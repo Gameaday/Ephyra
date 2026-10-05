@@ -38,6 +38,23 @@ class ChapterImpl : Chapter {
     // attached/copy-merged by extensions via `copyFrom`; host storage keeps it empty.
     override var memo: JsonObject = JsonObject(emptyMap())
 
+    // Inherited from `SChapter` (tachiyomix 1.7). These describe the *source's* view of a chapter —
+    // its own string numbering, volume, scanlation groups, content language, lock state and note.
+    // Host storage does not persist them, so they stay at their defaults rather than being invented;
+    // `chapter_number` above remains the stored value and `effectiveNumber()` prefers `number` when
+    // an extension sets it.
+    override var number: String? = null
+
+    override var volume: String? = null
+
+    override var scanlators: List<String> = emptyList()
+
+    override var language: String? = null
+
+    override var locked: Boolean = false
+
+    override var note: String? = null
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || javaClass != other.javaClass) return false

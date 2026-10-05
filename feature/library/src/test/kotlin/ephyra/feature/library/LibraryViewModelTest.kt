@@ -13,6 +13,8 @@ import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.history.interactor.GetNextChapters
 import ephyra.domain.library.model.LibraryManga
+import ephyra.domain.library.model.LibrarySort
+import ephyra.domain.library.model.sort
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.interactor.GetLibraryManga
@@ -29,6 +31,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -120,6 +123,12 @@ class LibraryViewModelTest {
         every { libraryPreferences.categoryTabs().changes() } returns flowOf(false)
         every { libraryPreferences.categoryNumberOfItems().changes() } returns flowOf(false)
         every { libraryPreferences.showContinueReadingButton().changes() } returns flowOf(false)
+
+        // Sort preferences. `libraryPreferences` is relaxed, so these need explicit flows for the
+        // combine to emit at all; the sort assertions below replace them with mutable ones.
+        every { libraryPreferences.sortingMode().changes() } returns flowOf(LibrarySort.default)
+        every { libraryPreferences.randomSortSeed().changes() } returns flowOf(0)
+        every { libraryPreferences.categorizedDisplaySettings().changes() } returns flowOf(false)
     }
 
     @AfterEach
@@ -136,6 +145,7 @@ class LibraryViewModelTest {
             chapterRepository = chapterRepository,
             setReadStatus = setReadStatus,
             updateManga = updateManga,
+            evictChapterCacheForManga = mockk(relaxed = true),
             setMangaCategories = setMangaCategories,
             preferences = preferences,
             libraryPreferences = libraryPreferences,
@@ -237,5 +247,190 @@ class LibraryViewModelTest {
             assertEquals(1, itemsInSystemCategory.size)
             assertEquals(42L, itemsInSystemCategory.first().id)
         }
+    }
+
+    /**
+     * Regression test for "sort does not work on the library screen".
+     *
+     * The re-sort pipeline is keyed on `LibraryData` equality. The sort was previously read straight
+     * from the preference inside `applySort`, so it lived outside the flow: `distinctUntilChanged()`
+     * saw an unchanged `LibraryData` and discarded the emission, and the grid kept the old order
+     * until the library contents happened to change. This drives the sort through the state flow and
+     * asserts the visible order actually moves.
+     */
+    @Test
+    fun `changing the sort mode reorders the library`() = runTest(testDispatcher) {
+        val dateAddedDescending = LibrarySort(LibrarySort.Type.DateAdded, LibrarySort.Direction.Descending)
+        val sortFlow = MutableStateFlow(dateAddedDescending)
+        every { libraryPreferences.sortingMode().changes() } returns sortFlow
+
+        // "Bravo" was added most recently, "Alpha" least recently.
+        val bravo = libraryManga(id = 1L, title = "Bravo", dateAdded = 200L)
+        val alpha = libraryManga(id = 2L, title = "Alpha", dateAdded = 100L)
+        every { getLibraryManga.subscribe() } returns flowOf(listOf(alpha, bravo))
+        every { getCategories.subscribe() } returns flowOf(emptyList())
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            // Descending by date added puts the newest first.
+            awaitStateWithIds(listOf(1L, 2L), sort = dateAddedDescending)
+
+            // Now sort by title ascending: "Alpha" must move ahead of "Bravo".
+            val alphabeticalAscending = LibrarySort(
+                LibrarySort.Type.Alphabetical,
+                LibrarySort.Direction.Ascending,
+            )
+            sortFlow.value = alphabeticalAscending
+
+            awaitStateWithIds(listOf(2L, 1L), sort = alphabeticalAscending)
+        }
+    }
+
+    /**
+     * Re-tapping Random writes a new seed. That seed was read outside the flow, so the shuffle never
+     * reached the grid and the control appeared dead.
+     */
+    @Test
+    fun `a new random seed reshuffles the library`() = runTest(testDispatcher) {
+        val seedFlow = MutableStateFlow(0)
+        every {
+            libraryPreferences.sortingMode().changes()
+        } returns flowOf(LibrarySort(LibrarySort.Type.Random, LibrarySort.Direction.Ascending))
+        every { libraryPreferences.randomSortSeed().changes() } returns seedFlow
+
+        val items = (1L..6L).map { libraryManga(id = it, title = "Title $it", dateAdded = it) }
+        every { getLibraryManga.subscribe() } returns flowOf(items)
+        every { getCategories.subscribe() } returns flowOf(emptyList())
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            val before = awaitAnyIds(count = 6, seed = 0)
+
+            // Try a handful of seeds: one particular seed can reproduce the same order by chance, so
+            // this asserts that *some* seed moves the order rather than that any single one does.
+            var changed = false
+            for (seed in 1..10) {
+                seedFlow.value = seed
+                val shuffled = awaitAnyIds(count = 6, seed = seed)
+                if (shuffled != before) {
+                    changed = true
+                    break
+                }
+            }
+            assertTrue(changed, "changing the random seed never changed the library order")
+        }
+    }
+
+    /**
+     * Drains state emissions until the grid publishes [expected] in display order, returning that
+     * emission.
+     *
+     * `groupedFavorites` and `libraryData` are written by two independent `collectLatest` writers, so an
+     * emission can carry a freshly-replaced `libraryData` beside a `groupedFavorites` still holding the
+     * previous ordering. The first matching emission therefore proves nothing; this waits for the
+     * ordering itself, and fails with what it actually saw if it never arrives.
+     *
+     * Waiting for a *value* rather than a count is what makes this an assertion rather than a sleep:
+     * with the sort read outside the flow the grid never re-orders, and this exhausts and throws.
+     *
+     * Returns the [LibraryViewModel.State] rather than just the ids so callers can assert on the same
+     * emission instead of asking Turbine for a value that has already been consumed.
+     */
+    private suspend fun app.cash.turbine.ReceiveTurbine<LibraryViewModel.State>.awaitStateWithIds(
+        expected: List<Long>,
+        sort: LibrarySort? = null,
+        seed: Int? = null,
+    ): LibraryViewModel.State {
+        var last: List<Long> = emptyList()
+        repeat(200) {
+            val state = awaitItem()
+            if (sort != null && state.libraryData.sortPreferences.sortMode != sort) return@repeat
+            if (seed != null && state.libraryData.sortPreferences.randomSortSeed != seed) return@repeat
+            val category = state.displayedCategories.firstOrNull() ?: return@repeat
+            last = state.getItemsForCategory(category).map { it.id }
+            if (last == expected) return state
+        }
+        error("expected the library in order $expected but the last observed order was $last")
+    }
+
+    private fun LibraryViewModel.State.displayedIds(): List<Long> =
+        displayedCategories.firstOrNull()?.let { getItemsForCategory(it).map { item -> item.id } }
+            ?: emptyList()
+
+    /** Waits for the first grid that holds [count] items, without asserting their order. */
+    private suspend fun app.cash.turbine.ReceiveTurbine<LibraryViewModel.State>.awaitAnyIds(
+        count: Int,
+        seed: Int? = null,
+    ): List<Long> {
+        repeat(200) {
+            val state = awaitItem()
+            if (seed != null && state.libraryData.sortPreferences.randomSortSeed != seed) return@repeat
+            val category = state.displayedCategories.firstOrNull() ?: return@repeat
+            val ids = state.getItemsForCategory(category).map { it.id }
+            if (ids.size == count) return ids
+        }
+        error("the library never published a grouped list of $count items")
+    }
+
+    /**
+     * The sort dialog must highlight the sort that produced the order on screen.
+     *
+     * It used to derive the highlighted option from `category.sort`. The Default tab is synthesized
+     * with flags 0, so that always read "Alphabetical, descending" no matter what the user picked --
+     * the grid would have re-ordered while the dialog insisted it had not.
+     */
+    @Test
+    fun `the Default tab reports the stored sort rather than its zero flags`() = runTest(testDispatcher) {
+        val chosen = LibrarySort(LibrarySort.Type.DateAdded, LibrarySort.Direction.Ascending)
+        every { libraryPreferences.sortingMode().changes() } returns MutableStateFlow(chosen)
+
+        val items = listOf(
+            libraryManga(id = 1L, title = "Bravo", dateAdded = 200L),
+            libraryManga(id = 2L, title = "Alpha", dateAdded = 100L),
+        )
+        every { getLibraryManga.subscribe() } returns flowOf(items)
+        every { getCategories.subscribe() } returns flowOf(emptyList())
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            // DateAdded ascending puts the older entry first: Bravo was added at 200, Alpha at 100.
+            val current = awaitStateWithIds(listOf(2L, 1L), sort = chosen)
+
+            val defaultTab = current.displayedCategories.first()
+            assertTrue(defaultTab.isSystemCategory, "expected the Default tab, got ${defaultTab.name}")
+
+            // The dialog resolves through `sortFor`, so it agrees with the rendered order...
+            assertEquals(chosen, current.sortFor(defaultTab))
+            // ...whereas decoding the tab's flags still yields Alphabetical/Descending -- the stale
+            // value the dialog used to highlight, because the Default tab is always built with
+            // flags 0. Asserting it explicitly pins the exact regression rather than just "not equal".
+            assertEquals(
+                LibrarySort(LibrarySort.Type.Alphabetical, LibrarySort.Direction.Descending),
+                defaultTab.sort,
+            )
+        }
+    }
+
+    private fun libraryManga(id: Long, title: String, dateAdded: Long): LibraryManga {
+        val manga: Manga = mockk(relaxed = true) {
+            every { this@mockk.id } returns id
+            every { source } returns 100L
+            every { favorite } returns true
+            every { this@mockk.title } returns title
+            every { this@mockk.dateAdded } returns dateAdded
+        }
+        return LibraryManga(
+            manga = manga,
+            categories = listOf(0L),
+            totalChapters = 10,
+            readCount = 0,
+            bookmarkCount = 0,
+            latestUpload = 0,
+            chapterFetchedAt = 0,
+            lastRead = 0,
+        )
     }
 }

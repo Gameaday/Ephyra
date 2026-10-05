@@ -2,6 +2,8 @@ package ephyra.app.ui.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.graphics.res.animatedVectorResource
@@ -56,6 +58,7 @@ import ephyra.presentation.core.components.material.NavigationRail
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.theme.MotionTokens
+import ephyra.presentation.core.ui.navigation.LocalMotionPreference
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.LocalNavigationCoordinator
 import ephyra.presentation.core.ui.navigation.NavigationCoordinator
@@ -98,6 +101,30 @@ private val TAB_ROOT_ROUTES = listOf(
     ScreenRoutes.Browse.route,
     ScreenRoutes.More.route,
 )
+
+/**
+ * Index of a tab route in [TAB_ROOT_ROUTES], or -1 when the route is not a tab root.
+ *
+ * The index is the tab's position in the bottom bar, which is also its position on the horizontal
+ * axis the tabs slide along. Deriving the slide direction from this one ordered list means the
+ * visual direction can never disagree with the order of the buttons the user is tapping.
+ */
+internal fun tabIndexOf(route: String?): Int = TAB_ROOT_ROUTES.indexOf(route)
+
+/**
+ * Whether a transition between two routes should slide forward (leftward, toward higher tab
+ * indices), backward, or not slide at all.
+ *
+ * Returns null when either end is not a tab root, which means the pair is not two peers on the tab
+ * axis and the caller should fall back to the fade-through. Returning a tri-state instead of a
+ * boolean keeps "this is not a tab pair" from being silently folded into "backward".
+ */
+internal fun tabSlideForward(fromRoute: String?, toRoute: String?): Boolean? {
+    val from = tabIndexOf(fromRoute)
+    val to = tabIndexOf(toRoute)
+    if (from == -1 || to == -1) return null
+    return to > from
+}
 
 @Composable
 fun HomeScreen(
@@ -220,13 +247,50 @@ fun HomeScreen(
                     .padding(contentPadding)
                     .consumeWindowInsets(contentPadding),
             ) {
+                // The five tabs are ordered peers, so a tab change slides horizontally by tab order
+                // instead of fading. A fade makes each tab read as a separate, discrete screen; a
+                // slide keeps the bar and the content on one surface, and makes going back to an
+                // earlier tab the same movement reversed rather than a second unrelated dissolve.
+                //
+                // Direction comes from the tab index, so the incoming page always enters from the
+                // side the tapped button sits on. Non-tab destinations (a nested screen reached
+                // inside a tab) keep the fade-through, since they are not peers on this axis.
+                val reducedMotion = LocalMotionPreference.current
                 NavHost(
                     navController = bottomNavController,
                     startDestination = ScreenRoutes.Library.route,
-                    enterTransition = { MotionTokens.m3FadeThroughEnter() },
-                    exitTransition = { MotionTokens.m3FadeThroughExit() },
-                    popEnterTransition = { MotionTokens.m3FadeThroughEnter() },
-                    popExitTransition = { MotionTokens.m3FadeThroughExit() },
+                    enterTransition = {
+                        val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
+                        when {
+                            reducedMotion -> EnterTransition.None
+                            forward == null -> MotionTokens.m3FadeThroughEnter()
+                            else -> MotionTokens.m3TabSlideEnter(forward)
+                        }
+                    },
+                    exitTransition = {
+                        val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
+                        when {
+                            reducedMotion -> ExitTransition.None
+                            forward == null -> MotionTokens.m3FadeThroughExit()
+                            else -> MotionTokens.m3TabSlideExit(forward)
+                        }
+                    },
+                    popEnterTransition = {
+                        val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
+                        when {
+                            reducedMotion -> EnterTransition.None
+                            forward == null -> MotionTokens.m3FadeThroughEnter()
+                            else -> MotionTokens.m3TabSlideEnter(forward)
+                        }
+                    },
+                    popExitTransition = {
+                        val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
+                        when {
+                            reducedMotion -> ExitTransition.None
+                            forward == null -> MotionTokens.m3FadeThroughExit()
+                            else -> MotionTokens.m3TabSlideExit(forward)
+                        }
+                    },
                     modifier = Modifier,
                 ) {
                     composable(ScreenRoutes.Library.route) {

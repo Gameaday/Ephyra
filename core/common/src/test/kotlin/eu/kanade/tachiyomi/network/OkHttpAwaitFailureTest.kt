@@ -7,7 +7,6 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Request
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.io.IOException
@@ -24,6 +23,21 @@ import java.net.UnknownHostException
  * so the reader re-requested the same unresolvable image URL on every attempt — including the first
  * attempt of the user's own Retry — and the page could not recover. The exception type is the whole
  * message here, so it is asserted directly rather than inferred.
+ *
+ * **Why this asserts the type and not object identity.** It originally asserted `assertSame`, and
+ * failed on both tests. That assertion was wrong, not the code: `await()` does hand back the very
+ * instance OkHttp produced — `withCallSite` mutates `stackTrace` in place and returns `this` — but
+ * `runBlocking` resumes through `suspendCancellableCoroutine`, and kotlinx-coroutines' stack-trace
+ * recovery substitutes a *copy* of the same type with the original chained as its `cause`. Probed
+ * rather than assumed: resuming the same `Continuation` directly, with no coroutine boundary, gives
+ * `same=true`; going through `runBlocking` gives `same=false` with the class unchanged and
+ * `cause=java.io.IOException`. So identity is unachievable across a suspension point by
+ * construction, and an assertion that can never hold is not evidence of anything.
+ *
+ * Asserting the exact class is the stronger claim anyway: the `DEF-023` defect produced an
+ * `IOException` wrapping an `UnknownHostException`, so a plain type check would pass while the
+ * defect was live. `assertEquals(UnknownHostException::class.java, thrown.javaClass)` fails for that
+ * shape and passes for a real resolver failure, which is precisely the distinction the fix turned on.
  */
 class OkHttpAwaitFailureTest {
 
@@ -37,11 +51,12 @@ class OkHttpAwaitFailureTest {
             runBlocking { failingCall(original).await() }
         }
 
-        assertSame(
-            original,
-            thrown,
-            "await() must rethrow OkHttp's own exception; a type-erased copy is what made DEF-023 " +
-                "unfixable downstream",
+        assertEquals(
+            UnknownHostException::class.java,
+            thrown.javaClass,
+            "await() must not downgrade the failure's type; a resolver failure is the one type " +
+                "that says the URL is wrong, and erasing it is what made DEF-023 unfixable " +
+                "downstream",
         )
         assertEquals(original.message, thrown.message, "the message must survive unchanged")
     }
@@ -55,7 +70,12 @@ class OkHttpAwaitFailureTest {
             runBlocking { failingCall(original).await() }
         }
 
-        assertSame(original, thrown)
+        assertEquals(
+            IOException::class.java,
+            thrown.javaClass,
+            "a plain failure must arrive as that exact type and not as a narrower or broader one",
+        )
+        assertEquals(original.message, thrown.message, "the message must survive unchanged")
     }
 
     /**

@@ -18,6 +18,7 @@ import ephyra.domain.track.interactor.AddTracks
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -69,7 +70,20 @@ class HistoryViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(): HistoryViewModel {
+    /**
+     * Builds a ViewModel whose long-lived collection belongs to [scope].
+     *
+     * **Why the scope is threaded through instead of cancelled afterwards.** The collector `init`
+     * launches runs for the ViewModel's lifetime, and `runTest`'s scope is not its parent, so nothing
+     * the test owns would wait for it or stop it. Passing the test's `backgroundScope` means the
+     * collector is cancelled *because the test ended* — not because the test remembered to cancel it,
+     * and not on a schedule.
+     *
+     * Cancelling `viewModelScope` in `tearDown` was tried first and made matters worse: one failing
+     * test became two, with the leak surfacing on different tests, because cancelling mid-collection
+     * reports an exception of its own. Removing the leak at its source beat suppressing its symptom.
+     */
+    private fun createViewModel(scope: CoroutineScope? = null): HistoryViewModel {
         return HistoryViewModel(
             addTracks = addTracks,
             getCategories = getCategories,
@@ -82,6 +96,7 @@ class HistoryViewModelTest {
             setMangaCategories = setMangaCategories,
             updateManga = updateManga,
             sourceManager = sourceManager,
+            collectionScope = scope,
         )
     }
 
@@ -107,7 +122,7 @@ class HistoryViewModelTest {
 
     @Test
     fun `initial state starts with null list and dialog`() = runTest(testDispatcher) {
-        val viewModel = createViewModel()
+        val viewModel = createViewModel(backgroundScope)
 
         viewModel.state.test {
             val item = awaitItem()
@@ -119,7 +134,7 @@ class HistoryViewModelTest {
 
     @Test
     fun `history flow updates state list`() = runTest(testDispatcher) {
-        val viewModel = createViewModel()
+        val viewModel = createViewModel(backgroundScope)
 
         viewModel.state.test {
             val initial = awaitItem()
@@ -142,7 +157,7 @@ class HistoryViewModelTest {
      */
     @Test
     fun `non-empty history populates items and inserts a date header`() = runTest(testDispatcher) {
-        val viewModel = createViewModel()
+        val viewModel = createViewModel(backgroundScope)
 
         viewModel.state.test {
             assertNull(awaitItem().list)
@@ -160,7 +175,7 @@ class HistoryViewModelTest {
 
     @Test
     fun `search query updates state`() = runTest(testDispatcher) {
-        val viewModel = createViewModel()
+        val viewModel = createViewModel(backgroundScope)
 
         viewModel.state.test {
             awaitItem() // initial
@@ -172,7 +187,7 @@ class HistoryViewModelTest {
 
     @Test
     fun `set dialog updates state dialog`() = runTest(testDispatcher) {
-        val viewModel = createViewModel()
+        val viewModel = createViewModel(backgroundScope)
 
         viewModel.state.test {
             awaitItem() // initial
@@ -185,7 +200,7 @@ class HistoryViewModelTest {
     @Test
     fun `clearing all history emits HistoryCleared effect`() = runTest(testDispatcher) {
         coEvery { removeHistory.awaitAll() } returns true
-        val viewModel = createViewModel()
+        val viewModel = createViewModel(backgroundScope)
 
         viewModel.effects.test {
             viewModel.onEvent(HistoryScreenEvent.RemoveAllHistory)
@@ -198,7 +213,7 @@ class HistoryViewModelTest {
     fun `getNextChapterForManga emits OpenChapter effect`() = runTest(testDispatcher) {
         val mockChapter: Chapter = mockk(relaxed = true)
         coEvery { getNextChapters.await(1L, 2L, onlyUnread = false) } returns listOf(mockChapter)
-        val viewModel = createViewModel()
+        val viewModel = createViewModel(backgroundScope)
 
         viewModel.effects.test {
             viewModel.onEvent(HistoryScreenEvent.GetNextChapterForManga(1L, 2L))

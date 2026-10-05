@@ -49,6 +49,7 @@ import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.policy.ChapterCompletionPolicy
 import ephyra.domain.reader.policy.DefaultReadingModeResolver
 import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.domain.source.diagnostics.SourceResolutionDiagnostics
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.TrackChapter
@@ -91,6 +92,7 @@ import javax.inject.Inject
 class ReaderViewModel @Inject constructor(
     private val savedState: SavedStateHandle,
     private val sourceManager: SourceManager,
+    private val sourceResolutionDiagnostics: SourceResolutionDiagnostics,
     private val downloadManager: DownloadManager,
     private val downloadProvider: DownloadProvider,
     private val imageSaver: ImageSaver,
@@ -115,6 +117,9 @@ class ReaderViewModel @Inject constructor(
 ) : BaseUdfViewModel<ReaderViewModel.State, ReaderEvent, ReaderViewModel.Event>(State()) {
     private companion object {
         const val FALLBACK_LAST_PAGE_INDEX = Int.MAX_VALUE
+
+        /** Current chapter plus two in either direction stays hot. */
+        const val WINDOW_SIZE = 5
     }
 
     val eventFlow: Flow<Event> get() = effects
@@ -269,8 +274,28 @@ class ReaderViewModel @Inject constructor(
                     currentChapter.requestedPage = currentChapter.chapter.lastPageRead.toInt()
                 }
                 chapterId = currentChapter.chapter.id
+                trackReadingWindow(currentChapter.chapter)
             }
             .launchIn(viewModelScope)
+    }
+
+    // ── Cold-tier eviction (doc/cache-retention-policy.md rule 1) ────────────
+    // The reader keeps the current chapter ±2 hot. A chapter that falls out of the
+    // window has its page list and images evicted: pages are large, viewed once
+    // sequentially, and cheap to re-fetch in the rare long backward jump — retention
+    // follows revisit probability, not arrival order. Eviction makes no network calls.
+    private val readingWindow = ArrayDeque<ephyra.domain.chapter.model.Chapter>(WINDOW_SIZE)
+
+    private fun trackReadingWindow(chapter: ephyra.domain.chapter.model.Chapter) {
+        if (readingWindow.lastOrNull()?.id == chapter.id) return
+        // Reorder on revisit so an in-window backward jump re-marks the chapter hot
+        // instead of double-counting it.
+        readingWindow.removeAll { it.id == chapter.id }
+        readingWindow.addLast(chapter)
+        while (readingWindow.size > WINDOW_SIZE) {
+            val evicted = readingWindow.removeFirst()
+            chapterCache.removeChapter(evicted)
+        }
     }
 
     override fun onCleared() {
@@ -281,6 +306,19 @@ class ReaderViewModel @Inject constructor(
                 downloadManager.addDownloadsToStartOfQueue(listOf(it))
             }
         }
+        // Series-switch eviction (doc/cache-retention-policy.md rule 1, second half):
+        // the sliding window only slides within one series, and each series gets its
+        // own ViewModel — so without this, reading the latest chapter of N series
+        // caches N × WINDOW_SIZE chapters until byte-pressure LRU notices. On reader
+        // close, keep only the chapter being left (instant resume) and decache the
+        // rest. Rotation does not call onCleared, so this fires on genuine exit only.
+        val keepId = readingWindow.lastOrNull()?.id
+        readingWindow.forEach { chapter ->
+            if (chapter.id != keepId) {
+                chapterCache.removeChapter(chapter)
+            }
+        }
+        readingWindow.clear()
     }
 
     // ── UDF entry-point ──────────────────────────────────────────────────────
@@ -316,6 +354,16 @@ class ReaderViewModel @Inject constructor(
      * trigger deletion of the downloaded chapters.
      */
     private fun onActivityFinish() {
+        // Persist the final chapter's history (read-at time + session duration) before exiting,
+        // as [updateHistory] is otherwise only invoked when switching chapters.
+        viewModelScope.launchNonCancellable {
+            try {
+                updateHistory()
+            } catch (e: Throwable) {
+                if (e is CancellationException) throw e
+                logcat(LogPriority.ERROR, e) { "Failed to update history on activity finish" }
+            }
+        }
         deletePendingChapters()
     }
 
@@ -341,6 +389,9 @@ class ReaderViewModel @Inject constructor(
                     if (chapterId == -1L) chapterId = initialChapterId
 
                     val source = sourceManager.getOrStub(manga.source)
+                    // DEF-029 instrument: an entry whose source is no longer registered fails later
+                    // and elsewhere, so record how this entry's source id resolves right here.
+                    sourceResolutionDiagnostics.reportEntry(manga.source)
                     loader = ChapterLoader(
                         app,
                         downloadManager,

@@ -21,6 +21,7 @@ import ephyra.feature.settings.screen.SettingsTrackingScreen
 import ephyra.feature.settings.screen.about.AboutScreen
 import ephyra.presentation.core.components.TwoPanelBox
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.LocalBackPress
 import ephyra.presentation.core.util.isTabletUi
 
@@ -54,7 +55,19 @@ fun SettingsScreen(
                 .consumeWindowInsets(insets),
             startContent = {
                 CompositionLocalProvider(LocalBackPress provides { navController.popBackStack() }) {
-                    SettingsMainScreen(twoPane = true, navController = navController)
+                    SettingsMainScreen(
+                        twoPane = true,
+                        navController = navController,
+                        onRouteSelected = { route ->
+                            val detail = detailFor(route)
+                            if (detail != null) {
+                                currentDetail = detail
+                                true
+                            } else {
+                                false
+                            }
+                        },
+                    )
                 }
             },
             endContent = {
@@ -74,6 +87,19 @@ enum class SettingsDetail {
     About,
     Data,
     Tracking,
+}
+
+/**
+ * Maps a settings sub-screen route to the tablet two-pane [SettingsDetail] pane it should
+ * display in, or null if the route has no dedicated detail pane (and should be navigated to
+ * as a full-screen destination instead).
+ */
+private fun detailFor(route: String): SettingsDetail? = when (route) {
+    ScreenRoutes.SettingsAppearance.route -> SettingsDetail.Appearance
+    ScreenRoutes.About.route -> SettingsDetail.About
+    ScreenRoutes.SettingsData.route -> SettingsDetail.Data
+    ScreenRoutes.SettingsTracking.route -> SettingsDetail.Tracking
+    else -> null
 }
 
 object SettingsScreen {

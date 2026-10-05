@@ -113,7 +113,7 @@ class MangaChapterInteractor @Inject constructor(
             }
         }.onSuccess { updateResult ->
             runCatching {
-                updateManga.awaitUpdateFromSource(manga, updateResult.manga, manualFetch = manualFetch)
+                updateManga.awaitUpdateFromSource(manga, updateResult.manga(), manualFetch = manualFetch)
             }.onFailure { e ->
                 logcat(LogPriority.WARN, e) {
                     "Failed to update manga details from source '${source.name}'"
@@ -127,7 +127,7 @@ class MangaChapterInteractor @Inject constructor(
             SMangaUpdate(sManga, sChapters)
         }
         return syncChaptersWithSource.await(
-            update.chapters,
+            update.chapters(),
             manga,
             source,
             manualFetch,

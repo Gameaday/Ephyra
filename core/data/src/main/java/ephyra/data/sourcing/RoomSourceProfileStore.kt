@@ -14,14 +14,6 @@ class RoomSourceProfileStore(
     private val json: Json = Json { ignoreUnknownKeys = true },
 ) : SourceProfileStore {
 
-    private companion object {
-        val DEFAULT_DOMAINS = setOf(
-            "https://mangadex.org",
-            "https://manganato.com",
-            "https://asuratoons.com",
-        )
-    }
-
     override suspend fun get(baseUrl: String): SourceProfile? {
         return dao.get(baseUrl)?.toDomain(json)
     }
@@ -36,8 +28,12 @@ class RoomSourceProfileStore(
     }
 
     override suspend fun getAllProfiledDomains(): Set<String> {
-        val urls = dao.getAllBaseUrls().toSet()
-        return if (urls.isEmpty()) DEFAULT_DOMAINS else urls
+        // No fallback. This used to substitute a hardcoded trio of real sites whenever the table was
+        // empty, which made "no sources configured" indistinguishable from "these three" — and it
+        // named sites the app could not actually serve. With `ADR-0015` removing the only engine that
+        // could create a profile, the table is always empty, so the fallback was permanently the
+        // answer rather than a fallback at all.
+        return dao.getAllBaseUrls().toSet()
     }
 
     override suspend fun exists(baseUrl: String): Boolean {

@@ -77,24 +77,22 @@ all in one place with a polished, configurable reading experience.
 - Color filters, grayscale, and inverted color modes for comfortable reading.
 - Create backups locally or to your preferred cloud service.
 
-## 🔌 Content Sourcing Architecture (Dynamic Scrapers, Heuristics, & On-Device Transpilation)
+## 🔌 Content Sourcing Architecture
 
-Ephyra implements a highly modular, secure, and lightweight dynamic content sourcing system. The application starts with a completely clean, empty sandbox (no pre-bundled scrapers). Users can add remote extension repositories and install extensions dynamically.
+Ephyra runs sources as ordinary Android extensions. A source is an APK installed into app-private
+storage and driven through the standard `HttpSource`/`CatalogueSource` contract, so the reader, the
+downloader and the library all see one shape regardless of which source produced a page.
 
-The retrieval pipeline consists of three core components:
+Sources come from two places:
 
-1. **On-Device Legacy Extension Transpiler**:
-   - **Raw Kotlin Compilation**: Ephyra downloads the raw Kotlin source code of extensions directly from remote repositories.
-   - **QuickJS Transpilation**: An on-device sandboxed compiler (`transpiler.js` running in QuickJS) translates the Kotlin code into secure, sandboxed JavaScript scraper files on the fly.
-   - **Auto-Updates**: When remote repositories are refreshed, Ephyra automatically checks version codes, fetches updated Kotlin sources, re-transpiles, and hot-updates the on-device JS scraper scripts in the background.
+1. **Extension repositories**:
+   - **Remote APK repositories**: Add a repository URL and Ephyra discovers, installs, and updates
+     the APKs it publishes, including private/self-hosted repository formats.
+   - **Local installs**: Import an extension APK directly, or install one already on the device.
 
-2. **Sandboxed JavaScript Engine (`ScriptableContentSourceEngine`)**:
-   - **Play Store Compliant QuickJS**: Leverages a secure, fully sandboxed QuickJS runtime to execute user-provided or transpiled `.js` scraper files.
-   - **Url Mapping**: Links specific base URLs of content providers to their respective transpiled scraper scripts (e.g., `mangadex_scraper.js`), offering exact control over fetching, pagination, and API payloads in a secure sandbox.
-
-3. **Layout Heuristics Engine (`AdaptiveHeuristicEngine`)**:
-   - **DOM Structure Heuristics**: Analyzes web pages on the fly using [Jsoup](https://jsoup.org/) to auto-discover selectors for search grids, item details, titles, covers, chapter lists, and reader images if a custom scraper is not mapped.
-   - **Intelligent Fallbacks & Caching**: Employs heuristic rules matching common classes/IDs and caches the discovered selector rules into a serialized `SourceProfile` template for optimal performance on subsequent requests.
+There is deliberately no third mechanism. An earlier design translated Kotlin extension sources into
+sandboxed JavaScript at runtime; it could not represent API-based sources faithfully and was removed
+rather than left in the tree half-working. See `doc/adr/0013-source-types-that-exist.md`.
 
 ## Contributing
 

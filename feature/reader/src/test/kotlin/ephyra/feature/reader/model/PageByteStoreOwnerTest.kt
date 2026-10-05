@@ -110,7 +110,7 @@ class PageByteStoreOwnerTest {
 
         owner.retain(page, ByteArray(owner.budgetBytes + 1))
 
-        assertEquals(0, owner.pageCount, "a declined value must not be recorded as a retained page")
+        assertEquals("a declined value must not be recorded as a retained page", 0, owner.pageCount)
         assertNull("the page must not be left holding bytes the store refused", page.cachedBytes)
         assertEquals(0, owner.retainedBytes)
     }

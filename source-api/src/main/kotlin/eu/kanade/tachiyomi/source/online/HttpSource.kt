@@ -258,7 +258,7 @@ abstract class HttpSource : CatalogueSource {
      */
     @Suppress("DEPRECATION")
     override suspend fun getMangaDetails(manga: SManga): SManga =
-        getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga
+        getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga()
 
     /**
      * Returns the request for the details of a manga. Override only if it's needed to change the
@@ -307,7 +307,7 @@ abstract class HttpSource : CatalogueSource {
      */
     @Suppress("DEPRECATION")
     override suspend fun getChapterList(manga: SManga): List<SChapter> =
-        getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true).chapters
+        getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true).chapters()
 
     /**
      * Returns the request for updating the chapter list. Override only if it's needed to override
@@ -403,8 +403,43 @@ abstract class HttpSource : CatalogueSource {
     open suspend fun getImageUrl(page: Page): String = fetchImageUrl(page).awaitSingle()
 
     /**
+     * What this source actually implements, probed once per instance.
+     *
+     * **Call sites read a capability, never the declared `extension-lib` version.** The version says
+     * whether the extension could be loaded; the capability says what it will do. They are different
+     * questions, and MangaDex is the case that separates them: it declares 1.6 and overrides
+     * `pageListParse` and `imageRequest` — not the URL-resolving chain at all — because its
+     * `Page.url` is an at-home cache key and its `Page.imageUrl` a relative path, which only its own
+     * `imageRequest` knows how to join.
+     *
+     * See [SourceCapabilities] for the probes and what the app must do differently for each.
+     */
+    val capabilities: SourceCapabilities by lazy { SourceCapabilities(javaClass) }
+
+    /**
      * Returns the request for getting the url to the source image. Override only if it's needed to
      * override the url, send different headers or request method like POST.
+     *
+     * [Page.url] is resolved against [baseUrl] here, at the boundary, rather than by each source.
+     * A source that names its page relatively — `img.attr("src")` instead of `absUrl("src")`, or the
+     * protocol-relative `//cdn…` a `<base>`-tagged site emits — is ordinary source code, and OkHttp
+     * answers a scheme-less URL with `Expected URL scheme 'http' or 'https' but no scheme was found
+     * for …` while *building* the request. No request is sent, so the page can be neither retried nor
+     * cached nor blamed on the network, and the reader showed that string to the user verbatim. The
+     * missing half of the address is a value this class already holds, so forming the address is
+     * strictly cheaper than reporting its absence. Overrides that build their own request inherit
+     * nothing from this, which is why `HttpPageLoader` resolves the resolved URL again before use.
+     *
+     * When [Page.imageUrl] is already populated it is preferred over [Page.url]. API sources
+     * When both fields are populated, the first one that can actually address a host wins.
+     * [Page.imageUrl] is preferred, because API sources (MangaDex is the canonical one) build
+     * `Page(index, imageUrl = absolute)` with `url` left at its `""` default, so resolving `url`
+     * alone can only produce `""`. But *preferring* is not the same as *trusting*: a source that
+     * sets `imageUrl` to something the contract does not allow — a composite of its own, rather
+     * than an address — must not be able to hide a perfectly good `url` behind it. So the other
+     * field is still tried, and the exception raised when neither works names the preferred one,
+     * because that is the value the source should have fixed. The rule itself lives in
+     * [PageImageAddress]; this is only its use.
      *
      * @param page the chapter whose page list has to be fetched
      */
@@ -413,7 +448,12 @@ abstract class HttpSource : CatalogueSource {
             "Source developers should make their own implementation according to their needs.",
     )
     protected open fun imageUrlRequest(page: Page): Request {
-        return GET(page.url, headers)
+        // `page.url`, and nothing else — Mihon's `imageUrlRequest` reads exactly this field. This is
+        // the deprecated chain: the request below is a *real fetch* of `page.url` whose response is
+        // handed to `imageUrlParse`. Substituting `page.imageUrl` here changes which URL is fetched,
+        // therefore what `imageUrlParse` receives, therefore the value the source returns. The
+        // resolution and judgement are ours and are kept; the choice of field is not.
+        return GET(PageImageAddress.of(page, baseUrl, PageImageAddress.Field.URL).url.value, headers)
     }
 
     /**
@@ -439,7 +479,27 @@ abstract class HttpSource : CatalogueSource {
      * @param page the chapter whose page list has to be fetched
      */
     protected open fun imageRequest(page: Page): Request {
-        return GET(page.imageUrl!!, headers)
+        // The same verdict the reader reaches at its own seam, enforced here so that *every* path to
+        // this constructor is covered. `Downloader` never consults the reader's check, and an
+        // override that builds its own request inherits nothing from this. Thrown before the
+        // [Request] exists, `MalformedImageUrlException` is classified by
+        // `TransientErrors.shouldReResolveUrl` as "ask the source again", which is the only thing
+        // that can recover: the source built the string and may build a different one next time.
+        //
+        // Deliberately the *same* expression as [imageUrlRequest], not a second copy of the rule.
+        // The two were byte-identical loops until this collapsed, and the fact that duplication was
+        // invisible is the argument against reintroducing it: a source that populated only `url`
+        // used to work through one builder and throw a bare `NullPointerException` through the
+        // other, with no layer attribution and no recovery.
+        // `page.imageUrl`, and nothing else — Mihon's `imageRequest` reads exactly this field, and
+        // this is the path for a source that already set the address in `getPageList`.
+        //
+        // **Deliberately the same expression shape as [imageUrlRequest] but not the same field.**
+        // These two were once byte-identical, and that is precisely how they drifted from the
+        // reference implementation unnoticed. Mihon reads `url` in one and `imageUrl` in the other,
+        // and that asymmetry is load-bearing rather than an oversight: collapsing it changed which
+        // request a deprecated-path extension actually receives.
+        return GET(PageImageAddress.of(page, baseUrl, PageImageAddress.Field.IMAGE_URL).url.value, headers)
     }
 
     /**

@@ -3,7 +3,9 @@ package ephyra.presentation.core.components
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -48,21 +50,29 @@ enum class MangaCover(val ratio: Float) {
         onClick: (() -> Unit)? = null,
     ) {
         val context = LocalContext.current
-        val model = if (data is ImageRequest) {
-            data
-        } else {
-            ImageRequest.Builder(context)
-                .data(data)
-                .crossfade(true)
-                .precision(Precision.EXACT)
-                .build()
-        }
-
         val sharedTransitionScope = LocalSharedTransitionScope.current
         val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
-        val sharedElementModifier = if (mangaId != null && sharedTransitionScope != null &&
+        val isSharedElement = mangaId != null && sharedTransitionScope != null &&
             animatedVisibilityScope != null
-        ) {
+        // Remembered: rebuilding the request on every recomposition hands Coil a new model
+        // instance each time, which at best re-runs request setup and at worst restarts the
+        // fetch — per visible cover, per state change. The request depends only on these inputs.
+        val model = remember(data, isSharedElement) {
+            if (data is ImageRequest) {
+                data
+            } else {
+                ImageRequest.Builder(context)
+                    .data(data)
+                    // No Coil crossfade on a shared element. While the element flies, both ends
+                    // draw the same image; a crossfade re-runs the placeholder-to-image blend
+                    // underneath the flight, which reads as the cover flashing mid-transition
+                    // (M3 guidance: shared elements must be settled content, not animating).
+                    .crossfade(!isSharedElement)
+                    .precision(Precision.EXACT)
+                    .build()
+            }
+        }
+        val sharedElementModifier = if (isSharedElement) {
             with(sharedTransitionScope) {
                 Modifier.sharedElement(
                     // Key comes from MotionPolicy so the library cell and the series header cannot
@@ -79,7 +89,7 @@ enum class MangaCover(val ratio: Float) {
 
         AsyncImage(
             model = model,
-            placeholder = ColorPainter(CoverPlaceholderColor),
+            placeholder = ColorPainter(coverPlaceholderColor()),
             error = rememberResourceBitmapPainter(id = R.drawable.cover_error),
             contentDescription = contentDescription,
             // Order matters here, and it was wrong.
@@ -118,4 +128,13 @@ enum class MangaCover(val ratio: Float) {
     }
 }
 
-private val CoverPlaceholderColor = Color(0x1F888888)
+/**
+ * Placeholder painted while a cover loads.
+ *
+ * Derived from the theme rather than a fixed translucent grey. The literal was the same in all
+ * themes, so on the Monochrome and Monet palettes the placeholder was the one surface in the grid
+ * that did not belong to the palette it was sitting in.
+ */
+@Composable
+private fun coverPlaceholderColor(): Color =
+    MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)

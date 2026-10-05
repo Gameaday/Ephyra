@@ -87,9 +87,7 @@ import ephyra.data.room.daos.UpdateDao
 import ephyra.data.saver.ImageSaverImpl
 import ephyra.data.source.SourceRepositoryImpl
 import ephyra.data.source.StubSourceRepositoryImpl
-import ephyra.data.sourcing.DynamicScraperUpdater
 import ephyra.data.sourcing.RoomSourceProfileStore
-import ephyra.data.sourcing.ScriptableContentSourceEngine
 import ephyra.data.track.TrackRepositoryImpl
 import ephyra.data.track.TrackerManagerImpl
 import ephyra.data.track.TrackingServiceImpl
@@ -127,7 +125,6 @@ import ephyra.domain.content.interactor.GetContentUnits
 import ephyra.domain.content.repository.ContentDatabase
 import ephyra.domain.content.repository.ContentRepository
 import ephyra.domain.content.repository.ContentUnitRepository
-import ephyra.domain.content.source.AdaptiveHeuristicEngine
 import ephyra.domain.content.source.ContentSourceEngine
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.RemoteSource
@@ -228,19 +225,19 @@ import ephyra.presentation.core.ui.delegate.SecureActivityDelegate
 import ephyra.presentation.core.ui.delegate.ThemingDelegate
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.CrashLogUtil
-import ephyra.source.api.ScriptableSourceEngine
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.io.LocalSourceFileSystem
-import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.source.AndroidSourceManager
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
 import nl.adaptivity.xmlutil.serialization.XML
+import javax.annotation.Nullable
 import javax.inject.Provider
 import javax.inject.Singleton
 
@@ -472,47 +469,43 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideDynamicScraperUpdater(
-        @ApplicationContext context: Context,
-        networkHelper: NetworkHelper,
-        preferenceStore: PreferenceStore,
-        json: Json,
-    ): DynamicScraperUpdater = DynamicScraperUpdater(context, networkHelper, preferenceStore, json)
-
-    @Provides
-    @Singleton
     fun provideOpportunisticMergeManager(): OpportunisticMergeManager =
         OpportunisticMergeManager()
 
+    /**
+     * The engine set the orchestrator resolves against — currently **empty**.
+     *
+     * The heuristic engine was removed (`ADR-0015`) and it was the only one bound, so there is
+     * deliberately nothing here until Jellyfin lands. That is a normal state rather than a
+     * misconfiguration, and two things make it safe:
+     *
+     * - Extension-APK sources never consult the orchestrator. `AndroidSourceManager` registers them
+     *   straight from the installed extensions; only *profiled* domains went through the profile path,
+     *   and the heuristic engine was the only thing that ever created a profile.
+     * - With no engine bound, the orchestrator raises `NoEngineBoundException` naming the unbound type
+     *   rather than substituting a substitute. A missing binding must be legible, not silently routed.
+     *
+     * Built as an explicit provider rather than `@IntoSet` because this project's KSP/Dagger setup
+     * does not honour the multibinding annotation on an `object` module — it generates the per-method
+     * factory but never wires a set binding. Adding Jellyfin means adding one line here; the
+     * orchestrator does not change.
+     */
     @Provides
     @Singleton
-    fun provideHeuristicContentSourceEngine(
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-        networkHelper: NetworkHelper,
-        profileCache: SourceProfileCache,
-    ): AdaptiveHeuristicEngine =
-        AdaptiveHeuristicEngine(ioDispatcher, networkHelper, profileCache)
-
-    @Provides
-    @Singleton
-    fun provideScriptableContentSourceEngine(
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-        scraperUpdater: DynamicScraperUpdater,
-        scriptEngine: ScriptableSourceEngine,
-        preferenceStore: PreferenceStore,
-        json: Json,
-    ): ScriptableContentSourceEngine =
-        ScriptableContentSourceEngine(ioDispatcher, scraperUpdater, scriptEngine, preferenceStore, json)
+    fun provideContentSourceEngines(): List<ContentSourceEngine> = emptyList()
 
     @Provides
     @Singleton
     fun provideContentSourceOrchestrator(
         profileCache: SourceProfileCache,
-        heuristicEngine: AdaptiveHeuristicEngine,
-        scriptEngine: ScriptableContentSourceEngine,
+        // `@JvmSuppressWildcards` is load-bearing, not decorative. Kotlin erases `List<ContentSourceEngine>`
+        // to `List<? extends ContentSourceEngine>` at the injection site, so this parameter's key
+        // differs by exactly that wildcard from `provideContentSourceEngines`'s key and Dagger reports
+        // the binding as missing. Suppressing it on the type makes both sides agree.
+        engines: @JvmSuppressWildcards List<ContentSourceEngine>,
         preferenceStore: PreferenceStore,
     ): ContentSourceOrchestrator =
-        ContentSourceOrchestrator(profileCache, heuristicEngine, scriptEngine, preferenceStore)
+        ContentSourceOrchestrator(profileCache, engines, preferenceStore)
 
     @Provides
     @Singleton
@@ -525,13 +518,6 @@ object AppModule {
     @Singleton
     fun provideNetworkHelper(@ApplicationContext context: Context, networkPreferences: NetworkPreferences) =
         NetworkHelper(context, networkPreferences)
-
-    @Provides
-    @Singleton
-    fun provideJavaScriptEngine(
-        @ApplicationContext context: Context,
-        networkHelper: NetworkHelper,
-    ) = JavaScriptEngine(context, networkHelper)
 
     @Provides
     @Singleton
@@ -1329,6 +1315,12 @@ object AppModule {
     fun provideGetChaptersByMangaId(chapterRepository: ChapterRepository) = GetChaptersByMangaId(chapterRepository)
 
     @Provides
+    fun provideEvictChapterCacheForManga(
+        chapterCache: ephyra.data.cache.ChapterCache,
+        getChaptersByMangaId: GetChaptersByMangaId,
+    ) = ephyra.domain.chapter.interactor.EvictChapterCacheForManga(chapterCache, getChaptersByMangaId)
+
+    @Provides
     fun provideUpdateChapter(chapterRepository: ChapterRepository) = UpdateChapter(chapterRepository)
 
     @Provides
@@ -1403,6 +1395,12 @@ object AppModule {
         sourcePreferences: SourcePreferences,
     ) =
         GetExtensionsByType(sourcePreferences, extensionManager)
+
+    @Provides
+    fun provideGetExtensionUpdateCount(
+        extensionManager: ephyra.domain.extension.service.ExtensionManager,
+    ) =
+        ephyra.domain.extension.interactor.GetExtensionUpdateCount(extensionManager)
 
     @Provides
     fun provideGetExtensionSources(sourcePreferences: SourcePreferences) =
@@ -1638,4 +1636,16 @@ object AppModule {
             override val catalogShortcutsEnabled: Boolean = ephyra.app.BuildConfig.INCLUDE_CATALOG_SHORTCUTS
         }
     }
+
+    /**
+     * Binds the scope a ViewModel's long-lived collection runs in.
+     *
+     * `null` means "use `viewModelScope`", which is what every production ViewModel wants and what
+     * every Hilt-constructed one gets. The parameter exists so a test can pass its own
+     * `runTest.backgroundScope` instead, because a collector launched into `viewModelScope` outlives
+     * `runTest` and fails whichever *later* test shares the JVM with it. See `HistoryViewModel`.
+     */
+    @Provides
+    @Nullable
+    fun provideViewModelCollectionScope(): CoroutineScope? = null
 }

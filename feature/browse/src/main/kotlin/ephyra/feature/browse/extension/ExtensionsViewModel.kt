@@ -8,9 +8,7 @@ import ephyra.core.common.preference.getAndSet
 import ephyra.core.common.util.Result
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
-import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceType
-import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.content.source.interactor.GetAvailableSources
 import ephyra.domain.content.source.interactor.RemoveCustomSource
 import ephyra.domain.content.source.interactor.UnifiedSource
@@ -18,7 +16,6 @@ import ephyra.domain.content.source.interactor.UpdateCustomSource
 import ephyra.domain.extension.interactor.GetExtensionsByType
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
-import ephyra.domain.extension.service.ExtensionTranspiler
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
@@ -36,7 +33,6 @@ import javax.inject.Inject
 class ExtensionsViewModel @Inject constructor(
     private val context: Application,
     private val getAvailableSources: GetAvailableSources,
-    private val addCustomSource: AddCustomSource,
     private val updateCustomSource: UpdateCustomSource,
     private val removeCustomSource: RemoveCustomSource,
     private val getExtensionRepo: GetExtensionRepo,
@@ -44,8 +40,6 @@ class ExtensionsViewModel @Inject constructor(
     private val deleteExtensionRepo: DeleteExtensionRepo,
     private val updateExtensionRepo: UpdateExtensionRepo,
     private val getExtensionsByType: GetExtensionsByType,
-    private val extensionTranspiler: ExtensionTranspiler,
-    private val scraperUpdater: ScraperScriptUpdater,
     private val preferenceStore: PreferenceStore,
     private val sourcePreferences: SourcePreferences,
     private val trustExtension: ephyra.domain.extension.interactor.TrustExtension,
@@ -86,41 +80,6 @@ class ExtensionsViewModel @Inject constructor(
                         untrustedExtensions = extensions.untrusted,
                         failedExtensions = extensions.failed,
                     )
-                }
-                checkForTranspiledExtensionUpdates(extensions.available)
-            }
-        }
-    }
-
-    private fun checkForTranspiledExtensionUpdates(available: List<Extension.Available>) {
-        viewModelScope.launch {
-            available.forEach { ext ->
-                val installedVersionCode = preferenceStore.getLong(
-                    "transpiled_extension_versioncode_${ext.pkgName}",
-                    0L,
-                ).get()
-                if (installedVersionCode > 0L && ext.versionCode > installedVersionCode) {
-                    val pkgSuffix = ext.pkgName.substringAfterLast(".")
-                    val filename = "${pkgSuffix}_scraper.js"
-
-                    // Find currently mapped custom source URLs by checking PreferenceStore mapping directly
-                    val previouslySelectedUrls = ext.sources.filter { source ->
-                        val normalized = source.baseUrl
-                            .removePrefix("https://")
-                            .removePrefix("http://")
-                            .removeSuffix("/")
-                            .trim()
-                        val mappingKey = "baseUrl_scraper_mapping_$normalized"
-                        preferenceStore.getString(mappingKey, "").get() == filename
-                    }.map { it.baseUrl }.toSet()
-
-                    // Automatically update/re-transpile in the background!
-                    logcat(LogPriority.INFO) { "Updating extension ${ext.name} to v${ext.versionName}" }
-                    val success = extensionTranspiler.transpileAndInstall(ext, previouslySelectedUrls)
-                    if (success) {
-                        updateState { it.copy(error = "Source ${ext.name} updated to v${ext.versionName}") }
-                        loadSources()
-                    }
                 }
             }
         }
@@ -191,19 +150,19 @@ class ExtensionsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Removes every source this extension backs.
+     *
+     * The scraper that used to be regenerated alongside the APK is gone, so there is no generated
+     * artefact left to delete here — an uninstall now only has to retire the sources it owns and
+     * the sandboxed APK itself.
+     */
     fun uninstallExtension(extension: Extension.Available) {
         viewModelScope.launch {
             updateState { it.copy(isLoading = true) }
-            val pkgSuffix = extension.pkgName.substringAfterLast(".")
-            val filename = "${pkgSuffix}_scraper.js"
-
-            scraperUpdater.removeScraper(filename)
             extension.sources.forEach { source ->
                 removeCustomSource.removeSource(source.baseUrl)
             }
-
-            // Clean up version tracking
-            extensionTranspiler.clearExtensionMetadata(extension.pkgName)
 
             // Ensure APK is uninstalled from sandboxed private storage
             extensionManager.uninstallExtensionByPkgName(extension.pkgName)
@@ -253,87 +212,6 @@ class ExtensionsViewModel @Inject constructor(
             updateState { it.copy(isLoading = true, error = null) }
             getAvailableSources().collectLatest { result ->
                 updateState { it.copy(sources = result, isLoading = false) }
-            }
-        }
-    }
-
-    fun addJsScraper(githubUrl: String, filename: String) {
-        viewModelScope.launch {
-            updateState { it.copy(isLoading = true) }
-            val result = addCustomSource.addJsScraper(githubUrl, filename)
-            updateState { it.copy(isLoading = false) }
-            when (result) {
-                is Result.Success -> loadSources()
-                is Result.Error -> updateState {
-                    it.copy(error = result.exception.message ?: "Failed to add scraper")
-                }
-                else -> {}
-            }
-        }
-    }
-
-    fun importJsScraper(filename: String, scriptContent: String) {
-        viewModelScope.launch {
-            updateState { it.copy(isLoading = true) }
-            val result = addCustomSource.importJsScraper(filename, scriptContent)
-            updateState { it.copy(isLoading = false) }
-            when (result) {
-                is Result.Success -> loadSources()
-                is Result.Error -> updateState {
-                    it.copy(
-                        error =
-                        result.exception.message ?: "Failed to import scraper",
-                    )
-                }
-                else -> {}
-            }
-        }
-    }
-
-    fun addHeuristicProfile(baseUrl: String, displayName: String?) {
-        viewModelScope.launch {
-            updateState { it.copy(isLoading = true) }
-            val result = addCustomSource.addHeuristicProfile(baseUrl, displayName)
-            updateState { it.copy(isLoading = false) }
-            when (result) {
-                is Result.Success -> loadSources()
-                is Result.Error -> updateState {
-                    it.copy(error = result.exception.message ?: "Failed to add profile")
-                }
-                else -> {}
-            }
-        }
-    }
-
-    fun linkScraperToUrl(baseUrl: String, scraperFilename: String) {
-        viewModelScope.launch {
-            updateState { it.copy(isLoading = true) }
-            val result = addCustomSource.linkScraperToUrl(baseUrl, scraperFilename)
-            updateState { it.copy(isLoading = false) }
-            when (result) {
-                is Result.Success -> loadSources()
-                is Result.Error -> updateState {
-                    it.copy(error = result.exception.message ?: "Failed to link scraper")
-                }
-                else -> {}
-            }
-        }
-    }
-
-    fun checkAndUpdateScraper(baseUrl: String) {
-        viewModelScope.launch {
-            updateState { it.copy(isLoading = true) }
-            val result = updateCustomSource.checkAndUpdateScraper(baseUrl)
-            updateState { it.copy(isLoading = false) }
-            when (result) {
-                is Result.Success -> loadSources()
-                is Result.Error -> updateState {
-                    it.copy(
-                        error =
-                        result.exception.message ?: "Failed to update scraper",
-                    )
-                }
-                else -> {}
             }
         }
     }
@@ -420,11 +298,6 @@ class ExtensionsViewModel @Inject constructor(
             is ExtensionsScreenEvent.UninstallExtension -> uninstallExtension(event.extension)
             ExtensionsScreenEvent.LoadSources -> loadSources()
             ExtensionsScreenEvent.RefreshAll -> refreshAll()
-            is ExtensionsScreenEvent.AddJsScraper -> addJsScraper(event.githubUrl, event.filename)
-            is ExtensionsScreenEvent.ImportJsScraper -> importJsScraper(event.filename, event.scriptContent)
-            is ExtensionsScreenEvent.AddHeuristicProfile -> addHeuristicProfile(event.baseUrl, event.displayName)
-            is ExtensionsScreenEvent.LinkScraperToUrl -> linkScraperToUrl(event.baseUrl, event.scraperFilename)
-            is ExtensionsScreenEvent.CheckAndUpdateScraper -> checkAndUpdateScraper(event.baseUrl)
             is ExtensionsScreenEvent.ForceRediscover -> forceRediscover(event.baseUrl)
             is ExtensionsScreenEvent.RemoveSource -> removeSource(event.baseUrl)
             is ExtensionsScreenEvent.Search -> search(event.query)
@@ -466,11 +339,6 @@ sealed interface ExtensionsScreenEvent {
     data class UninstallExtension(val extension: Extension.Available) : ExtensionsScreenEvent
     data object LoadSources : ExtensionsScreenEvent
     data object RefreshAll : ExtensionsScreenEvent
-    data class AddJsScraper(val githubUrl: String, val filename: String) : ExtensionsScreenEvent
-    data class ImportJsScraper(val filename: String, val scriptContent: String) : ExtensionsScreenEvent
-    data class AddHeuristicProfile(val baseUrl: String, val displayName: String?) : ExtensionsScreenEvent
-    data class LinkScraperToUrl(val baseUrl: String, val scraperFilename: String) : ExtensionsScreenEvent
-    data class CheckAndUpdateScraper(val baseUrl: String) : ExtensionsScreenEvent
     data class ForceRediscover(val baseUrl: String) : ExtensionsScreenEvent
     data class RemoveSource(val baseUrl: String) : ExtensionsScreenEvent
     data class Search(val query: String?) : ExtensionsScreenEvent

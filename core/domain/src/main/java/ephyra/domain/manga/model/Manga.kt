@@ -195,7 +195,7 @@ fun Manga.copyFrom(other: SManga): Manga {
     val artist = other.artist ?: artist
     val description = other.description ?: description
     val genres = if (other.genre != null) {
-        other.getGenres()
+        other.effectiveGenres()
     } else {
         genre
     }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -24,6 +25,7 @@ import ephyra.feature.library.LibraryItem
 import ephyra.presentation.core.components.material.PullRefresh
 import ephyra.presentation.core.util.PreferenceMutableState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -34,6 +36,7 @@ fun LibraryContent(
     selection: Set<Long>,
     contentPadding: PaddingValues,
     currentPage: Int,
+    categoryIndexLoaded: Boolean,
     hasActiveFilters: Boolean,
     showPageTabs: Boolean,
     deadSourceCount: Int,
@@ -90,6 +93,29 @@ fun LibraryContent(
     ) {
         val pagerState = rememberPagerState(currentPage) { categories.size }
 
+        // Follow and persist the active category only once the *persisted* index is known.
+        //
+        // [currentPage] arrives from a preference read that completes after the first composition,
+        // so at first the pager is at page 0 because nothing has loaded yet, not because the user
+        // chose it. Doing either half of the round trip before that point is wrong: following the
+        // index would fight the user, and persisting the pager's page would write 0 over the
+        // category they last used. Before the load, both directions are inert.
+        LaunchedEffect(categoryIndexLoaded, currentPage) {
+            if (!categoryIndexLoaded) return@LaunchedEffect
+            if (!pagerState.isScrollInProgress && pagerState.currentPage != currentPage) {
+                pagerState.scrollToPage(currentPage)
+            }
+        }
+
+        LaunchedEffect(pagerState, categoryIndexLoaded) {
+            if (!categoryIndexLoaded) return@LaunchedEffect
+            // Persist on page *settlement*, and drop the value the flow emits on subscription.
+            // Reading `currentPage` directly would persist the pre-load page 0 the moment the flag
+            // flips, and would also persist every intermediate page of a fling.
+            snapshotFlow { pagerState.settledPage }
+                .drop(1)
+                .collect { page -> onChangeCurrentPage(page) }
+        }
         val scope = rememberCoroutineScope()
         var isRefreshing by remember(pagerState.currentPage) { mutableStateOf(false) }
 
@@ -166,10 +192,6 @@ fun LibraryContent(
                 onLongClickManga = onToggleRangeSelection,
                 onClickContinueReading = onContinueReadingClicked,
             )
-        }
-
-        LaunchedEffect(pagerState.currentPage) {
-            onChangeCurrentPage(pagerState.currentPage)
         }
     }
 }

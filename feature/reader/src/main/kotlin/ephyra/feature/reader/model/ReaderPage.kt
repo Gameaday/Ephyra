@@ -98,4 +98,21 @@ open class ReaderPage(
      */
     @Volatile
     var cachedBytes: ByteArray? = null
+
+    /**
+     * Set when the recovery ladder has indicted this page's address and a replacement must come from
+     * a fresh page list.
+     *
+     * **Why a flag rather than clearing the address.** For a source that populates `Page.imageUrl` in
+     * `getPageList` — every 1.6 extension, since upstream removed the per-page chain — an address of
+     * `null` is a page that can never be loaded again: the loader asks `getImageUrl`, which such a
+     * source does not implement, and the inherited default throws. That was the reported MangaDex
+     * failure, and it happened on every path that dropped an address.
+     *
+     * The address is left in place until its replacement arrives, so the page, the disk-cache key and
+     * the URL that will be requested stay the same string in the meantime — which is the invariant the
+     * reader is careful about elsewhere.
+     */
+    @Volatile
+    var needsFreshAddress: Boolean = false
 }

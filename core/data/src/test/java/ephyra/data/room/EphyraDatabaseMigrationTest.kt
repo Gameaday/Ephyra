@@ -171,4 +171,75 @@ class EphyraDatabaseMigrationTest {
         }
         db.close()
     }
+
+    /**
+     * 3 → 4 drops `source_profiles.scraper_filename`, and this is the test that proves an existing
+     * install keeps its source profiles across that upgrade.
+     *
+     * **Why a row is inserted rather than only validating the schema.** `runMigrationsAndValidate`
+     * on an empty database would pass even if the rebuild copied nothing, because an empty table
+     * trivially satisfies the schema. The rebuild is a `CREATE … / INSERT SELECT … / DROP /
+     * RENAME` sequence, and the failure mode that matters is losing every configured source while
+     * the schema still validates perfectly. So the row must exist before the migration and be
+     * read back afterwards.
+     *
+     * The row is given a non-null `scraper_filename` deliberately: that is the state a build from
+     * the JS era would have left behind, and it proves the value is discarded rather than
+     * blocking the upgrade.
+     */
+    @Test
+    @Throws(IOException::class)
+    fun testMigrateV3ToV4DropsScraperFilenameAndKeepsProfiles() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val dbPath = context.getDatabasePath("migration-test-v3-to-v4").absolutePath
+
+        helper.createDatabase(dbPath, 3).use { db ->
+            val values = ContentValues().apply {
+                put("base_url", "https://mangadex.org")
+                put("display_name", "MangaDex")
+                put("content_type", "MANGA")
+                put("source_type", "REMOTE_EXTENSION")
+                put("enabled", 1)
+                put("response_type", "JSON")
+                put("pagination", "PAGE_BASED")
+                put("failure_count", 0)
+                put("verified", 1)
+                put("last_health_check", 0L)
+                put("last_updated", 1000L)
+                put("scraper_filename", "mangadex_scraper.js")
+                put("repository_id", null as String?)
+                put("endpoints_json", "{}")
+                put("selectors_json", null as String?)
+                put("json_path_json", null as String?)
+                put("headers_json", "{}")
+                put("auth_type", "NONE")
+                put("rate_limit_ms", 500L)
+            }
+            assertTrue(db.insert("source_profiles", SQLiteDatabase.CONFLICT_REPLACE, values) > 0)
+        }
+
+        val db = helper.runMigrationsAndValidate(dbPath, Migrations.DB_VERSION, true, *Migrations.ALL)
+
+        // The profile survives the rebuild.
+        db.query(
+            "SELECT display_name, source_type, rate_limit_ms FROM source_profiles WHERE base_url = 'https://mangadex.org'",
+        )
+            .use { c ->
+                assertTrue("the profile row must survive the table rebuild", c.moveToFirst())
+                assertEquals("MangaDex", c.getString(0))
+                assertEquals("REMOTE_EXTENSION", c.getString(1))
+                assertEquals(500L, c.getLong(2))
+            }
+
+        // And the column is genuinely gone, not merely unused.
+        val columns = mutableListOf<String>()
+        db.query("PRAGMA table_info(`source_profiles`)").use { c ->
+            while (c.moveToNext()) columns += c.getString(1)
+        }
+        assertTrue(
+            "scraper_filename should have been dropped: $columns",
+            !columns.contains("scraper_filename"),
+        )
+        db.close()
+    }
 }

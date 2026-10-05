@@ -17,7 +17,7 @@ legacy CatalogueSource path
 
 modern profile path
   -> ContentSourceOrchestrator
-  -> ScriptableContentSourceEngine / AdaptiveHeuristicEngine
+  -> AdaptiveHeuristicEngine          (JS_SCRAPER engine removed, ADR-0013)
 ```
 
 The target is one capability-based path:
@@ -69,15 +69,13 @@ These are not target architecture and must not receive new features:
 | Component | Current role | Classification | Decision |
 |---|---|---|---|
 | `source-api/ContentSource` | Generic content identity/details/units/resources contract | **target foundation** | Keep; evolve into capability-gated contract. |
-| `source-api/ContentCatalogueSource` | Catalogue/search extension of generic source | **adapter/target bridge** | Keep only where it serves native sources; do not make it universal. |
-| `source-api/ContentSourceAdapter` | Tachiyomi/Mihon `Source` → generic content adapter | **compatibility** | Keep only until callers migrate; superseded by the one-way `LegacySourceGateway` boundary. |
 | `source-api/LegacySourceGateway` | Legacy `Source`/`CatalogueSource` → target `SourceGateway` | **temporary compatibility** | Isolate; delete after all product callers use native gateways. |
 | `source-local/LocalSourceGateway` | Canonical `UnifiedContentSource` → target `SourceGateway` | **target native adapter** | Keep; prove offline, SAF, archive, and resource-byte behavior. |
 | `core:data/OpdsSourceGateway` | Existing OPDS 1.2/2.0 HTTP source → target `SourceGateway` | **target native adapter** | Keep; controlled HTTP path with parser/transport contract tests. |
 | `source-api/SourceHierarchy` | Transport-oriented hierarchy | **compatibility concept** | Reuse transport descriptors, not interface inheritance as the product model. |
 | `domain/content/source/ContentSourceEngine` | Profile-based source engine contract | **compatibility contract** | Replace with capability-gated `SourceGateway`. |
 | `ContentSourceOrchestrator` | Modern profile engine selection and fallback | **target concept, incomplete implementation** | Retain orchestration role; remove profile-as-source-truth assumptions. |
-| `ScriptableContentSourceEngine` | QuickJS source execution | **external adapter technology** | Retain; move behind trusted `ExternalSourceAdapter` with typed results. |
+| `ScriptableContentSourceEngine` | ~~QuickJS source execution~~ | **REMOVED** | Deleted with the JS runtime (`ADR-0013`). Nothing references it; `fromString` keeps `JS_SCRAPER` only so an older install's persisted profile resolves to `REMOTE_EXTENSION` instead of silently becoming `HEURISTIC`. |
 | `AdaptiveHeuristicEngine` | DOM discovery and extraction | **experimental discovery assistant** | Retain only as profile proposal/validation tooling, not authoritative runtime. |
 | `DynamicHttpSource` | Modern orchestrator exposed through legacy `HttpSource` | **compatibility bridge** | Isolate; delete after UI/features use the modern gateway. |
 | `StubSource` | Legacy source placeholder | **compatibility** | Replace with source registry unavailable/trust state. |

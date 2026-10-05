@@ -135,6 +135,23 @@ class ReaderActivity : BaseActivity() {
     internal var isScrollingThroughPages = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The reader is a separate Activity, so it cannot use the Compose shared-axis X transition
+        // the rest of the app navigates with — the window animation is the only motion available.
+        // Only the *close* half was set (in [finish]), which left the entry as a hard cut: pushing
+        // from a series page into a chapter swapped the whole screen instantly, while coming back
+        // slid. Setting the open half from the same animation resources makes the pair read as one
+        // movement in both directions.
+        //
+        // Set before `super.onCreate` because the transition must be registered before the window
+        // is added; `WebViewActivity` does the same for the same reason. Reduced motion needs no
+        // branch here: the platform honours the animator scale setting and collapses these to an
+        // instant change on its own.
+        overrideTransitionCompat(
+            Activity.OVERRIDE_TRANSITION_OPEN,
+            CoreR.anim.shared_axis_x_push_enter,
+            CoreR.anim.shared_axis_x_push_exit,
+        )
+
         window.applyHighRefreshRate()
 
         enableEdgeToEdge()
@@ -243,6 +260,9 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
+        if (isFinishing) {
+            sendActivityFinish()
+        }
         currentViewer?.destroy()
         super.onDestroy()
         config = null
@@ -251,7 +271,6 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onPause() {
-        viewModel.onEvent(ReaderEvent.ActivityFinish)
         super.onPause()
     }
 
@@ -272,8 +291,21 @@ class ReaderActivity : BaseActivity() {
         assistUrl?.let { outContent.webUri = it.toUri() }
     }
 
-    override fun finish() {
+    private var activityFinishSent = false
+
+    /**
+     * Sends [ReaderEvent.ActivityFinish] exactly once, either from [finish] or from [onDestroy]
+     * when the activity is finishing. Never on a plain [onPause] to avoid deleting
+     * remove-after-read chapters on every pause.
+     */
+    private fun sendActivityFinish() {
+        if (activityFinishSent) return
+        activityFinishSent = true
         viewModel.onEvent(ReaderEvent.ActivityFinish)
+    }
+
+    override fun finish() {
+        sendActivityFinish()
         super.finish()
         overrideTransitionCompat(
             Activity.OVERRIDE_TRANSITION_CLOSE,

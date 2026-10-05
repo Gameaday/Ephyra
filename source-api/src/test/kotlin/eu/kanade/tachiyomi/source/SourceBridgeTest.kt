@@ -82,9 +82,9 @@ class SourceBridgeTest {
             title = "Original"
         }
         val update = source.getMangaUpdate(dummyManga, emptyList(), fetchDetails = true, fetchChapters = true)
-        assertEquals("Updated Original", update.manga.title)
-        assertEquals(1, update.chapters.size)
-        assertEquals("Chapter 1", update.chapters.first().name)
+        assertEquals("Updated Original", update.manga().title)
+        assertEquals(1, update.chapters().size)
+        assertEquals("Chapter 1", update.chapters().first().name)
 
         val pages = source.getPageList(SChapter.create().apply { url = "/chapter/dummy" })
         assertEquals(1, pages.size)

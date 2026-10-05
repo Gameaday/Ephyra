@@ -60,13 +60,28 @@ class ExtensionLoader(
         /**
          * Extension library versions supported by the loader.
          *
-         * 1.4 — legacy Tachiyomi-era extensions.
-         * 1.5 — previous stable extension API.
-         * 1.6 — the new Mihon extension structure (updated extension-lib,
-         * `tachiyomix.*` metadata keys, delegate-last classloading).
+         * **1.6 only, deliberately.** 1.4 and 1.5 are refused rather than tolerated. Carrying them
+         * meant carrying their whole deprecated surface — `fetchImageUrl`, `imageUrlRequest`,
+         * `imageUrlParse`, the `Observable` catalogue methods — and that surface is where every
+         * reported extension failure came from: an app-side probe enumerating methods that upstream
+         * has since deleted, disagreeing with what the extension actually overrides.
+         *
+         * Upstream `tachiyomix` makes the same call. Its `[Unreleased]` changelog removes
+         * `HttpSource.fetchImageUrl`, `HttpSource.xxxRequest`/`xxxParse` (except `imageRequest`) and
+         * the RxJava dependency "with no replacement", so a 1.6 extension in circulation cannot be
+         * using them. Keeping the older versions supported meant maintaining an API that no longer
+         * has any users.
+         *
+         * Refusing is also the better failure. An extension declaring 1.4 is rejected with
+         * `UNSUPPORTED_LIB_VERSION` at load time — a clear, reported refusal — rather than loaded and
+         * then failing per page in ways that read as image-pipeline bugs.
+         *
+         * **The 1.6 contract this relies on:** `getPageList` populates `Page.imageUrl`, and
+         * `getImageUrl` is the fallback for a source that does not. `Page.url` is *not* an image
+         * address and is never treated as one.
          */
-        val SUPPORTED_LIB_VERSIONS = listOf(1.4, 1.5, 1.6)
-        const val LIB_VERSION_MIN = 1.4
+        val SUPPORTED_LIB_VERSIONS = listOf(1.6)
+        const val LIB_VERSION_MIN = 1.6
         const val LIB_VERSION_MAX = 1.6
 
         fun isLibVersionSupported(libVersion: Double?): Boolean =

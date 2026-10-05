@@ -86,6 +86,7 @@ class MangaViewModel @Inject constructor(
     private val getCategories: GetCategories,
     val sourceManager: SourceManager,
     private val mangaInfoInteractor: ephyra.feature.manga.interactor.MangaInfoInteractor,
+    private val evictChapterCacheForManga: ephyra.domain.chapter.interactor.EvictChapterCacheForManga,
     private val mangaChapterInteractor: ephyra.feature.manga.interactor.MangaChapterInteractor,
     private val mangaTrackInteractor: ephyra.feature.manga.interactor.MangaTrackInteractor,
     private val syncJellyfin: ephyra.domain.jellyfin.interactor.SyncJellyfin,
@@ -292,6 +293,9 @@ class MangaViewModel @Inject constructor(
                 mangaInfoInteractor.syncLibraryAdditionToTrackers(manga)
             } else {
                 coverCache.deleteFromCache(manga, false)
+                // Retention rule 4: pages of a series that left the library are
+                // orphaned; evict now rather than waiting for byte-pressure LRU.
+                evictChapterCacheForManga.evict(manga.id)
             }
         }
     }
@@ -378,10 +382,12 @@ class MangaViewModel @Inject constructor(
                 LibraryPreferences.ChapterSwipeAction.Download -> {
                     when (item.downloadState) {
                         Download.State.DOWNLOADED -> {
-                            mangaChapterInteractor.deleteChapters(
-                                chapters = listOf(item.chapter),
-                                manga = success.manga,
-                                source = success.source,
+                            // Deleting downloaded chapters is destructive; route through the
+                            // confirmation dialog instead of deleting immediately.
+                            onEvent(
+                                MangaScreenEvent.ShowDeleteChapterDialog(
+                                    chapters = listOf(item.chapter),
+                                ),
                             )
                         }
                         Download.State.NOT_DOWNLOADED, Download.State.ERROR -> {
@@ -652,7 +658,8 @@ class MangaViewModel @Inject constructor(
                 }
             }
             ChapterDownloadAction.DELETE -> {
-                deleteChapters(chapters)
+                // Route through the confirmation dialog before deleting downloaded chapters.
+                onEvent(MangaScreenEvent.ShowDeleteChapterDialog(chapters))
             }
         }
     }

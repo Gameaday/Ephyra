@@ -7,8 +7,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil3.size.Size
+import ephyra.domain.reader.media.BorderCropCacheKey
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -23,6 +25,27 @@ import java.io.ByteArrayOutputStream
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [36])
 class BorderCropTransformationTest {
+
+    @Test
+    fun `the reported cache key is the domain contract, not a second copy of it`() {
+        // The reader cannot import `core:data` -- it is barred by a `build.yml` gate -- so this
+        // value had to be hoisted into `core:domain` and referenced from both sides. That is only
+        // safe while it is genuinely one definition: if `CACHE_KEY` were restated as a literal
+        // here, the algorithm could be bumped in one place while the reader kept folding the old
+        // version into its page key, and every cached page would keep serving the previous
+        // algorithm's pixels with no error anywhere. This pins the delegation.
+        assertEquals(
+            "the transformation must report the domain contract verbatim; a second literal here " +
+                "is the drift this arrangement exists to prevent",
+            BorderCropCacheKey.VALUE,
+            BorderCropTransformation.CACHE_KEY,
+        )
+        assertEquals(
+            "the instance Coil keys its memory cache on must also be the domain contract",
+            BorderCropCacheKey.VALUE,
+            BorderCropTransformation().cacheKey,
+        )
+    }
 
     @Test
     fun `uniform border is trimmed conservatively`() {

@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hierarchical push, outgoing side: the screen being covered leaves to the left.
+
+  Activity-level half of MotionTokens.m3SharedAxisXExit. Travel and duration are the token values so
+  this matches the Compose transition rather than being a smaller, faster move. The outgoing leg is
+  deliberately shorter than the incoming one (200 vs 450): the departing screen is already
+  understood, so holding it only delays the transition.
+-->
 <set xmlns:android="http://schemas.android.com/apk/res/android">
     <translate
-        android:duration="300"
+        android:duration="200"
         android:fromXDelta="0"
-        android:interpolator="@android:interpolator/fast_out_slow_in"
-        android:toXDelta="-5%p" />
+        android:interpolator="@android:interpolator/fast_out_linear_in"
+        android:toXDelta="-30%p" />
 
     <alpha
-        android:duration="195"
+        android:duration="200"
         android:fromAlpha="1"
         android:interpolator="@android:interpolator/fast_out_linear_in"
         android:toAlpha="0" />

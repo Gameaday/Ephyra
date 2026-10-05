@@ -45,6 +45,12 @@ sealed class ScreenRoutes(val route: String) {
     data object SourcesFilter : ScreenRoutes("sources_filter")
     data object ExtensionFilter : ScreenRoutes("extension_filter")
 
+    // Extension/source management and source migration as standalone destinations.
+    // Both used to be pager pages inside the Discover tab; they are settings-shaped
+    // management surfaces (RFC-0001 D8), reached from Settings or the Discover update chip.
+    data object Extensions : ScreenRoutes("extensions")
+    data object SourceMigration : ScreenRoutes("source_migration")
+
     object MigrateManga : ScreenRoutes("migrate_manga/{sourceId}") {
         fun createRoute(sourceId: Long) = "migrate_manga/$sourceId"
     }
@@ -106,7 +112,6 @@ sealed class ScreenRoutes(val route: String) {
     object SettingsData : ScreenRoutes("settings_data")
     object SettingsSecurity : ScreenRoutes("settings_security")
     object SettingsAdvanced : ScreenRoutes("settings_advanced")
-    data object ContentSourcing : ScreenRoutes("content_sourcing")
     object SourceManagement : ScreenRoutes("source_management")
 }
 

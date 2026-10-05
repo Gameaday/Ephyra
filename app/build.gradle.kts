@@ -150,7 +150,6 @@ android {
                 "libandroidx.graphics.path",
                 "libarchive-jni",
                 "librjxlcoder",
-                "libquickjs",
                 "libsqlite3x",
             )
                 .map { "**/$it.so" }
@@ -191,6 +190,34 @@ android {
             all {
                 it.maxHeapSize = "2g"
                 it.exclude("**/ShadowAnimatedVectorResources*")
+
+                // One JVM per test class.
+                //
+                // `ShadowAnimatedVectorResources` shadows the whole of `android.content.res.Resources`
+                // so that Compose's animated vector drawables load under Robolectric, which throws on
+                // an `<animated-vector>` root. Shadowing a framework class this broadly is global
+                // state: Robolectric installs the shadow per sandbox, and instrumented call sites
+                // cast the extracted shadow back to the declaring class. When a `Resources` instance is
+                // shadowed without ours — which happens once another Robolectric class in the same JVM
+                // has run first — that cast fails:
+                //
+                //   Cannot cast org.robolectric.shadows.ShadowResources to ShadowAnimatedVectorResources
+                //     at android.content.res.Resources.loadXmlResourceParser
+                //     at android.content.res.Resources.getAnimation
+                //     at android.view.animation.AnimationUtils.loadInterpolator
+                //     at com.android.internal.policy.DecorView.<init>
+                //
+                // That path is reached by any test that launches a real Activity (DecorView's
+                // constructor loads the platform window animation), which is why it surfaced in
+                // `HomeScreenUiTest` and `DeepLinkActivityTest` and nowhere else. It was also
+                // intermittent: `:app:testDebugUnitTest` alone passed while the same task failed when
+                // run with other modules, because that changes what shares the JVM.
+                //
+                // A fresh JVM per class is the fix that actually holds, rather than the
+                // `exclude` above, which only keeps the shadow out of test *discovery* and does
+                // nothing about shadow installation order. The cost is JVM startup per class; it is
+                // paid in CI rather than as a test that fails for reasons unrelated to what it tests.
+                it.forkEvery = 1
             }
         }
     }

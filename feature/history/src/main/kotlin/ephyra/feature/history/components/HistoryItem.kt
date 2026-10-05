@@ -52,6 +52,11 @@ fun HistoryItem(
         MangaCover.Book(
             modifier = Modifier.fillMaxHeight(),
             data = history.coverData,
+            // Named so this cover is the shared element for History -> Series, like the library
+            // grid cell. Without it the series page declared a shared element with no counterpart
+            // here, and because the pair's container motion is a deliberate no-op the whole
+            // transition had nothing left to animate — it cut.
+            mangaId = history.mangaId,
             onClick = onClickCover,
         )
         Column(
@@ -67,7 +72,9 @@ fun HistoryItem(
                 overflow = TextOverflow.Ellipsis,
                 style = textStyle,
             )
-            val readAt = remember { history.readAt?.toTimestampString() ?: "" }
+            // Keyed: in a LazyColumn the same slot is reused as items scroll, so a keyless
+            // remember would show the previous item's timestamp here — and never update it.
+            val readAt = remember(history.readAt) { history.readAt?.toTimestampString() ?: "" }
             Text(
                 text = if (history.chapterNumber > -1) {
                     stringResource(

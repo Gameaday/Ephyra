@@ -78,7 +78,7 @@ import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.LoadFailureReason
 import ephyra.domain.extensionrepo.model.ExtensionRepo
 import ephyra.feature.browse.extension.ExtensionsViewModel
-import ephyra.feature.browse.presentation.components.UniversalAddSourceDialog
+import ephyra.feature.browse.presentation.components.AddExtensionRepositoryDialog
 import ephyra.presentation.core.components.ExtensionIcon
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
@@ -89,11 +89,6 @@ fun ExtensionScreen(
     state: ExtensionsViewModel.State,
     contentPadding: PaddingValues,
     searchQuery: String?,
-    onAddJsScraper: (String, String) -> Unit,
-    onImportJsScraper: (String, String) -> Unit,
-    onAddHeuristic: (String, String?) -> Unit,
-    onLinkScraper: (String, String) -> Unit,
-    onCheckUpdates: (String) -> Unit,
     onForceRediscover: (String) -> Unit,
     onRemoveSource: (String) -> Unit,
     onRefresh: () -> Unit,
@@ -108,23 +103,13 @@ fun ExtensionScreen(
     navController: NavController = LocalNavController.current,
 ) {
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
-    var showAddJsScraperDialog by remember { mutableStateOf(false) }
-    var showImportJsScraperDialog by remember { mutableStateOf(false) }
-    var showAddHeuristicDialog by remember { mutableStateOf(false) }
-    var showLinkScraperDialog by remember { mutableStateOf(false) }
     var showRemoveConfirmDialog by remember { mutableStateOf(false) }
     var showAddRepoDialog by remember { mutableStateOf(false) }
     var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
-    var selectedSourceForLink by remember { mutableStateOf<UnifiedSource?>(null) }
-
-    var githubUrl by remember { mutableStateOf("") }
-    var scraperFilename by remember { mutableStateOf("") }
-    var importFilename by remember { mutableStateOf("") }
-    var importScriptContent by remember { mutableStateOf("") }
-    var heuristicUrl by remember { mutableStateOf("") }
-    var heuristicName by remember { mutableStateOf("") }
-    var linkBaseUrl by remember { mutableStateOf("") }
-    var linkScraperName by remember { mutableStateOf("") }
+    var showUninstallConfirmDialog by remember { mutableStateOf(false) }
+    var selectedExtensionToUninstall by remember { mutableStateOf<Extension.Installed?>(null) }
+    var showDeleteRepoConfirmDialog by remember { mutableStateOf(false) }
+    var selectedRepoToDelete by remember { mutableStateOf<ExtensionRepo?>(null) }
 
     LaunchedEffect(state.error) {
         if (state.error != null) {
@@ -190,24 +175,21 @@ fun ExtensionScreen(
             installedExtensions = filteredInstalledExtensions,
             untrustedExtensions = state.untrustedExtensions,
             failedExtensions = state.failedExtensions,
-            onAddJsScraperClick = { showAddJsScraperDialog = true },
-            onImportJsScraperClick = { showImportJsScraperDialog = true },
-            onAddHeuristicClick = { showAddHeuristicDialog = true },
             onAddRepoClick = { showAddRepoDialog = true },
-            onDeleteRepoClick = onDeleteRepository,
+            onDeleteRepoClick = { url ->
+                selectedRepoToDelete = state.repos.firstOrNull { it.baseUrl == url }
+                showDeleteRepoConfirmDialog = true
+            },
             onInstallExtensionClick = { ext -> onInstallExtension(ext, null) },
             onUninstallExtensionClick = onUninstallExtension,
             onUpdateExtension = onUpdateExtension,
-            onUninstallInstalledExtension = onUninstallInstalledExtension,
+            onUninstallInstalledExtension = { ext ->
+                selectedExtensionToUninstall = ext
+                showUninstallConfirmDialog = true
+            },
             onTrustExtensionClick = onTrustExtension,
             onUninstallByPkgName = onUninstallByPkgName,
             onClickExtension = { pkgName -> navController.navigate(Screen.ExtensionDetails(pkgName)) },
-            onLinkScraperClick = { source ->
-                selectedSourceForLink = source
-                linkBaseUrl = source.baseUrl
-                linkScraperName = ""
-                showLinkScraperDialog = true
-            },
             onRefresh = onRefresh,
             onSourceClick = { source ->
                 snackbarMessage = buildString {
@@ -223,9 +205,6 @@ fun ExtensionScreen(
                     }
                 }
             },
-            onCheckUpdates = { source ->
-                onCheckUpdates(source.baseUrl)
-            },
             onForceRediscover = { source ->
                 onForceRediscover(source.baseUrl)
             },
@@ -240,14 +219,10 @@ fun ExtensionScreen(
 
     // Universal Add Repository & Source Dialog
     if (showAddRepoDialog) {
-        UniversalAddSourceDialog(
+        AddExtensionRepositoryDialog(
             onDismissRequest = { showAddRepoDialog = false },
             onAddRepo = { repoUrl ->
                 onAddRepository(repoUrl)
-                showAddRepoDialog = false
-            },
-            onAddWebSource = { url, name ->
-                onAddHeuristic(url, name)
                 showAddRepoDialog = false
             },
         )
@@ -307,92 +282,83 @@ fun ExtensionScreen(
         )
     }
 
-    // Add JS Scraper Dialog
-    if (showAddJsScraperDialog) {
-        AddJsScraperDialog(
-            onDismiss = {
-                showAddJsScraperDialog = false
-                githubUrl = ""
-                scraperFilename = ""
+    // Uninstall installed extension confirmation dialog
+    if (showUninstallConfirmDialog && selectedExtensionToUninstall != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showUninstallConfirmDialog = false
+                selectedExtensionToUninstall = null
             },
-            onConfirm = { url, name ->
-                onAddJsScraper(url, name)
-                showAddJsScraperDialog = false
-                githubUrl = ""
-                scraperFilename = ""
+            title = { Text("Uninstall Extension") },
+            text = {
+                Text(
+                    "Are you sure you want to uninstall \"${selectedExtensionToUninstall!!.name}\"? " +
+                        "This action cannot be undone.",
+                )
             },
-            githubUrl = githubUrl,
-            onGithubUrlChange = { githubUrl = it },
-            scraperFilename = scraperFilename,
-            onScraperFilenameChange = { scraperFilename = it },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedExtensionToUninstall?.let { ext ->
+                            onUninstallInstalledExtension(ext)
+                        }
+                        showUninstallConfirmDialog = false
+                        selectedExtensionToUninstall = null
+                    },
+                ) {
+                    Text("Uninstall", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showUninstallConfirmDialog = false
+                        selectedExtensionToUninstall = null
+                    },
+                ) {
+                    Text("Cancel")
+                }
+            },
         )
     }
 
-    // Import JS Scraper Dialog
-    if (showImportJsScraperDialog) {
-        ImportJsScraperDialog(
-            onDismiss = {
-                showImportJsScraperDialog = false
-                importFilename = ""
-                importScriptContent = ""
+    // Delete repository confirmation dialog
+    if (showDeleteRepoConfirmDialog && selectedRepoToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteRepoConfirmDialog = false
+                selectedRepoToDelete = null
             },
-            onConfirm = { name, content ->
-                onImportJsScraper(name, content)
-                showImportJsScraperDialog = false
-                importFilename = ""
-                importScriptContent = ""
+            title = { Text("Delete Repository") },
+            text = {
+                Text(
+                    "Are you sure you want to delete the repository \"${selectedRepoToDelete!!.name}\"? " +
+                        "This action cannot be undone.",
+                )
             },
-            filename = importFilename,
-            onFilenameChange = { importFilename = it },
-            scriptContent = importScriptContent,
-            onScriptContentChange = { importScriptContent = it },
-        )
-    }
-
-    // Add Heuristic Profile Dialog
-    if (showAddHeuristicDialog) {
-        AddHeuristicDialog(
-            onDismiss = {
-                showAddHeuristicDialog = false
-                heuristicUrl = ""
-                heuristicName = ""
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedRepoToDelete?.let { repo ->
+                            onDeleteRepository(repo.baseUrl)
+                        }
+                        showDeleteRepoConfirmDialog = false
+                        selectedRepoToDelete = null
+                    },
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
             },
-            onConfirm = { url, name ->
-                onAddHeuristic(url, name?.ifBlank { null })
-                showAddHeuristicDialog = false
-                heuristicUrl = ""
-                heuristicName = ""
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteRepoConfirmDialog = false
+                        selectedRepoToDelete = null
+                    },
+                ) {
+                    Text("Cancel")
+                }
             },
-            url = heuristicUrl,
-            onUrlChange = { heuristicUrl = it },
-            name = heuristicName,
-            onNameChange = { heuristicName = it },
-        )
-    }
-
-    // Link Scraper Dialog
-    if (showLinkScraperDialog) {
-        LinkScraperDialog(
-            onDismiss = {
-                showLinkScraperDialog = false
-                linkBaseUrl = ""
-                linkScraperName = ""
-                selectedSourceForLink = null
-            },
-            onConfirm = { baseUrl, scraperName ->
-                onLinkScraper(baseUrl, scraperName)
-                showLinkScraperDialog = false
-                linkBaseUrl = ""
-                linkScraperName = ""
-                selectedSourceForLink = null
-            },
-            baseUrl = linkBaseUrl,
-            onBaseUrlChange = { linkBaseUrl = it },
-            scraperName = linkScraperName,
-            onScraperNameChange = { linkScraperName = it },
-            availableScrapers = state.sources
-                .filter { it.sourceType == SourceType.JS_SCRAPER }
-                .map { it.name },
         )
     }
 }
@@ -406,9 +372,6 @@ private fun ExtensionScraperManagementLayout(
     installedExtensions: List<Extension.Installed>,
     untrustedExtensions: List<Extension.Untrusted>,
     failedExtensions: List<Extension.Failed>,
-    onAddJsScraperClick: () -> Unit,
-    onImportJsScraperClick: () -> Unit,
-    onAddHeuristicClick: () -> Unit,
     onAddRepoClick: () -> Unit,
     onDeleteRepoClick: (String) -> Unit,
     onInstallExtensionClick: (Extension.Available) -> Unit,
@@ -418,16 +381,18 @@ private fun ExtensionScraperManagementLayout(
     onTrustExtensionClick: (Extension.Untrusted) -> Unit,
     onUninstallByPkgName: (String) -> Unit,
     onClickExtension: (String) -> Unit,
-    onLinkScraperClick: (UnifiedSource) -> Unit,
     onRefresh: () -> Unit,
     onSourceClick: (UnifiedSource) -> Unit,
-    onCheckUpdates: (UnifiedSource) -> Unit,
     onForceRediscover: (UnifiedSource) -> Unit,
     onRemoveSource: (UnifiedSource) -> Unit,
     navController: NavController,
     searchQuery: String? = null,
 ) {
     var showDevTools by remember { mutableStateOf(false) }
+    // O(1) lookup per row; the previous per-row firstOrNull was O(n*m) across the section.
+    val installedByPackage = remember(installedExtensions) {
+        installedExtensions.associateBy { it.pkgName }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -487,18 +452,30 @@ private fun ExtensionScraperManagementLayout(
             }
         }
 
-        // Available Extensions (from connected repos)
+        // Available Extensions (from connected repos).
+        //
+        // The header is one item and the extensions are lazy items, so a large repository only
+        // composes the rows near the viewport instead of every row at once.
         if (repos.isNotEmpty()) {
-            item {
-                AvailableExtensionsSection(
-                    availableExtensions = availableExtensions,
-                    installedExtensions = installedExtensions,
-                    onInstall = onInstallExtensionClick,
-                    onUninstallInstalled = onUninstallInstalledExtension,
-                    onUpdate = onUpdateExtension,
-                    onClickExtension = onClickExtension,
+            item(key = "available_extensions_header") {
+                AvailableExtensionsHeader(
+                    availableExtensionCount = availableExtensions.size,
                     onRefresh = onRefresh,
                     searchQuery = searchQuery,
+                )
+            }
+            items(
+                items = availableExtensions,
+                key = { it.pkgName },
+            ) { ext ->
+                val installedExt = installedByPackage[ext.pkgName]
+                ExtensionItemRow(
+                    extension = ext,
+                    installedExtension = installedExt,
+                    onInstall = { onInstallExtensionClick(ext) },
+                    onUninstall = { installedExt?.let(onUninstallInstalledExtension) },
+                    onUpdate = { installedExt?.let(onUpdateExtension) },
+                    onClickExtension = { onClickExtension(ext.pkgName) },
                 )
             }
         }
@@ -508,13 +485,8 @@ private fun ExtensionScraperManagementLayout(
             DeveloperToolsSection(
                 isExpanded = showDevTools,
                 onToggleExpand = { showDevTools = !showDevTools },
-                onAddJsScraperClick = onAddJsScraperClick,
-                onImportJsScraperClick = onImportJsScraperClick,
-                onAddHeuristicClick = onAddHeuristicClick,
                 sources = sources,
                 onSourceClick = onSourceClick,
-                onLinkScraper = onLinkScraperClick,
-                onCheckUpdates = onCheckUpdates,
                 onForceRediscover = onForceRediscover,
                 onRemoveSource = onRemoveSource,
             )
@@ -618,13 +590,8 @@ private fun EmptyRepositoriesCard(
 private fun DeveloperToolsSection(
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
-    onAddJsScraperClick: () -> Unit,
-    onImportJsScraperClick: () -> Unit,
-    onAddHeuristicClick: () -> Unit,
     sources: List<UnifiedSource>,
     onSourceClick: (UnifiedSource) -> Unit,
-    onLinkScraper: (UnifiedSource) -> Unit,
-    onCheckUpdates: (UnifiedSource) -> Unit,
     onForceRediscover: (UnifiedSource) -> Unit,
     onRemoveSource: (UnifiedSource) -> Unit,
 ) {
@@ -661,58 +628,6 @@ private fun DeveloperToolsSection(
                     contentDescription = if (isExpanded) "Collapse" else "Expand",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-
-            if (isExpanded) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    QuickActionButton(
-                        icon = Icons.Outlined.Code,
-                        label = "Add JS",
-                        color = MaterialTheme.colorScheme.primary,
-                        onClick = onAddJsScraperClick,
-                    )
-                    QuickActionButton(
-                        icon = Icons.Outlined.UploadFile,
-                        label = "Import",
-                        color = MaterialTheme.colorScheme.secondary,
-                        onClick = onImportJsScraperClick,
-                    )
-                    QuickActionButton(
-                        icon = Icons.Outlined.Autorenew,
-                        label = "Heuristic",
-                        color = MaterialTheme.colorScheme.tertiary,
-                        onClick = onAddHeuristicClick,
-                    )
-                }
-
-                val devSources = sources.filter {
-                    it.sourceType == SourceType.JS_SCRAPER || it.sourceType == SourceType.HEURISTIC
-                }
-                if (devSources.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Custom Scrapers & Profiles (${devSources.size})",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        devSources.forEach { source ->
-                            SourceRow(
-                                source = source,
-                                onClick = { onSourceClick(source) },
-                                onLinkScraper = { onLinkScraper(source) },
-                                onCheckUpdates = { onCheckUpdates(source) },
-                                onForceRediscover = { onForceRediscover(source) },
-                                onRemoveSource = { onRemoveSource(source) },
-                            )
-                        }
-                    }
-                }
             }
         }
     }
@@ -1072,14 +987,18 @@ private fun RepoRow(
     }
 }
 
+/**
+ * Header for the available-extensions section.
+ *
+ * The rows are emitted as lazy items by the parent `LazyColumn`, not rendered here. This section
+ * used to be one `item { }` containing a `forEach` over every available extension, so a repository
+ * with a few hundred extensions composed and measured all of them the moment the section scrolled
+ * into view -- the reported "slow loading when scrolling into available extensions". Only the
+ * header is eager now; rows compose as they approach the viewport.
+ */
 @Composable
-private fun AvailableExtensionsSection(
-    availableExtensions: List<Extension.Available>,
-    installedExtensions: List<Extension.Installed>,
-    onInstall: (Extension.Available) -> Unit,
-    onUninstallInstalled: (Extension.Installed) -> Unit,
-    onUpdate: (Extension.Installed) -> Unit,
-    onClickExtension: (String) -> Unit,
+private fun AvailableExtensionsHeader(
+    availableExtensionCount: Int,
     onRefresh: () -> Unit,
     searchQuery: String? = null,
 ) {
@@ -1115,7 +1034,7 @@ private fun AvailableExtensionsSection(
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
                     Text(
-                        text = availableExtensions.size.toString(),
+                        text = availableExtensionCount.toString(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Bold,
@@ -1123,7 +1042,7 @@ private fun AvailableExtensionsSection(
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            if (availableExtensions.isEmpty()) {
+            if (availableExtensionCount == 0) {
                 val message = if (!searchQuery.isNullOrBlank()) {
                     "No extensions match \"$searchQuery\""
                 } else {
@@ -1152,20 +1071,6 @@ private fun AvailableExtensionsSection(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Refresh Repositories")
                         }
-                    }
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    availableExtensions.forEach { ext ->
-                        val installedExt = installedExtensions.firstOrNull { it.pkgName == ext.pkgName }
-                        ExtensionItemRow(
-                            extension = ext,
-                            installedExtension = installedExt,
-                            onInstall = { onInstall(ext) },
-                            onUninstall = { installedExt?.let(onUninstallInstalled) },
-                            onUpdate = { installedExt?.let(onUpdate) },
-                            onClickExtension = { onClickExtension(ext.pkgName) },
-                        )
                     }
                 }
             }
@@ -1285,693 +1190,21 @@ private fun ExtensionItemRow(
     }
 }
 
-@Composable
-private fun RowScope.QuickActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    color: Color,
-    onClick: () -> Unit,
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier
-            .weight(1f)
-            .height(80.dp)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-            contentColor = color,
-        ),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.5f)),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Medium,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SourceTypeSection(
-    sourceType: SourceType,
-    sources: List<UnifiedSource>,
-    onSourceClick: (UnifiedSource) -> Unit,
-    onLinkScraper: (UnifiedSource) -> Unit,
-    onCheckUpdates: (UnifiedSource) -> Unit,
-    onForceRediscover: (UnifiedSource) -> Unit,
-    onRemoveSource: (UnifiedSource) -> Unit,
-) {
-    val (icon, color) = when (sourceType) {
-        SourceType.REMOTE_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
-        SourceType.JS_SCRAPER -> Icons.Outlined.Code to MaterialTheme.colorScheme.secondary
-        SourceType.HEURISTIC -> Icons.Outlined.Autorenew to MaterialTheme.colorScheme.tertiary
-        SourceType.REPOSITORY -> Icons.Outlined.Storage to MaterialTheme.colorScheme.outline
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f),
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .background(color.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                        .padding(8.dp),
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = color,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = sourceType.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = color,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .background(color.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = sources.size.toString(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = color,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                sources.forEach { source ->
-                    SourceRow(
-                        source = source,
-                        onClick = { onSourceClick(source) },
-                        onLinkScraper = { onLinkScraper(source) },
-                        onCheckUpdates = { onCheckUpdates(source) },
-                        onForceRediscover = { onForceRediscover(source) },
-                        onRemoveSource = { onRemoveSource(source) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SourceRow(
-    source: UnifiedSource,
-    onClick: () -> Unit,
-    onLinkScraper: () -> Unit,
-    onCheckUpdates: () -> Unit,
-    onForceRediscover: () -> Unit,
-    onRemoveSource: () -> Unit,
-) {
-    val statusColor = if (source.enabled) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outline
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (source.enabled) {
-                MaterialTheme.colorScheme.surface
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerLowest
-            },
-        ),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .height(40.dp)
-                    .background(statusColor, RoundedCornerShape(2.dp)),
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = source.name,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    if (!source.enabled) {
-                        Text(
-                            text = "DISABLED",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = source.baseUrl,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                source.sourceType.color.copy(alpha = 0.2f),
-                                RoundedCornerShape(4.dp),
-                            )
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text = source.sourceType.displayName,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = source.sourceType.color,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
-
-                    if (source.extensionId != null) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                                    RoundedCornerShape(4.dp),
-                                )
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text = "Extension: ${source.extensionId}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline,
-                            )
-                        }
-                    }
-
-                    if (source.failureCount > 0) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
-                                    RoundedCornerShape(4.dp),
-                                )
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Row {
-                                Icon(
-                                    imageVector = Icons.Outlined.Info,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(10.dp),
-                                )
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text(
-                                    text = "${source.failureCount} failures",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            Column(
-                horizontalAlignment = Alignment.End,
-            ) {
-                if (source.sourceType == SourceType.HEURISTIC || source.sourceType == SourceType.REPOSITORY) {
-                    IconButton(onClick = onLinkScraper) {
-                        Icon(
-                            imageVector = Icons.Outlined.Link,
-                            contentDescription = "Link scraper",
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
-                if (source.sourceType == SourceType.JS_SCRAPER) {
-                    IconButton(onClick = onCheckUpdates) {
-                        Icon(
-                            imageVector = Icons.Outlined.CloudDownload,
-                            contentDescription = "Check for updates",
-                            tint = MaterialTheme.colorScheme.secondary,
-                        )
-                    }
-                }
-                IconButton(onClick = onForceRediscover) {
-                    Icon(
-                        imageVector = Icons.Outlined.Refresh,
-                        contentDescription = "Force rediscover",
-                        tint = MaterialTheme.colorScheme.outline,
-                    )
-                }
-                IconButton(onClick = onRemoveSource) {
-                    Icon(
-                        imageVector = Icons.Outlined.DeleteOutline,
-                        contentDescription = "Remove source",
-                        tint = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AddJsScraperDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit,
-    githubUrl: String,
-    onGithubUrlChange: (String) -> Unit,
-    scraperFilename: String,
-    onScraperFilenameChange: (String) -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add JS Scraper from GitHub") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = githubUrl,
-                    onValueChange = onGithubUrlChange,
-                    label = { Text("GitHub URL") },
-                    placeholder = { Text("https://github.com/user/repo/scraper.js") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = scraperFilename,
-                    onValueChange = onScraperFilenameChange,
-                    label = { Text("Filename") },
-                    placeholder = { Text("mangadex_scraper.js") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "The script will be downloaded and sandboxed. Auto-updates enabled if from GitHub.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (githubUrl.isNotBlank() && scraperFilename.isNotBlank()) {
-                    onConfirm(githubUrl, scraperFilename)
-                }
-            }) {
-                Text("Download")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
-}
-
-@Composable
-private fun ImportJsScraperDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit,
-    filename: String,
-    onFilenameChange: (String) -> Unit,
-    scriptContent: String,
-    onScriptContentChange: (String) -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Import Local JS Script") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = filename,
-                    onValueChange = onFilenameChange,
-                    label = { Text("Script Name") },
-                    placeholder = { Text("custom_scraper.js") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = scriptContent,
-                    onValueChange = onScriptContentChange,
-                    label = { Text("JavaScript Content") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    shape = RoundedCornerShape(8.dp),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (filename.isNotBlank() && scriptContent.isNotBlank()) {
-                    onConfirm(filename, scriptContent)
-                }
-            }) {
-                Text("Import")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
-}
-
-@Composable
-private fun AddHeuristicDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String?) -> Unit,
-    url: String,
-    onUrlChange: (String) -> Unit,
-    name: String,
-    onNameChange: (String) -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Heuristic Profile") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = onUrlChange,
-                    label = { Text("Website Base URL") },
-                    placeholder = { Text("https://example.com") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = onNameChange,
-                    label = { Text("Display Name (optional)") },
-                    placeholder = { Text("Auto-detected from page title") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "The adaptive heuristic engine will analyze the page structure on first use.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (url.isNotBlank()) {
-                    onConfirm(url, name.ifBlank { null })
-                }
-            }) {
-                Text("Add")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
-}
-
-@Composable
-private fun LinkScraperDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit,
-    baseUrl: String,
-    onBaseUrlChange: (String) -> Unit,
-    scraperName: String,
-    onScraperNameChange: (String) -> Unit,
-    availableScrapers: List<String>,
-) {
-    var dropdownExpanded by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Link Scraper to Website") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = baseUrl,
-                    onValueChange = onBaseUrlChange,
-                    label = { Text("Website Base URL") },
-                    placeholder = { Text("https://example.com") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                if (availableScrapers.isNotEmpty()) {
-                    Box {
-                        OutlinedTextField(
-                            value = scraperName,
-                            onValueChange = onScraperNameChange,
-                            label = { Text("Select Scraper") },
-                            placeholder = { Text("Choose a scraper...") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            trailingIcon = {
-                                IconButton(onClick = { dropdownExpanded = true }) {
-                                    Icon(
-                                        imageVector = if (dropdownExpanded) {
-                                            Icons.Outlined.ExpandLess
-                                        } else {
-                                            Icons.Outlined.ExpandMore
-                                        },
-                                        contentDescription = "Show available scrapers",
-                                    )
-                                }
-                            },
-                            readOnly = false,
-                        )
-                        DropdownMenu(
-                            expanded = dropdownExpanded,
-                            onDismissRequest = { dropdownExpanded = false },
-                        ) {
-                            availableScrapers.forEach { name ->
-                                DropdownMenuItem(
-                                    text = { Text(name) },
-                                    onClick = {
-                                        onScraperNameChange(name)
-                                        dropdownExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    OutlinedTextField(
-                        value = scraperName,
-                        onValueChange = onScraperNameChange,
-                        label = { Text("Scraper Filename") },
-                        placeholder = { Text("No JS scrapers available. Add one first.") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (baseUrl.isNotBlank() && scraperName.isNotBlank()) {
-                    onConfirm(baseUrl, scraperName)
-                }
-            }) {
-                Text("Link")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
-}
-
+/**
+ * A human label for a source type.
+ *
+ * Kept here rather than on [SourceType] itself because it is a presentation concern and the enum
+ * lives in `:core:domain`, which knows nothing about wording. It is an exhaustive `when` on
+ * purpose: adding a type to the enum is meant to force a decision about how it is named here, and
+ * `SourceTypeRegistryStructuralTest` fails the build if the enum grows and this does not.
+ *
+ * `REPOSITORY` is the Jellyfin slot. It is listed because it is a real declared type, not because
+ * anything can currently be one -- the engine registry is empty, so a `REPOSITORY` profile raises
+ * `NoEngineBoundException` rather than resolving. Naming it now means the label is ready when
+ * something can actually answer to it.
+ */
 private val SourceType.displayName: String
     get() = when (this) {
-        SourceType.REMOTE_EXTENSION -> "Remote Extensions"
-        SourceType.JS_SCRAPER -> "JS Scrapers"
-        SourceType.HEURISTIC -> "Heuristic Profiles"
+        SourceType.REMOTE_EXTENSION -> "Extension Sources"
         SourceType.REPOSITORY -> "Repositories"
     }
-
-private val SourceType.color: Color
-    @Composable
-    get() = when (this) {
-        SourceType.REMOTE_EXTENSION -> MaterialTheme.colorScheme.primary
-        SourceType.JS_SCRAPER -> MaterialTheme.colorScheme.secondary
-        SourceType.HEURISTIC -> MaterialTheme.colorScheme.tertiary
-        SourceType.REPOSITORY -> MaterialTheme.colorScheme.outline
-    }
-
-@Composable
-private fun ExtensionSourcesDialog(
-    extension: Extension.Available,
-    installedSources: List<UnifiedSource>,
-    onDismiss: () -> Unit,
-    onConfirm: (Set<String>) -> Unit,
-) {
-    val initiallySelected = remember(extension, installedSources) {
-        val mapped = extension.sources.filter { source ->
-            installedSources.any { it.baseUrl == source.baseUrl && it.sourceType == SourceType.JS_SCRAPER }
-        }.map { it.baseUrl }.toSet()
-        if (mapped.isEmpty()) {
-            extension.sources.map { it.baseUrl }.toSet()
-        } else {
-            mapped
-        }
-    }
-
-    var selectedUrls by remember { mutableStateOf(initiallySelected) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = "Manage ${extension.name}") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Select which sources to use from this extension:",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 12.dp),
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(
-                        checked = selectedUrls.size == extension.sources.size,
-                        onCheckedChange = { checked ->
-                            selectedUrls = if (checked) {
-                                extension.sources.map { it.baseUrl }.toSet()
-                            } else {
-                                emptySet()
-                            }
-                        },
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Select All", style = MaterialTheme.typography.bodyMedium)
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(extension.sources) { source ->
-                        val isChecked = selectedUrls.contains(source.baseUrl)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedUrls = if (isChecked) {
-                                        selectedUrls - source.baseUrl
-                                    } else {
-                                        selectedUrls + source.baseUrl
-                                    }
-                                }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Checkbox(
-                                checked = isChecked,
-                                onCheckedChange = { checked ->
-                                    selectedUrls = if (checked) {
-                                        selectedUrls + source.baseUrl
-                                    } else {
-                                        selectedUrls - source.baseUrl
-                                    }
-                                },
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(text = source.name, style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    text = "${source.lang.uppercase()} • ${source.baseUrl}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm(selectedUrls)
-                    onDismiss()
-                },
-            ) {
-                Text("Save")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
-}

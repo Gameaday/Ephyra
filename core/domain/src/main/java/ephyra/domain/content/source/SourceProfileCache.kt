@@ -82,18 +82,21 @@ class PreferenceSourceProfileStore(
     }
 
     /**
-     * Retrieve all profiled domains dynamically, falling back to a pre-populated default set.
+     * Retrieve the domains that actually have a profile, from the preference alone.
+     *
+     * **The hardcoded fallback is gone.** This used to return mangadex.org / manganato.com /
+     * asuratoons.com whenever the preference was empty. That was a hidden default doing two kinds of
+     * damage at once: it made "no sources configured" indistinguishable from "these three", and it
+     * named real sites the app could not actually serve. Since `ADR-0015` removed the only engine
+     * that could create a profile, the real list is now *always* empty — so the fallback was not a
+     * fallback at all, it was the permanent answer, and the Sources list showed three sources that
+     * could never load.
+     *
+     * An empty set is the honest answer, and it is what the rest of the code already handles: the
+     * sources list renders empty and the user installs an extension APK to populate it.
      */
     override suspend fun getAllProfiledDomains(): Set<String> {
-        val customList = preferenceStore.getStringSet("profiled_domains_list", emptySet()).get()
-        if (customList.isEmpty()) {
-            return setOf(
-                "https://mangadex.org",
-                "https://manganato.com",
-                "https://asuratoons.com",
-            )
-        }
-        return customList
+        return preferenceStore.getStringSet("profiled_domains_list", emptySet()).get()
     }
 
     /** Check if a profile exists in cache. */
@@ -142,7 +145,6 @@ internal data class SerializableProfile(
     val lastHealthCheck: Long = 0,
     val lastUpdated: Long = 0,
     val failureCount: Int = 0,
-    val scraperFilename: String? = null,
     val repositoryId: String? = null,
 ) {
     companion object {
@@ -172,7 +174,6 @@ internal data class SerializableProfile(
                 lastHealthCheck = profile.lastHealthCheck,
                 lastUpdated = profile.lastUpdated,
                 failureCount = profile.failureCount,
-                scraperFilename = profile.scraperFilename,
                 repositoryId = profile.repositoryId,
             )
         }
@@ -191,7 +192,10 @@ internal data class SerializableProfile(
             sourceType = try {
                 SourceType.valueOf(sourceType)
             } catch (e: Exception) {
-                SourceType.HEURISTIC
+                // An unrecognised persisted name means a build older than this one wrote it, or a
+                // retired type (`JS_SCRAPER`, `HEURISTIC`). Both map to the extension path via
+                // `fromString`, which is also where the retired names are folded in deliberately.
+                SourceType.fromString(sourceType)
             },
             enabled = enabled,
             endpoints = endpoints.mapKeys {
@@ -269,7 +273,6 @@ internal data class SerializableProfile(
             lastHealthCheck = lastHealthCheck,
             lastUpdated = lastUpdated,
             failureCount = failureCount,
-            scraperFilename = scraperFilename,
             repositoryId = repositoryId,
         )
     }

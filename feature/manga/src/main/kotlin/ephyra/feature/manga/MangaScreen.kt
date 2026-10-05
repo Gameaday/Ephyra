@@ -487,17 +487,12 @@ fun MangaDetailsScreen(
                 onSaveGenres = { ViewModel.onEvent(MangaScreenEvent.EditGenres(it)) },
                 onToggleLock = { ViewModel.onEvent(MangaScreenEvent.ToggleLockedField(it)) },
                 onSetAllLocks = { mask -> ViewModel.onEvent(MangaScreenEvent.SetLockedFields(mask)) },
-                onIdentify = if (manga.canonicalId == null) {
-                    {
-                        ViewModel.onEvent(MangaScreenEvent.DismissDialog)
-                        ViewModel.onEvent(MangaScreenEvent.ResolveCanonicalId)
-                    }
-                } else {
-                    {
-                        ViewModel.onEvent(MangaScreenEvent.DismissDialog)
-                        ViewModel.onEvent(MangaScreenEvent.RefreshFromAuthority)
-                    }
-                },
+                // No manual Identify/Refresh action (D13): authority matching is being
+                // retracted from user-facing surfaces and returns as silent background
+                // enrichment. The badge and Unlink remain: unlink is the escape hatch
+                // for entries already linked (and for wrong future auto-attaches), so
+                // it must stay reachable and reversible.
+                onIdentify = null,
                 onUnlinkAuthority = if (manga.canonicalId != null) {
                     {
                         ViewModel.onEvent(MangaScreenEvent.DismissDialog)

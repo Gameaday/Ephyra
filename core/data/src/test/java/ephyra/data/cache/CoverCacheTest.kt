@@ -120,10 +120,10 @@ class CoverCacheTest {
         )
 
         assertEquals(
-            1,
-            pruned,
             "the custom cover's bytes must count towards the budget, or the remote cover is " +
                 "considered within budget while the cache is over it",
+            1L,
+            pruned.toLong(),
         )
         assertFalse("the unprotected remote cover should have been pruned", remote.exists())
         assertTrue("custom covers must never be pruned", custom.exists())

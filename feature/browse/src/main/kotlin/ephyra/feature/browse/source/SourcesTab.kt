@@ -3,10 +3,9 @@ package ephyra.feature.browse.source
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddLink
-import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material3.AlertDialog
@@ -27,7 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.feature.browse.presentation.SourceOptionsDialog
 import ephyra.feature.browse.presentation.SourcesScreen
-import ephyra.feature.browse.presentation.components.UniversalAddSourceDialog
+import ephyra.feature.browse.presentation.components.AddExtensionRepositoryDialog
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
@@ -44,6 +43,7 @@ fun sourcesTab(
     navController: NavController = LocalNavController.current,
 ): TabContent {
     val state by ViewModel.state.collectAsStateWithLifecycle()
+    val extensionUpdates by ViewModel.extensionUpdateCount.collectAsStateWithLifecycle()
     var showAddSourceDialog by remember { mutableStateOf(false) }
 
     return TabContent(
@@ -65,11 +65,6 @@ fun sourcesTab(
                 icon = Icons.Outlined.FilterList,
                 onClick = { navController.navigate(ScreenRoutes.SourcesFilter.route) },
             ),
-            AppBar.Action(
-                title = "Content Sourcing Hub",
-                icon = Icons.Outlined.CloudSync,
-                onClick = { navController.navigate(ScreenRoutes.ContentSourcing.route) },
-            ),
         ),
         content = { contentPadding, snackbarHostState ->
             var webSourceUrl by remember { mutableStateOf("") }
@@ -79,15 +74,34 @@ fun sourcesTab(
                 ViewModel.search(null)
             }
 
-            SourcesScreen(
-                state = state,
-                contentPadding = contentPadding,
-                onClickItem = { source, listing ->
-                    navController.navigate(Screen.BrowseSource(source.id, listing.query))
-                },
-                onClickPin = { ViewModel.onEvent(SourcesScreenEvent.TogglePin(it)) },
-                onLongClickItem = { ViewModel.onEvent(SourcesScreenEvent.ShowSourceDialog(it)) },
-            )
+            Column {
+                // Updates chip: absent when nothing is waiting, so sources maintenance
+                // only ever interrupts the user when there is something to act on. Lives
+                // here (not the search page) because sources ARE extensions — the signal
+                // sits in its maintenance context next to the list it concerns.
+                if (extensionUpdates > 0) {
+                    androidx.compose.material3.ElevatedAssistChip(
+                        onClick = { navController.navigate(ScreenRoutes.Extensions.route) },
+                        label = {
+                            Text(
+                                text = "%d extension update%s available — tap to review"
+                                    .format(extensionUpdates, if (extensionUpdates == 1) "" else "s"),
+                            )
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+
+                SourcesScreen(
+                    state = state,
+                    contentPadding = contentPadding,
+                    onClickItem = { source, listing ->
+                        navController.navigate(Screen.BrowseSource(source.id, listing.query))
+                    },
+                    onClickPin = { ViewModel.onEvent(SourcesScreenEvent.TogglePin(it)) },
+                    onLongClickItem = { ViewModel.onEvent(SourcesScreenEvent.ShowSourceDialog(it)) },
+                )
+            }
 
             state.dialog?.let { dialog ->
                 val source = dialog.source
@@ -106,13 +120,10 @@ fun sourcesTab(
             }
 
             if (showAddSourceDialog) {
-                UniversalAddSourceDialog(
+                AddExtensionRepositoryDialog(
                     onDismissRequest = { showAddSourceDialog = false },
                     onAddRepo = { repoUrl ->
                         navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(repoUrl))
-                    },
-                    onAddWebSource = { url, name ->
-                        ViewModel.onEvent(SourcesScreenEvent.AddWebSource(url, name))
                     },
                 )
             }
@@ -123,12 +134,6 @@ fun sourcesTab(
                     when (effect) {
                         SourcesViewModel.Effect.FailedFetchingSources -> {
                             launch { snackbarHostState.showSnackbar(internalErrString) }
-                        }
-                        is SourcesViewModel.Effect.WebSourceAdded -> {
-                            launch { snackbarHostState.showSnackbar("Added source: ${effect.name}") }
-                        }
-                        is SourcesViewModel.Effect.WebSourceAddFailed -> {
-                            launch { snackbarHostState.showSnackbar("Failed to add source: ${effect.error}") }
                         }
                     }
                 }

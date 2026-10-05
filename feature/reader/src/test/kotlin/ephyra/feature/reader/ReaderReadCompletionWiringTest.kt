@@ -111,6 +111,13 @@ class ReaderReadCompletionWiringTest {
         // not guarantee method order -- so the two tests that expect exactly one read write
         // intermittently saw two. Verified: the class passes in isolation but failed inside a
         // multi-module run where ordering differed. Clearing per test removes the dependency.
+        // The completion write is launched on `viewModelScope` and `checkChapterCompletion`
+        // returns that `Job`, so every call site below joins it before verifying. Under
+        // `UnconfinedTestDispatcher` the work usually runs eagerly, so the omission was invisible;
+        // it failed as `UpdateChapter(#340).await(...) was not called` only when test ordering
+        // differed inside a full multi-module run. Joining removes the dependency on scheduling
+        // rather than leaving it to chance, and it also stops the two `exactly = 0` tests from
+        // passing vacuously by verifying before the coroutine had a chance to run.
         clearMocks(
             updateChapter,
             updateManga,
@@ -157,6 +164,7 @@ class ReaderReadCompletionWiringTest {
     private fun createViewModel(): ReaderViewModel = ReaderViewModel(
         savedState = savedState,
         sourceManager = sourceManager,
+        sourceResolutionDiagnostics = mockk(relaxed = true),
         downloadManager = downloadManager,
         downloadProvider = downloadProvider,
         imageSaver = imageSaver,
@@ -232,7 +240,7 @@ class ReaderReadCompletionWiringTest {
         val viewModel = createViewModel()
         val (_, pages) = loadedChapter(pageCount = 5)
 
-        viewModel.checkChapterCompletion(pages[4])
+        viewModel.checkChapterCompletion(pages[4])?.join()
 
         coVerify(exactly = 1) { updateChapter.await(match { it.read == true }) }
     }
@@ -244,7 +252,7 @@ class ReaderReadCompletionWiringTest {
         val viewModel = createViewModel()
         val (_, pages) = loadedChapter(pageCount = 3, absorbedFrom = 1)
 
-        viewModel.checkChapterCompletion(pages[0])
+        viewModel.checkChapterCompletion(pages[0])?.join()
 
         coVerify(exactly = 1) { updateChapter.await(match { it.read == true }) }
     }
@@ -254,7 +262,7 @@ class ReaderReadCompletionWiringTest {
         val viewModel = createViewModel()
         val (_, pages) = loadedChapter(pageCount = 3)
 
-        viewModel.checkChapterCompletion(pages[2], NavigationVector.BACKWARD)
+        viewModel.checkChapterCompletion(pages[2], NavigationVector.BACKWARD)?.join()
 
         coVerify(exactly = 0) { updateChapter.await(match { it.read == true }) }
     }
@@ -280,7 +288,7 @@ class ReaderReadCompletionWiringTest {
         }
         readerChapter.state = ReaderChapter.State.Loading
 
-        viewModel.checkChapterCompletion(partial[1])
+        viewModel.checkChapterCompletion(partial[1])?.join()
 
         coVerify(exactly = 0) { updateChapter.await(match { it.read == true }) }
     }
@@ -291,7 +299,7 @@ class ReaderReadCompletionWiringTest {
         val (readerChapter, pages) = loadedChapter(pageCount = 3)
         val insert = InsertPage(pages[2]).also { it.chapter = readerChapter }
 
-        viewModel.checkChapterCompletion(insert)
+        viewModel.checkChapterCompletion(insert)?.join()
 
         coVerify(exactly = 0) { updateChapter.await(match { it.read == true }) }
     }

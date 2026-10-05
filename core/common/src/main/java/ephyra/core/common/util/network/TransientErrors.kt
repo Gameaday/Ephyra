@@ -1,8 +1,12 @@
+
 package ephyra.core.common.util.network
 
 import eu.kanade.tachiyomi.network.HttpException
 import java.io.IOException
+import java.net.ConnectException
 import java.net.UnknownHostException
+import javax.net.ssl.SSLHandshakeException
+import javax.net.ssl.SSLPeerUnverifiedException
 
 /**
  * One definition of "this failure is worth retrying".
@@ -78,6 +82,18 @@ object TransientErrors {
                 // hand back a different host on the next resolution, and a fresh URL is the only
                 // thing that can recover from a dead one.
                 is UnknownHostException -> return true
+                // The host is reachable but is not serving this URL: a certificate that does not
+                // verify, a refused connection. These are the same shape of verdict as a name that
+                // does not resolve -- the *host* is at fault, not the connection -- and the sources
+                // that produce them are the ones that hand out a different CDN on the next
+                // resolution, which is the only thing that can recover.
+                //
+                // Left out on purpose: `SocketTimeoutException`. It is an `IOException`, so it is
+                // still retried, but a timeout is not evidence about the host -- it is what a slow
+                // read looks like too, and there is no type that separates the two phases portably.
+                // Re-resolving on it would spend a source round-trip on the many timeouts that a
+                // re-resolve cannot fix.
+                is SSLPeerUnverifiedException, is SSLHandshakeException, is ConnectException -> return true
                 // The URL cannot address a host at all — a splicing artifact such as
                 // `cmdx98sb0x3yprd.mangadex.network,https`. Re-requesting it cannot succeed, but
                 // *re-resolving* still can, because the source builds the string that is malformed

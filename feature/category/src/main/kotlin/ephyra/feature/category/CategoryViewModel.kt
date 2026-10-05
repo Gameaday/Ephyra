@@ -13,6 +13,8 @@ import ephyra.domain.category.model.Category
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -73,13 +75,57 @@ class CategoryViewModel @Inject constructor(
         }
     }
 
+    private var reorderJob: Job? = null
+
+    /**
+     * Scope that outlives `viewModelScope` by one deferred write. Only ever launched from
+     * [onCleared], so at most one job exists at a time; the scope itself is never cancelled, which
+     * is the point — the whole reason for it is that `viewModelScope` is being cancelled at that
+     * moment.
+     */
+    private val reorderWriteScope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO,
+    )
+
+    /**
+     * The most recent (category, newIndex) whose write has not yet landed.
+     *
+     * Debouncing means the write is deferred, which is correct while the screen is alive, but if the
+     * ViewModel is cleared before the delay elapses the last move would be dropped and the database
+     * would keep a stale order. [onCleared] flushes it.
+     */
+    private var pendingReorder: Pair<Category, Int>? = null
+
     private fun changeOrder(category: Category, newIndex: Int) {
-        viewModelScope.launch {
-            when (reorderCategory.await(category, newIndex)) {
-                is ReorderCategory.Result.InternalError -> emitEffect(CategoryEvent.InternalError)
-                else -> {}
-            }
+        // Dragging emits a move event per drag frame; debounce the DB write so the order is
+        // persisted only once dragging settles instead of on every frame.
+        pendingReorder = category to newIndex
+        reorderJob?.cancel()
+        reorderJob = viewModelScope.launch {
+            delay(REORDER_DEBOUNCE_MILLIS)
+            flushPendingReorder()
         }
+    }
+
+    private suspend fun flushPendingReorder() {
+        val pending = pendingReorder ?: return
+        pendingReorder = null
+        when (reorderCategory.await(pending.first, pending.second)) {
+            is ReorderCategory.Result.InternalError -> emitEffect(CategoryEvent.InternalError)
+            else -> {}
+        }
+    }
+
+    override fun onCleared() {
+        // viewModelScope is about to be cancelled, which would drop any deferred write. The write
+        // is a single idempotent DB call, so it is moved to a scope that outlives the ViewModel for
+        // exactly that one write rather than being dropped with it.
+        val pending = pendingReorder ?: return super.onCleared()
+        pendingReorder = null
+        reorderWriteScope.launch {
+            runCatching { reorderCategory.await(pending.first, pending.second) }
+        }
+        super.onCleared()
     }
 
     private fun renameCategory(category: Category, name: String) {
@@ -120,6 +166,8 @@ sealed interface CategoryEvent {
     sealed class LocalizedMessage(val stringRes: Int) : CategoryEvent
     data object InternalError : LocalizedMessage(ephyra.app.core.common.R.string.internal_error)
 }
+
+private const val REORDER_DEBOUNCE_MILLIS = 500L
 
 sealed interface CategoryScreenState {
 

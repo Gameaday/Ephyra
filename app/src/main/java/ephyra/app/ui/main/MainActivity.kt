@@ -9,10 +9,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -66,7 +66,6 @@ import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.openInBrowser
 import ephyra.core.download.DownloadCache
 import ephyra.core.migration.Migrator
-import ephyra.data.cache.ChapterCache
 import ephyra.data.updater.AppUpdateChecker
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.library.service.LibraryPreferences
@@ -116,6 +115,36 @@ private fun NavBackStackEntry.isMangaDetails(): Boolean = runCatching {
 
 private fun NavBackStackEntry.isHome(): Boolean = destination.route == ScreenRoutes.Home.route
 
+private fun NavBackStackEntry.isBrowseSource(): Boolean = runCatching {
+    toRoute<Screen.BrowseSource>()
+}.isSuccess
+
+private fun NavBackStackEntry.isGlobalSearch(): Boolean = runCatching {
+    toRoute<Screen.GlobalSearch>()
+}.isSuccess
+
+/**
+ * Whether this destination can be one end of the shared-cover transition.
+ *
+ * A destination qualifies only if it *both* renders `MangaCover` with the manga's id for its list
+ * items *and* provides `LocalNavAnimatedVisibilityScope`. The shared element needs a scope at each
+ * end inside the same `SharedTransitionLayout`; a screen that renders the cover but provides no
+ * scope cannot match, and the element then has no counterpart — which, because the pair's container
+ * motion is a deliberate no-op, leaves the whole transition with nothing to animate.
+ *
+ * This predicate is the "and" of those two obligations written down once. It used to be
+ * `destination.route == Home`, which was too narrow: `Home` is the whole tab shell, so any series
+ * opened from a source's results or from global search took the generic fallback even though those
+ * lists carry the same cover.
+ *
+ * `MangaDetails` is deliberately **not** a host. It renders covers and provides the scope, but the
+ * direction rule below reads "leaving a series page" as BACKWARD, so listing it would give a
+ * forward navigation to a related series the shorter return timeline. Details-to-details keeps the
+ * generic shared-axis treatment until that direction can be told apart.
+ */
+private fun NavBackStackEntry.hostsSharedCover(): Boolean =
+    isHome() || isBrowseSource() || isGlobalSearch()
+
 /**
  * The motion route pair for a transition between [from] and [to], or null when the transition has
  * no declared rule and should keep the default shared-axis treatment.
@@ -124,31 +153,48 @@ private fun NavBackStackEntry.isHome(): Boolean = destination.route == ScreenRou
  * Android-layer concern; the *decision* about what the pair should do is `MotionPolicy`'s, and this
  * function only names the pair.
  *
- * Both directions resolve to [MotionRoutePair.LIBRARY_SERIES] because the cover is the same element
- * whether it is growing or shrinking. What differs is [MotionDirection], which `MotionPolicy` uses
- * to pick the timeline: M3's shared-element spec is deliberately asymmetric, with the return
- * shorter than the arrival. Resolving the pair in one place and the direction in another is what
- * keeps those two facts from being conflated — an earlier version of this named one pair and then
- * collapsed both directions onto a single duration.
+ * Both directions are named in one `when`, over one predicate, because they must resolve to the same
+ * pair: the cover is the same element whether it is growing or shrinking, and predictive back
+ * replays this model, so a pair that differed on the way out would give the gesture a different
+ * animation from the toolbar arrow. What differs is [MotionDirection], which `MotionPolicy` uses to
+ * pick the timeline: M3's shared-element spec is deliberately asymmetric, with the return shorter
+ * than the arrival.
  */
-private fun motionRoutePair(from: NavBackStackEntry, to: NavBackStackEntry): MotionRoutePair? = when {
-    from.isHome() && to.isMangaDetails() -> MotionRoutePair.LIBRARY_SERIES
-    from.isMangaDetails() && to.isHome() -> MotionRoutePair.LIBRARY_SERIES
+private fun motionRoutePair(
+    from: NavBackStackEntry,
+    to: NavBackStackEntry,
+    isPop: Boolean,
+): MotionRoutePair? = when {
+    // Pushing into a series from a list that carries its cover.
+    !isPop && from.hostsSharedCover() && to.isMangaDetails() -> MotionRoutePair.LIBRARY_SERIES
+
+    // Popping out of a series back to the list that carries its cover.
+    //
+    // The two branches are kept separate on purpose: a series page can also navigate *forward* into
+    // a cover list (e.g. "browse more from this source"), and that is not a return. Letting it name
+    // the pair would hold the container still, look for a shared cover the target does not
+    // necessarily render, and run the shorter backward timeline for a forward move. Only a real pop
+    // out of the series page is a return.
+    isPop && from.isMangaDetails() && to.hostsSharedCover() -> MotionRoutePair.LIBRARY_SERIES
+
     else -> null
 }
 
 /**
  * Which way the user is travelling.
  *
- * `popEnter`/`popExit` are the back path, so direction is read from the transitions that are
- * popping rather than inferred from the entries. `initialState` is the screen being left, so a
- * transition away from a series page is a return.
+ * Direction comes from [isPop], not from which entry is the series page. The entries alone cannot
+ * answer it, because a series page can navigate forward *into* a cover list as well as back out of
+ * one; only the transition that fired (push vs pop) separates the two. Reading direction from the
+ * entry roles was correct only while the pair could not form in the forward direction, which the
+ * wider [hostsSharedCover] set changed.
  */
 private fun motionDirectionFor(
     from: NavBackStackEntry,
     to: NavBackStackEntry,
-): MotionDirection? = motionRoutePair(from, to)?.let {
-    if (from.isMangaDetails()) MotionDirection.BACKWARD else MotionDirection.FORWARD
+    isPop: Boolean,
+): MotionDirection? = motionRoutePair(from, to, isPop)?.let {
+    if (isPop) MotionDirection.BACKWARD else MotionDirection.FORWARD
 }
 
 /**
@@ -173,9 +219,10 @@ private fun motionPlanFor(
     from: NavBackStackEntry,
     to: NavBackStackEntry,
     reducedMotion: Boolean,
+    isPop: Boolean,
 ): MotionPlan? {
-    val pair = motionRoutePair(from, to) ?: return null
-    val direction = motionDirectionFor(from, to) ?: return null
+    val pair = motionRoutePair(from, to, isPop) ?: return null
+    val direction = motionDirectionFor(from, to, isPop) ?: return null
     val mangaId = to.sharedCoverMangaId() ?: from.sharedCoverMangaId() ?: return null
     return MotionPolicy.plan(
         pair = pair,
@@ -197,9 +244,6 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
     @Inject
     lateinit var downloadCache: DownloadCache
-
-    @Inject
-    lateinit var chapterCache: ChapterCache
 
     @Inject
     lateinit var getIncognitoState: GetIncognitoState
@@ -353,6 +397,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 initialState,
                                                 targetState,
                                                 reducedMotion,
+                                                isPop = false,
                                             )
                                             if (plan != null) {
                                                 MotionTokens.containerEnter(
@@ -360,15 +405,15 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisZEnter() +
-                                                    slideIntoContainer(
-                                                        AnimatedContentTransitionScope.SlideDirection.Start,
-                                                        initialOffset = { (it * 0.10f).toInt() },
-                                                        animationSpec = tween(
-                                                            durationMillis = MotionTokens.DURATION_LONG_1,
-                                                            easing = MotionTokens.EasingEmphasizedDecelerate,
-                                                        ),
-                                                    )
+                                                // Fallback path (no declared pair, or no cover id).
+                                                // Must honour reduced motion too: the plan path
+                                                // does, so a fallback that animates anyway would
+                                                // make the setting inconsistent per route.
+                                                if (reducedMotion) {
+                                                    EnterTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXEnter()
+                                                }
                                             }
                                         },
                                         exitTransition = {
@@ -376,6 +421,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 initialState,
                                                 targetState,
                                                 reducedMotion,
+                                                isPop = false,
                                             )
                                             if (plan != null) {
                                                 MotionTokens.containerExit(
@@ -383,15 +429,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisZExit() +
-                                                    slideOutOfContainer(
-                                                        AnimatedContentTransitionScope.SlideDirection.Start,
-                                                        targetOffset = { (it * 0.10f).toInt() },
-                                                        animationSpec = tween(
-                                                            durationMillis = MotionTokens.DURATION_MEDIUM_3,
-                                                            easing = MotionTokens.EasingEmphasizedAccelerate,
-                                                        ),
-                                                    )
+                                                if (reducedMotion) {
+                                                    ExitTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXExit()
+                                                }
                                             }
                                         },
                                         popEnterTransition = {
@@ -399,6 +441,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 initialState,
                                                 targetState,
                                                 reducedMotion,
+                                                isPop = true,
                                             )
                                             if (plan != null) {
                                                 MotionTokens.containerEnter(
@@ -406,15 +449,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisZPopEnter() +
-                                                    slideIntoContainer(
-                                                        AnimatedContentTransitionScope.SlideDirection.End,
-                                                        initialOffset = { (it * 0.10f).toInt() },
-                                                        animationSpec = tween(
-                                                            durationMillis = MotionTokens.DURATION_MEDIUM_4,
-                                                            easing = MotionTokens.EasingEmphasizedDecelerate,
-                                                        ),
-                                                    )
+                                                if (reducedMotion) {
+                                                    EnterTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXPopEnter()
+                                                }
                                             }
                                         },
                                         popExitTransition = {
@@ -422,6 +461,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 initialState,
                                                 targetState,
                                                 reducedMotion,
+                                                isPop = true,
                                             )
                                             if (plan != null) {
                                                 MotionTokens.containerExit(
@@ -429,15 +469,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisZPopExit() +
-                                                    slideOutOfContainer(
-                                                        AnimatedContentTransitionScope.SlideDirection.End,
-                                                        targetOffset = { (it * 0.10f).toInt() },
-                                                        animationSpec = tween(
-                                                            durationMillis = MotionTokens.DURATION_MEDIUM_2,
-                                                            easing = MotionTokens.EasingEmphasizedAccelerate,
-                                                        ),
-                                                    )
+                                                if (reducedMotion) {
+                                                    ExitTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXPopExit()
+                                                }
                                             }
                                         },
                                     ) {

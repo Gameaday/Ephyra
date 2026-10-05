@@ -9,6 +9,7 @@
 - Do not preserve legacy behavior merely because it is tested.
 - Do not let a compatibility adapter become a dependency of a new feature.
 - Every removal step must have a replacement, evidence, and rollback boundary.
+- Every removal step must answer, in the step itself: **what fact or capability did this component own, and who owns it now?** "Nobody, and nothing read it" is the only answer that authorises deletion without a replacement. An adapter is never a reason to keep dead code and never the owner of a fact — see [ADR-0012](../adr/0012-source-existence-and-identity-have-one-owner.md).
 
 ## Removal sequence
 
@@ -62,6 +63,7 @@
 
 ### R-006 — Add external source lifecycle
 
+- Establish the single registration and identity owner **before** extending lifecycle work: source existence and source identity are read from one registry, and a health observation may degrade or quarantine a source but never erase its definition (`SRC-011`, [ADR-0012](../adr/0012-source-existence-and-identity-have-one-owner.md)).
 - Define external source package format.
 - Add source revision and trust metadata.
 - Add install/update/remove lifecycle.
@@ -89,7 +91,7 @@ Preconditions:
 
 Delete:
 
-- `ContentSourceAdapter` (after all callers are migrated);
+- ~~`ContentSourceAdapter`~~ — **done 2026-09-30.** The "after all callers are migrated" condition was never going to be met, because it had no callers to migrate: one implementor of `ContentCatalogueSource`, zero consumers of it, and `SOURCE_DISCOVERY_EXECUTION.md` already recorded that the native path does not use it. A removal plan entry with no callers behind it is a queue item that can never be worked, which is worse than no entry at all.
 - `LegacySourceGateway`;
 - `DynamicHttpSource`;
 - `SourceManager` compatibility interface;

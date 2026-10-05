@@ -17,6 +17,7 @@ import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.AuthenticatorUtil.authenticate
 import ephyra.presentation.core.util.system.AuthenticatorUtil.isAuthenticationSupported
+import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap
 
@@ -49,6 +50,21 @@ object SettingsSecurityScreen : SearchableSettings {
         val useAuthPref = securityPreferences.useAuthenticator()
         val useAuth by useAuthPref.collectAsState()
 
+        // Settings are hosted by a FragmentActivity in the app, but not everywhere this screen can
+        // be composed (previews, an alternate activity context). The cast used to be unconditional,
+        // so toggling a lock preference in one of those contexts threw ClassCastException instead of
+        // simply failing to prompt. When there is no activity to prompt from, the change is allowed
+        // through and the user is told why no prompt appeared, rather than being blocked silently.
+        val confirmWithBiometrics: suspend (String) -> Boolean = { title ->
+            val activity = context as? FragmentActivity
+            if (activity == null) {
+                context.toast(ephyra.app.core.common.R.string.security_auth_unavailable)
+                true
+            } else {
+                activity.authenticate(title = title)
+            }
+        }
+
         return Preference.PreferenceGroup(
             title = stringResource(ephyra.app.core.common.R.string.pref_security),
             preferenceItems = persistentListOf(
@@ -57,8 +73,8 @@ object SettingsSecurityScreen : SearchableSettings {
                     title = stringResource(ephyra.app.core.common.R.string.lock_with_biometrics),
                     enabled = authSupported,
                     onValueChanged = {
-                        (context as FragmentActivity).authenticate(
-                            title = context.stringResource(ephyra.app.core.common.R.string.lock_with_biometrics),
+                        confirmWithBiometrics(
+                            context.stringResource(ephyra.app.core.common.R.string.lock_with_biometrics),
                         )
                     },
                 ),
@@ -80,8 +96,8 @@ object SettingsSecurityScreen : SearchableSettings {
                     title = stringResource(ephyra.app.core.common.R.string.lock_when_idle),
                     enabled = authSupported && useAuth,
                     onValueChanged = {
-                        (context as FragmentActivity).authenticate(
-                            title = context.stringResource(ephyra.app.core.common.R.string.lock_when_idle),
+                        confirmWithBiometrics(
+                            context.stringResource(ephyra.app.core.common.R.string.lock_when_idle),
                         )
                     },
                 ),

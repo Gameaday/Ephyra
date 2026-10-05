@@ -40,6 +40,19 @@ android {
             // Robolectric is only pulled in by the Room/DAO suites; plain JVM tests still touch
             // android.util.Log through the project's `logcat` helper, which must not throw.
             isReturnDefaultValues = true
+
+            all {
+                // Robolectric does not fit Gradle's 512m default test-worker heap. The worker is
+                // killed before it flushes its results, and Gradle reports the symptom instead of
+                // the cause:
+                //
+                //   java.nio.file.NoSuchFileException: ...\binary\in-progress-results-generic.bin
+                //
+                // which reads like corrupt output and is not. Every module with
+                // `isIncludeAndroidResources = true` needs this; `:app`, `:feature:browse` and
+                // `:feature:reader` already carry it.
+                it.maxHeapSize = "2g"
+            }
         }
     }
 }

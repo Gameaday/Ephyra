@@ -120,5 +120,19 @@
     "Heuristic discovery requires a dedicated validation milestone and may only propose source definitions; it is never an authoritative source.",
     "Jellyfin content retrieval remains future work; the current Jellyfin tracker is progress synchronization only."
   ],
+  "unificationTasks": [
+    {
+      "id": "SRC-011",
+      "task": "Source existence and identity have one owner.",
+      "decisionRecord": "doc/adr/0012-source-existence-and-identity-have-one-owner.md",
+      "gate": "one registry read seam; canonical identity plus migration from hashCode-derived ids; health never erases a definition; single-owner and orphan-entry gates"
+    },
+    {
+      "id": "SRC-012",
+      "task": "MangaDex-shaped source as a first-class gateway adapter (at-home handshake).",
+      "decisionRecord": "doc/adr/0012-source-existence-and-identity-have-one-owner.md",
+      "gate": "capability and typed-outcome tests; no foreign error strings; at-home URL shapes pinned in ImageUrlPolicyResolveTest"
+    }
+  ],
   "removalGate": "Do not delete legacy paths until zero-legacy product scenarios, capability tests, trust lifecycle, migration rollback, backup/restore, and user-visible evidence pass."
 }

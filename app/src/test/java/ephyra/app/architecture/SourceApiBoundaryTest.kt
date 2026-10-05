@@ -16,11 +16,14 @@ class SourceApiBoundaryTest {
     fun `target source-api files do not import legacy source ABI or transitional engine`() {
         val root = repositoryRoot()
         val compatibilityFiles = setOf(
-            "source-api/src/main/kotlin/ephyra/source/api/ContentSourceAdapter.kt",
             "source-api/src/main/kotlin/ephyra/source/api/LegacySourceGateway.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/HttpSource.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/ParsedHttpSource.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/ResolvableSource.kt",
+            // Added with the image-address consolidation: it reasons about `Page`'s two URL fields,
+            // so it needs the legacy `Page` type and cannot live under the target package. Same
+            // category as HttpSource above — compatibility code that the boundary may not police.
+            "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/PageImageAddress.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/CatalogueSource.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/Source.kt",
         )

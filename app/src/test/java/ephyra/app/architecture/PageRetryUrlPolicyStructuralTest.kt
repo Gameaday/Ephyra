@@ -3,6 +3,7 @@ package ephyra.app.architecture
 import ephyra.app.security.TrackedFileNames
 import ephyra.core.common.util.network.TransientErrors
 import eu.kanade.tachiyomi.network.HttpException
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -140,6 +141,63 @@ class PageRetryUrlPolicyStructuralTest {
         )
     }
 
+    @Test
+    fun `a dropped address is replaced, never cleared`() {
+        // The defect this prevents, twice over. `dropUrl` means "this URL is at fault", and both the
+        // reader and the downloader acted on it by setting `Page.imageUrl = null`. For a source that
+        // populates `Page.imageUrl` in `getPageList` — every 1.6 extension, since upstream removed
+        // the per-page chain — a page with no address is asked for one via `getImageUrl`, which that
+        // source does not implement. The inherited default runs and throws.
+        //
+        // Dropping the URL was correct; a dead MangaDex@Home token must not be reused. There was
+        // simply no way back from having dropped it.
+        val offenders = filesThatClearAnAddress()
+        assertTrue(
+            offenders.isEmpty(),
+            "clearing Page.imageUrl leaves the page unrecoverable for any source that populates it. " +
+                "Supply a replacement from a page list instead:\n" +
+                offenders.joinToString("\n") { "  $it" },
+        )
+    }
+
+    @Test
+    fun `every module that drops an address supplies one`() {
+        // The counterweight to the rule above: a file that *never* drops is not evidence the rule is
+        // satisfied, it is just a file that has not hit the case yet. Both current sites must appear,
+        // so deleting one cannot make this pass.
+        val sites = listOf(
+            "feature/reader/src/main/kotlin/ephyra/feature/reader/loader/HttpPageLoader.kt",
+            "core/download/src/main/kotlin/ephyra/core/download/Downloader.kt",
+        )
+        val dropping = sites.filter { path ->
+            val file = File(TrackedFileNames.repositoryRoot(), path)
+            file.exists() && DROPS_ADDRESS.containsMatchIn(file.readText())
+        }
+        assertEquals(2, dropping.size, "expected both the reader and the downloader to drop addresses")
+    }
+
+    /** Files that clear `Page.imageUrl` without putting something in its place. */
+    private fun filesThatClearAnAddress(): List<String> = SEVERAL_DROPS_SITES.mapNotNull { path ->
+        val file = File(TrackedFileNames.repositoryRoot(), path)
+        if (!file.exists()) return@mapNotNull null
+        val offending = file.readText().lineSequence()
+            .map { it.trim() }
+            .filter { CLEARS_ADDRESS.containsMatchIn(it) }
+            .filterNot { SUPPLIES_REPLACEMENT.containsMatchIn(it) }
+            .toList()
+        offending.takeIf { it.isNotEmpty() }?.let { "$path:\n" + it.joinToString("\n") { "    $it" } }
+    }
+
+    @Test
+    fun `the matchers distinguish a clear from a replacement`() {
+        // A gate that cannot fail is worse than none. These are the exact forms in the tree.
+        assertTrue(CLEARS_ADDRESS.containsMatchIn("page.imageUrl = null"))
+        assertTrue(SUPPLIES_REPLACEMENT.containsMatchIn("page.imageUrl = freshAddresses.at(page.index)"))
+        assertTrue(SUPPLIES_REPLACEMENT.containsMatchIn("page.imageUrl = download.source.freshPage(page)"))
+        assertFalse(CLEARS_ADDRESS.containsMatchIn("page.imageUrl = freshAddresses.at(page.index)"))
+        assertFalse(CLEARS_ADDRESS.containsMatchIn("page.imageUrl = ResolvedImageUrl.of(value, baseUrl)"))
+    }
+
     private fun loader(): File = File(
         TrackedFileNames.repositoryRoot(),
         "feature/reader/src/main/kotlin/ephyra/feature/reader/loader/HttpPageLoader.kt",
@@ -148,6 +206,21 @@ class PageRetryUrlPolicyStructuralTest {
     }
 
     private companion object {
+        /** Every module that acts on `dropUrl` today. A new one must be added here deliberately. */
+        val SEVERAL_DROPS_SITES = listOf(
+            "feature/reader/src/main/kotlin/ephyra/feature/reader/loader/HttpPageLoader.kt",
+            "core/download/src/main/kotlin/ephyra/core/download/Downloader.kt",
+        )
+
+        /** An address being thrown away: the form that makes a 1.6 page unrecoverable. */
+        val CLEARS_ADDRESS = Regex("""\b\w+\.imageUrl\s*=\s*null\b""")
+
+        /** A replacement drawn from a page list — the only place a 1.6 source keeps addresses. */
+        val SUPPLIES_REPLACEMENT = Regex("""\b\w+\.imageUrl\s*=\s*(?!null)\S+""")
+
+        /** The decision being acted on, so a file that never drops cannot pass by omission. */
+        val DROPS_ADDRESS = Regex("""if\s*\(\s*decision\.dropUrl\s*\)""")
+
         /** A call to the shared classifier, by name. */
         val RECLASSIFIER = Regex("""TransientErrors\.shouldReResolveUrl\(""")
 
@@ -159,4 +232,3 @@ class PageRetryUrlPolicyStructuralTest {
         val COUNTER_HEURISTIC = Regex("""retries\s*>\s*0""")
     }
 }
-

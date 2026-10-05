@@ -139,11 +139,16 @@ class CategoryViewModelTest {
     }
 
     @Test
-    fun `change order calls interactor`() = runTest {
+    fun `change order calls interactor`() = runTest(testDispatcher) {
         val viewModel = createViewModel()
         coEvery { reorderCategory.await(testCategory1, 2) } returns ReorderCategory.Result.Success
 
         viewModel.onEvent(CategoryScreenEvent.ChangeOrder(testCategory1, 2))
+
+        // The reorder write is debounced by REORDER_DEBOUNCE_MILLIS so a drag persists once rather
+        // than on every frame, so the interactor is not called synchronously. Verifying without
+        // advancing the virtual clock asserted against a coroutine that had not run yet.
+        testScheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) { reorderCategory.await(testCategory1, 2) }
     }

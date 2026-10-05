@@ -62,6 +62,8 @@ import ephyra.feature.reader.viewer.ReaderPageLoadingView
 import ephyra.feature.reader.viewer.pageImageErrorPainter
 import ephyra.feature.reader.viewer.pageImagePlaceholderPainter
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
+import ephyra.feature.reader.viewer.webtoon.RateLimitedRetry
+import ephyra.feature.reader.viewer.webtoon.isRateLimitError
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import ephyra.presentation.core.data.coil.cropBorders
 import eu.kanade.tachiyomi.source.model.Page
@@ -312,11 +314,33 @@ fun ZoomableMangaPage(
                     ReaderPageLoadingView(progress = progress)
                 }
                 is Page.State.Error -> {
+                    val isRateLimited = remember(currentStatus) {
+                        isRateLimitError(currentStatus.error)
+                    }
                     ReaderPageErrorView(
                         modifier = Modifier,
                         error = currentStatus.error,
                         pageNumber = page.number,
                         onRetry = { page.chapter.pageLoader?.retryPage(page) },
+                        // The same affordance the webtoon reader already had, for the same failure
+                        // from the same shared loader. Tapping Retry the instant a 429 lands only
+                        // extends the source ban, and the pager was the one reader that let a user
+                        // do exactly that. `isRateLimitError` is pure and already tested; this is
+                        // only the wiring that was missing.
+                        retryContent = if (isRateLimited) {
+                            {
+                                RateLimitedRetry(
+                                    page = page,
+                                    onRetry = { page.chapter.pageLoader?.retryPage(page) },
+                                    // Re-arm per failure, not per page: a cooldown spent on the
+                                    // first rate-limited failure must not leave every later one
+                                    // with an already-enabled button.
+                                    restartKey = currentStatus,
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                 }
                 Page.State.Ready -> {

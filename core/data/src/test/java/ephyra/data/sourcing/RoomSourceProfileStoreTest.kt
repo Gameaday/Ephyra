@@ -49,7 +49,7 @@ class RoomSourceProfileStoreTest {
             baseUrl = "https://example-manga.com",
             displayName = "Example Manga Source",
             contentType = ContentType.MANGA,
-            sourceType = SourceType.HEURISTIC,
+            sourceType = SourceType.REMOTE_EXTENSION,
             endpoints = mapOf(
                 Endpoint.SEARCH to EndpointPattern("/search?q={query}"),
                 Endpoint.POPULAR to EndpointPattern("/popular"),

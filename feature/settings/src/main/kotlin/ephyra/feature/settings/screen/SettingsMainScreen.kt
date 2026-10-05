@@ -9,12 +9,14 @@ import androidx.compose.material.icons.automirrored.outlined.ChromeReaderMode
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.GetApp
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +43,7 @@ import kotlinx.collections.immutable.persistentListOf
 fun SettingsMainScreen(
     twoPane: Boolean,
     navController: NavController = LocalNavController.current,
+    onRouteSelected: ((String) -> Boolean)? = null,
 ) {
     val containerColor = if (twoPane) getPalerSurface() else MaterialTheme.colorScheme.surface
     val topBarState = rememberTopAppBarState()
@@ -57,7 +60,11 @@ fun SettingsMainScreen(
                             AppBar.Action(
                                 title = stringResource(ephyra.app.core.common.R.string.action_search),
                                 icon = Icons.Outlined.Search,
-                                onClick = { navController.navigate(ScreenRoutes.SettingsSearch.route) },
+                                onClick = {
+                                    navController.navigate(ScreenRoutes.SettingsSearch.route) {
+                                        launchSingleTop = true
+                                    }
+                                },
                             ),
                         ),
                     )
@@ -91,8 +98,11 @@ fun SettingsMainScreen(
                             subtitle = item.formatSubtitle(),
                             icon = item.icon,
                             onPreferenceClick = {
-                                navController.navigate(item.route) {
-                                    launchSingleTop = true
+                                val handledInPane = onRouteSelected?.invoke(item.route) == true
+                                if (!handledInPane) {
+                                    navController.navigate(item.route) {
+                                        launchSingleTop = true
+                                    }
                                 }
                             },
                         )
@@ -153,6 +163,18 @@ private fun getItems(): List<Item> = listOf(
         subtitleRes = ephyra.app.core.common.R.string.pref_browse_summary,
         icon = Icons.Outlined.Explore,
         route = ScreenRoutes.SettingsBrowse.route,
+    ),
+    Item(
+        // Source/extension management: moved out of the Discover tab (RFC-0001 D8).
+        titleRes = ephyra.app.core.common.R.string.label_source_management,
+        icon = Icons.Outlined.Extension,
+        route = ScreenRoutes.Extensions.route,
+    ),
+    Item(
+        // Source migration: likewise a management task, not a discovery surface.
+        titleRes = ephyra.app.core.common.R.string.label_migration,
+        icon = Icons.Outlined.SwapHoriz,
+        route = ScreenRoutes.SourceMigration.route,
     ),
     Item(
         titleRes = ephyra.app.core.common.R.string.label_data_storage,

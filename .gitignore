@@ -41,3 +41,6 @@ Thumbs.db
 # Project IDX
 # .idx/dev.nix (Keep tracked)
 *.pytroubleshooting/
+
+# transient commit-message scratch file
+commitmsg.tmp

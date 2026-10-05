@@ -15,14 +15,12 @@ import ephyra.app.data.library.LibraryUpdateJob
 import ephyra.app.data.library.LibraryUpdateNotifier
 import ephyra.app.data.library.MetadataUpdateJob
 import ephyra.app.data.updater.AppUpdateDownloadJob
-import ephyra.app.data.work.DynamicScraperUpdateWorker
 import ephyra.app.track.DelayedTrackingUpdateJob
 import ephyra.core.download.DownloadJob
 import ephyra.core.download.DownloadManager
 import ephyra.data.backup.create.BackupCreator
 import ephyra.data.backup.restore.BackupRestorer
 import ephyra.data.cache.CoverCache
-import ephyra.data.sourcing.DynamicScraperUpdater
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
@@ -73,7 +71,6 @@ interface WorkerFactoryEntryPoint {
     fun libraryUpdateNotifier(): LibraryUpdateNotifier
     fun libraryPreferences(): LibraryPreferences
     fun getUpdates(): GetUpdates
-    fun dynamicScraperUpdater(): DynamicScraperUpdater
     fun extensionApi(): ephyra.app.extension.api.ExtensionApi
 }
 
@@ -155,11 +152,6 @@ class AppWorkerFactory : WorkerFactory() {
                 appContext,
                 workerParameters,
                 entryPoint.getUpdates(),
-            )
-            DynamicScraperUpdateWorker::class.java.name -> DynamicScraperUpdateWorker(
-                appContext,
-                workerParameters,
-                entryPoint.dynamicScraperUpdater(),
             )
             ephyra.app.extension.ExtensionUpdateWorker::class.java.name -> ephyra.app.extension.ExtensionUpdateWorker(
                 appContext,

@@ -169,6 +169,11 @@ private fun UpdatesUiItem(
                 .padding(vertical = 6.dp)
                 .fillMaxHeight(),
             data = update.coverData,
+            // Named so this cover is the shared element for Updates -> Series. The row's cover is
+            // square while the series header is 2:3, so the flight interpolates aspect; that is
+            // deliberate here (a container transform) and is only correct because MangaCover
+            // resolves the ratio before the shared modifier measures the element.
+            mangaId = update.mangaId,
             onClick = onClickCover,
         )
 

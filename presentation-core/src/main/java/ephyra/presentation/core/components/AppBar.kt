@@ -58,7 +58,13 @@ import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.core.util.showSoftKeyboard
 import kotlinx.collections.immutable.ImmutableList
 
-const val SEARCH_DEBOUNCE_MILLIS = 250L
+/**
+ * Debounce for search-query flows on screens that filter locally (Library, Sources).
+ *
+ * Aliased to the shared search operator's constant so the app bar and the search operator cannot
+ * disagree; they previously carried separate 250ms and 300ms literals for the same interaction.
+ */
+const val SEARCH_DEBOUNCE_MILLIS = ephyra.presentation.core.util.lang.SEARCH_DEBOUNCE_MILLIS
 
 @Composable
 fun AppBar(

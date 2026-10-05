@@ -192,7 +192,7 @@ class GetAvailableSourcesTest {
         val profile = SourceProfile(
             baseUrl = "https://heuristic.org",
             contentType = ContentType.MANGA,
-            sourceType = SourceType.HEURISTIC,
+            sourceType = SourceType.REMOTE_EXTENSION,
             displayName = "Heuristic Source",
             enabled = true,
         )

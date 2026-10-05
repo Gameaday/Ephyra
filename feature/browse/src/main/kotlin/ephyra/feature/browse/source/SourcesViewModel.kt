@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.Result
 import ephyra.core.common.util.system.logcat
-import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.source.interactor.GetEnabledSources
 import ephyra.domain.source.interactor.ToggleSource
 import ephyra.domain.source.interactor.ToggleSourcePin
@@ -24,6 +23,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -36,8 +36,12 @@ class SourcesViewModel @Inject constructor(
     private val getEnabledSources: GetEnabledSources,
     private val toggleSource: ToggleSource,
     private val toggleSourcePin: ToggleSourcePin,
-    private val addCustomSource: AddCustomSource,
+    getExtensionUpdateCount: ephyra.domain.extension.interactor.GetExtensionUpdateCount,
 ) : BaseUdfViewModel<SourcesViewModel.State, SourcesScreenEvent, SourcesViewModel.Effect>(State()) {
+
+    /** Updates waiting on installed extensions; zero-network, from the local cache. */
+    val extensionUpdateCount = getExtensionUpdateCount.subscribe()
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), 0)
 
     init {
         viewModelScope.launch {
@@ -111,22 +115,6 @@ class SourcesViewModel @Inject constructor(
             is SourcesScreenEvent.ShowSourceDialog -> showSourceDialog(event.source)
             SourcesScreenEvent.CloseDialog -> closeDialog()
             is SourcesScreenEvent.Search -> search(event.query)
-            is SourcesScreenEvent.AddWebSource -> addWebSource(event.url, event.name)
-        }
-    }
-
-    fun addWebSource(url: String, name: String? = null) {
-        viewModelScope.launch {
-            try {
-                val result = addCustomSource.addHeuristicProfile(url, name)
-                if (result is Result.Success) {
-                    emitEffect(Effect.WebSourceAdded(result.data.displayName))
-                } else if (result is Result.Error) {
-                    emitEffect(Effect.WebSourceAddFailed(result.exception.message ?: "Failed to discover source"))
-                }
-            } catch (e: Exception) {
-                emitEffect(Effect.WebSourceAddFailed(e.message ?: "Failed to discover source"))
-            }
         }
     }
 
@@ -148,8 +136,6 @@ class SourcesViewModel @Inject constructor(
 
     sealed interface Effect {
         data object FailedFetchingSources : Effect
-        data class WebSourceAdded(val name: String) : Effect
-        data class WebSourceAddFailed(val error: String) : Effect
     }
 
     data class Dialog(val source: Source)

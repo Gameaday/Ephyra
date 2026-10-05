@@ -34,8 +34,8 @@ import ephyra.data.room.views.*
         HistoryView::class,
         UpdatesView::class,
     ],
-    // v3: canonical Room schema including source_profiles.
-    version = 3,
+    // v4: canonical Room schema including source_profiles, minus scraper_filename.
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(RoomTypeConverters::class)

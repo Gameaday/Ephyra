@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.source.online
 
 import ephyra.core.common.util.getOrThrow
+import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.SourceProfile
@@ -34,12 +35,17 @@ class DynamicHttpSource(
         add("Referer", "$baseUrl/")
     }
 
-    private fun resolveUrl(url: String): String {
-        if (url.startsWith("http://") || url.startsWith("https://")) return url
-        val cleanBase = baseUrl.trimEnd('/')
-        val cleanUrl = url.trimStart('/')
-        return "$cleanBase/$cleanUrl"
-    }
+    /**
+     * Absolutises a URL the scraper returned, against this source's base URL.
+     *
+     * Delegates to [ImageUrlPolicy.resolve] rather than keeping a local rule. The local version
+     * treated *any* non-`http` string as a path and trimmed its leading slashes, so a
+     * protocol-relative `//cdn.example.com/1.jpg` became
+     * `https://base.example/cdn.example.com/1.jpg` — a well-formed URL pointing at a host that does
+     * not exist, which is a worse failure than a rejected one because it is spent on a real request.
+     * That is the same class of defect as `DEF-027`, and the fix is the same: one owner for the rule.
+     */
+    private fun resolveUrl(url: String): String = ImageUrlPolicy.resolve(url, baseUrl)
 
     override suspend fun getPopularManga(page: Int): MangasPage {
         val items = orchestrator.getPopular(baseUrl, page).getOrThrow()
@@ -96,11 +102,31 @@ class DynamicHttpSource(
         return SMangaUpdate(updatedManga, updatedChapters)
     }
 
+    /**
+     * The crossing from an orchestrator profile into legacy pages.
+     *
+     * **This is the adapter seam** (`ADR-0014`), and it is the first production code to reach the
+     * `ContentAdapter` contract rather than only declaring it. The full extraction — moving every
+     * method here behind the interface — is Phase 4 of `doc/SOURCE_ROADMAP.md`; doing only `getPageList`
+     * now is deliberate, because this is the one method where an unchecked output becomes a request.
+     *
+     * The rest of this class still forwards through `resolveUrl` without a verdict, so a malformed
+     * string is caught downstream by `HttpSource.imageRequest` instead of here. That is a safe
+     * fallback, not an equivalent: the failure is reported as a transport fault rather than an adapter
+     * fault, which is precisely the misdiagnosis that made the MangaDex report expensive.
+     */
     override suspend fun getPageList(chapter: SChapter): List<Page> {
         val fullUrl = resolveUrl(chapter.url)
         val pages = orchestrator.getPages(baseUrl, fullUrl).getOrThrow()
         return pages.mapIndexed { index, imageUrl ->
             val resolvedUrl = resolveUrl(imageUrl)
+            // Ask whether the address is worth requesting *here*, at the point the shape changes from
+            // ours to the ABI's. A spliced address such as `cmxd98sb0x3yprd.mangadex.network,https`
+            // parses well enough for OkHttp to canonicalise and hand to DNS, so without this it costs
+            // a request and surfaces as `UnknownHostException` — a network verdict about a host that
+            // could never exist. `requireUsable` is the single owner of that judgement, so this cannot
+            // drift from what the loader will later enforce.
+            ImageUrlPolicy.requireUsable(resolvedUrl)
             Page(index = index, url = resolvedUrl, imageUrl = resolvedUrl)
         }
     }

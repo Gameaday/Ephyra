@@ -252,6 +252,30 @@ class ChapterCache(
         }
     }
 
+    /**
+     * Evicts one chapter's page list and every page image it referenced.
+     *
+     * Implements the cold tier of doc/cache-retention-policy.md: a chapter's pages
+     * leave the cache once the reader has moved far enough past them. Images are
+     * resolved from the cached page list *before* the list is removed, because the
+     * list is the only record of which URLs belonged to the chapter. A chapter whose
+     * list was never cached still gets its (possibly uncached) image keys removed —
+     * removals of absent keys are cheap no-ops in the underlying DiskCache.
+     *
+     * @return true if the page list entry was present and removed.
+     */
+    override fun removeChapter(chapter: Chapter): Boolean {
+        val pages = runCatching { getPageListFromCache(chapter) }.getOrNull()
+        pages?.forEach { page ->
+            page.imageUrl?.let { url ->
+                runCatching { diskCache.remove(DiskUtil.hashKeyForDisk(url)) }
+            }
+        }
+        return runCatching {
+            diskCache.remove(DiskUtil.hashKeyForDisk(getKey(chapter)))
+        }.getOrDefault(false)
+    }
+
     override fun clear(): Int {
         // Count data files before clearing so we can report how many entries were removed.
         val count = cacheDir.listFiles()
@@ -261,7 +285,21 @@ class ChapterCache(
         return count
     }
 
+    /**
+     * Format version of the stored page list, so a list written by a build whose loader treated
+     * `Page.imageUrl` differently is never read back by a build that treats it another way.
+     *
+     * v1 stored `imageUrl` exactly as the loader resolved it — absolute, joined onto the source's
+     * `baseUrl` — because the loader rewrote the field before use. v2 builds keep the field exactly
+     * as the source produced it (it is opaque to the host; a source that overrides `imageRequest`,
+     * MangaDex among them, joins its own host onto it), so a v1 list read by a v2 build would hand
+     * that source an already-absolute address and produce a spliced, never-resolvable URL for
+     * every page. Versioning the key discards the stale lists instead: the cost is one refetch of
+     * each open chapter's page list, and the entries age out of the LRU cache on their own.
+     */
+    private val pageListFormatVersion = 2
+
     private fun getKey(chapter: Chapter): String {
-        return "${chapter.mangaId}${chapter.url}"
+        return "${chapter.mangaId}${chapter.url}#$pageListFormatVersion"
     }
 }

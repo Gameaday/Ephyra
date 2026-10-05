@@ -44,6 +44,7 @@ fun LibrarySettingsDialog(
     onDismissRequest: () -> Unit,
     ViewModel: LibrarySettingsViewModel,
     category: Category?,
+    sort: LibrarySort,
 ) {
     TabbedDialog(
         onDismissRequest = onDismissRequest,
@@ -65,6 +66,7 @@ fun LibrarySettingsDialog(
 
                 1 -> SortPage(
                     category = category,
+                    sort = sort,
                     ViewModel = ViewModel,
                 )
 
@@ -187,11 +189,12 @@ private fun ColumnScope.FilterPage(
 @Composable
 private fun ColumnScope.SortPage(
     category: Category?,
+    sort: LibrarySort,
     ViewModel: LibrarySettingsViewModel,
 ) {
     val trackers by ViewModel.trackersFlow.collectAsStateWithLifecycle()
-    val sortingMode = category.sort.type
-    val sortDescending = !category.sort.isAscending
+    val sortingMode = sort.type
+    val sortDescending = !sort.isAscending
 
     val options = remember(trackers.isEmpty()) {
         val trackerMeanPair = if (trackers.isNotEmpty()) {

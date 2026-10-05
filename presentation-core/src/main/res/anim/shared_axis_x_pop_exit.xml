@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hierarchical pop, outgoing side: the popped screen leaves to the right.
+
+  Activity-level half of MotionTokens.m3SharedAxisXPopExit. This is the half the reader has always
+  used (ReaderActivity.finish); the open half in shared_axis_x_push_enter.xml was missing, which is
+  why entering a chapter cut while leaving it slid.
+-->
 <set xmlns:android="http://schemas.android.com/apk/res/android">
     <translate
         android:duration="300"
         android:fromXDelta="0"
-        android:interpolator="@android:interpolator/fast_out_slow_in"
-        android:toXDelta="5%p" />
+        android:interpolator="@android:interpolator/fast_out_linear_in"
+        android:toXDelta="30%p" />
 
     <alpha
-        android:duration="195"
+        android:duration="200"
         android:fromAlpha="1"
         android:interpolator="@android:interpolator/fast_out_linear_in"
         android:toAlpha="0" />

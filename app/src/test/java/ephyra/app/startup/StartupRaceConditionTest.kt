@@ -44,8 +44,7 @@ class StartupRaceConditionTest {
                     displayName = "Example $index",
                     verified = true,
                     enabled = true,
-                    sourceType = SourceType.HEURISTIC,
-                    scraperFilename = null,
+                    sourceType = SourceType.REMOTE_EXTENSION,
                     lastUpdated = System.currentTimeMillis(),
                 )
                 val dynamicSource = DynamicHttpSource(profile, mockOrchestrator)

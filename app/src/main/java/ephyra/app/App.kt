@@ -55,6 +55,7 @@ import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
 import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.source.diagnostics.SourceResolutionDiagnostics
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.updates.interactor.GetUpdates
@@ -113,6 +114,14 @@ class App :
 
     @Inject
     lateinit var sourceManagerProvider: javax.inject.Provider<SourceManager>
+
+    /**
+     * Defect instrument for `DEF-029`: reports where the app's authorities disagree about which
+     * sources exist and what their ids are. Observational only; deleted when `SRC-011` gives that
+     * fact a single owner.
+     */
+    @Inject
+    lateinit var sourceResolutionDiagnostics: SourceResolutionDiagnostics
 
     @Volatile
     private var verboseLoggingEnabled = false
@@ -174,6 +183,7 @@ class App :
 
         super<Application>.onCreate()
         ephyra.app.data.work.CoverCacheMaintenanceWorker.setupTask(this)
+        ephyra.app.data.work.CoverCacheMaintenanceWorker.enqueueOneTimeAudit(this)
         ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
 
         // Phase 4: Telemetry (non-critical)
@@ -292,6 +302,12 @@ class App :
                 } catch (e: Exception) {
                     logcat(LogPriority.ERROR, e) { "Migration failed — continuing with current data" }
                 }
+
+                try {
+                    sourceResolutionDiagnostics.reportRegistration("startup")
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Source registration diagnostic failed" }
+                }
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e) { "Async startup initialization failed" }
             } finally {
@@ -322,8 +338,19 @@ class App :
         }
     }
 
+    /**
+     * The loader's configured memory-cache size, captured when the loader is built.
+     *
+     * Trimming used to halve whatever the cache currently held, so each trim halved the previous
+     * trim: a long session that hit memory pressure a few times ratcheted the cache down towards
+     * nothing and never put it back, even after the pressure cleared. Remembering the configured
+     * size makes the trim idempotent and lets [onStart] restore it when the app is foregrounded
+     * again.
+     */
+    private var imageCacheBaselineMaxSize: Long? = null
+
     override fun newImageLoader(context: Context): ImageLoader {
-        return ImageLoader.Builder(this).apply {
+        val loader = ImageLoader.Builder(this).apply {
             val callFactoryLazy = lazy { networkHelper.client }
             components {
                 // NetworkFetcher.Factory
@@ -354,7 +381,19 @@ class App :
 
             memoryCache(
                 MemoryCache.Builder()
-                    .maxSizePercent(context)
+                    // Tiered like the chapter/disk caches: on high-RAM devices (S24 class)
+                    // a larger decoded-bitmap working set means library/updates grids
+                    // recompose from memory instead of re-decoding from disk, which is
+                    // where scroll jitter at 120Hz actually comes from. LOW keeps Coil's
+                    // conservative default so memory pressure decides eviction there.
+                    .maxSizePercent(
+                        context,
+                        when (DeviceUtil.performanceTier(this@App)) {
+                            DeviceUtil.PerformanceTier.LOW -> 0.20
+                            DeviceUtil.PerformanceTier.MEDIUM -> 0.25
+                            DeviceUtil.PerformanceTier.HIGH -> 0.30
+                        },
+                    )
                     .build(),
             )
             // Coil 3 lifecycle-aware background trimming: when the app moves to the
@@ -395,10 +434,29 @@ class App :
             decoderCoroutineContext(Dispatchers.IO.limitedParallelism(3))
         }
             .build()
+        // Captured once, before any trim has had a chance to shrink it, so a trim always computes
+        // from the configured size rather than from the previous trim's result.
+        imageCacheBaselineMaxSize = loader.memoryCache?.maxSize
+        return loader
     }
 
     override fun onStart(owner: LifecycleOwner) {
         SecureActivityDelegateState.onApplicationStart(securityPreferences)
+        restoreImageCacheSize()
+    }
+
+    /**
+     * Restores the memory cache to its configured size after a trim.
+     *
+     * Coming back to the foreground is the point at which the reason for trimming is gone. Without
+     * this the shrink was permanent for the life of the process: the cache stayed at half (or a
+     * quarter, or an eighth) of its configured size, so every cover and page scrolled past after a
+     * memory warning was decoded again instead of being found in memory.
+     */
+    private fun restoreImageCacheSize() {
+        val baseline = imageCacheBaselineMaxSize ?: return
+        val memoryCache = SingletonImageLoader.get(this).memoryCache ?: return
+        if (memoryCache.maxSize < baseline) memoryCache.maxSize = baseline
     }
 
     override fun onStop(owner: LifecycleOwner) {
@@ -408,11 +466,14 @@ class App :
     /**
      * Called by the system when it determines that memory is running low.
      *
-     * Foreground pressure is handled by shrinking Coil's memory cache to half its current
-     * size (Coil 3 [MemoryCache] sizes itself by percent of app memory, so halving the max
-     * evicts the least-recently-used decoded bitmaps). Background trimming is handled
-     * automatically by the lifecycle-aware [memoryCacheMaxSizePercentWhileInBackground]
-     * policy configured in [newImageLoader].
+     * Foreground pressure is handled by shrinking Coil's memory cache to half its *configured*
+     * size (Coil 3 [MemoryCache] sizes itself by percent of app memory, so lowering the max evicts
+     * the least-recently-used decoded bitmaps). Computing from the configured size rather than the
+     * current one makes the trim idempotent — halving the current value meant every warning halved
+     * the previous result, and the cache crept towards zero for the rest of the process.
+     * [restoreImageCacheSize] puts it back the next time the app is foregrounded. Background
+     * trimming is handled automatically by the lifecycle-aware
+     * [memoryCacheMaxSizePercentWhileInBackground] policy configured in [newImageLoader].
      *
      * Why LOW matters: long webtoon sessions pin chapter bytes + decoded strips in RAM,
      * and waiting for RUNNING_CRITICAL meant the reader appeared "full" (stalled loads)
@@ -425,7 +486,10 @@ class App :
         super.onTrimMemory(level)
         val memoryCache = SingletonImageLoader.get(this).memoryCache
         if (level >= TRIM_MEMORY_RUNNING_LOW && memoryCache != null) {
-            memoryCache.maxSize = (memoryCache.maxSize / 2).coerceAtLeast(16L * 1024 * 1024)
+            // Half of the *configured* size, so repeated trims land on the same value instead of
+            // compounding; [restoreImageCacheSize] puts it back on the next foreground.
+            val baseline = imageCacheBaselineMaxSize ?: memoryCache.maxSize
+            memoryCache.maxSize = (baseline / 2).coerceAtLeast(16L * 1024 * 1024)
         }
         if (level >= TRIM_MEMORY_RUNNING_CRITICAL) {
             memoryCache?.clear()

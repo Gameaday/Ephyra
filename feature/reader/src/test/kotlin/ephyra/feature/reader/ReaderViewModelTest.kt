@@ -21,6 +21,7 @@ import ephyra.domain.manga.interactor.SetMangaViewerFlags
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.domain.source.diagnostics.SourceResolutionDiagnostics
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.TrackChapter
@@ -53,6 +54,7 @@ class ReaderViewModelTest {
 
     private val savedState = SavedStateHandle()
     private val sourceManager: SourceManager = mockk(relaxed = true)
+    private val sourceResolutionDiagnostics: SourceResolutionDiagnostics = mockk(relaxed = true)
     private val downloadManager: DownloadManager = mockk(relaxed = true)
     private val downloadProvider: DownloadProvider = mockk(relaxed = true)
     private val imageSaver: ImageSaver = mockk(relaxed = true)
@@ -116,6 +118,7 @@ class ReaderViewModelTest {
         return ReaderViewModel(
             savedState = savedState,
             sourceManager = sourceManager,
+            sourceResolutionDiagnostics = sourceResolutionDiagnostics,
             downloadManager = downloadManager,
             downloadProvider = downloadProvider,
             imageSaver = imageSaver,

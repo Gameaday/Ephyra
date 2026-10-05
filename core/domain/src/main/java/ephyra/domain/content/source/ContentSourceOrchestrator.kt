@@ -13,18 +13,69 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 /**
+ * No engine is bound for [sourceType], and none is bound at all.
+ *
+ * **Why an exception rather than a silent fallback.** The orchestrator previously guaranteed a
+ * fallback existed, because the heuristic engine was always bound. Removing it (`ADR-0015`) made an
+ * empty registry a real and ordinary state — the correct state until Jellyfin lands. Encoding that
+ * as an exception rather than substituting some other engine is the point: a source with no engine
+ * must say so, and naming the type is what makes the fix obvious.
+ *
+ * @property sourceType the unbound type, or null when nothing is bound and no type can be named.
+ */
+class NoEngineBoundException(
+    val sourceType: SourceType?,
+) : IllegalStateException(
+    if (sourceType != null) {
+        "No ContentSourceEngine is bound for SourceType.$sourceType"
+    } else {
+        "No ContentSourceEngine is bound. Sources are provided by extension APKs today; a " +
+            "profile-based source needs an engine registered."
+    },
+)
+
+/**
  * Central orchestrator for resolving content from URLs, implementing [RemoteSource].
  *
  * Implements the "try known → fall back to heuristic → report failure" pipeline.
  * The app core calls this single class; it never touches engines directly.
  * All return values are explicitly wrapped in [Result] structures for Clean UDF execution.
+ *
+ * **Engine selection is a registry, not a `when`.** [enginesByType] is built by asking each engine
+ * which [SourceType]s it serves, so adding a source type means writing one engine and binding it —
+ * not editing an exhaustive branch here. That branch used to exist and every source type added since
+ * had to be remembered by it; `JS_SCRAPER` existed only because the transpiler fed it, and
+ * `REMOTE_EXTENSION` was routed to the script engine on the stated grounds that "remote extensions use
+ * script engine via mapping", which was never true of the APK path.
  */
 class ContentSourceOrchestrator(
     private val profileCache: SourceProfileCache,
-    private val heuristicEngine: ContentSourceEngine,
-    private val scriptEngine: ContentSourceEngine,
+    engines: List<ContentSourceEngine>,
     private val preferenceStore: PreferenceStore,
 ) : RemoteSource {
+
+    /** Every engine by the types it claims, first registration wins on an overlap. */
+    private val enginesByType: Map<SourceType, ContentSourceEngine> = buildMap {
+        engines.forEach { engine ->
+            engine.handles.forEach { type -> putIfAbsent(type, engine) }
+        }
+    }
+
+    /**
+     * The engine every unbound source type falls back to, or `null` when none is bound.
+     *
+     * **Nullable on purpose.** The heuristic engine was removed (`ADR-0015`) and it was the only
+     * bound one, so the registry is legitimately empty until Jellyfin lands. Reading
+     * `enginesByType[HEURISTIC] ?: engines.first()` here would have thrown `NoSuchElementException`
+     * inside a constructor, turning "no engine yet" into a startup crash — the worst possible
+     * encoding of an ordinary state.
+     *
+     * A null fallback is also what makes the failure *legible*: a source with no engine reports that
+     * no engine serves its type, which names the fix, instead of being misrouted somewhere that will
+     * fail less clearly.
+     */
+    private val fallbackEngine: ContentSourceEngine? =
+        enginesByType.values.firstOrNull()
 
     override suspend fun discover(baseUrl: String): Result<SourceProfile> {
         return try {
@@ -37,7 +88,6 @@ class ContentSourceOrchestrator(
                 profile.copy(
                     sourceType = cached.sourceType,
                     enabled = cached.enabled,
-                    scraperFilename = cached.scraperFilename,
                     repositoryId = cached.repositoryId,
                     lastUpdated = System.currentTimeMillis(),
                 )
@@ -193,19 +243,17 @@ class ContentSourceOrchestrator(
     }
 
     /**
-     * Updates the source type of a profile (e.g., switch from heuristic to JS scraper).
+     * Updates the source type of a profile.
      */
     suspend fun setSourceType(
         baseUrl: String,
         sourceType: SourceType,
-        scraperFilename: String? = null,
     ): Result<SourceProfile> {
         return try {
             val profile =
                 profileCache.get(baseUrl) ?: return Result.Error(IllegalArgumentException("Source not found: $baseUrl"))
             val updated = profile.copy(
                 sourceType = sourceType,
-                scraperFilename = scraperFilename,
                 lastUpdated = System.currentTimeMillis(),
             )
             profileCache.save(updated)
@@ -275,30 +323,25 @@ class ContentSourceOrchestrator(
         return profile
     }
 
+    /**
+     * Picks the engine that serves [profile]'s type, or fails legibly.
+     *
+     * @throws NoEngineBoundException when nothing serves the type and nothing is bound at all. Naming
+     *   the unbound type is the whole point: the alternative — quietly substituting some other engine —
+     *   is what turns a missing binding into content from the wrong place.
+     */
     private fun resolveEngineForProfile(profile: SourceProfile): ContentSourceEngine {
-        return when (profile.sourceType) {
-            SourceType.JS_SCRAPER -> scriptEngine
-            SourceType.REMOTE_EXTENSION -> scriptEngine // Remote extensions use script engine via mapping
-            SourceType.REPOSITORY -> heuristicEngine // Repositories use heuristic for now
-            SourceType.HEURISTIC -> heuristicEngine
-        }
+        return enginesByType[profile.sourceType] ?: fallbackEngine
+            ?: throw NoEngineBoundException(profile.sourceType)
     }
 
     private suspend fun resolveEngine(baseUrl: String): ContentSourceEngine {
-        val normalized = normalizeUrl(baseUrl)
-        val mapped = preferenceStore.getString("baseUrl_scraper_mapping_$normalized", "").get()
-
-        // Check if there's a cached profile with explicit source type
         val cached = profileCache.get(baseUrl)
         if (cached != null) {
             return resolveEngineForProfile(cached)
         }
 
-        return if (mapped.isNotBlank()) {
-            scriptEngine
-        } else {
-            heuristicEngine
-        }
+        return fallbackEngine ?: throw NoEngineBoundException(null)
     }
 
     /**
@@ -317,23 +360,37 @@ class ContentSourceOrchestrator(
         val primaryEngine = resolveEngineForProfile(profile)
         return try {
             val result = primary(primaryEngine)
-            if (fallbackOnEmpty != null && primaryEngine !== heuristicEngine && fallbackOnEmpty(result)) {
-                val fallbackResult = fallback(heuristicEngine)
+            if (fallbackOnEmpty != null && fallbackEngine != null && primaryEngine !== fallbackEngine &&
+                fallbackOnEmpty(result)
+            ) {
+                val fallbackResult = fallbackEngine?.let { fallback(it) } ?: result
                 if (fallbackOnEmpty(fallbackResult)) result else fallbackResult
             } else {
                 result
             }
         } catch (primaryEx: Exception) {
-            if (primaryEngine !== heuristicEngine) {
-                fallback(heuristicEngine)
+            // With no fallback engine bound, the primary failure is the only thing to report. Rethrowing
+            // it preserves the real cause, which is what the caller needs; there is nothing to fall
+            // back to, so falling back would mean inventing a substitute.
+            if (fallbackEngine != null && primaryEngine !== fallbackEngine) {
+                fallback(fallbackEngine)
             } else {
                 throw primaryEx
             }
         }
     }
 
+    /**
+     * The type an engine's own discovery result should be recorded under.
+     *
+     * Previously `if (engine === scriptEngine) JS_SCRAPER else HEURISTIC`, which could only ever
+     * produce two of the four types and silently filed a repository as a heuristic profile. It now
+     * reads the engine's declaration: a single-type engine names its type, and an engine claiming
+     * several types (or none) records as [SourceType.REMOTE_EXTENSION] — the only type with a
+     * working provider behind it today.
+     */
     private fun inferSourceType(engine: ContentSourceEngine): SourceType {
-        return if (engine === scriptEngine) SourceType.JS_SCRAPER else SourceType.HEURISTIC
+        return engine.handles.singleOrNull() ?: SourceType.REMOTE_EXTENSION
     }
 
     private suspend fun updateProfileHealth(profile: SourceProfile, success: Boolean) {

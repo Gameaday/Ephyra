@@ -5,9 +5,7 @@ import app.cash.turbine.test
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.Result
-import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceType
-import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.content.source.interactor.GetAvailableSources
 import ephyra.domain.content.source.interactor.RemoveCustomSource
 import ephyra.domain.content.source.interactor.UnifiedSource
@@ -18,7 +16,6 @@ import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.Extensions
 import ephyra.domain.extension.model.InstallStep
 import ephyra.domain.extension.service.ExtensionManager
-import ephyra.domain.extension.service.ExtensionTranspiler
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
@@ -51,7 +48,6 @@ class ExtensionsViewModelTest {
 
     private val context: Application = mockk(relaxed = true)
     private val getAvailableSources: GetAvailableSources = mockk(relaxed = true)
-    private val addCustomSource: AddCustomSource = mockk(relaxed = true)
     private val updateCustomSource: UpdateCustomSource = mockk(relaxed = true)
     private val removeCustomSource: RemoveCustomSource = mockk(relaxed = true)
     private val getExtensionRepo: GetExtensionRepo = mockk(relaxed = true)
@@ -59,8 +55,6 @@ class ExtensionsViewModelTest {
     private val deleteExtensionRepo: DeleteExtensionRepo = mockk(relaxed = true)
     private val updateExtensionRepo: UpdateExtensionRepo = mockk(relaxed = true)
     private val getExtensionsByType: GetExtensionsByType = mockk(relaxed = true)
-    private val extensionTranspiler: ExtensionTranspiler = mockk(relaxed = true)
-    private val scraperUpdater: ScraperScriptUpdater = mockk(relaxed = true)
     private val preferenceStore: PreferenceStore = mockk(relaxed = true)
     private val sourcePreferences: SourcePreferences = mockk(relaxed = true)
     private val trustExtension: TrustExtension = mockk(relaxed = true)
@@ -91,7 +85,6 @@ class ExtensionsViewModelTest {
     private fun createViewModel() = ExtensionsViewModel(
         context,
         getAvailableSources,
-        addCustomSource,
         updateCustomSource,
         removeCustomSource,
         getExtensionRepo,
@@ -99,8 +92,6 @@ class ExtensionsViewModelTest {
         deleteExtensionRepo,
         updateExtensionRepo,
         getExtensionsByType,
-        extensionTranspiler,
-        scraperUpdater,
         preferenceStore,
         sourcePreferences,
         trustExtension,
@@ -196,12 +187,15 @@ class ExtensionsViewModelTest {
     }
 
     @Test
-    fun `RemoveSource event calls removeCustomSource if source is custom`() = runTest {
+    fun `RemoveSource event calls removeCustomSource if source is not extension-backed`() = runTest {
+        // REPOSITORY, not HEURISTIC: the heuristic type was retired (`ADR-0015`) and it used to be the
+        // only non-extension type, so this branch had no other way to be reached. REPOSITORY is now
+        // that case -- a source the app serves itself rather than one an extension APK provides.
         val customSource = UnifiedSource(
             id = 456L,
             name = "Custom Source",
             baseUrl = "https://custom.example.com",
-            sourceType = SourceType.JS_SCRAPER,
+            sourceType = SourceType.REPOSITORY,
             enabled = true,
             extensionId = null,
             lastHealthCheck = 0L,

@@ -32,11 +32,10 @@ class SourceProfileCacheTest {
         val profile = SourceProfile(
             baseUrl = "https://mangadex.org",
             contentType = ContentType.MANGA,
-            sourceType = SourceType.JS_SCRAPER,
+            sourceType = SourceType.REMOTE_EXTENSION,
             displayName = "MangaDex",
             enabled = true,
             verified = true,
-            scraperFilename = "mangadex_scraper.js",
             rateLimitMs = 500L,
             authType = AuthType.NONE,
         )
@@ -48,11 +47,10 @@ class SourceProfileCacheTest {
         val result = loaded!!
         assertEquals("https://mangadex.org", result.baseUrl)
         assertEquals(ContentType.MANGA, result.contentType)
-        assertEquals(SourceType.JS_SCRAPER, result.sourceType)
+        assertEquals(SourceType.REMOTE_EXTENSION, result.sourceType)
         assertEquals("MangaDex", result.displayName)
         assertEquals(true, result.enabled)
         assertEquals(true, result.verified)
-        assertEquals("mangadex_scraper.js", result.scraperFilename)
         assertEquals(500L, result.rateLimitMs)
         assertEquals(AuthType.NONE, result.authType)
     }
@@ -97,8 +95,24 @@ class SourceProfileCacheTest {
         assertEquals(setOf("https://mangadex.org", "https://manganato.com"), all.map { it.baseUrl }.toSet())
     }
 
+    /**
+     * No sources configured is not "these three sites".
+     *
+     * This test used to assert the opposite — that `getAllProfiledDomains` returned 3 defaults
+     * before any profiling — which is how the app came to list mangadex.org, manganato.com and
+     * asuratoons.com as available sources despite having no way to serve them. `ADR-0015` removed the
+     * only engine that could create a profile, so the real list is now always empty, and the fallback
+     * was the permanent answer rather than a fallback.
+     *
+     * An empty answer is the honest one: the Sources list renders empty until the user installs an
+     * extension APK.
+     */
     @Test
-    fun `getAllProfiledDomains returns defaults before any profiling`() = runTest {
-        assertEquals(3, cache.getAllProfiledDomains().size)
+    fun `getAllProfiledDomains is empty when nothing is profiled`() = runTest {
+        assertEquals(
+            emptySet<String>(),
+            cache.getAllProfiledDomains(),
+            "no profile can be created, so inventing domains here would list sources that cannot load",
+        )
     }
 }

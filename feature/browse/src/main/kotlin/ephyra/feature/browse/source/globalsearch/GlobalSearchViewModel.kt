@@ -51,8 +51,11 @@ class GlobalSearchViewModel @Inject constructor(
     val suggestions: StateFlow<List<String>> = combine(
         state.map { it.searchQuery.orEmpty().trim() }.distinctUntilChanged(),
         getLibraryManga.subscribe(),
-    ) { query, library ->
-        val recents = recentSearches.get().filterNot { it.equals(query, ignoreCase = true) }
+        // Reactive: a freshly recorded search should appear without waiting for a
+        // query or library change to re-trigger the combine.
+        recentSearches.observe(),
+    ) { query, library, recordedRecents ->
+        val recents = recordedRecents.filterNot { it.equals(query, ignoreCase = true) }
         if (query.isBlank()) {
             recents.take(SUGGESTION_LIMIT)
         } else {

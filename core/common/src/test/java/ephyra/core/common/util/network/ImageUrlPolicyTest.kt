@@ -114,7 +114,6 @@ class ImageUrlPolicyTest {
         // mirror, and the policy has no business second-guessing an address shape anyway.
         assertNull(ImageUrlPolicy.defectOf("http://[2001:db8::1]/1.jpg"))
     }
-}
 
     @ParameterizedTest
     @ValueSource(
@@ -137,8 +136,7 @@ class ImageUrlPolicyTest {
         ],
     )
     fun `a URL that cannot address a host is rejected with a stated reason`(url: String) {
-        val defect = ImageUrlPolicy.defectOf(url)
-        assertNotNull(defect, "$url cannot address a host")
+        val defect = requireNotNull(ImageUrlPolicy.defectOf(url)) { "$url cannot address a host" }
         assertFalse(defect.isBlank(), "a rejection must say why; an unexplained failure is what the user sees instead")
     }
 

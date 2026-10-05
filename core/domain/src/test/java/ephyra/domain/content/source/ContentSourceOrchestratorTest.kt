@@ -22,23 +22,22 @@ import org.junit.jupiter.api.Test
  * uses to search, obtain details, fetch chapters/pages, and manage sources.
  *
  * This is where "none of the ways to get content work" surfaces: it routes
- * each request to the correct engine (heuristic vs. script), enforces enabled
+ * each request to the correct engine (heuristic vs. registered), enforces enabled
  * state, and tracks source health. If routing or health tracking regresses,
  * remote content silently stops resolving.
  */
 class ContentSourceOrchestratorTest {
 
-    private val heuristic = FakeContentSourceEngine()
-    private val script = FakeContentSourceEngine()
+    private val heuristic = FakeContentSourceEngine(handles = setOf(SourceType.REMOTE_EXTENSION))
+    private val repository = FakeContentSourceEngine(handles = setOf(SourceType.REPOSITORY))
 
     private val orchestrator = ContentSourceOrchestrator(
         profileCache = SourceProfileCache(FakePreferenceStore(), Json { ignoreUnknownKeys = true }),
-        heuristicEngine = heuristic,
-        scriptEngine = script,
+        engines = listOf(heuristic, repository),
         preferenceStore = FakePreferenceStore(),
     )
 
-    private fun profile(baseUrl: String, sourceType: SourceType = SourceType.HEURISTIC) =
+    private fun profile(baseUrl: String, sourceType: SourceType = SourceType.REMOTE_EXTENSION) =
         SourceProfile(baseUrl = baseUrl, contentType = ContentType.MANGA, sourceType = sourceType, enabled = true)
 
     private fun item(title: String) = ContentItem(
@@ -54,6 +53,31 @@ class ContentSourceOrchestratorTest {
         thumbnailUrl = null,
         contentType = ContentType.MANGA,
     )
+
+    // ── engine registry ───────────────────────────────────────────────────
+
+    /**
+     * The reason selection is a registry: a source type with no engine bound resolves to the
+     * heuristic fallback rather than to nothing.
+     *
+     * This is what Jellyfin will rely on. When `REPOSITORY` had no engine, the old `when` sent it to
+     * the heuristic engine silently, so a Jellyfin profile looked configured and worked like HTML
+     * scraping that happened to return nothing.
+     */
+    @Test
+    fun `a source type with no registered engine falls back to the heuristic engine`() = runTest {
+        // `REMOTE_EXTENSION` has no engine in this registry — only REPOSITORY and HEURISTIC are claimed.
+        orchestrator.discover("https://unbound.example")
+        orchestrator.setSourceType("https://unbound.example", SourceType.REMOTE_EXTENSION)
+        heuristic.searchHandler = { query -> listOf(item("Heuristic:$query")) }
+
+        val result = orchestrator.search("https://unbound.example", "q", 1)
+
+        assertTrue(result is Result.Success)
+        assertEquals(listOf("Heuristic:q"), result.getOrThrow().map { it.title })
+        assertEquals(1, heuristic.searchCalls)
+        assertEquals(0, repository.searchCalls)
+    }
 
     // ── discover ─────────────────────────────────────────────────────────
 
@@ -83,16 +107,16 @@ class ContentSourceOrchestratorTest {
     }
 
     @Test
-    fun `search routes to script engine for JS_SCRAPER profile`() = runTest {
+    fun `search routes to the registered engine for a REPOSITORY profile`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.JS_SCRAPER, "mangadex_scraper.js")
-        script.searchHandler = { query -> listOf(item("Script:$query")) }
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
+        repository.searchHandler = { query -> listOf(item("Repo:$query")) }
 
         val result = orchestrator.search("https://mangadex.org", "Naruto", 1)
 
         assertTrue(result is Result.Success)
-        assertEquals(listOf("Script:Naruto"), result.getOrThrow().map { it.title })
-        assertEquals(1, script.searchCalls)
+        assertEquals(listOf("Repo:Naruto"), result.getOrThrow().map { it.title })
+        assertEquals(1, repository.searchCalls)
         assertEquals(0, heuristic.searchCalls)
     }
 
@@ -117,40 +141,40 @@ class ContentSourceOrchestratorTest {
     }
 
     @Test
-    fun `search falls back to heuristic engine when script engine throws exception`() = runTest {
+    fun `search falls back to the heuristic engine when the registered engine throws`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.JS_SCRAPER, "broken_scraper.js")
-        script.searchHandler = { throw IllegalStateException("Script error") }
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
+        repository.searchHandler = { throw IllegalStateException("Engine error") }
         heuristic.searchHandler = { listOf(item("Recovered:Heuristic")) }
 
         val result = orchestrator.search("https://mangadex.org", "One Piece", 1)
 
         assertTrue(result is Result.Success)
         assertEquals(listOf("Recovered:Heuristic"), result.getOrThrow().map { it.title })
-        assertEquals(1, script.searchCalls)
+        assertEquals(1, repository.searchCalls)
         assertEquals(1, heuristic.searchCalls)
     }
 
     @Test
-    fun `search falls back to heuristic engine when script engine returns empty list`() = runTest {
+    fun `search falls back to the heuristic engine when the registered engine returns empty`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.JS_SCRAPER, "outdated_scraper.js")
-        script.searchHandler = { emptyList() }
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
+        repository.searchHandler = { emptyList() }
         heuristic.searchHandler = { listOf(item("Recovered:Heuristic")) }
 
         val result = orchestrator.search("https://mangadex.org", "One Piece", 1)
 
         assertTrue(result is Result.Success)
         assertEquals(listOf("Recovered:Heuristic"), result.getOrThrow().map { it.title })
-        assertEquals(1, script.searchCalls)
+        assertEquals(1, repository.searchCalls)
         assertEquals(1, heuristic.searchCalls)
     }
 
     @Test
-    fun `getItem falls back to heuristic engine when script engine fails`() = runTest {
+    fun `getItem falls back to the heuristic engine when the registered engine fails`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.JS_SCRAPER, "broken_scraper.js")
-        script.getItemHandler = { throw IllegalStateException("Scraper failed") }
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
+        repository.getItemHandler = { throw IllegalStateException("Scraper failed") }
         heuristic.getItemHandler = { item("Recovered Detail") }
 
         val result = orchestrator.getItem("https://mangadex.org", "/manga/1")
@@ -160,10 +184,10 @@ class ContentSourceOrchestratorTest {
     }
 
     @Test
-    fun `getChapters falls back to heuristic engine when script engine returns empty`() = runTest {
+    fun `getChapters falls back to the heuristic engine when the registered engine returns empty`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.JS_SCRAPER, "outdated_scraper.js")
-        script.chaptersHandler = { emptyList() }
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
+        repository.chaptersHandler = { emptyList() }
         val chapter = ContentUnit(
             id = -1L,
             contentItemId = 1L,

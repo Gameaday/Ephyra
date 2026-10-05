@@ -3,16 +3,26 @@ package ephyra.feature.reader.loader
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.network.ImageUrlPolicy
-import ephyra.core.common.util.network.MalformedImageUrlException
+import ephyra.core.common.util.network.LayeredFailure
+import ephyra.core.common.util.network.PageLoadRecovery
+import ephyra.core.common.util.network.PageLoadRecoveryAction
+import ephyra.core.common.util.network.PageLoadRecoveryDecision
+import ephyra.core.common.util.network.ReResolvePacer
 import ephyra.core.common.util.network.TransientErrors
+import ephyra.core.common.util.network.withContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.source.online.PageListDiagnostics
+import eu.kanade.tachiyomi.source.online.needsFreshPageList
+import eu.kanade.tachiyomi.source.online.resolvePageImage
+import eu.kanade.tachiyomi.source.online.resolvesOwnPageImages
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +34,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import logcat.LogPriority
 import java.io.IOException
 import java.util.concurrent.PriorityBlockingQueue
@@ -32,6 +44,37 @@ import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.math.min
+
+/**
+ * Fresh page addresses for one chapter load, fetched at most once.
+ *
+ * **Why a refetch and not `getImageUrl`.** When the recovery ladder drops an indicted URL the page is
+ * left with no address, and the next attempt asks the source for a replacement. For a source that
+ * populates `Page.imageUrl` in `getPageList` — which is every 1.6 extension, because upstream removed
+ * the per-page chain from the extension API — **there is no per-page call that returns one**. Making
+ * one runs an inherited default that throws, from a method the source does not implement.
+ *
+ * This is the reported MangaDex failure, in full: its at-home tokens expire after five minutes, so a
+ * long read drops them. Clearing the field was correct — a dead token should not be reused — but there
+ * was no way back from it, and a chapter that had listed perfectly could not be finished.
+ *
+ * Memoised because pages load concurrently: one expired token should cost a page-list fetch for the
+ * chapter, not one per page.
+ */
+private class FreshPageAddresses(
+    private val source: HttpSource,
+    private val chapter: Chapter,
+) {
+    private val mutex = Mutex()
+    private var pages: List<Page>? = null
+
+    suspend fun at(index: Int): String? {
+        val list = mutex.withLock {
+            pages ?: source.getPageList(chapter.toSChapter()).also { pages = it }
+        }
+        return list.getOrNull(index)?.imageUrl
+    }
+}
 
 /**
  * Loader used to load chapters from an online source.
@@ -121,6 +164,26 @@ internal class HttpPageLoader(
     @Volatile
     private var cacheHadMissingImageUrls = true
 
+    /**
+     * Describes the page list this loader holds, for the rejection report.
+     *
+     * An instance field rather than a static because the reader prefetches neighbouring chapters: a
+     * shared counter describes whichever chapter was fetched last, not the one that failed. Two lines
+     * of one device report contradicted each other while both were true of different objects, because
+     * they came from different chapters.
+     */
+    private var pageListOrigin: String = "<no page list loaded yet>"
+
+    /**
+     * Spaces re-resolutions across this chapter's pages.
+     *
+     * Per loader rather than per process, because one chapter failing together is the observed
+     * shape; correlating across chapters would need state with a lifetime nobody owns. The work
+     * count is already bounded by the worker pool, so what this prevents is those few workers
+     * asking the source the same question at the same instant.
+     */
+    private val reResolvePacer = ReResolvePacer()
+
     /** Guards [promoteToActive] so the promotion is applied at most once. */
     @OptIn(ExperimentalAtomicApi::class)
     private val promoted = AtomicBoolean(!isPreloadOnly)
@@ -164,6 +227,46 @@ internal class HttpPageLoader(
     override var isLocal: Boolean = false
 
     /**
+     * Fetches the page list from the source and persists it.
+     *
+     * Extracted from the cache-miss arm of [getPages] because there are now two ways to reach it —
+     * no cached entry, or a cached entry that failed the URL contract — and they must behave
+     * identically. In particular both must persist, so a rejected list is *overwritten* rather than
+     * left on disk to be rejected again on the next open.
+     */
+    private suspend fun fetchAndPersist(domainChapter: Chapter): List<Page> {
+        val networkPages = source.getPageList(chapter.chapter.toSChapter())
+        // What the source actually returned, counted rather than asserted. Every fixture in
+        // `HttpPageLoaderUrlResolutionTest` builds `Page` with an image URL in `getPageList`, so
+        // passing tests only proved the app agrees with a model — never that a real 1.6 source
+        // populates the field the way the fixtures assume it does.
+        //
+        // Recorded on `PageListDiagnostics` rather than only logged, because the reported failure is
+        // a contradiction between two facts about this call — `getPageList` is declared, yet the pages
+        // carry no address — and the resolver cannot see this one. Logging it left the question
+        // answerable only by someone reading logcat; putting it on the diagnostic means the *next
+        // error message* carries the answer with it.
+        val withAddress = networkPages.count { !it.imageUrl.isNullOrEmpty() }
+        PageListDiagnostics.record(networkPages.size, withAddress)
+        logcat(LogPriority.INFO) {
+            "getPageList returned ${networkPages.size} page(s) for '${domainChapter.name}', " +
+                "$withAddress with an image address, source=${source.javaClass.name}, " +
+                "declaresGetPageList=${source.capabilities.declaringClassOf("getPageList")}"
+        }
+        // Persist immediately so a crash before recycle() doesn't lose the page list.
+        scope.launchIO {
+            try {
+                chapterCache.putPageListToCache(domainChapter, networkPages)
+            } catch (ex: Throwable) {
+                if (ex is CancellationException) throw ex
+                logcat(LogPriority.WARN, ex) { "Failed to persist page list to cache after network fetch" }
+            }
+        }
+        // cacheHadMissingImageUrls stays true (network pages have no imageUrls yet)
+        return networkPages
+    }
+
+    /**
      * Returns the page list for a chapter. It tries to return the page list from the local cache,
      * otherwise fallbacks to network.
      *
@@ -175,27 +278,41 @@ internal class HttpPageLoader(
     override suspend fun getPages(): List<ReaderPage> {
         check(!isRecycled)
         val domainChapter = chapter.chapter
+        var isCacheHit = false
+
         val pages = try {
             val cachedPages = chapterCache.getPageListFromCache(domainChapter)
-            // All image URLs are already resolved: the recycle() save can be skipped.
-            cacheHadMissingImageUrls = cachedPages.any { it.imageUrl.isNullOrEmpty() }
-            cachedPages
+            // A cache hit is only a hit if the list it holds still satisfies the URL contract. The
+            // reported MangaDex failure lived here: a list written by a bad pass was served verbatim
+            // on every subsequent open, the source was never asked, and no fix downstream of the
+            // read could take effect. See `cachedPagesAreUsable`.
+            if (cachedPagesAreUsable(cachedPages, source.baseUrl)) {
+                // All image URLs are already resolved: the recycle() save can be skipped.
+                isCacheHit = true
+                cacheHadMissingImageUrls = cachedPages.any { it.imageUrl.isNullOrEmpty() }
+                cachedPages
+            } else {
+                logcat(LogPriority.WARN) {
+                    "Discarding a cached page list for '${domainChapter.name}' that fails the URL " +
+                        "contract; refetching from the source"
+                }
+                fetchAndPersist(domainChapter)
+            }
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
             }
-            val networkPages = source.getPageList(chapter.chapter.toSChapter())
-            // Persist immediately so a crash before recycle() doesn't lose the page list.
-            scope.launchIO {
-                try {
-                    chapterCache.putPageListToCache(domainChapter, networkPages)
-                } catch (ex: Throwable) {
-                    if (ex is CancellationException) throw ex
-                    logcat(LogPriority.WARN, ex) { "Failed to persist page list to cache after network fetch" }
-                }
-            }
-            // cacheHadMissingImageUrls stays true (network pages have no imageUrls yet)
-            networkPages
+            fetchAndPersist(domainChapter)
+        }
+        // Which list this loader ended up holding. Reported by the loader rather than read from a
+        // static on `PageListDiagnostics`, because the reader prefetches neighbouring chapters and a
+        // static describes whichever list was fetched most recently — not the chapter whose page had
+        // just failed. Two lines of one report then contradicted each other while both were true of
+        // different objects.
+        pageListOrigin = buildString {
+            append("from ").append(if (isCacheHit) "cache" else "source fetch")
+            append(", ").append(pages.size).append(" page(s) held, ")
+            append(pages.count { !it.imageUrl.isNullOrEmpty() }).append(" with an address")
         }
         return pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
@@ -206,9 +323,39 @@ internal class HttpPageLoader(
     /**
      * Loads a page through the queue. Handles re-enqueueing pages if they were evicted from the cache.
      */
+    // One per chapter load, shared by every page: pages load concurrently, and an expired at-home
+    // token should cost a page-list fetch for the chapter rather than one per page.
+    private val freshAddresses = FreshPageAddresses(source, chapter.chapter)
+
     override suspend fun loadPage(page: ReaderPage) = withIOContext {
         check(!isRecycled)
         val imageUrl = page.imageUrl
+
+        // A page whose address the ladder has indicted gets a replacement from a fresh page list,
+        // before anything else looks at it. This is the only place a 1.6 source keeps addresses:
+        // `getImageUrl` would be a call the source does not implement.
+        //
+        // **The fetch is network I/O and must not be fatal to the reader.** It is made here, on
+        // the viewer's own coroutine, so an exception that escapes — a connection reset by the
+        // source's API being the reported one — killed that coroutine and with it the reader
+        // activity, presenting as a dialog and a kick back to the series screen rather than a
+        // failed page. A page that cannot get a replacement stays flagged and falls back to the
+        // ladder's own resolution inside `internalLoadPage`, whose recovery ladder is the one
+        // place that already knows how to fail a *page* rather than a *reader*.
+        if (page.needsFreshAddress) {
+            runCatching { freshAddresses.at(page.index) }
+                .onSuccess { replacement ->
+                    page.imageUrl = replacement
+                    page.needsFreshAddress = false
+                }
+                .onFailure { e ->
+                    if (e is CancellationException) throw e
+                    logcat(LogPriority.WARN, e) {
+                        "Could not obtain a replacement address for page ${page.number} of " +
+                            "${chapter.chapter.name}; leaving it to the recovery ladder"
+                    }
+                }
+        }
 
         // Check if the image has been deleted
         if (page.status == Page.State.Ready && imageUrl != null && !chapterCache.isImageInCache(imageUrl)) {
@@ -428,25 +575,30 @@ internal class HttpPageLoader(
         page.clearLoadedImage()
         page.stream = null
         if (dropImageUrl) {
-            page.imageUrl = null
+            // Flagged rather than cleared: the address is replaced from a fresh page list when the
+            // page is next loaded, which is the only place a 1.6 source keeps them. Clearing it
+            // instead leaves the page asking a method the source does not implement.
+            page.needsFreshAddress = true
         }
         page.status = Page.State.Queue
     }
 
     /**
      * Loads the page, retrieving the image URL and downloading the image if necessary.
-     * Automatically retries on transient network errors (IO errors, HTTP 429 and 5xx) up to
-     * [MAX_PAGE_LOAD_RETRIES] times with exponential backoff before marking the page as failed.
-     * Downloaded images are stored in the chapter cache.
+     * Failed loads are retried on a jittered backoff, up to
+     * [PageLoadRecovery.DEFAULT_MAX_RETRIES] times, before the page is marked failed. Downloaded
+     * images are stored in the chapter cache.
      *
      * **Why a retry does not always keep the URL.** Whether the next attempt re-requests the same
-     * URL or asks the source for a new one is decided by [TransientErrors.shouldReResolveUrl], not
-     * by a local attempt counter. A counter cannot tell the two apart: it re-resolves after a `429`
-     * (where the same URL is correct and re-resolving costs an extra source round-trip) and it
-     * re-resolves after a `403` or a name that did not resolve only from the *second* attempt — so
-     * the first attempt of a user's own Retry re-requested the URL that had just failed. For a
-     * signed URL or a dead image CDN host that attempt is a verbatim repeat of a request known to
-     * fail, which is what made "even after retry" true: see `DEF-023`.
+     * URL or asks the source for a new one is [PageLoadRecovery]'s decision, from
+     * [TransientErrors.shouldReResolveUrl] — not a local attempt counter. A counter cannot tell the
+     * two apart: it re-resolves after a `429` (where the same URL is correct and re-resolving costs
+     * an extra source round-trip) and it re-resolves after a `403` or a name that did not resolve
+     * only from the *second* attempt — so the first attempt of a user's own Retry re-requested the
+     * URL that had just failed. For a signed URL or a dead image CDN host that attempt is a verbatim
+     * repeat of a request known to fail, which is what made "even after retry" true: see `DEF-023`.
+     * The same owner now serves the downloader, which previously re-requested the identical URL no
+     * matter what the classifier said: see `DEF-028`.
      *
      * If a higher-priority page enters the queue while this page is still waiting to start or
      * between the URL-fetch and image-download phases, this method yields immediately: the page
@@ -464,43 +616,81 @@ internal class HttpPageLoader(
      * @param priority the queue priority at which this page was dequeued.
      */
     private suspend fun internalLoadPage(page: ReaderPage, priority: Int) {
-        var retries = 0
-        // A URL this load has already found structurally unusable. Held in the method rather than
-        // on the page because it is a fact about *this attempt sequence*, not about the page: the
-        // page's own answer to "is my URL any good" is that it no longer has one.
-        //
-        // Its only use is to stop asking the source for a string we have already proved cannot
-        // address a host. See the guard below.
-        var rejectedUrl: String? = null
+        // One owner for the decision, so the downloader cannot drift from the reader on what to do
+        // about a failure. It used to: the reader dropped a URL the classifier indicted and asked
+        // the source again, while the downloader retried the identical string against the same
+        // classifier — so a chapter could read and fail to download. See `PageLoadRecovery`.
+        val recovery = PageLoadRecovery()
         while (true) {
             try {
                 // Yield to a higher-priority page before starting the URL fetch.
                 if (requeueAndYield(page, priority)) return
 
+                // Clear the previous attempt's progress. `Page.progress` is written by
+                // `ProgressListener` as bytes arrive and is not reset anywhere on this path, so a
+                // download that died at 47% left the retry ladder showing a *frozen determinate*
+                // spinner at 47% -- a status that is confidently wrong. Zero renders as the
+                // indeterminate spinner, which is what is actually true: the next attempt has not
+                // started transferring yet. `Downloader` already does this; the reader did not.
+                page.progress = 0
+
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
-                    val resolved = source.getImageUrl(page)
+                    // Paced, but *only* when this is a re-resolution. The first resolution of a page
+                    // is on the hot path — the user is waiting for that image, and the page they are
+                    // waiting on competes with the preload window for the same few workers — so
+                    // spacing those out taxes every chapter open to solve a problem that only exists
+                    // after something has already failed. Measured on a six-page preload window,
+                    // pacing unconditionally added 1.2s, and up to 400ms to the page being waited
+                    // for. `isRetrySequence` is the guard, and it is the reason it is asked here
+                    // rather than inferred.
+                    if (recovery.isRetrySequence) {
+                        reResolvePacer.paceReResolution().takeIf { it > 0 }?.let { delay(it) }
+                    }
+                    // The extension ABI — which field holds the address, whether this source customises
+                    // the chain, how to ask it — lives in one place, `resolvePageImage`. It used to be
+                    // spelled out here, and separately in `Downloader`, and both had to be corrected
+                    // more than once. A Jellyfin or local-archive consumer will not learn these rules
+                    // at all; it asks one question.
+                    //
+                    // What stays here is page-load *policy*, which depends on state this cannot see:
+                    // pacing above, and the repeat-address check below.
+                    val resolved = source.resolvePageImage(page, pageListOrigin).value
                     // A source that hands back the identical string we have already rejected is not
                     // going to produce a different one on the next call either, and every call it
                     // does make is a round-trip spent learning nothing. Reporting the defect now
                     // ends the ladder sooner and reports the *cause* rather than a resolver error
                     // about a name that can never exist.
-                    if (resolved == rejectedUrl) {
+                    //
+                    // Re-judged here, redundantly, on purpose: this is the branch that decides whether
+                    // a *repeat* address is worth another round-trip, so it must answer from the value
+                    // it is about to store rather than inherit an answer computed for a different
+                    // string.
+                    if (recovery.isKnownUnusable(resolved)) {
                         ImageUrlPolicy.requireUsable(resolved)
                     }
                     page.imageUrl = resolved
                 }
+                // **`page.imageUrl` is opaque to the host once populated.** It is *not* resolved or
+                // rewritten here, and nothing else in this loader may write into it. The source
+                // that produced it owns its interpretation: MangaDex — the canonical 1.6
+                // extension — stores a **relative path** (`/data/<hash>/<file>`) in `imageUrl`
+                // and an at-home cache key in `url`, and its own overridden `imageRequest` joins
+                // them (`GET(mdAtHomeServerUrl + page.imageUrl)`). A previous version of this
+                // loader resolved `imageUrl` against `baseUrl` and wrote the result back before
+                // fetching, so MangaDex's request became
+                // `"<at-home-host>https://mangadex.org/data/..."` — two URLs spliced into a host
+                // that can never resolve — and **every page of every chapter failed identically**.
+                // Upstream Mihon never writes into a populated `Page.imageUrl`, and neither do we.
+                //
+                // Sources that do *not* override `imageRequest` lose nothing: the base
+                // `HttpSource.imageRequest` resolves at the request boundary (see
+                // `PageImageAddress`), where a source override inherits nothing by design. The
+                // only consumers of the raw value below are the cache key and the persisted page
+                // list, which must both be the same string the source produced.
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
 
-                // Ask whether the URL is worth requesting *before* requesting it. A URL that cannot
-                // address a host — `cmxd98sb0x3yprd.mangadex.network,https`, the splicing artifact
-                // behind the missed-image report — is served by OkHttp and handed to DNS, because a
-                // comma is not a forbidden host character. That request can only fail, and its
-                // resolver message is what the user was shown. Classified as a URL fault, it takes
-                // the same path as a revoked signed URL: the URL is dropped and the source is asked
-                // again, which is the one thing that can actually recover it.
-                ImageUrlPolicy.requireUsable(imageUrl)
-                rejectedUrl = null
+                recovery.onResolved(imageUrl)
 
                 // Yield again after the URL fetch (which can be slow) and before the potentially
                 // large image download, giving the urgent page a chance to start promptly.
@@ -552,55 +742,53 @@ internal class HttpPageLoader(
                 return
             } catch (e: Throwable) {
                 if (e is CancellationException) throw e
-                // One shared definition, so the reader and the downloader cannot drift on what
-                // counts as retryable. The reader's own copy treated 403 as permanent, which for a
-                // signed or time-limited image URL is exactly backwards: the URL is stale, the
-                // source will issue a different one, and the page failed after a full backoff
-                // ladder for a request that could never succeed.
-                if (TransientErrors.shouldReResolveUrl(e)) {
-                    // The URL, not the connection, is what failed — a revoked signed URL, or a
-                    // host that does not resolve. Drop it, so the next attempt has to ask the
-                    // source; the only way that request can differ from the one that just failed
-                    // is if the URL it uses is not the URL that failed.
-                    //
-                    // Dropping it here, at the point of failure, rather than at the start of the
-                    // next attempt, is what makes this survive a yield: [requeueAndYield] returns
-                    // out of this loop and a fresh call starts with a new attempt counter, so a
-                    // decision held in a local would be lost and the page would go back to the URL
-                    // that just failed. The page simply stops holding a URL known to be bad, and
-                    // every path back in — this ladder, [loadPage], the user's Retry — re-resolves
-                    // for the same reason. [prepareForReload] is the same rule applied when the
-                    // reload starts instead of the failure.
-                    //
-                    // Deliberately not gated on [TransientErrors.isTransient] either. This is a
-                    // verdict on the URL, not on the retry, and the two are not the same question:
-                    // `isTransient` reads only the outermost exception on purpose, so a source
-                    // extension wrapping a resolver failure in its own error type is correctly
-                    // permanent *and* still leaves the page not holding the URL that failed. It
-                    // also keeps a known-bad URL out of the page list [recycle] persists, so the
-                    // next open of this chapter asks the source rather than starting from a URL
-                    // that is already known to be dead. [recycle] re-derives whether a save is
-                    // needed for exactly this reason: `cacheHadMissingImageUrls` describes the
-                    // list as it was loaded and cannot see a URL dropped here.
-                    page.imageUrl = null
-                    // Remember a URL we rejected *structurally*, so the next attempt can tell a
-                    // source that handed back the same unusable string from one that handed back a
-                    // different URL. Both warrant another resolution; only the second can succeed.
-                    // Keyed off the exception rather than off a re-run of the policy so that the
-                    // recorded string is exactly the one that was rejected.
-                    if (e is MalformedImageUrlException) {
-                        rejectedUrl = e.url
-                    }
+
+                // One decision, one owner, shared with the downloader: retry this URL, ask the
+                // source for a different one, or stop. `PageLoadRecovery` also decides whether the
+                // failed URL is dropped from the page — including when the answer is "stop", because
+                // a URL the classifier has indicted is dead either way, and leaving it on the page
+                // would let it reach the list `recycle` persists, so the next open of this chapter
+                // would begin by requesting an address already known to be bad.
+                //
+                // Dropping it here, at the point of failure, rather than at the start of the next
+                // attempt, is what makes this survive a yield: [requeueAndYield] returns out of this
+                // loop and a fresh call starts a fresh attempt sequence, so a decision held in a
+                // local would be lost and the page would go back to the URL that just failed.
+                //
+                // The old `rejectedUrl = null` on every successful resolve is now
+                // `recovery.onResolved(imageUrl)`, at the same point in the same order, so a source
+                // that fixes itself is not refused forever on the strength of an older failure.
+                val decision = recovery.onFailure(page.imageUrl, e)
+                if (decision.dropUrl) {
+                    // Replaced rather than cleared, and flagged as well: clearing leaves the page
+                    // asking `getImageUrl` for a new address, which for a source that populates
+                    // `Page.imageUrl` in `getPageList` is a call it does not implement — the reported
+                    // failure. The replacement has to come from a page list, the only place those
+                    // addresses exist.
+                    page.imageUrl = freshAddresses.at(page.index)
+                    page.needsFreshAddress = false
                 }
-                if (TransientErrors.isTransient(e) && retries < MAX_PAGE_LOAD_RETRIES) {
-                    retries++
-                    delay(
-                        (PAGE_LOAD_RETRY_DELAY_MS * (1L shl (retries - 1))).coerceAtMost(MAX_PAGE_LOAD_RETRY_DELAY_MS),
-                    )
-                } else {
-                    page.status = Page.State.Error(e)
+
+                if (decision.action == PageLoadRecoveryAction.GIVE_UP) {
+                    // The only place that knows what was tried. Without it a page that gave up after
+                    // three hosts reports one host's error and the other two are unrecorded anywhere,
+                    // which is what made the original report a puzzle to reason about rather than a
+                    // fault to read.
+                    //
+                    // The line leads with the layer that *owns* the failure, not the one that noticed
+                    // it. A transport failure on an address that could never have worked is an ADAPTER
+                    // failure reported late, and `MalformedImageUrlException` is classified that way on
+                    // purpose — the MangaDex report was `Unable to resolve host "…,https"`, which reads
+                    // as a network fault and sent the investigation to the resolver when the string was
+                    // the defect. Leading with the layer makes this line answer "renderer, source or
+                    // adapter?" before it answers "what happened?".
+                    logcat(LogPriority.WARN, decision.error) {
+                        giveUpMessage(page.number, chapter.chapter.name, decision, recovery.summary())
+                    }
+                    page.status = Page.State.Error(decision.error)
                     return
                 }
+                delay(decision.delayMs)
             }
         }
     }
@@ -631,9 +819,6 @@ internal class HttpPageLoader(
     }
 
     companion object {
-        /** Maximum number of automatic retry attempts for transient page-load failures. */
-        private const val MAX_PAGE_LOAD_RETRIES = 3
-
         /**
          * Whether [recycle] has to write the page list back to the chapter cache.
          *
@@ -653,11 +838,65 @@ internal class HttpPageLoader(
             imageUrls: List<String?>,
         ): Boolean = cacheHadMissingImageUrls || imageUrls.any { it.isNullOrEmpty() }
 
-        /** Initial delay in milliseconds before the first retry; doubles with each subsequent attempt. */
-        private const val PAGE_LOAD_RETRY_DELAY_MS = 1_000L
+        /**
+         * Whether a page list read back from the chapter cache can be trusted.
+         *
+         * **This is the fix for "it worked a week ago".** The chapter cache is a *provider* of page
+         * data, and until now it was the one provider whose output was never checked. A page list
+         * written by a bad pass — the reported case being a URL that is a three-part composite of a
+         * host, an API URL and a timestamp rather than an address — was read back and used verbatim,
+         * forever, across app updates. Because the poisoned `imageUrl` is non-empty, the loader's
+         * "resolve it from the source" branch is skipped entirely, so `source.getImageUrl` is never
+         * called: fixing the source cannot help, and neither can any fix that runs after the read.
+         * The only way out was clearing the cache by hand.
+         *
+         * That is why the reported failure outlived every URL-policy change: none of them looked here.
+         *
+         * **Why the whole list is discarded rather than the one bad page.** The pages arrived from a
+         * single `putPageListToCache`, so a list containing one unusable URL is evidence that the
+         * write was wrong, not that one page happened to be. Keeping the rest would leave a list the
+         * source never produced.
+         *
+         * A page whose `imageUrl` is null or empty is *not* a failure: that is the ordinary state of
+         * a list fetched from the network and not yet resolved, and it is what
+         * [needsPageListSave] exists to track.
+         *
+         * **Why the check resolves before judging, rather than judging the raw string.** A cached
+         * page holding a *relative* URL is a supported, ordinary state — `img.attr("src")` instead
+         * of `absUrl("src")` is everyday source code, and the loader's job is precisely to complete
+         * it against `baseUrl`. Judging the raw string would reject that and send a perfectly
+         * recoverable page back to the source on every open, which is the same failure as not
+         * caching at all, only slower. So the question is not "is this already an address" but "can
+         * this become one", and only the second is disqualifying.
+         */
+        internal fun cachedPagesAreUsable(
+            pages: List<Page>,
+            baseUrl: String?,
+        ): Boolean = !pages.needsFreshPageList(baseUrl)
 
-        /** Maximum delay cap in milliseconds between retry attempts. */
-        private const val MAX_PAGE_LOAD_RETRY_DELAY_MS = 8_000L
+        /**
+         * The terminal log line for a page that has exhausted its ladder.
+         *
+         * Leads with the layer that **owns** the fault rather than the one that noticed it last.
+         * The reported failure read `Giving up on page 3 after 3 attempt(s): Unable to resolve host
+         * "cmxd98sb0x3yprd.mangadex.network,https"`, which described the resolver — the last thing
+         * touched — when the string was already impossible before it left the adapter. Leading with
+         * the layer is what makes the next line self-diagnosing without a device log.
+         */
+        internal fun giveUpMessage(
+            pageNumber: Int,
+            chapterName: String,
+            decision: PageLoadRecoveryDecision,
+            summary: String,
+        ): String {
+            val failure = LayeredFailure.classify(
+                operation = "image request",
+                subject = "page $pageNumber of $chapterName",
+                error = decision.error,
+            )
+            return "Giving up: ${failure.describe()} after ${decision.attempt} attempt(s): " +
+                "$summary (${decision.reason})"
+        }
 
         /**
          * Priority assigned to pages queued by [preloadAllPages]. Set below the nearby-page

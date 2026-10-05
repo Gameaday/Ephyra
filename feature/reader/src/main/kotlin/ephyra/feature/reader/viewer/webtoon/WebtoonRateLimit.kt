@@ -39,9 +39,20 @@ fun RateLimitedRetry(
     onRetry: () -> Unit,
     cooldownMs: Long = RATE_LIMIT_RETRY_COOLDOWN_MS,
     modifier: Modifier = Modifier,
+    /**
+     * Identity that re-arms the countdown when it changes.
+     *
+     * **Why this is not just `page`.** Page identity is stable for the life of the chapter, so a
+     * countdown held against it is spent once and never returns: the first rate-limited failure
+     * waits five seconds, and every failure after it offers an already-enabled button. That is
+     * backwards, because the thing the cooldown exists to prevent — tapping straight back into a
+     * source that is rate limiting — is exactly as true on the fifth failure as on the first. The
+     * caller passes the current `Page.State.Error`, a fresh instance per failure.
+     */
+    restartKey: Any? = page,
 ) {
-    var remainingMs by remember(page) { mutableLongStateOf(cooldownMs) }
-    LaunchedEffect(page) {
+    var remainingMs by remember(restartKey) { mutableLongStateOf(cooldownMs) }
+    LaunchedEffect(restartKey) {
         val started = android.os.SystemClock.elapsedRealtime()
         while (isActive) {
             val elapsed = android.os.SystemClock.elapsedRealtime() - started
