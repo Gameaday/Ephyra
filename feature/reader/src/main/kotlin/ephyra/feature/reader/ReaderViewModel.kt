@@ -271,8 +271,33 @@ class ReaderViewModel @Inject constructor(
                     currentChapter.requestedPage = currentChapter.chapter.lastPageRead.toInt()
                 }
                 chapterId = currentChapter.chapter.id
+                trackReadingWindow(currentChapter.chapter)
             }
             .launchIn(viewModelScope)
+    }
+
+    // ── Cold-tier eviction (doc/cache-retention-policy.md rule 1) ────────────
+    // The reader keeps the current chapter ±2 hot. A chapter that falls out of the
+    // window has its page list and images evicted: pages are large, viewed once
+    // sequentially, and cheap to re-fetch in the rare long backward jump — retention
+    // follows revisit probability, not arrival order. Eviction makes no network calls.
+    private val readingWindow = ArrayDeque<ephyra.domain.chapter.model.Chapter>(WINDOW_SIZE)
+
+    private fun trackReadingWindow(chapter: ephyra.domain.chapter.model.Chapter) {
+        if (readingWindow.lastOrNull()?.id == chapter.id) return
+        // Reorder on revisit so an in-window backward jump re-marks the chapter hot
+        // instead of double-counting it.
+        readingWindow.removeAll { it.id == chapter.id }
+        readingWindow.addLast(chapter)
+        while (readingWindow.size > WINDOW_SIZE) {
+            val evicted = readingWindow.removeFirst()
+            chapterCache.removeChapter(evicted)
+        }
+    }
+
+    private companion object {
+        /** Current chapter plus two in either direction stays hot. */
+        const val WINDOW_SIZE = 5
     }
 
     override fun onCleared() {
