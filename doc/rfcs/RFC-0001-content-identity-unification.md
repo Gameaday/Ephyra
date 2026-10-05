@@ -140,3 +140,8 @@ config (endpoint + credentials + type), not an identity carrier.
   queued for a review surface. This removes the pairing-corruption risk from the
   discovery critical path. See phase2-search-critical-review.md (staged rollout
   revised).
+
+- **D14. Add-time duplicate check is the matching test bed.** v1 search results carry
+  no dedup, but add-to-library checks for an existing entry of the same work
+  (confirm-or-bypass). This exercises and calibrates the normalizer confidence rules
+  with reversible, user-visible outcomes before any silent matching ships.

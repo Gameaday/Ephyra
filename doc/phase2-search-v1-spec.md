@@ -43,8 +43,19 @@ Library, Sources. One field. No authority UI (D13).
 - Availability-first toggle (Stage B) ships *in* v1 since it is pure presentation
   over fan-out data — default: installed+enabled sources only.
 
+## Add-time duplicate check (owner addition)
+
+Dedup is banned from *results*, not from *adds*. On add-to-library (tap or
+long-press), check for existing entries of the same work from other sources using the
+existing normalizers (`TitleNormalizer.forEquality` exact first, fuzzy as secondary
+suggestion only). Outcomes: **confirm** (attach/merge path per existing behavior) or
+**add anyway** (bypass — user may want both editions). This is deliberately the test
+bed for the comparison/matching rules RFC-0001 will depend on: every confirm/bypass
+is evidence about whether our confidence gates are calibrated, and it exercises the
+matching code where a wrong answer is visible and reversible instead of silent.
+
 ## Explicit non-goals for v1
-- No merging/dedup of any kind.
+- No merging/dedup of any kind in search results (add-time check above excepted).
 - No authority/tracker UI.
 - No quality scoring, no availability badges beyond "which source row exists".
 - No pairing/attach logic.
