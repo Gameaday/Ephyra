@@ -9,7 +9,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.feature.browse.source.SourcesViewModel
-import ephyra.feature.browse.source.authority.discoverTab
+import ephyra.feature.browse.source.globalsearch.GlobalSearchViewModel
+import ephyra.feature.browse.source.globalsearch.SearchScreenEvent
+import ephyra.feature.browse.source.globalsearch.unifiedSearchTab
 import ephyra.feature.browse.source.sourcesTab
 import ephyra.presentation.core.components.TabbedScreen
 import ephyra.presentation.core.ui.AppReadySignal
@@ -32,27 +34,39 @@ fun BrowseTabScreen(
 ) {
     val context = LocalContext.current
 
+    // Hoisted for the search page's toolbar field
+    val searchViewModel = hiltViewModel<GlobalSearchViewModel>()
+    val searchState by searchViewModel.state.collectAsStateWithLifecycle()
+
     // Hoisted for the sources page's search bar
     val sourcesViewModel = hiltViewModel<SourcesViewModel>()
     val sourcesState by sourcesViewModel.state.collectAsStateWithLifecycle()
 
     val tabs = persistentListOf(
-        discoverTab(navController),
+        unifiedSearchTab(searchViewModel, navController),
         sourcesTab(sourcesViewModel, navController),
     )
 
     val state = rememberPagerState { tabs.size }
 
-    // One search bar, one meaning: on the sources page it filters sources; the search
-    // page owns its own field internally, so the bar hides there (null query).
+    // One toolbar field, one owner per page: page 0 is the unified search (network
+    // fan-out on submit only — D5), page 1 filters the sources list locally.
     val currentQuery = when (state.currentPage) {
+        0 -> searchState.searchQuery
         1 -> sourcesState.searchQuery
         else -> null
     }
 
     val onQueryChange: (String?) -> Unit = { query ->
-        if (state.currentPage == 1) {
-            sourcesViewModel.search(query)
+        when (state.currentPage) {
+            0 -> searchViewModel.onEvent(SearchScreenEvent.UpdateSearchQuery(query))
+            1 -> sourcesViewModel.search(query)
+        }
+    }
+
+    val onSearch: (String) -> Unit = {
+        if (state.currentPage == 0) {
+            searchViewModel.onEvent(SearchScreenEvent.Search)
         }
     }
 
@@ -62,6 +76,7 @@ fun BrowseTabScreen(
         state = state,
         searchQuery = currentQuery,
         onChangeSearchQuery = onQueryChange,
+        onSearch = onSearch,
     )
 
     LaunchedEffect(Unit) {

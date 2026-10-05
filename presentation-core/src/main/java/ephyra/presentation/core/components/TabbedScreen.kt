@@ -35,6 +35,10 @@ fun TabbedScreen(
     state: PagerState = rememberPagerState { tabs.size },
     searchQuery: String? = null,
     onChangeSearchQuery: (String?) -> Unit = {},
+    // Submit (IME search / enter). Tabs that filter locally ignore this; the unified
+    // search tab uses it to fire the network fan-out, keeping fan-out off every
+    // keystroke (D5 politeness).
+    onSearch: (String) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -49,6 +53,7 @@ fun TabbedScreen(
                 searchEnabled = searchEnabled,
                 searchQuery = if (searchEnabled) searchQuery else null,
                 onChangeSearchQuery = onChangeSearchQuery,
+                onSearch = onSearch,
                 actions = { AppBarActions(tab.actions) },
             )
         },
