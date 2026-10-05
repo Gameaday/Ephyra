@@ -37,9 +37,9 @@ This file is the single entry point for the reconstruction program. If another d
 21. [`doc/source/SOURCE_REMOVAL_PLAN.md`](doc/source/SOURCE_REMOVAL_PLAN.md)  ordered legacy bridge removal gates.
 22. [`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md)  device-evidence runbook, artifact format, and what a screenshot may and may not prove.
 23. [`doc/BUILD_HEALTH.md`](doc/BUILD_HEALTH.md)  repository health ratchets, timing budgets, and verified device availability.
- 24. [`doc/SOURCE_ROADMAP.md`](doc/SOURCE_ROADMAP.md)  **sourcing authority** — current vs compatibility vs planned, phases, gates, and what must not be reintroduced.
- 25. [`doc/README.md`](doc/README.md)  documentation index — the current document set and its owners.
- 26. [`doc/2_0_COMPLETION_PLAN.md`](doc/2_0_COMPLETION_PLAN.md)  **forward plan** — validated state and ordered steps to the `2.0-clean` baseline.
+24. [`doc/SOURCE_ROADMAP.md`](doc/SOURCE_ROADMAP.md)  **sourcing authority** — current vs compatibility vs planned, phases, gates, and what must not be reintroduced.
+25. [`doc/README.md`](doc/README.md)  documentation index — the current document set and its owners.
+26. [`doc/2_0_COMPLETION_PLAN.md`](doc/2_0_COMPLETION_PLAN.md)  **forward plan** — validated state and ordered steps to the `2.0-clean` baseline.
 
 ## Program outcome
 
