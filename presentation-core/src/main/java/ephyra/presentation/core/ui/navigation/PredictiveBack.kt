@@ -104,7 +104,15 @@ fun PredictiveBackDraggableProgress(
 
     PredictiveBackHandler(enabled = enabled) { flow ->
         val startOffset = state.offset.takeIf { it.isFinite() } ?: 0f
-        if (startOffset == 0f) return@PredictiveBackHandler
+        if (startOffset == 0f) {
+            // The handler contract REQUIRES the progress flow to be collected, even
+            // when there is nothing to drag: returning early here crashed with
+            // "You must collect the progress flow" whenever a back swipe started
+            // while the sheet sat fully settled (e.g. chapter filter/sort sheet on
+            // the series page). Drain it and let the gesture pass through.
+            flow.collect { }
+            return@PredictiveBackHandler
+        }
         var travelled = 0f
         try {
             flow.collect { event ->
