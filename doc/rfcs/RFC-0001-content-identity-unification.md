@@ -88,3 +88,35 @@ config (endpoint + credentials + type), not an identity carrier.
 - Who owns canonical metadata when providers disagree — first-seen, user-preferred
   provider, or manual edit? (Recommend: user-preferred provider, else richest.)
 - Merge/split UI for mistakes — needed at v1 or deferrable?
+
+## Decisions (owner, session on cline/0crpxa7t)
+
+- **D1. Search is authoritative AND actionable.** A search result must link directly to
+  usable content; a "discovery-only" search that duplicates the user's work in a second
+  search is a rejected design. One search surface only.
+- **D2. Provider visibility**: invisible auto-preference by default; provider picker in
+  the details screen. (Confirmed.)
+- **D3. Matching confidence**: never silently merge below exact canonical-hash or
+  external-id confidence; title-only fuzzy matches are user-confirmed. (Confirmed.)
+- **D4. Unified search v1 = grouped sections** (library / sources / Jellyfin), upgraded
+  to a merged ranked list once work identity lands. Search must degrade gracefully:
+  partial results with per-source error states, never all-or-nothing.
+- **D5. Remote-source politeness**: no speculative fan-out. Debounced queries,
+  in-flight cancellation, per-source rate limiting, no prefetching of details we were
+  not asked for. Our own Jellyfin server is exempt from conservatism. An opt-in
+  "extended search" (deeper/slower fan-out) is a later goal.
+- **D6. Progress model**: deferred, but must be ONE decision applied uniformly across
+  migration, multi-provider bindings, and source switching — no per-feature answers.
+  Pending design; recorded as open question O2 below.
+- **D7. Jellyfin v1 = consumption only.** No progress sync back, no writes. Sync is a
+  future phase.
+- **D8. Extension management moves to Settings.** Discover surfaces at most an
+  "update available" chip that deep-links to the right place.
+- **D9. Discover stays a bottom-nav tab**, simplified to: unified search + source
+  catalog browsing.
+
+### Open questions (updated)
+- O1. Merge/split UI for bad matches (deferrable; likely needed once fuzzy
+  confirmations exist).
+- O2. Unified progress model (see D6) — needs a short RFC of its own before
+  multi-provider bindings ship, since migration already suffers from the ambiguity.
