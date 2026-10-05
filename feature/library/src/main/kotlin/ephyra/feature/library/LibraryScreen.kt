@@ -50,6 +50,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
+/** Covers prefetched per library load — roughly two grid screenfuls at 3-4 columns. */
+private const val COVER_PREFETCH_COUNT = 24
+
 @Composable
 fun LibraryScreen(
     navController: NavController = LocalNavController.current,
@@ -66,9 +69,6 @@ fun LibraryScreen(
 }
 
 @Composable
-/** Covers prefetched per library load — roughly two grid screenfuls at 3-4 columns. */
-private const val COVER_PREFETCH_COUNT = 24
-
 fun LibraryScreen(
     ViewModel: LibraryViewModel,
     settingsViewModel: LibrarySettingsViewModel,
