@@ -52,3 +52,20 @@ bar that changes meaning per tab.
 - Merged ranked results (needs work identity — RFC-0001).
 - Jellyfin section (Phase 3).
 - Extension management UX redesign (just relocated).
+
+## Progress log
+
+- [x] Step 1 — Extensions + Migrate removed from the Discover pager; hoisted
+  `ExtensionsViewModel` (did repo network work on every Discover visit) and the
+  `switchToExtensionTabChannel` page-scroll hack deleted. `0157ad6`
+- [x] Step 2 — Standalone routes `extensions` + `source_migration` hosting the exact
+  same content, registered in `BrowseFeatureApi`; Settings gained both entries.
+  `11369eb`, `1ba0b43`
+- [ ] Step 3 — Updates-available chip: pending. Note: must NOT instantiate
+  `ExtensionsViewModel` (network-on-init); needs a lightweight updates-count flow.
+- [ ] Step 4 — Unified search rebuild. **Key finding while in the code:** the Discover
+  page today is `AuthoritySearchScreen` (tracker/authority search) while source fan-out
+  search is a *separate* `GlobalSearchScreen` — exactly the "two discovery searches"
+  problem D1 rejects. Step 4 must merge these into one field with grouped sections
+  (Library / Authority / Sources), not just restyle one of them.
+- [ ] Steps 5–6 pending.
