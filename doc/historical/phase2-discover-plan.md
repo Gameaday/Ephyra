@@ -1,5 +1,8 @@
 # Phase 2 — Discover Tab Simplification: Implementation Plan
 
+> **Status:** HISTORICAL - completed improvement-session record. Retained for archaeology only;
+> not current guidance. Current forward plan: [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+
 Decisions: RFC-0001 D1–D9. Current state: `BrowseTabScreen` is a 4-page pager
 (Discover, Sources, Extensions, Migrate) with per-tab hoisted ViewModels and a search
 bar that changes meaning per tab.

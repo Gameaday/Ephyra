@@ -1,5 +1,8 @@
 # Search Systems Audit
 
+> **Status:** HISTORICAL - completed improvement-session record. Retained for archaeology only;
+> not current guidance. Current forward plan: [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+
 Status: inventory complete; one divergence fixed in this pass (the debounce value), the rest is a
 proposed convergence plan. Scope: every search/filter surface in the app, whether it filters in
 memory, queries a source, or resolves to a navigation target.

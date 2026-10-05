@@ -1,5 +1,8 @@
 # Image path audit — what we added, and what to remove
 
+> **Status:** HISTORICAL - completed improvement-session record. Retained for archaeology only;
+> not current guidance. Current forward plan: [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+
 Written while a device test of the reported MangaDex failure is in flight. **No behaviour change
 accompanies this document**, deliberately: changing the image path mid-test would invalidate the
 result it is being collected for.
