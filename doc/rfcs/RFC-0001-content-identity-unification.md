@@ -125,7 +125,7 @@ config (endpoint + credentials + type), not an identity carrier.
   metadata may come from the tracker authority while content is served by a different,
   higher-quality repository. The auto-preference score (from D2) is computed per
   binding from its unit list: coverage ratio, gap count, highest/latest unit, update
-  recency. See phase2-search-experience-design.md R2.
+  recency. See ../historical/phase2-search-experience-design.md R2.
 - **D11. Results are availability-first.** Search shows only readable titles
   (library or installed source) by default; unavailable titles sit behind an explicit
   toggle. See R4.
@@ -138,7 +138,7 @@ config (endpoint + credentials + type), not an identity carrier.
   code and returns later as *background enrichment* (metadata refresh, identity
   attach) with no prompts — silent below external-id confidence, everything else
   queued for a review surface. This removes the pairing-corruption risk from the
-  discovery critical path. See phase2-search-critical-review.md (staged rollout
+  discovery critical path. See ../historical/phase2-search-critical-review.md (staged rollout
   revised).
 
 - **D14. Add-time duplicate check is the matching test bed.** v1 search results carry

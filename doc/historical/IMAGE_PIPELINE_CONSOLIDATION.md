@@ -1,5 +1,8 @@
 # Implementation Plan
 
+> **Status:** HISTORICAL - completed improvement-session record. Retained for archaeology only;
+> not current guidance. Current forward plan: [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+
 ## Overview
 
 Consolidate the image address pipeline so that resolving, validating, attributing and caching a page image each happen in exactly one place, rather than a "resolve, then judge" two-step repeated at eight call sites with two different field-preference rules.

@@ -1,5 +1,8 @@
 # Phase 1 — Navigation Transitions: Audit & Actions
 
+> **Status:** HISTORICAL - completed improvement-session record. Retained for archaeology only;
+> not current guidance. Current forward plan: [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+
 Date: session branch `cline/0crpxa7t`.
 
 ## Already in place (verified)

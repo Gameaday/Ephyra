@@ -1,5 +1,8 @@
 # Phase 2.1 — Search Experience: Problem Analysis & Redesign
 
+> **Status:** HISTORICAL - completed improvement-session record. Retained for archaeology only;
+> not current guidance. Current forward plan: [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+
 Not a merge of two screens — a redesign from the problem up. Supersedes the "just
 combine them" framing in phase2-discover-plan.md step 4.
 

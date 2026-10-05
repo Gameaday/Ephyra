@@ -1,5 +1,8 @@
 # UI / Transitions / Effects / Menu / Settings Audit
 
+> **Status:** HISTORICAL - completed improvement-session record. Retained for archaeology only;
+> not current guidance. Current forward plan: [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+
 Scope: full UI audit of Ephyra at commit `39cedf9` (branch `cline/ezxqydet`). Areas: settings
 (incl. More, onboarding), reader/player, library/browse/manga/updates/upcoming/history/category,
 and the shared presentation layer (theme, navigation, components, effects).
@@ -20,9 +23,9 @@ The findings below were triaged and implemented in phases (see the commits on `c
 - **Hierarchical transitions + extensions loading** (`perf(extensions) ... ; feat(nav) ...`) — the
   back-transition quality and the slow available-extensions scroll.
 - **Cache and cover art** (`fix(cache): ...`) — L-6 and the cover placeholder theming, with the
-  remaining items in `doc/CACHE_AND_COVER_AUDIT.md`.
+  remaining items in `doc/historical/CACHE_AND_COVER_AUDIT.md`.
 - **Search** (`refactor(search): ...`) — the divergent debounce constants, with the full inventory in
-  `doc/SEARCH_SYSTEM_AUDIT.md`.
+  `doc/historical/SEARCH_SYSTEM_AUDIT.md`.
 
 Findings not listed above remain open; they are unchanged below.
 

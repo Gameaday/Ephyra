@@ -1,5 +1,8 @@
 # Phase 5 — Performance & Jank Audit (S24 / 120Hz context)
 
+> **Status:** HISTORICAL - completed improvement-session record. Retained for archaeology only;
+> not current guidance. Current forward plan: [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+
 Frame budget at 120Hz adaptive: ~8ms. Findings and fixes, landed separately.
 
 ## Fixed (this pass, CI-verified)

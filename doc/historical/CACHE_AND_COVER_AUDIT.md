@@ -1,5 +1,8 @@
 # Cover Art and Cache Systems Audit
 
+> **Status:** HISTORICAL - completed improvement-session record. Retained for archaeology only;
+> not current guidance. Current forward plan: [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+
 Status: audit complete; two defects fixed in this pass, the rest are recommendations with evidence.
 Scope: Coil image loader configuration (`app/src/main/java/ephyra/app/App.kt`), cover requests
 (`presentation-core/.../components/MangaCover.kt`, `MangaCoverFetcher`), reader page requests
