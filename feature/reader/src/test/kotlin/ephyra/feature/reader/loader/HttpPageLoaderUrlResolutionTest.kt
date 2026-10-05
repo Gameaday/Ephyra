@@ -456,6 +456,8 @@ class HttpPageLoaderUrlResolutionTest {
         tempDir: Path,
         private val cachedPageImageUrl: String?,
     ) : ChapterCache {
+        override fun removeChapter(chapter: ephyra.domain.chapter.model.Chapter): Boolean = false
+
         private val image = tempDir.resolve("1.jpg").toFile().apply { writeBytes(byteArrayOf(1)) }
 
         var requested: String? = null

@@ -307,6 +307,8 @@ class HttpPageLoaderCdnSwapTest {
         private val failWith: Throwable,
         private val failTimes: Int,
     ) : ChapterCache {
+        override fun removeChapter(chapter: ephyra.domain.chapter.model.Chapter): Boolean = false
+
         private val image = tempDir.resolve("1.jpg").toFile().apply { writeBytes(byteArrayOf(1)) }
 
         val requested = mutableListOf<String>()

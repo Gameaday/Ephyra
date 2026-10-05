@@ -75,6 +75,11 @@ class SourcesViewModelTest {
             getEnabledSources = getEnabledSources,
             toggleSource = toggleSource,
             toggleSourcePin = toggleSourcePin,
+            getExtensionUpdateCount = ephyra.domain.extension.interactor.GetExtensionUpdateCount(
+                mockk {
+                    every { installedExtensionsFlow } returns kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+                },
+            ),
         )
     }
 
