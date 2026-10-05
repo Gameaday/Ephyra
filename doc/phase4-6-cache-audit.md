@@ -47,7 +47,15 @@ Gaps:
 - **Removed dead `ChapterCache` injection from MainActivity** — Hilt was constructing
   it (and its DiskLruCache journal) at every activity start for no use. `a54d42d`.
 
+## Done since
+- Reader sliding-window eviction + exit-keeps-one (`ee11b21`, `83e8ef6`).
+- Library cover prefetch of first screenfuls (`c2caf52`).
+- Per-manga chapter eviction on library removal, both single (series page) and bulk
+  (library delete) paths (`b88c25a`).
+- CI green on PR #285 after fix rounds (ktlint/spotless/interface/test doubles).
+
 ## Remaining queue
-1. Prefetch covers visible±N (Phase 5 pairing).
-2. Eager prior-revision delete on cover refresh.
-3. Per-manga chapter-cache eviction on library removal.
+1. Eager prior-revision delete on cover refresh.
+2. Migration-source-change chapter-cache orphaning (keys embed source URLs; LRU
+   handles today; candidate for the same interactor at migration time).
+3. Device validation: reading-window feel, prefetch cost on first library load.
