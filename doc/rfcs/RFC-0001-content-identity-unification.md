@@ -120,3 +120,15 @@ config (endpoint + credentials + type), not an identity carrier.
   confirmations exist).
 - O2. Unified progress model (see D6) — needs a short RFC of its own before
   multi-provider bindings ship, since migration already suffers from the ambiguity.
+
+- **D10. Binding preference is quality-scored, not metadata-driven.** A work's
+  metadata may come from the tracker authority while content is served by a different,
+  higher-quality repository. The auto-preference score (from D2) is computed per
+  binding from its unit list: coverage ratio, gap count, highest/latest unit, update
+  recency. See phase2-search-experience-design.md R2.
+- **D11. Results are availability-first.** Search shows only readable titles
+  (library or installed source) by default; unavailable titles sit behind an explicit
+  toggle. See R4.
+- **D12. Pairing is one action.** Adding always attempts to complete the work+binding
+  pair in both directions (authority->source and source->authority), subject to D3
+  confidence. See R3.
