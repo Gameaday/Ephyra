@@ -105,6 +105,7 @@ class LibraryViewModel @Inject constructor(
     private val chapterRepository: ChapterRepository,
     private val setReadStatus: SetReadStatus,
     private val updateManga: UpdateManga,
+    private val evictChapterCacheForManga: ephyra.domain.chapter.interactor.EvictChapterCacheForManga,
     private val setMangaCategories: SetMangaCategories,
     private val preferences: BasePreferences,
     private val libraryPreferences: LibraryPreferences,
@@ -801,6 +802,8 @@ class LibraryViewModel @Inject constructor(
                     )
                 }
                 updateManga.awaitAll(toDelete)
+                // Retention rule 4: evict orphaned chapter pages immediately.
+                mangas.forEach { evictChapterCacheForManga.evict(it.id) }
             }
 
             if (deleteChapters) {

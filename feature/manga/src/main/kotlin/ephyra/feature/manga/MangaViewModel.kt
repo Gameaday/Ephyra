@@ -86,6 +86,7 @@ class MangaViewModel @Inject constructor(
     private val getCategories: GetCategories,
     val sourceManager: SourceManager,
     private val mangaInfoInteractor: ephyra.feature.manga.interactor.MangaInfoInteractor,
+    private val evictChapterCacheForManga: ephyra.domain.chapter.interactor.EvictChapterCacheForManga,
     private val mangaChapterInteractor: ephyra.feature.manga.interactor.MangaChapterInteractor,
     private val mangaTrackInteractor: ephyra.feature.manga.interactor.MangaTrackInteractor,
     private val syncJellyfin: ephyra.domain.jellyfin.interactor.SyncJellyfin,
@@ -292,6 +293,9 @@ class MangaViewModel @Inject constructor(
                 mangaInfoInteractor.syncLibraryAdditionToTrackers(manga)
             } else {
                 coverCache.deleteFromCache(manga, false)
+                // Retention rule 4: pages of a series that left the library are
+                // orphaned; evict now rather than waiting for byte-pressure LRU.
+                evictChapterCacheForManga.evict(manga.id)
             }
         }
     }
