@@ -3,7 +3,8 @@
 > **Authority:** this file decides what is current, what is compatibility, and what is planned for
 > content sourcing. Where an older document disagrees, **this file wins** and the other is a defect.
 >
-> **Last updated:** 2026-09-30, after the dependency-hygiene pass (orphaned QuickJS AAR removed).
+> **Last updated:** 2026-10-05, after the documentation reconciliation. Sourcing Phase 4 is now
+> decided by [`ADR-0017`](adr/0017-delete-the-unreachable-profile-path.md).
 > Supersedes `ADR-0013` (JS) and `ADR-0014`
 > attribution). Supersedes the sourcing sections of `SOURCE_DISCOVERY_ARCHITECTURE.md` and
 > `SOURCE_DISCOVERY_EXECUTION.md`.
@@ -107,7 +108,7 @@ Ordered by dependency, not by appeal. Each phase is independently shippable.
 
 **Gate:** a MangaDex chapter renders on device, and the reproduction names the layer.
 
-**Related, not a gate:** `IMAGE_PIPELINE_CONSOLIDATION.md` consolidates the eight
+**Related, not a gate:** `historical/IMAGE_PIPELINE_CONSOLIDATION.md` consolidates the eight
 resolve-then-judge call sites into one wrapper type, so a future defect is harder to
 introduce. It is behaviour-neutral and has landed.
 
@@ -137,14 +138,15 @@ The first non-APK, non-HTML provider, and the thing that proves the adapter seam
 **Gate:** Jellyfin content renders through the same reader path as an APK source, and
 `ContentConformance` passes for its adapter.
 
-### Phase 4 — Resolve the profile path · **IN PROGRESS · decision needed**
+### Phase 4 — Resolve the profile path · **DECIDED (ADR-0017) · deletion not yet executed**
 *The profile machinery is now unreachable, which is a planning fact rather than a bug.*
 
 `AndroidSourceManager` builds `DynamicHttpSource` only for domains in `profiled_domains_list`.
 `ADR-0015` removed the only writer of that preference (the heuristic engine, via `AddCustomSource`),
 so the list is always empty and `DynamicHttpSource` is never constructed. The whole path —
-`SourceProfile` → `SourceProfileCache` → Room → `DynamicHttpSource` — is dead code that only Jellyfin
-would revive.
+`SourceProfile` → `SourceProfileCache` → Room → `DynamicHttpSource` — is dead code. `ADR-0017`
+resolved whether to keep it as Jellyfin's landing pad: it does not need one, because a Jellyfin
+engine receives an explicit server URL and has no discovery step to cache.
 
 - [x] Reader emits `FailureLayer`; the give-up log names the owning layer
 - [x] `HttpSource.imageRequest` / `imageUrlRequest` validate before a request exists
@@ -165,12 +167,12 @@ would revive.
       rebuilds the table, and `testMigrateV3ToV4DropsScraperFilenameAndKeepsProfiles` proves a
       profile survives with the column gone — verified non-vacuous by mutating the migration to
       discard rows and watching it fail
-- [ ] **Decide: delete the rest of the profile path, or keep it as Jellyfin's landing pad.** Scoped
-      and *not* done here, because it is not the dead code it looks like: `RemoveCustomSource` and
-      `UpdateCustomSource` are wired into the working Extensions and Source Management screens,
-      `GetAvailableSources` composes the Sources list from the profile cache, and DEF-029's
-      diagnostics read `profiled_domains_list`. Deleting it is a redesign of source management, not
-      a cleanup. **This is the open decision blocking Phases 2 and 5.**
+- [x] **Decided 2026-09-28: delete the profile path ([`ADR-0017`](adr/0017-delete-the-unreachable-profile-path.md)).**
+      **Not yet executed — the largest cleanup item in the programme.** All seven targets are still in
+      the tree: `SourceProfile`, `SourceProfileCache`, `SourceProfileStore`, `RoomSourceProfileStore`,
+      the Room entity and its migration, `DynamicHttpSource`, `RemoteSource`, `ContentSourceOrchestrator`,
+      plus `GetAvailableSources`'s profile branch. `SourceType`, the engine registry, and
+      `ContentSourceEngine` survive as the next adapter's contract. See `2_0_COMPLETION_PLAN.md` step D1.
 - [ ] Delete `DEF-029`'s remaining three-owners disagreement (`profiled_domains_list` vs
       `SourceProfileCache` vs `GetAvailableSources`) per `ADR-0012`
 
