@@ -85,3 +85,46 @@ ranked list (D4's endgame) and cross-provider progress (O2) require the schema. 
   ≥1 source? (Leaning: collapsed behind "more results".)
 - Q3. Content-type filter chips (manga/novel/comic): keep on the unified field or
   drop until v2? (Leaning: keep, they already exist and are cheap.)
+
+## Owner refinements (brainstorm round 2)
+
+- **R1. The authority's core value is dedup, not metadata.** "One title, available in
+  a few places" is the experience. Metadata quality is secondary to that.
+- **R2. Metadata authority and content authority are different things.** The best
+  cover/description may come from the tracker, while the best *reading* source is
+  chosen independently — by repository quality: most thorough coverage, fewest chapter
+  gaps, highest/latest chapter number without gaps. A work binds to the best-quality
+  source for content while keeping authority metadata. Quality is a property of the
+  binding's unit list, computable: coverage ratio, gap count, latest unit number,
+  update recency. This becomes the binding-preference score in RFC-0001 (D2's
+  "auto = healthiest" made concrete).
+- **R3. Paired-add must be one action in both directions.** Today: authority-saved
+  entries need a separate step to attach a content source; source-saved entries need a
+  separate step to attach authority metadata. The add action must always try to
+  complete the pair: adding a work attaches the best source automatically; adding from
+  a source attaches the authority identity when one matches (D3 confidence rules).
+- **R4. Availability-first results.** Default: only show titles the user can actually
+  read (in library or on an installed source). Unavailable titles (authority hits with
+  no installed source) are hidden behind an explicit "include unavailable" toggle,
+  persisted per session at most — searching should answer "what can I read", with
+  discovery-of-the-unavailable as an opt-in.
+
+### Design impact
+
+- The Matches section badge ("on N sources") is now load-bearing, not decorative:
+  with R4 it is the *filter*, and with R2 it feeds the binding-preference score.
+- Binding-preference scoring needs a `SourceQuality` computation (coverage, gaps,
+  latest unit, recency) — new domain component, unit-testable, fed by chapter/unit
+  lists we already fetch for details. Cheap enough per candidate source; must stay
+  lazy (D5).
+- R3 means `FindContentSource` stops being a post-add prompt entirely and becomes a
+  silent part of add (already the v1 direction; now it is mandatory, not optional).
+
+### New open questions
+
+- Q4. R4 default for titles on sources that are installed but disabled?
+  (Leaning: treated as unavailable, with a hint row "N results on disabled sources".)
+- Q5. Quality-score ties or near-ties: auto-pick silently or surface the picker?
+  (Leaning: silent within a threshold; picker always available in details per D2.)
+- Q6. Does "include unavailable" deserve a persistent setting or session-only?
+  (Leaning: session-only toggle; persistent risks a permanently noisy result list.)
