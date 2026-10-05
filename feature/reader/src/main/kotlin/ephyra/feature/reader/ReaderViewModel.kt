@@ -178,12 +178,6 @@ class ReaderViewModel @Inject constructor(
         private set
 
     /**
-     * Source order of the chapter that most recently produced a page selection, used to
-     * resolve the arrival direction when crossing a chapter boundary.
-     */
-    private var lastSelectedChapterSourceOrder: Long = 0L
-
-    /**
      * The chapter loader for the loaded manga. It'll be null until [manga] is set.
      */
     private var loader: ChapterLoader? = null
@@ -780,6 +774,24 @@ class ReaderViewModel @Inject constructor(
      * - Within the same chapter, moving to a lower page index is BACKWARD.
      * - The initial selection of a freshly opened reader is BACKWARD only when the chapter
      *   was explicitly positioned at its end (backward arrival); otherwise FORWARD.
+     *
+     * **Why [lastSelectedChapterId] and [chapterPageIndex] are not read from the reader session**,
+     * which owns the same concepts and is otherwise the better home for them. `ReaderSessionState`
+     * has `chapterId`, `pageId` and `pageIndex`, so this looks like a mechanical swap. It is not,
+     * and the difference is the whole point of the field.
+     *
+     * [lastSelectedChapterId] is the chapter that most recently produced a **page selection**,
+     * which is `null` until the reader selects one -- and the `previousChapterId == null` branch
+     * below exists precisely to handle that first selection, distinguishing a deliberate arrival at
+     * the end of a chapter from an arrival at its start. The session cannot express it:
+     * `chapterLoaded` moves straight to `LoadingPage` with a `pageId` set, and `isRestorable`
+     * requires `pageId == pageIds[pageIndex]`, so "opened but nothing selected yet" is not a
+     * representable state there.
+     *
+     * Absorbing it therefore means the session has to model *arrival* separately from *open*, which
+     * is a change to a component with its own tests rather than a wiring change, and is not
+     * attempted here. `DEF-011` and `DEF-015` were both completion decided from state that looked
+     * right and was not, and a plausible-looking swap of this field is precisely that failure mode.
      */
     private fun resolveNavigationVector(selectedChapter: ReaderChapter, page: ReaderPage): NavigationVector {
         val previousChapterId = lastSelectedChapterId

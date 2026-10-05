@@ -440,6 +440,14 @@ fun ZoomableMangaPage(
                                         // Decode at the source's original resolution so
                                         // zooming in preserves the full detail instead of
                                         // showing a downsampled (blurry) version.
+                                        //
+                                        // Deliberately Coil's ORIGINAL sentinel rather than
+                                        // PageDecodeWidth: this reader's decode width *is* the
+                                        // source width, and routing it through a computed value
+                                        // would decode a not-yet-measured page (width 0) at one
+                                        // pixel. A sentinel that defers to the decoder cannot be
+                                        // wrong that way. See PageDecodeWidth for the
+                                        // display-derived case this reader does not have.
                                         .size(CoilSize.ORIGINAL)
                                         .crossfade(false)
                                         .build()
