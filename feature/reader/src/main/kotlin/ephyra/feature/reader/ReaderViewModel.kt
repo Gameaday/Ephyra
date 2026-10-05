@@ -306,6 +306,19 @@ class ReaderViewModel @Inject constructor(
                 downloadManager.addDownloadsToStartOfQueue(listOf(it))
             }
         }
+        // Series-switch eviction (doc/cache-retention-policy.md rule 1, second half):
+        // the sliding window only slides within one series, and each series gets its
+        // own ViewModel — so without this, reading the latest chapter of N series
+        // caches N × WINDOW_SIZE chapters until byte-pressure LRU notices. On reader
+        // close, keep only the chapter being left (instant resume) and decache the
+        // rest. Rotation does not call onCleared, so this fires on genuine exit only.
+        val keepId = readingWindow.lastOrNull()?.id
+        readingWindow.forEach { chapter ->
+            if (chapter.id != keepId) {
+                chapterCache.removeChapter(chapter)
+            }
+        }
+        readingWindow.clear()
     }
 
     // ── UDF entry-point ──────────────────────────────────────────────────────
