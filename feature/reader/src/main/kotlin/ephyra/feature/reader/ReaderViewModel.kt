@@ -117,6 +117,9 @@ class ReaderViewModel @Inject constructor(
 ) : BaseUdfViewModel<ReaderViewModel.State, ReaderEvent, ReaderViewModel.Event>(State()) {
     private companion object {
         const val FALLBACK_LAST_PAGE_INDEX = Int.MAX_VALUE
+
+        /** Current chapter plus two in either direction stays hot. */
+        const val WINDOW_SIZE = 5
     }
 
     val eventFlow: Flow<Event> get() = effects
@@ -295,10 +298,6 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    private companion object {
-        /** Current chapter plus two in either direction stays hot. */
-        const val WINDOW_SIZE = 5
-    }
 
     override fun onCleared() {
         val currentChapters = state.value.viewerChapters
