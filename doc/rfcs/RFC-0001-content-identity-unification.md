@@ -132,3 +132,11 @@ config (endpoint + credentials + type), not an identity carrier.
 - **D12. Pairing is one action.** Adding always attempts to complete the work+binding
   pair in both directions (authority->source and source->authority), subject to D3
   confidence. See R3.
+
+- **D13. Authority search leaves the user-facing surface entirely.** The unified
+  search v1 is Library + Sources only. Tracker/authority capability is preserved in
+  code and returns later as *background enrichment* (metadata refresh, identity
+  attach) with no prompts — silent below external-id confidence, everything else
+  queued for a review surface. This removes the pairing-corruption risk from the
+  discovery critical path. See phase2-search-critical-review.md (staged rollout
+  revised).

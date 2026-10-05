@@ -75,3 +75,24 @@ Three compounding gaps found in review:
 Start Stage A now. It is the lowest-risk highest-value step and is mostly composition
 work. C is the stage that deserves the most test coverage (it is where corruption can
 happen); D is where the caching lifecycle work (Phase 6) intersects.
+
+## Revision: authority removed from user-facing search (owner decision, D13)
+
+The staged rollout simplifies:
+
+- **Stage A — one front door** composing Library + Sources sections only. The
+  authority screen is removed as a destination (code preserved). Sources section
+  groups by `canonicalKey` (exact) with fuzzy as secondary — weaker dedup than
+  authority-backed rows, accepted for v1.
+- **Stage B** unchanged (availability-first).
+- **Stage C — pairing** is no longer a search feature; it becomes the background
+  enrichment pipeline (silent external-id attaches; review queue for the rest).
+  Undo surface lives in details (unlink).
+- **Stage D** unchanged (lazy quality scoring, caching, stable re-preference).
+- **Stage E — removals** grows: tracker picker, merge-prompt gauntlet,
+  MatchResultsScreen, post-add source prompt, *and* the AuthoritySearch screen/event
+  classes once enrichment absorbs their logic.
+
+Risks C carried move off the discovery path entirely; enrichment matching still needs
+the confidence rules (silent = external-id only), but a wrong attach is now a visible,
+unlinkable detail on one library entry rather than a broken search result.
