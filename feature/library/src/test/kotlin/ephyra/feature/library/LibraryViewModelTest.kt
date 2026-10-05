@@ -145,6 +145,7 @@ class LibraryViewModelTest {
             chapterRepository = chapterRepository,
             setReadStatus = setReadStatus,
             updateManga = updateManga,
+            evictChapterCacheForManga = mockk(relaxed = true),
             setMangaCategories = setMangaCategories,
             preferences = preferences,
             libraryPreferences = libraryPreferences,

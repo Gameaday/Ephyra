@@ -183,6 +183,7 @@ class App :
 
         super<Application>.onCreate()
         ephyra.app.data.work.CoverCacheMaintenanceWorker.setupTask(this)
+        ephyra.app.data.work.CoverCacheMaintenanceWorker.enqueueOneTimeAudit(this)
         ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
 
         // Phase 4: Telemetry (non-critical)

@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -35,7 +36,12 @@ class SourcesViewModel @Inject constructor(
     private val getEnabledSources: GetEnabledSources,
     private val toggleSource: ToggleSource,
     private val toggleSourcePin: ToggleSourcePin,
+    getExtensionUpdateCount: ephyra.domain.extension.interactor.GetExtensionUpdateCount,
 ) : BaseUdfViewModel<SourcesViewModel.State, SourcesScreenEvent, SourcesViewModel.Effect>(State()) {
+
+    /** Updates waiting on installed extensions; zero-network, from the local cache. */
+    val extensionUpdateCount = getExtensionUpdateCount.subscribe()
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), 0)
 
     init {
         viewModelScope.launch {

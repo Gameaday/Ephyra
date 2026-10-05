@@ -20,6 +20,7 @@ import androidx.compose.ui.util.fastAll
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil3.imageLoader
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.category.model.Category
@@ -50,6 +51,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
+/** Covers prefetched per library load — roughly two grid screenfuls at 3-4 columns. */
+private const val COVER_PREFETCH_COUNT = 24
+
 @Composable
 fun LibraryScreen(
     navController: NavController = LocalNavController.current,
@@ -79,6 +83,24 @@ fun LibraryScreen(
     val haptic = LocalHapticFeedback.current
 
     val state by ViewModel.state.collectAsStateWithLifecycle()
+
+    // Hot-tier prefetch (doc/cache-retention-policy.md rule 2): when the library
+    // loads, warm the durable cover cache for the first screenfuls so initial scroll
+    // never waits on the network. Bounded (one small batch per library change),
+    // deduped by Coil against in-flight requests, and a durable hit is a cheap no-op.
+    val imageLoader = context.imageLoader
+    LaunchedEffect(state.libraryData.favorites) {
+        state.libraryData.favorites
+            .asSequence()
+            .mapNotNull { it.libraryManga.manga.thumbnailUrl }
+            .distinct()
+            .take(COVER_PREFETCH_COUNT)
+            .forEach { url ->
+                imageLoader.enqueue(
+                    coil3.request.ImageRequest.Builder(context).data(url).build(),
+                )
+            }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
 

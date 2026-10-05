@@ -252,6 +252,30 @@ class ChapterCache(
         }
     }
 
+    /**
+     * Evicts one chapter's page list and every page image it referenced.
+     *
+     * Implements the cold tier of doc/cache-retention-policy.md: a chapter's pages
+     * leave the cache once the reader has moved far enough past them. Images are
+     * resolved from the cached page list *before* the list is removed, because the
+     * list is the only record of which URLs belonged to the chapter. A chapter whose
+     * list was never cached still gets its (possibly uncached) image keys removed —
+     * removals of absent keys are cheap no-ops in the underlying DiskCache.
+     *
+     * @return true if the page list entry was present and removed.
+     */
+    override fun removeChapter(chapter: Chapter): Boolean {
+        val pages = runCatching { getPageListFromCache(chapter) }.getOrNull()
+        pages?.forEach { page ->
+            page.imageUrl?.let { url ->
+                runCatching { diskCache.remove(DiskUtil.hashKeyForDisk(url)) }
+            }
+        }
+        return runCatching {
+            diskCache.remove(DiskUtil.hashKeyForDisk(getKey(chapter)))
+        }.getOrDefault(false)
+    }
+
     override fun clear(): Int {
         // Count data files before clearing so we can report how many entries were removed.
         val count = cacheDir.listFiles()

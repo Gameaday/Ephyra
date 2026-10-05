@@ -9,6 +9,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
@@ -64,7 +66,6 @@ import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.openInBrowser
 import ephyra.core.download.DownloadCache
 import ephyra.core.migration.Migrator
-import ephyra.data.cache.ChapterCache
 import ephyra.data.updater.AppUpdateChecker
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.library.service.LibraryPreferences
@@ -245,9 +246,6 @@ class MainActivity : BaseActivity(), AppReadySignal {
     lateinit var downloadCache: DownloadCache
 
     @Inject
-    lateinit var chapterCache: ChapterCache
-
-    @Inject
     lateinit var getIncognitoState: GetIncognitoState
 
     @Inject
@@ -407,7 +405,15 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXEnter()
+                                                // Fallback path (no declared pair, or no cover id).
+                                                // Must honour reduced motion too: the plan path
+                                                // does, so a fallback that animates anyway would
+                                                // make the setting inconsistent per route.
+                                                if (reducedMotion) {
+                                                    EnterTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXEnter()
+                                                }
                                             }
                                         },
                                         exitTransition = {
@@ -423,7 +429,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXExit()
+                                                if (reducedMotion) {
+                                                    ExitTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXExit()
+                                                }
                                             }
                                         },
                                         popEnterTransition = {
@@ -439,7 +449,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXPopEnter()
+                                                if (reducedMotion) {
+                                                    EnterTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXPopEnter()
+                                                }
                                             }
                                         },
                                         popExitTransition = {
@@ -455,7 +469,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXPopExit()
+                                                if (reducedMotion) {
+                                                    ExitTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXPopExit()
+                                                }
                                             }
                                         },
                                     ) {

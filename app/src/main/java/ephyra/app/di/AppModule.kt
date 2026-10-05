@@ -1315,6 +1315,12 @@ object AppModule {
     fun provideGetChaptersByMangaId(chapterRepository: ChapterRepository) = GetChaptersByMangaId(chapterRepository)
 
     @Provides
+    fun provideEvictChapterCacheForManga(
+        chapterCache: ephyra.data.cache.ChapterCache,
+        getChaptersByMangaId: GetChaptersByMangaId,
+    ) = ephyra.domain.chapter.interactor.EvictChapterCacheForManga(chapterCache, getChaptersByMangaId)
+
+    @Provides
     fun provideUpdateChapter(chapterRepository: ChapterRepository) = UpdateChapter(chapterRepository)
 
     @Provides
@@ -1389,6 +1395,12 @@ object AppModule {
         sourcePreferences: SourcePreferences,
     ) =
         GetExtensionsByType(sourcePreferences, extensionManager)
+
+    @Provides
+    fun provideGetExtensionUpdateCount(
+        extensionManager: ephyra.domain.extension.service.ExtensionManager,
+    ) =
+        ephyra.domain.extension.interactor.GetExtensionUpdateCount(extensionManager)
 
     @Provides
     fun provideGetExtensionSources(sourcePreferences: SourcePreferences) =

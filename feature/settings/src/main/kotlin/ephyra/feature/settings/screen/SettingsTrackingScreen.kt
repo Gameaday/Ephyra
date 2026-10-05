@@ -326,9 +326,11 @@ object SettingsTrackingScreen : SearchableSettings {
                     ),
                 ),
             )
-            // Authority management: consolidated import + link in one group
-            // MangaUpdates is always available (public search — no login required).
-            val hasAuthoritativeTracker = true
+            // Authority management is retracted from user-facing surfaces (D13): manual
+            // matching, tracker ordering, and import/link return as silent background
+            // enrichment. Gated off rather than deleted so the enrichment rework can
+            // salvage the pieces it needs; delete this block when that lands.
+            val hasAuthoritativeTracker = false
             if (hasAuthoritativeTracker) {
                 // Checking the job state hits WorkManager over IPC and blocks the calling
                 // thread, so it must not run inline in composition.

@@ -17,6 +17,12 @@ interface ChapterCache {
 
     fun getImageFile(imageUrl: String): File?
 
+    /**
+     * Evicts one chapter's page list and referenced page images (cold-tier eviction,
+     * doc/cache-retention-policy.md). No-op for entries not present.
+     */
+    fun removeChapter(chapter: Chapter): Boolean
+
     suspend fun getReadableSize(): String
 
     fun clear(): Int

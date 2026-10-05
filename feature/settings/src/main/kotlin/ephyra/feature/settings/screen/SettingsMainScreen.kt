@@ -9,12 +9,14 @@ import androidx.compose.material.icons.automirrored.outlined.ChromeReaderMode
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.GetApp
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -161,6 +163,18 @@ private fun getItems(): List<Item> = listOf(
         subtitleRes = ephyra.app.core.common.R.string.pref_browse_summary,
         icon = Icons.Outlined.Explore,
         route = ScreenRoutes.SettingsBrowse.route,
+    ),
+    Item(
+        // Source/extension management: moved out of the Discover tab (RFC-0001 D8).
+        titleRes = ephyra.app.core.common.R.string.label_source_management,
+        icon = Icons.Outlined.Extension,
+        route = ScreenRoutes.Extensions.route,
+    ),
+    Item(
+        // Source migration: likewise a management task, not a discovery surface.
+        titleRes = ephyra.app.core.common.R.string.label_migration,
+        icon = Icons.Outlined.SwapHoriz,
+        route = ScreenRoutes.SourceMigration.route,
     ),
     Item(
         titleRes = ephyra.app.core.common.R.string.label_data_storage,

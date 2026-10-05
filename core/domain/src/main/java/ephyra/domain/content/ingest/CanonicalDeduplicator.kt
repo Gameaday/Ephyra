@@ -1,23 +1,16 @@
 package ephyra.domain.content.ingest
 
 import ephyra.domain.content.model.ContentItem
-import java.security.MessageDigest
+import ephyra.domain.manga.interactor.TitleNormalizer
 
 object CanonicalDeduplicator {
     /**
-     * Generates a stable, reproducible content hash based on structural metadata.
-     * Keeps content identical regardless of what source or file naming was used.
+     * Stable content hash — delegates to [TitleNormalizer.canonicalKey], the single
+     * source of truth for work identity (RFC-0001). Retained as a named entry point
+     * for ingest callers; do not reintroduce local hashing here.
      */
-    fun generateContentHash(title: String, author: String?, genres: List<String>): String {
-        val rawInput = buildString {
-            append(title.lowercase().trim())
-            author?.let { append(it.lowercase().trim()) }
-            genres.sorted().forEach { append(it.lowercase().trim()) }
-        }
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hashBytes = digest.digest(rawInput.toByteArray(Charsets.UTF_8))
-        return hashBytes.joinToString("") { "%02x".format(it) }
-    }
+    fun generateContentHash(title: String, author: String?, genres: List<String>): String =
+        TitleNormalizer.canonicalKey(title, author, genres)
 
     /**
      * Deduplicates a list of content items, merging items with matching content hashes or canonical IDs.

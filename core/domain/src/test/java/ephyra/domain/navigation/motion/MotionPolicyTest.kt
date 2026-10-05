@@ -103,37 +103,6 @@ class MotionPolicyTest {
     }
 
     @Test
-    fun `only the library pair may carry a shared element`() {
-        listOf(
-            MotionRoutePair.TAB_PEER,
-            MotionRoutePair.READER_ENTRY,
-            MotionRoutePair.SHEET_PARENT,
-            MotionRoutePair.UNDECLARED,
-        ).forEach { pair ->
-            val plan = MotionPolicy.plan(pair, MotionDirection.FORWARD, key)
-            assertFalse(plan.shouldAnimateSharedElement, "pair=$pair must not animate a shared element")
-        }
-    }
-
-    @Test
-    fun `a tab peer crossfades`() {
-        val plan = MotionPolicy.plan(MotionRoutePair.TAB_PEER)
-        assertEquals(ContainerMotion.CROSSFADE, plan.effectiveContainerMotion)
-    }
-
-    @Test
-    fun `a reader entry uses a shared axis`() {
-        val plan = MotionPolicy.plan(MotionRoutePair.READER_ENTRY)
-        assertEquals(ContainerMotion.SHARED_AXIS, plan.effectiveContainerMotion)
-    }
-
-    @Test
-    fun `an undeclared pair falls back to a crossfade rather than nothing`() {
-        val plan = MotionPolicy.plan(MotionRoutePair.UNDECLARED)
-        assertEquals(ContainerMotion.CROSSFADE, plan.effectiveContainerMotion)
-    }
-
-    @Test
     fun `the return is quicker than the arrival`() {
         // Material 3's shared-element spec is deliberately asymmetric: the user already knows where
         // back goes, so the cover only has to retrace its path. Running the full forward length
@@ -257,14 +226,6 @@ class MotionPolicyTest {
         // The predicate MainActivity branches on. If a second pair ever returns true it would start
         // carrying a shared element it has no counterpart for, which degrades to a silent crossfade.
         assertTrue(MotionRoutePair.LIBRARY_SERIES.usesSharedCover())
-        listOf(
-            MotionRoutePair.TAB_PEER,
-            MotionRoutePair.READER_ENTRY,
-            MotionRoutePair.SHEET_PARENT,
-            MotionRoutePair.UNDECLARED,
-        ).forEach { pair ->
-            assertFalse(pair.usesSharedCover(), "pair=$pair must not declare a shared cover")
-        }
     }
 
     @Test

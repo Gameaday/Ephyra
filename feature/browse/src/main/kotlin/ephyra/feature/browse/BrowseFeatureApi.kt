@@ -61,6 +61,16 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
             )
         }
 
+        // Extensions (source/extension management), standalone route — Settings entry point.
+        navGraphBuilder.composable(ScreenRoutes.Extensions.route) {
+            ephyra.feature.browse.extension.ExtensionsRouteScreen(navController)
+        }
+
+        // Source migration, standalone route — Settings entry point.
+        navGraphBuilder.composable(ScreenRoutes.SourceMigration.route) {
+            ephyra.feature.browse.migration.sources.MigrateSourceRouteScreen(navController)
+        }
+
         // Sources Filter Screen
         navGraphBuilder.composable(ScreenRoutes.SourcesFilter.route) {
             ephyra.feature.browse.source.SourcesFilterScreen(navController)
@@ -69,11 +79,6 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
         // Extension Filter Screen
         navGraphBuilder.composable(ScreenRoutes.ExtensionFilter.route) {
             ephyra.feature.browse.extension.ExtensionFilterScreen(navController)
-        }
-
-        // Match Results Screen
-        navGraphBuilder.composable(ScreenRoutes.MatchResults.route) {
-            ephyra.feature.browse.source.authority.MatchResultsScreen(navController)
         }
 
         // Global Search Screen
