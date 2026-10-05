@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.FilterList
@@ -96,10 +95,10 @@ fun sourcesTab(
                 SourcesScreen(
                     state = state,
                     contentPadding = contentPadding,
-                onClickItem = { source, listing ->
-                    navController.navigate(Screen.BrowseSource(source.id, listing.query))
-                },
-                onClickPin = { ViewModel.onEvent(SourcesScreenEvent.TogglePin(it)) },
+                    onClickItem = { source, listing ->
+                        navController.navigate(Screen.BrowseSource(source.id, listing.query))
+                    },
+                    onClickPin = { ViewModel.onEvent(SourcesScreenEvent.TogglePin(it)) },
                     onLongClickItem = { ViewModel.onEvent(SourcesScreenEvent.ShowSourceDialog(it)) },
                 )
             }
