@@ -72,8 +72,7 @@ class PredictiveBackTest {
         checkNotNull(source) { "PredictiveBack.kt not found" }
         val handler = source.readText()
             .substringAfter("PredictiveBackHandler(enabled = enabled) { flow ->")
-            .substringBefore("    }
-}")
+            .substringBefore("internal fun backGestureOffset")
         assertTrue(
             handler.contains("flow.collect { }") &&
                 handler.indexOf("flow.collect { }") < handler.indexOf("return@PredictiveBackHandler"),
