@@ -20,6 +20,7 @@ import androidx.compose.ui.util.fastAll
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil3.imageLoader
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.category.model.Category
@@ -87,7 +88,7 @@ fun LibraryScreen(
     // loads, warm the durable cover cache for the first screenfuls so initial scroll
     // never waits on the network. Bounded (one small batch per library change),
     // deduped by Coil against in-flight requests, and a durable hit is a cheap no-op.
-    val imageLoader = coil3.imageLoader(context)
+    val imageLoader = context.imageLoader
     LaunchedEffect(state.libraryData.favorites) {
         state.libraryData.favorites
             .asSequence()

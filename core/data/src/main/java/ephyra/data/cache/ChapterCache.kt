@@ -264,7 +264,7 @@ class ChapterCache(
      *
      * @return true if the page list entry was present and removed.
      */
-    fun removeChapter(chapter: Chapter): Boolean {
+    override fun removeChapter(chapter: Chapter): Boolean {
         val pages = runCatching { getPageListFromCache(chapter) }.getOrNull()
         pages?.forEach { page ->
             page.imageUrl?.let { url ->
