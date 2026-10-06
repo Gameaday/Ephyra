@@ -110,6 +110,8 @@ is not done until that evidence exists. `E2` = JVM/Robolectric, `E3` = emulator/
 
 ### Track D - Legacy deletion & cleanup (the crispness work)
 
+Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](2_0_CLEANUP_AUDIT.md) (CU-1..CU-8); absorb them into D1/D2/D3.
+
 | ID | Action | Evidence | Depends on |
 |---|---|---|---|
 | D1 | **Execute `ADR-0017`:** delete `SourceProfile`, `SourceProfileCache`, `SourceProfileStore`, `RoomSourceProfileStore`, the Room entity + migration, `DynamicHttpSource`, `RemoteSource`, `ContentSourceOrchestrator`, `GetAvailableSources`'s profile branch, and `DEF-029`. | compile + `SourceApiBoundaryTest` + migration tests | B2 (identity owner must exist first) |
