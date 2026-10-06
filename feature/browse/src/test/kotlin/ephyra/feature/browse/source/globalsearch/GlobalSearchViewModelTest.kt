@@ -90,12 +90,14 @@ class GlobalSearchViewModelTest {
         Dispatchers.resetMain()
     }
 
-    @Test
-    fun `initial state has empty query and PinnedOnly filter`() = runTest {
+        @Test
+    fun `initial state has empty query and All filter`() = runTest {
         viewModel.state.test {
             val initial = awaitItem()
             assertNull(initial.searchQuery)
-            assertEquals(SourceFilter.PinnedOnly, initial.sourceFilter)
+            // Default must be All: pinning-only-by-default left users with no pinned
+            // sources with an empty result set on every search.
+            assertEquals(SourceFilter.All, initial.sourceFilter)
             assertFalse(initial.onlyShowHasResults)
         }
     }
@@ -114,15 +116,20 @@ class GlobalSearchViewModelTest {
     }
 
     @Test
-    fun `SetSourceFilter event updates sourceFilter in state`() = runTest {
+    fun `SetSourceFilter event toggles sourceFilter in state`() = runTest {
         viewModel.state.test {
             val initial = awaitItem()
-            assertEquals(SourceFilter.PinnedOnly, initial.sourceFilter)
+            assertEquals(SourceFilter.All, initial.sourceFilter)
+
+            viewModel.onEvent(SearchScreenEvent.SetSourceFilter(SourceFilter.PinnedOnly))
+
+            val narrowed = awaitItem()
+            assertEquals(SourceFilter.PinnedOnly, narrowed.sourceFilter)
 
             viewModel.onEvent(SearchScreenEvent.SetSourceFilter(SourceFilter.All))
 
-            val updated = awaitItem()
-            assertEquals(SourceFilter.All, updated.sourceFilter)
+            val widened = awaitItem()
+            assertEquals(SourceFilter.All, widened.sourceFilter)
         }
     }
 
