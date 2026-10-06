@@ -1,114 +1,55 @@
 # Ephyra — Brand Assets
 
-Vector identity for **Ephyra 2.0**, the manga / comic / light-novel reader.
+The Ephyra symbol: a **geometric open book** — two folded planes meeting at a gutter — on a deep-teal
+field, with a single coral wave beneath. It is deliberately **not a letterform**: the mark is an
+object (a book) built from hard-edged planes, so it reads as *reading* at a glance and stays legible
+from a 24 dp icon to a splash screen.
 
-| File | What it is | ViewBox |
-|------|------------|---------|
-| `ephyra-mark.svg` | Square app mark / monogram (tile + page-panel “E” + coral wave) | `0 0 512 512` |
-| `ephyra-logo.svg` | Primary horizontal lockup — mark + “Ephyra” wordmark | `0 0 256 64` |
-| `ephyra-adaptive-icon-foreground.svg` | Android adaptive-icon foreground layer | `0 0 108 108` |
+## Files
 
-All files are standalone SVG: pure vector, no external fonts, no raster content,
-no JavaScript, no `@import`, no external `href`.
+| File | Size / grid | What it is |
+|------|-------------|------------|
+| `ephyra-symbol.svg` | 512 | The mark alone, single colour, transparent background. Use on any light surface. |
+| `ephyra-icon.svg` | 512 | The full app icon: mark + teal field + coral wave. |
+| `ephyra-adaptive-icon-foreground.svg` | 108 (66 safe) | Android adaptive-icon **foreground** layer. |
+| `ephyra-adaptive-icon-background.svg` | 108 | Android adaptive-icon **background** layer (flat teal + one facet). |
+| `ephyra-monochrome.svg` | 108 (66 safe) | Single-colour layer for Material **themed icons**. |
+| `ephyra-24dp.svg` | 24 | Material icon-grid version for in-app use. |
 
----
+All files are standalone SVG: pure vector, no external fonts, no raster content, no JavaScript, no
+`@import`, no external `href`.
 
 ## Palette
 
 | Role | Name | Hex | Usage |
 |------|------|-----|-------|
-| Primary | **Abyss Teal** | `#0E4C5C` | Tile, wordmark, single-colour mark on light |
-| Accent | **Ember Coral** | `#FF7A59` | The wave / sea gesture only |
-| Neutral | **Sea Paper** | `#F5F1E8` | Monogram, text on teal, single-colour mark on dark |
+| Primary | **Abyss Teal** | `#0E4C5C` | Field, symbol on light surfaces |
+| Facet | **Abyss Deep** | `#0A3A47` | The single background facet |
+| Accent | **Ember Coral** | `#FF7A59` | The wave only — reserve it |
+| Neutral | **Sea Paper** | `#F5F1E8` | Symbol on the teal field |
 
-Three colours, one job each. Keep the coral reserved for the wave so it stays a
-deliberate accent rather than decoration.
+Contrast: Sea Paper on Abyss Teal ≈ **8.4:1** (WCAG AAA); Teal on white ≈ **9.5:1**.
 
-**Contrast**
-- Sea Paper on Abyss Teal ≈ **8.4:1** — passes WCAG AAA for all text sizes.
-- Ember Coral on Abyss Teal ≈ **3.7:1** — fine for the large wave shape, not for text.
+## Construction
 
-> Note: the in-app **Ephyra** Compose theme (`THEME_STYLE_GUIDE.md`) currently uses
-> Electric Indigo `#4F46E5` + Cyan `#0891B2`. This mark is an intentional 2.0 refresh;
-> migrate the theme tokens to the palette above when convenient so app and mark match.
+- Built on a **512 grid**, symbol inside a **384 keyline** (64 units clear on every side).
+- The book is **two mirrored planes**; the **12-unit gutter** between them is the spine, and it is
+  what makes the shape read as a book rather than a chevron. Do not close it.
+- The **24 dp** version is drawn on the Material grid with a 20 dp live area (2 dp padding).
+- The **adaptive icon** keeps all essential geometry inside the central **66 × 66** of the
+  108 × 108 canvas; the background facet is decorative and may bleed to the mask edge.
 
----
+## Material compliance
 
-## Clear space
+- **Adaptive icon**: separate `foreground`, `background`, and `monochrome` layers at 108 × 108, with
+  a 66 dp safe zone (Google Play requires the 66 dp centre; the outer 18 dp per side may be masked).
+- **Themed icons**: `ephyra-monochrome.svg` is a single-colour silhouette on transparency, tinted by
+  the system — do not bake colour into it.
+- **Icon grid**: the 24 dp asset follows the Material keyline (square keyline, 2 dp padding).
 
-Use **X = one page-panel width** (the thickness of the “E” strokes) as the spacing unit.
+## Notes
 
-- **Mark** — keep a margin of **2X** clear on all four sides
-  (≈ 104 units on the 512 grid, ≈ 10 px around a 48 px icon).
-- **Horizontal logo** — keep a margin equal to the **cap height of the wordmark**
-  (32 units on the 64-high logo) on all sides.
-- Never place other elements, edges, or competing colour inside the clear space.
-
-## Minimum sizes
-
-| Asset | Minimum | Preferred |
-|-------|---------|-----------|
-| `ephyra-mark.svg` | **24 px** (digital), 32 px favicon | 48 px+ |
-| `ephyra-logo.svg` | **120 px** wide | 160 px+ |
-
-Below 120 px the wordmark is hard to read — switch to the **mark alone**.
-
-## Monochrome
-
-The mark is designed to survive as a **single colour**.
-
-- **On light backgrounds** — render the monogram (page-panel “E” + wave) in
-  Abyss Teal `#0E4C5C` on a transparent or paper field.
-- **On dark backgrounds** — render the monogram in Sea Paper `#F5F1E8`
-  (or pure white) on a transparent field; the coral wave becomes the same colour.
-- **One-colour tile** — Abyss Teal tile `#0E4C5C` + Sea Paper monogram
-  (this is exactly the default mark, with the coral wave re-coloured to paper).
-- Use the monogram paths with a single `fill`; the wave may simply be dropped if a
-  solid, compact mark is needed.
-
-## Android adaptive icon
-
-`ephyra-adaptive-icon-foreground.svg` is the **foreground** layer only.
-
-- **Background layer:** solid Abyss Teal `#0E4C5C`.
-- The monogram is centred on `(54, 54)` and kept inside the central **66 dp safe
-  zone** (≈ 30 dp radius). The coral wave is decorative and bleeds to the edge by
-  design, so it is not clipped by round/squircle masks.
-- Result composes to the same image as `ephyra-mark.svg`.
-
-## Colour-on-background cheat sheet
-
-| Surface | Treatment |
-|---------|-----------|
-| Light / white | Full-colour mark, or monogram in Abyss Teal |
-| Dark / near-black | Monogram in Sea Paper (coral wave → paper) |
-| Photography / busy art | Full-colour mark on its own tile, or paper monogram in a solid teal tile |
-
----
-
-## Design rationale
-
-Ephyra reads as a **bold geometric “E” built from three stacked page panels** —
-sequential art, a fanned stack of pages, a reader — standing on a single
-**coral wave** that gives the sea-nymph her water and keeps the mark from feeling
-like a generic tech monogram. The soft, generous corner radii mirror the app’s
-own “Ephyra” theme shape language, so the icon and the UI feel cut from the same
-cloth, while the deep-teal-plus-warm-coral palette reads as ocean and daylight
-rather than startup-gradient. The result is calm, confident and legible from a
-48 px launcher tile down to a favicon, and it collapses cleanly to one colour
-when the situation demands it.
-
----
-
-## Design directions
-
-Two marks ship in this directory. **Pick one and delete the other before wiring launcher icons.**
-
-| Direction | Files | Character |
-|---|---|---|
-| **Rounded (v1)** | `ephyra-mark.svg`, `ephyra-logo.svg` | Soft squircle tile, rounded page-panel “E”, coral wave. Friendly consumer-app read; closest to the Material 3 shape language. Adaptive-icon foreground provided. |
-| **Geometric (v2)** | `ephyra-mark-geometric.svg`, `ephyra-logo-geometric.svg` | Hard corners, flat colour, one diagonal facet: a sharp page-bar “E” over a coral chevron. Media/streaming read — the Jellyfin-adjacent direction. |
-
-Both share the palette and the core idea (a page-derived “E” plus a sea gesture), so they are
-interchangeable without redoing the palette. The adaptive-icon foreground currently exists only for
-the rounded direction; if the geometric mark wins, regenerate it from `ephyra-mark-geometric.svg`.
+- The in-app Compose theme currently uses Electric Indigo `#4F46E5` + Cyan `#0891B2`. This mark is a
+  2.0 refresh; migrate the theme tokens to the palette above so app and mark match.
+- Wiring the adaptive icon into `app/src/main/res/mipmap-anydpi-v26/` is a separate, reviewable step
+  (it changes the launcher icon).
