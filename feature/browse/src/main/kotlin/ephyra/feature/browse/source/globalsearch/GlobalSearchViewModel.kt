@@ -8,6 +8,7 @@ import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.interactor.TitleNormalizer
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -44,33 +45,49 @@ class GlobalSearchViewModel @Inject constructor(
 ) {
 
     /**
-     * Search suggestions: recent queries when the field is blank or short, plus
-     * fuzzy-matched library titles (same normalization engine as Smart Merge) once
-     * the user starts typing. Drives the one-tap chip row on the search screen.
+     * Library matches for the current query — powers the "From your library" section at the
+     * top of the results. Instant (local DB), no network; same normalization engine as Smart
+     * Merge. Empty unless the query is >= 2 chars after normalization, so it is safe to
+     * render as-you-type without firing network traffic.
+     */
+    val libraryMatches: StateFlow<List<Manga>> = combine(
+        state.map { it.searchQuery.orEmpty().trim() }.distinctUntilChanged(),
+        getLibraryManga.subscribe(),
+    ) { query, library ->
+        if (query.isBlank()) return@combine emptyList()
+        val normalizedQuery = TitleNormalizer.forEquality(query)
+        if (normalizedQuery.length < 2) return@combine emptyList()
+        library.asSequence()
+            .map { it.manga }
+            .filter { manga ->
+                TitleNormalizer.forEquality(manga.title).contains(normalizedQuery)
+            }
+            .take(SUGGESTION_LIMIT)
+            .toList()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList(),
+    )
+
+    /**
+     * Recent-query chip row: recent searches filtered to the active query, for one-tap
+     * re-runs. Library titles are intentionally no longer chips — they live in the
+     * [libraryMatches] section as full rows, so the page reads Library → recents → sources
+     * instead of duplicating the same work as both a chip and a card.
      */
     val suggestions: StateFlow<List<String>> = combine(
         state.map { it.searchQuery.orEmpty().trim() }.distinctUntilChanged(),
-        getLibraryManga.subscribe(),
-        // Reactive: a freshly recorded search should appear without waiting for a
-        // query or library change to re-trigger the combine.
+        // recentSearches.observe() is reactive, so a freshly recorded search appears here
+        // without needing a query change to re-trigger the combine.
         recentSearches.observe(),
-    ) { query, library, recordedRecents ->
+    ) { query, recordedRecents ->
         val recents = recordedRecents.filterNot { it.equals(query, ignoreCase = true) }
         if (query.isBlank()) {
             recents.take(SUGGESTION_LIMIT)
         } else {
-            val normalizedQuery = TitleNormalizer.forEquality(query)
-            val libraryMatches = library.asSequence()
-                .map { it.manga.title }
-                .filter { title ->
-                    val normalized = TitleNormalizer.forEquality(title)
-                    normalizedQuery.length >= 2 && normalized.contains(normalizedQuery)
-                }
+            recents.filter { it.contains(query, ignoreCase = true) }
                 .take(SUGGESTION_LIMIT)
-            (libraryMatches + recents.filter { it.contains(query, ignoreCase = true) })
-                .distinct()
-                .take(SUGGESTION_LIMIT)
-                .toList()
         }
     }.stateIn(
         scope = viewModelScope,

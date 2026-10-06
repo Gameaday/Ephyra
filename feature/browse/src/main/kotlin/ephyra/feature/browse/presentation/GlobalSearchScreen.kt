@@ -29,6 +29,7 @@ import ephyra.feature.browse.source.globalsearch.SearchItemResult
 import ephyra.feature.browse.source.globalsearch.SearchViewModel
 import ephyra.feature.browse.source.globalsearch.SourceFilter
 import ephyra.presentation.core.components.material.Scaffold
+import ephyra.presentation.core.screens.EmptyScreen
 import eu.kanade.tachiyomi.source.CatalogueSource
 
 @Composable
@@ -75,6 +76,7 @@ fun GlobalSearchScreen(
             suggestions = suggestions,
             onSuggestionClick = onSuggestionClick,
             mergedDuplicateCount = mergedDuplicateCount,
+            searchQuery = state.searchQuery,
         )
     }
 }
@@ -140,10 +142,50 @@ internal fun GlobalSearchContent(
     suggestions: List<String> = emptyList(),
     onSuggestionClick: (String) -> Unit = {},
     mergedDuplicateCount: Int = 0,
+    searchQuery: String? = null,
+    libraryResults: List<Manga> = emptyList(),
 ) {
+    val loading = items.values.any { it is SearchItemResult.Loading }
+    val hasResults = libraryResults.isNotEmpty() ||
+        items.values.any { it is SearchItemResult.Success && !it.isEmpty }
+    // Don't show a "no results" screen while a search is in flight, while library
+    // suggestions still exist for the query (those are valid matches the user owns),
+    // or when there's nothing to search yet (blank query / suggestions row present).
+    val showEmptyState =
+        !searchQuery.isNullOrBlank() && !loading && !hasResults && suggestions.isEmpty()
+
+    if (showEmptyState) {
+        EmptyScreen(
+            stringRes = ephyra.app.core.common.R.string.no_results_found,
+            modifier = Modifier.padding(contentPadding),
+        )
+        return
+    }
+
     LazyColumn(
         contentPadding = contentPadding,
     ) {
+        // Library section (instant, local DB): rendered above everything else when the
+        // query matches something the user already owns, per the v1 spec. Reuses the
+        // same card row as the per-source results so the page stays uniform and
+        // uncluttered (Library → recents → sources).
+        if (libraryResults.isNotEmpty()) {
+            item(key = "library-results", contentType = "library-results") {
+                Text(
+                    text = stringResource(ephyra.app.core.common.R.string.search_library_suggestions),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                )
+                GlobalSearchCardRow(
+                    titles = libraryResults,
+                    getManga = getManga,
+                    onClick = onClickItem,
+                    onLongClick = onLongClickItem,
+                )
+            }
+        }
         if (suggestions.isNotEmpty() || mergedDuplicateCount > 0) {
             item(key = "search-suggestions", contentType = "search-suggestions") {
                 GlobalSearchMergedBanner(mergedDuplicateCount)

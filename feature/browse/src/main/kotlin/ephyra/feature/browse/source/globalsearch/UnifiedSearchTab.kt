@@ -18,6 +18,9 @@ import ephyra.presentation.core.ui.navigation.Screen
  * ordering and read as availability, not noise). The field lives in the shared
  * [ephyra.presentation.core.components.TabbedScreen] toolbar, hoisted by
  * `BrowseTabScreen`, which also routes the submit that fires the fan-out.
+ *
+ * Sectioned as-you-type: an instant (local-DB) Library match section renders above the
+ * streaming per-source results, per the v1 spec (see `doc/phase2-search-v1-spec.md`).
  */
 @Composable
 fun unifiedSearchTab(
@@ -26,10 +29,12 @@ fun unifiedSearchTab(
 ): TabContent {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
+    val libraryMatches by viewModel.libraryMatches.collectAsStateWithLifecycle()
 
     return TabContent(
         titleRes = ephyra.app.core.common.R.string.label_search,
         searchEnabled = true,
+        alwaysShowSearch = true,
         content = { contentPadding, _ ->
             GlobalSearchContent(
                 items = state.filteredItems,
@@ -45,6 +50,8 @@ fun unifiedSearchTab(
                     viewModel.onEvent(SearchScreenEvent.UpdateSearchQuery(query))
                     viewModel.onEvent(SearchScreenEvent.Search)
                 },
+                searchQuery = state.searchQuery,
+                libraryResults = libraryMatches,
             )
         },
     )
