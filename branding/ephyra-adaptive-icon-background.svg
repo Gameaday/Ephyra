@@ -2,5 +2,5 @@
   <title id="ab-t">Ephyra adaptive icon background</title>
   <desc id="ab-d">Background layer: a flat deep-teal field with one hard diagonal facet.</desc>
   <rect width="108" height="108" fill="#0E4C5C"/>
-  <path d="M108 52 L108 108 L52 108 Z" fill="#0A3A47"/>
+  <polygon points="108,54 108,108 54,108" fill="#0A3A47"/>
 </svg>

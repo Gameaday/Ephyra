@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-labelledby="m24-t m24-d">
   <title id="m24-t">Ephyra</title>
-  <desc id="m24-d">Ephyra 24dp icon on the Material icon grid (20dp live area).</desc>
-  <g fill="#0E4C5C">
-    <path d="M11.5 6 L3.5 8.2 L3.5 17.8 L11.5 15.6 Z"/>
-    <path d="M12.5 6 L20.5 8.2 L20.5 17.8 L12.5 15.6 Z"/>
+  <desc id="m24-d">Ephyra 24dp icon on the Material icon grid: the bell alone with its coral margin.</desc>
+  <g transform="translate(12 12) scale(0.0862) translate(-256 -247)">
+    <polygon points="140,304 140,258 180,214 216,190 296,190 332,214 372,258 372,304" fill="#0E4C5C"/>
+    <polygon points="140,278 372,278 372,304 140,304" fill="#FF7A59"/>
   </g>
 </svg>
