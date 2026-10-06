@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="ephyra-mark-title ephyra-mark-desc">
+  <title id="ephyra-mark-title">Ephyra</title>
+  <desc id="ephyra-mark-desc">Ephyra app mark: a bold geometric E built from stacked page panels, standing above a coral wave, on a deep teal squircle.</desc>
+
+  <defs>
+    <clipPath id="ephyra-tile">
+      <rect x="16" y="16" width="480" height="480" rx="116" ry="116"/>
+    </clipPath>
+  </defs>
+
+  <!-- Tile -->
+  <rect x="16" y="16" width="480" height="480" rx="116" ry="116" fill="#0E4C5C"/>
+
+  <!-- Sea: coral wave filling the base of the tile -->
+  <path clip-path="url(#ephyra-tile)" fill="#FF7A59"
+        d="M-40 372 C40 372 60 326 150 326 C240 326 260 372 350 372 C440 372 460 326 552 326 L552 552 L-40 552 Z"/>
+
+  <!-- Monogram: three stacked page panels + spine -->
+  <g fill="#F5F1E8">
+    <rect x="140" y="118" width="52" height="214" rx="20" ry="20"/>
+    <rect x="140" y="118" width="232" height="52" rx="20" ry="20"/>
+    <rect x="140" y="199" width="172" height="52" rx="20" ry="20"/>
+    <rect x="140" y="280" width="232" height="52" rx="20" ry="20"/>
+  </g>
+</svg>
