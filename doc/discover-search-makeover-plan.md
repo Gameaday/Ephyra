@@ -80,20 +80,28 @@ These directly resolve (1), (2), and the worst of (3):
 | B | **Always-visible search field on the Discover Search tab.** Added `TabContent.alwaysShowSearch`; `TabbedScreen` renders the field (empty, with placeholder) up-front instead of waiting for an icon tap. The Sources tab is unchanged (keeps icon-first, local-filter behaviour). | `TabbedScreen.kt`, `UnifiedSearchTab.kt` |
 | C | **Empty state.** `GlobalSearchContent` now shows `EmptyScreen("No results found")` when a submitted query has no successful non-empty results, is not still loading, and has no library suggestions to fall back on. `searchQuery` is threaded through all three call sites. | `GlobalSearchScreen.kt`, `MigrateSearchScreen.kt`, `UnifiedSearchTab.kt` |
 | C | **UI tests** for the empty state (shown on no results; suppressed during loading / when suggestions exist). | `GlobalSearchComponentsUiTest.kt` |
+| D | **Library section (4.2, implemented).** `GlobalSearchViewModel.libraryMatches` — an instant, local-DB, fuzzy-matched (`TitleNormalizer.forEquality`) StateFlow of the user's library manga for the active query (>= 2 normalized chars; capped at `SUGGESTION_LIMIT`). The `suggestions` chip row is now recents-only so library titles are not duplicated as both chips and cards (keeps the page uncluttered). `GlobalSearchContent` renders a "From your library" header + the existing `GlobalSearchCardRow` above the suggestions row when matches exist; `hasResults` now counts library results so the empty state still suppresses correctly. The standalone global-search route shares the same ViewModel and shows the same section; migration search (`MigrateSearchViewModel`) is unchanged. | `GlobalSearchViewModel.kt`, `GlobalSearchScreen.kt`, `UnifiedSearchTab.kt` |
+| D | **ViewModel + UI tests** for the Library section. | `GlobalSearchViewModelTest.kt`, `GlobalSearchComponentsUiTest.kt` |
 
-Net effect: open Discover → the search bar is already there and focused → type → Enter →
-results stream in from all enabled sources. Tap a library/suggestion chip → it searches across
-all sources and returns hits. A query with genuinely no hits shows "No results found" instead
-of a silent blank page.
+Net effect: open Discover → the search bar is already there and focused → type → the
+Library section fills in instantly from the local DB, recents appear as one-tap chips, and
+source results stream in per-source from all enabled sources. Tap a library/suggestion chip →
+it searches across all sources and returns hits. A query with genuinely no hits shows
+"No results found" instead of a silent blank page.
 
 ## 4. Phased backlog — the rest of the make over
 
-### 4.1 — Make the source filter visible & switchable on the tab (next)
+### 4.1 — Make the source filter visible & switchable on the tab (deferred to design review)
 
-Today the pinned/all choice is invisible on the Discover tab (only on the standalone route).
-Now that the default is `All`, surface a small segmented control / filter chip group inside the
-search page content (above the suggestions row) so users can narrow to **Pinned** intentionally.
+**Status:** deferred, not implemented yet. The pinned/all choice is still invisible on the
+Discover tab (only on the standalone route). Now that the default is `All`, surfacing a toggle
+is the natural transparency affordance, but the user asked for an intentional, uncluttered
+page and section (4.2) already adds a header + card row + chip row above the results, so a
+third inline chip group risks crowding the top of the scroll area. Holding for a design review
+of placement (e.g. fold the pinned/all toggle into the search-field trailing area rather than
+a separate chip row).
 
+When green-lit, the plan stands as written:
 - Add `sourceFilter` + `onChangeSearchFilter` params to `GlobalSearchContent` (nullable,
   default `null`), and render a `SourceFilterChips` row only when they are supplied.
 - `UnifiedSearchTab` passes `state.sourceFilter` and a `SetSourceFilter` event handler.
@@ -106,17 +114,23 @@ search page content (above the suggestions row) so users can narrow to **Pinned*
 
 ### 4.2 — Section the results (Library + Sources), per `phase2-search-v1-spec.md`
 
-- **Library section first, instant.** Query the local library DB as-you-type (debounced) and
-  render library matches as full rows with reading progress ("Ch 42 · 3 unread"), ahead of any
-  network result. Today library titles only appear inside the suggestions chip row.
-- **Sources section streams.** Render per-source result headers + inline status: a slim
-  "searching N sources…" progress line, per-source success/empty/error/slow-collapse rows,
-  and retry on error rows. Today a failed source shows `GlobalSearchErrorResultItem` inline but
-  there is no aggregate progress or retry affordance.
-- **Ordering.** Exact `TitleNormalizer.forEquality` match to top of each section; pinned
+**Status:** Phase 1 shipped this session — the **Library section** is implemented (instant local
+fuzzy match via `GlobalSearchViewModel.libraryMatches`, rendered above the recents chip row
+and the per-source results, reusing `GlobalSearchCardRow`). `suggestions` is recents-only so
+library titles are not duplicated as both chips and cards.
+
+Remaining phase-2 items (not shipped — larger and not required to unblock the page):
+- **Library rows with reading progress** ("Ch 42 · 3 unread") in the Library section. The
+  card row currently shows title + cover + in-library badge; plumbing `LibraryManga`
+  progress into `MangaComfortableGridItem` is a follow-up.
+- **Sources section streaming polish:** a slim "searching N sources…" progress line, per-source
+  success/empty/error/slow-collapse rows, and retry on error rows. Today a failed source
+  shows `GlobalSearchErrorResultItem` inline but there is no aggregate progress or retry.
+- **Ordering:** exact `TitleNormalizer.forEquality` match to top of each section; pinned
   sources first within the Sources section (preserve existing `sortComparator` intent).
-- **Actionability.** Long-press a source row → add to library directly (the add-time duplicate
-  check from the v1 spec), bypassing the details detour.
+- **Actionability:** long-press a source row → add to library directly (the add-time duplicate
+  check from the v1 spec), bypassing the details detour. (This is the test bed for the
+  matching-rules RFC-0001 comparison; see `phase2-search-v1-spec.md` "Add-time duplicate check".)
 
 ### 4.3 — Smart Merge banner + merged-row toggle on the tab
 
@@ -128,33 +142,68 @@ stable.)
 
 ### 4.4 — Matching refresh to the Sources tab (the "other discover page")
 
-The Sources tab (`sourcesTab` → `SourcesScreen`) is the sibling Discover page. Matching
-changes:
+The Sources tab (`sourcesTab` → `SourcesScreen`) is the sibling Discover page. Per the owner's
+direction, the two tabs keep **distinct identities**, and the Sources tab stays as-is:
 
-- It already has an `EmptyScreen` for no-results / no-sources (good — keep it).
-- Consider applying `alwaysShowSearch = true` here too so the local-filter bar is always
-  visible and consistent with the Search tab. **Risk:** the Sources tab's top bar also carries
-  the "Add Source or Repo", "Global search", and "Filter" action icons; rendering the field
-  alongside all three narrows the bar. Decide placement (field + overflow the three actions)
-  in a design review before implementing; treat as a follow-up, not a regression.
-- The Sources tab already shows an "extension updates available" assist chip
-  (`ElevatedAssistChip` in `sourcesTab`). Consider unifying that chip's shape/style with the
-  search page's filter chips for visual consistency.
-- Keep the Sources tab's `BackHandler` (clears the local filter query) behaviour intact when
-  adopting always-show-search.
+- **No always-show-search on the Sources tab.** It keeps its icon-first, local-filter
+  behaviour. The Search tab is the network search front door; the Sources tab is the enabled-
+  sources catalog to drill into each one. Adding an always-visible field there would crowd its
+  top bar (which carries "Add Source or Repo", "Global search", and "Filter") and blur the two
+  pages' purposes. (The `alwaysShowSearch` flag exists precisely so only the Search tab opts in.)
+- **Empty state already present** (`SourcesScreen` shows `EmptyScreen` for no-results / no-
+  sources) — keep it.
+- **Visual consistency touch** (optional): the Sources tab already surfaces an
+  "extension updates available" `ElevatedAssistChip`. Consider matching the search page's
+  chip shape/style for visual cohesion — a purely cosmetic follow-up.
 
 ### 4.5 — Migrate the Discover search engine to the target-native path
 
-`source-api` now ships a target-native search stack
-(`NativeSourceRegistry` → `GlobalSearchCoordinator` → `SearchSession`) with per-source
-timeout, concurrency cap, and typed `SearchFailure` kinds (`TRANSIENT` / `PERMANENT` /
-`RATE_LIMITED` / timed-out). The legacy fan-out in `SearchViewModel.search()` (manual
-`async`/`withContext(Dispatchers.IO.limitedParallelism(5))`) predates that and lacks
-per-source timeout cancellation. A later phase should drive the Discover Search tab from
-`GlobalSearchCoordinator` instead of `UnifiedSearchEngine`, converting
-`SourceContentItem`/`MergedSourceItem` into the existing `Manga`-based rows at the UI
-boundary. (Out of scope for this change set — large, needs the local-source gateway wired
-first; tracked in `doc/SOURCE_DISCOVERY_ARCHITECTURE.md`.)
+`source-api` now ships a target-native search stack (`NativeSourceRegistry` →
+`GlobalSearchCoordinator` → `SearchSession`) with per-source timeout, concurrency cap, and
+typed `SearchFailure` kinds (`TRANSIENT` / `PERMANENT` / `RATE_LIMITED` / timed-out). The
+legacy fan-out in `SearchViewModel.search()` (manual `async`/`withContext(Dispatchers.IO
+.limitedParallelism(5))`) predates that and lacks per-source timeout cancellation. A later
+phase should drive the Discover Search tab from `GlobalSearchCoordinator` instead of
+`UnifiedSearchEngine`, converting `SourceContentItem`/`MergedSourceItem` into the existing
+`Manga`-based rows at the UI boundary.
+
+**Why this matters (benefits of 4.5):**
+
+- **Reliability you can see, not just logs.** Per-source `SearchSessionConfig.sourceTimeoutMillis`
+  (default 10s) + `try { ... } catch` → a single `SourceSearchState.Failed`/`Empty` row instead
+  of a hung source blocking the fan-out. Today a slow source just stays `Loading` until the
+  coroutine times out implicitly (or not).
+- **Typed failures.** `SearchFailureKind` lets the UI show "failed — retry" vs "rate limited,
+  try again in N min" vs "this source doesn't support search" — distinct from `SmartSourceSearchEngine`'s
+  opaque `catch (e: Throwable) -> emptyList()`, which silently turns every failure into "no results".
+- **Cancellation correctness.** `SearchSession` is generation/cancellation-aware; switching
+  queries or leaving the tab cancels in-flight per-source calls cleanly. The legacy
+  `SearchViewModel` cancels the whole `searchJob` but individual `runExtensionCall` wrappers
+  aren't guaranteed to honour it per-source.
+- **One engine, all fronts.** Same `GlobalSearchCoordinator` can back the Discover tab, the
+  deep-link `Screen.GlobalSearch` route, and future source-discovery flows — instead of
+  `UnifiedSearchEngine` + `SmartSourceSearchEngine` + `FindContentSource` three parallel
+  fan-outs that drift.
+- **Target-native sources.** `NativeSourceRegistry` excludes `LEGACY_COMPATIBILITY`/`LEGACY`
+  sources by construction; moving Discover onto it is the prerequisite for ChromeOS /
+  Google Books native sources to appear in search without leaking legacy compat layers.
+
+(Out of scope for this change set — large, needs the local-source gateway wired first; tracked
+in `doc/SOURCE_DISCOVERY_ARCHITECTURE.md` and the `TargetSearchMapper`/`GlobalSearchCoordinator`
+types in `source-api`.)
+
+## 5. Verification
+
+- `GlobalSearchViewModelTest` — asserts the `All` default + toggle; new
+  `libraryMatches` test (blank → empty, "Berserk" → one match). JVM, no Android deps.
+- `GlobalSearchComponentsUiTest` — Robolectric Compose tests: suggestion chips, merged
+  banner, empty state (shown on no results; suppressed during loading / when suggestions
+  exist), and the Library section (header renders + suppresses empty state).
+- No Android SDK / Gradle toolchain is available in this sandbox, so nothing was compiled
+  or executed locally. Changes were written against the exact call sites and signatures in
+  `AppBar.kt` / `SearchToolbar` / `TabbedScreen.kt` / `GlobalSearchContent` and matched to
+  the existing test patterns (`MangaFixtures.manga()`, `collectAsStateWithLifecycle()`).
+  **Gate on CI before release.**
 
 ## 5. Verification
 
