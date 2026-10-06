@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="ic-t ic-d">
+  <title id="ic-t">Ephyra</title>
+  <desc id="ic-d">Ephyra app icon: a geometric open book on a deep-teal field with a coral wave beneath.</desc>
+  <rect width="512" height="512" rx="116" ry="116" fill="#0E4C5C"/>
+  <g fill="#F5F1E8">
+    <path d="M250 178 L112 218 L112 394 L250 354 Z"/>
+    <path d="M262 178 L400 218 L400 394 L262 354 Z"/>
+  </g>
+  <path d="M112 430 L256 398 L400 430" fill="none" stroke="#FF7A59" stroke-width="22" stroke-linecap="square"/>
+</svg>

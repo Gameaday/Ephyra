@@ -1,21 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108" role="img" aria-labelledby="ephyra-ai-title ephyra-ai-desc">
-  <title id="ephyra-ai-title">Ephyra adaptive icon foreground</title>
-  <desc id="ephyra-ai-desc">Adaptive-icon foreground layer: the Ephyra page-panel monogram above a coral wave. Designed to sit on a deep teal background layer.</desc>
-
-  <!--
-    Android adaptive icon foreground (108 x 108 dp).
-    Pair with a solid background layer of #0E4C5C.
-    The monogram is centred at (54, 54) and kept inside the
-    central 66 dp safe zone; the wave is decorative and may bleed.
-  -->
-  <g transform="translate(54 54) scale(0.19) translate(-256 -225)">
-    <path fill="#FF7A59"
-          d="M-40 372 C40 372 60 326 150 326 C240 326 260 372 350 372 C440 372 460 326 552 326 L552 552 L-40 552 Z"/>
-    <g fill="#F5F1E8">
-      <rect x="140" y="118" width="52" height="214" rx="20" ry="20"/>
-      <rect x="140" y="118" width="232" height="52" rx="20" ry="20"/>
-      <rect x="140" y="199" width="172" height="52" rx="20" ry="20"/>
-      <rect x="140" y="280" width="232" height="52" rx="20" ry="20"/>
-    </g>
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108" role="img" aria-labelledby="af-t af-d">
+  <title id="af-t">Ephyra adaptive icon foreground</title>
+  <desc id="af-d">Foreground layer: the geometric open book, inside the 66dp safe zone.</desc>
+  <g fill="#F5F1E8">
+    <path d="M52.7 34 L30 40 L30 76 L52.7 70 Z"/>
+    <path d="M55.3 34 L78 40 L78 76 L55.3 70 Z"/>
   </g>
 </svg>
