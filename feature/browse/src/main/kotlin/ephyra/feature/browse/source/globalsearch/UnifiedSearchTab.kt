@@ -30,6 +30,7 @@ fun unifiedSearchTab(
     return TabContent(
         titleRes = ephyra.app.core.common.R.string.label_search,
         searchEnabled = true,
+        alwaysShowSearch = true,
         content = { contentPadding, _ ->
             GlobalSearchContent(
                 items = state.filteredItems,
@@ -45,6 +46,7 @@ fun unifiedSearchTab(
                     viewModel.onEvent(SearchScreenEvent.UpdateSearchQuery(query))
                     viewModel.onEvent(SearchScreenEvent.Search)
                 },
+                searchQuery = state.searchQuery,
             )
         },
     )

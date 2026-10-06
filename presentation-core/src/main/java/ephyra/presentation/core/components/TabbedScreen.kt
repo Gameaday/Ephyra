@@ -48,10 +48,20 @@ fun TabbedScreen(
             val tab = tabs[state.currentPage]
             val searchEnabled = tab.searchEnabled
 
+            // `alwaysShowSearch` tabs render the search field up-front (empty query,
+            // placeholder shown) instead of hiding it behind a top-right action icon that
+            // users have to hunt for. Search-centric tabs (e.g. the Discover search page)
+            // opt in; tabs that only filter locally keep the icon-first behaviour.
+            val toolbarQuery = when {
+                !searchEnabled -> null
+                tab.alwaysShowSearch -> searchQuery ?: ""
+                else -> searchQuery
+            }
+
             SearchToolbar(
                 titleContent = { AppBarTitle(stringResource(titleRes)) },
                 searchEnabled = searchEnabled,
-                searchQuery = if (searchEnabled) searchQuery else null,
+                searchQuery = toolbarQuery,
                 onChangeSearchQuery = onChangeSearchQuery,
                 onSearch = onSearch,
                 actions = { AppBarActions(tab.actions) },
@@ -104,6 +114,12 @@ data class TabContent(
     val titleRes: Int,
     val badgeNumber: Int? = null,
     val searchEnabled: Boolean = false,
+    /**
+     * When true, the shared tab search field is rendered immediately (with the
+     * placeholder) instead of waiting for the user to tap the search action icon.
+     * Intended for search-centric tabs such as the Discover search page.
+     */
+    val alwaysShowSearch: Boolean = false,
     val actions: ImmutableList<AppBar.AppBarAction> = persistentListOf(),
     val content: @Composable (contentPadding: PaddingValues, snackbarHostState: SnackbarHostState) -> Unit,
 )

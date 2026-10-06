@@ -49,6 +49,7 @@ fun MigrateSearchScreen(
             onClickSource = onClickSource,
             onClickItem = onClickItem,
             onLongClickItem = onLongClickItem,
+            searchQuery = state.searchQuery,
         )
     }
 }

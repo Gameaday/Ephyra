@@ -1,10 +1,13 @@
 package ephyra.feature.browse.presentation
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -67,5 +70,40 @@ class GlobalSearchComponentsUiTest {
         composeRule.setContent { GlobalSearchMergedBanner(mergedCount = 3) }
         composeRule.onNodeWithText("Smart Merge removed 3 duplicate result(s) from other sources")
             .assertExists()
+    }
+
+    @Test
+    fun `empty state shown when a query yields no results`() {
+        composeRule.setContent {
+            GlobalSearchContent(
+                items = emptyMap(),
+                contentPadding = PaddingValues(0.dp),
+                getManga = { mutableStateOf(it) },
+                onClickSource = {},
+                onClickItem = {},
+                onLongClickItem = {},
+                searchQuery = "Naruto",
+            )
+        }
+        composeRule.onNodeWithText("No results found").assertExists()
+    }
+
+    @Test
+    fun `empty state is suppressed while a search is loading`() {
+        composeRule.setContent {
+            GlobalSearchContent(
+                items = emptyMap(),
+                contentPadding = PaddingValues(0.dp),
+                getManga = { mutableStateOf(it) },
+                onClickSource = {},
+                onClickItem = {},
+                onLongClickItem = {},
+                searchQuery = "Naruto",
+                suggestions = listOf("Naruto"),
+            )
+        }
+        // Library suggestions for the query are themselves valid matches, so the
+        // "no results" empty state must not appear alongside them.
+        composeRule.onNodeWithText("No results found").assertDoesNotExist()
     }
 }
