@@ -15,6 +15,8 @@ from a 24 dp icon to a splash screen.
 | `ephyra-adaptive-icon-background.svg` | 108 | Android adaptive-icon **background** layer (flat teal + one facet). |
 | `ephyra-monochrome.svg` | 108 (66 safe) | Single-colour layer for Material **themed icons**. |
 | `ephyra-24dp.svg` | 24 | Material icon-grid version for in-app use. |
+| `ephyra-wordmark.svg` | 764x252 | The "Ephyra" wordmark, Abyss Teal, for light surfaces. |
+| `ephyra-wordmark-on-dark.svg` | 764x252 | The wordmark in Sea Paper, for dark surfaces. |
 
 All files are standalone SVG: pure vector, no external fonts, no raster content, no JavaScript, no
 `@import`, no external `href`.
@@ -36,6 +38,14 @@ Contrast: Sea Paper on Abyss Teal ≈ **8.4:1** (WCAG AAA); Teal on white ≈ **
 - The book is **two mirrored planes**; the **12-unit gutter** between them is the spine, and it is
   what makes the shape read as a book rather than a chevron. Do not close it.
 - The **24 dp** version is drawn on the Material grid with a 20 dp live area (2 dp padding).
+
+### Wordmark
+
+A geometric monoline sans (26-unit stroke, butt caps) drawn as stroked paths, not text: E has a
+spine plus three bars; p and a use circular bowls; h has a round shoulder; y is two arms with a
+leftward descender; r is a stem plus a quarter-round arm. Cap height 140, x-height 100, descender 40.
+Because it is geometry rather than `<text>`, it renders identically everywhere and needs no font.
+If the lockup is needed, set the symbol left of the wordmark with clear space of 2X.
 - The **adaptive icon** keeps all essential geometry inside the central **66 × 66** of the
   108 × 108 canvas; the background facet is decorative and may bleed to the mask edge.
 
