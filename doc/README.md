@@ -22,6 +22,7 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
 | Document | Purpose | Owner / update rule |
 |---|---|---|
 | [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md) | Ordered steps to the `2.0-clean` baseline. | Update when a step lands or the state changes. |
+| [`2_0_CLEANUP_AUDIT.md`](2_0_CLEANUP_AUDIT.md) | Reconciliation of merged work against the current tree. | Update when an item is cleaned up. |
 | [`2_0_CONTENT_MODEL_PLAN.md`](2_0_CONTENT_MODEL_PLAN.md) | Subordinate 10-step plan for content model / profile path. | Delete when its last step lands. |
 | [`REBUILD_PROGRAM.md`](REBUILD_PROGRAM.md) | Phased architecture and delivery rules. | Change only with an ADR. |
 | [`REBUILD_EXECUTION_GUIDE.md`](REBUILD_EXECUTION_GUIDE.md) | Operating procedure for humans and agents. | Update when procedure changes. |
