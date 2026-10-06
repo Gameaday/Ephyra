@@ -97,3 +97,18 @@ cloth, while the deep-teal-plus-warm-coral palette reads as ocean and daylight
 rather than startup-gradient. The result is calm, confident and legible from a
 48 px launcher tile down to a favicon, and it collapses cleanly to one colour
 when the situation demands it.
+
+---
+
+## Design directions
+
+Two marks ship in this directory. **Pick one and delete the other before wiring launcher icons.**
+
+| Direction | Files | Character |
+|---|---|---|
+| **Rounded (v1)** | `ephyra-mark.svg`, `ephyra-logo.svg` | Soft squircle tile, rounded page-panel “E”, coral wave. Friendly consumer-app read; closest to the Material 3 shape language. Adaptive-icon foreground provided. |
+| **Geometric (v2)** | `ephyra-mark-geometric.svg`, `ephyra-logo-geometric.svg` | Hard corners, flat colour, one diagonal facet: a sharp page-bar “E” over a coral chevron. Media/streaming read — the Jellyfin-adjacent direction. |
+
+Both share the palette and the core idea (a page-derived “E” plus a sea gesture), so they are
+interchangeable without redoing the palette. The adaptive-icon foreground currently exists only for
+the rounded direction; if the geometric mark wins, regenerate it from `ephyra-mark-geometric.svg`.

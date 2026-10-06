@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="eg-title eg-desc">
+  <title id="eg-title">Ephyra</title>
+  <desc id="eg-desc">Ephyra geometric mark: a sharp-cornered E built from page bars over a coral chevron wave on a flat deep-teal field, with a faceted lower corner.</desc>
+
+  <!-- Flat field -->
+  <rect width="512" height="512" fill="#0E4C5C"/>
+  <!-- Facet: a single hard diagonal, no rounding -->
+  <path d="M512 236 L512 512 L236 512 Z" fill="#0A3A47"/>
+
+  <!-- Monogram: E from four sharp page bars (no corner radius) -->
+  <g fill="#F5F1E8">
+    <rect x="132" y="112" width="56" height="288"/>
+    <rect x="132" y="112" width="248" height="56"/>
+    <rect x="132" y="228" width="176" height="56"/>
+    <rect x="132" y="344" width="248" height="56"/>
+  </g>
+
+  <!-- Sea: a hard coral chevron, the only curved idea in the mark -->
+  <path d="M132 452 L256 408 L380 452 L380 480 L256 436 L132 480 Z" fill="#FF7A59"/>
+</svg>
