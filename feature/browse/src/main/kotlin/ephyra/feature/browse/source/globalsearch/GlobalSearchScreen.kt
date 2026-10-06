@@ -68,6 +68,7 @@ fun GlobalSearchScreen(
                 viewModel.onEvent(SearchScreenEvent.Search)
             },
             mergedDuplicateCount = state.mergedResults.count { it.sourceIds.size > 1 },
+            libraryResults = viewModel.libraryMatches.collectAsStateWithLifecycle().value,
         )
     }
 }

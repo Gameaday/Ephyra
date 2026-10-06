@@ -3,6 +3,7 @@ package ephyra.feature.browse.source.globalsearch
 import app.cash.turbine.test
 import ephyra.core.common.preference.Preference
 import ephyra.domain.extension.service.ExtensionManager
+import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
@@ -130,6 +131,32 @@ class GlobalSearchViewModelTest {
 
             val widened = awaitItem()
             assertEquals(SourceFilter.All, widened.sourceFilter)
+        }
+    }
+
+    @Test
+    fun `libraryMatches surfaces library manga matching the query`() = runTest {
+        val libraryManga = LibraryManga(
+            manga = manga(title = "Berserk"),
+            categories = emptyList(),
+            totalChapters = 0L,
+            readCount = 0L,
+            bookmarkCount = 0L,
+            latestUpload = 0L,
+            chapterFetchedAt = 0L,
+            lastRead = 0L,
+        )
+        every { getLibraryManga.subscribe() } returns flowOf(listOf(libraryManga))
+
+        viewModel.libraryMatches.test {
+            // Query is blank -> no library matches (section is hidden).
+            assertTrue(awaitItem().isEmpty())
+
+            viewModel.onEvent(SearchScreenEvent.UpdateSearchQuery("Berserk"))
+
+            val matches = awaitItem()
+            assertEquals(1, matches.size)
+            assertEquals("Berserk", matches.first().title)
         }
     }
 

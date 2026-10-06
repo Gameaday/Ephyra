@@ -143,9 +143,11 @@ internal fun GlobalSearchContent(
     onSuggestionClick: (String) -> Unit = {},
     mergedDuplicateCount: Int = 0,
     searchQuery: String? = null,
+    libraryResults: List<Manga> = emptyList(),
 ) {
     val loading = items.values.any { it is SearchItemResult.Loading }
-    val hasResults = items.values.any { it is SearchItemResult.Success && !it.isEmpty }
+    val hasResults = libraryResults.isNotEmpty() ||
+        items.values.any { it is SearchItemResult.Success && !it.isEmpty }
     // Don't show a "no results" screen while a search is in flight, while library
     // suggestions still exist for the query (those are valid matches the user owns),
     // or when there's nothing to search yet (blank query / suggestions row present).
@@ -163,6 +165,27 @@ internal fun GlobalSearchContent(
     LazyColumn(
         contentPadding = contentPadding,
     ) {
+        // Library section (instant, local DB): rendered above everything else when the
+        // query matches something the user already owns, per the v1 spec. Reuses the
+        // same card row as the per-source results so the page stays uniform and
+        // uncluttered (Library → recents → sources).
+        if (libraryResults.isNotEmpty()) {
+            item(key = "library-results", contentType = "library-results") {
+                Text(
+                    text = stringResource(ephyra.app.core.common.R.string.search_library_suggestions),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                )
+                GlobalSearchCardRow(
+                    titles = libraryResults,
+                    getManga = getManga,
+                    onClick = onClickItem,
+                    onLongClick = onLongClickItem,
+                )
+            }
+        }
         if (suggestions.isNotEmpty() || mergedDuplicateCount > 0) {
             item(key = "search-suggestions", contentType = "search-suggestions") {
                 GlobalSearchMergedBanner(mergedDuplicateCount)
