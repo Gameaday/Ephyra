@@ -1,10 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="ic-t ic-d">
-  <title id="ic-t">Ephyra</title>
-  <desc id="ic-d">Ephyra app icon: a geometric open book on a deep-teal field with a coral wave beneath.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="ei-t ei-d">
+  <title id="ei-t">Ephyra</title>
+  <desc id="ei-d">Ephyra app icon: the ephyra jellyfish in sea paper on a deep-teal field with a coral bell margin.</desc>
   <rect width="512" height="512" rx="116" ry="116" fill="#0E4C5C"/>
-  <g fill="#F5F1E8">
-    <path d="M250 178 L112 218 L112 394 L250 354 Z"/>
-    <path d="M262 178 L400 218 L400 394 L262 354 Z"/>
-  </g>
-  <path d="M112 430 L256 398 L400 430" fill="none" stroke="#FF7A59" stroke-width="22" stroke-linecap="square"/>
+    <polygon points="138,226 138,198 166,168 212,150 300,150 346,168 374,198 374,226" fill="#F5F1E8"/>
+    <polygon points="138,206 374,206 374,226 138,226" fill="#FF7A59"/>
+    <polygon points="167.0,226 193.0,226 161.0,374 147.0,374" fill="#F5F1E8"/>
+    <polygon points="205.0,226 231.0,226 212.0,392 198.0,392" fill="#F5F1E8"/>
+    <polygon points="243.0,226 269.0,226 263.0,406 249.0,406" fill="#F5F1E8"/>
+    <polygon points="281.0,226 307.0,226 314.0,392 300.0,392" fill="#F5F1E8"/>
+    <polygon points="319.0,226 345.0,226 365.0,374 351.0,374" fill="#F5F1E8"/>
 </svg>

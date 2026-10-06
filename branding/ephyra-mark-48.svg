@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="e48-t e48-d">
+  <title id="e48-t">Ephyra</title>
+  <desc id="e48-d">Ephyra 48 px form: the bell with three tentacles, for small UI sizes.</desc>
+    <polygon points="138,226 138,198 166,168 212,150 300,150 346,168 374,198 374,226" fill="#0E4C5C"/>
+    <polygon points="138,206 374,206 374,226 138,226" fill="#FF7A59"/>
+    <polygon points="181.0,226 211.0,226 190.0,386 174.0,386" fill="#0E4C5C"/>
+    <polygon points="241.0,226 271.0,226 264.0,402 248.0,402" fill="#0E4C5C"/>
+    <polygon points="301.0,226 331.0,226 338.0,386 322.0,386" fill="#0E4C5C"/>
+</svg>

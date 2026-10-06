@@ -1,8 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108" role="img" aria-labelledby="mo-t mo-d">
   <title id="mo-t">Ephyra monochrome icon</title>
   <desc id="mo-d">Single-colour layer for Material themed icons.</desc>
-  <g fill="#000000">
-    <path d="M52.7 34 L30 40 L30 76 L52.7 70 Z"/>
-    <path d="M55.3 34 L78 40 L78 76 L55.3 70 Z"/>
+  <g transform="translate(54 54) scale(0.24) translate(-256 -278)">
+      <polygon points="138,226 138,198 166,168 212,150 300,150 346,168 374,198 374,226" fill="#000000"/>
+      <polygon points="138,206 374,206 374,226 138,226" fill="#000000"/>
+      <polygon points="167.0,226 193.0,226 161.0,374 147.0,374" fill="#000000"/>
+      <polygon points="205.0,226 231.0,226 212.0,392 198.0,392" fill="#000000"/>
+      <polygon points="243.0,226 269.0,226 263.0,406 249.0,406" fill="#000000"/>
+      <polygon points="281.0,226 307.0,226 314.0,392 300.0,392" fill="#000000"/>
+      <polygon points="319.0,226 345.0,226 365.0,374 351.0,374" fill="#000000"/>
   </g>
 </svg>
