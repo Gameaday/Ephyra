@@ -3,27 +3,27 @@
     android:height="512dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <!-- Ephyra jellyfish silhouette (white) — notification-safe single color. -->
-    <!-- Full-color version: @drawable/ic_ephyra_brand. -->
+    <!-- Ephyra jellyfish in the live app palette: Indigo #4F46E5 + Cyan #0891B2. -->
+    <!-- Single-color (notification-safe) version: @drawable/ic_ephyra. -->
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#FF4F46E5"
         android:pathData="M138,226 L138,198 L166,168 L212,150 L300,150 L346,168 L374,198 L374,226 Z" />
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#FF0891B2"
         android:pathData="M138,206 L374,206 L374,226 L138,226 Z" />
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#FF4F46E5"
         android:pathData="M167,226 L193,226 L161,374 L147,374 Z" />
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#FF4F46E5"
         android:pathData="M205,226 L231,226 L212,392 L198,392 Z" />
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#FF4F46E5"
         android:pathData="M243,226 L269,226 L263,406 L249,406 Z" />
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#FF4F46E5"
         android:pathData="M281,226 L307,226 L314,392 L300,392 Z" />
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#FF4F46E5"
         android:pathData="M319,226 L345,226 L365,374 L351,374 Z" />
 </vector>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108" role="img" aria-labelledby="afi-t afi-d">
+  <title id="afi-t">Ephyra adaptive icon foreground (Indigo merge)</title>
+  <desc id="afi-d">Foreground layer in the live app palette: white jellyfish with Cyan bell margin, held inside the 66dp safe zone. Recolor of ephyra-adaptive-icon-foreground.svg.</desc>
+  <g transform="translate(54 54) scale(0.24) translate(-256 -278)">
+      <polygon points="138,226 138,198 166,168 212,150 300,150 346,168 374,198 374,226" fill="#FFFFFF"/>
+      <polygon points="138,206 374,206 374,226 138,226" fill="#0891B2"/>
+      <polygon points="167.0,226 193.0,226 161.0,374 147.0,374" fill="#FFFFFF"/>
+      <polygon points="205.0,226 231.0,226 212.0,392 198.0,392" fill="#FFFFFF"/>
+      <polygon points="243.0,226 269.0,226 263.0,406 249.0,406" fill="#FFFFFF"/>
+      <polygon points="281.0,226 307.0,226 314.0,392 300.0,392" fill="#FFFFFF"/>
+      <polygon points="319.0,226 345.0,226 365.0,374 351.0,374" fill="#FFFFFF"/>
+  </g>
+</svg>

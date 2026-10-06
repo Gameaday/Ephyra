@@ -80,9 +80,39 @@ descender; r is a stem plus a quarter-round arm. Because it is geometry rather t
 renders identically everywhere and needs no font. For a lockup, set the symbol left of the wordmark
 with clear space of 2X (X = one tentacle width).
 
-## Notes
+## Indigo merge — jellyfish shape in the live app palette
 
-- The in-app Compose theme currently uses Electric Indigo `#4F46E5` + Cyan `#0891B2`. This mark is a
-2.0 refresh; migrate the theme tokens to the palette above so app and mark match.
-- Wiring the adaptive icon into `app/src/main/res/mipmap-anydpi-v26/` is a separate, reviewable step
-(it changes the launcher icon).
+Keeps the new jellyfish geometry, recolored to `EphyraColorScheme`
+(`presentation-core/.../theme/colorscheme/EphyraColorScheme.kt`):
+
+| New role | Hex | Replaces | Usage |
+|----------|-----|----------|-------|
+| Electric Indigo | `#4F46E5` | Abyss Teal `#0E4C5C` | Field; mark on light surfaces |
+| Indigo Deep | `#3730A3` | Abyss Deep `#0A3A47` | The single background facet |
+| Cyan | `#0891B2` | Ember Coral `#FF7A59` | The bell margin only — reserve it |
+| White | `#FFFFFF` | Sea Paper `#F5F1E8` | Mark on the indigo field |
+
+Files (`*-indigo.svg`, same geometry as the teal originals):
+
+- `ephyra-symbol-indigo.svg` — mark alone, transparent background, light surfaces
+- `ephyra-icon-indigo.svg` — full app icon: white mark on indigo field
+- `ephyra-mark-48-indigo.svg` / `ephyra-mark-24-indigo.svg` — small-size forms
+- `ephyra-adaptive-icon-foreground-indigo.svg` / `ephyra-adaptive-icon-background-indigo.svg` — adaptive layers (monochrome stays single-color, no recolor needed)
+- `ephyra-24dp-indigo.svg` — in-app Material-grid version
+- `ephyra-wordmark-indigo.svg` / `ephyra-wordmark-on-dark-indigo.svg` — wordmarks
+
+The teal originals above remain untouched. No theme tokens changed.
+
+## Wired in — what ships the indigo jellyfish
+
+- Launcher (`app/src/main/res/drawable/ic_launcher_{foreground,background,monochrome}.xml`,
+  mirrored to `app/src/debug/` + `presentation-core/`): white jellyfish + cyan
+  `#0891B2` bell-margin on indigo `#4F46E5` field with `#3730A3` facet; monochrome
+  is the all-white silhouette (tinted by the system). Referenced by
+  `app/src/main/res/mipmap/ic_launcher.xml` (manifest `android:icon` unchanged).
+- In-app brand (`ic_ephyra_brand.xml` in `presentation-core/`, `app/`, `core/common/`):
+  indigo `#4F46E5` mark + cyan margin. Used by `LogoHeader` (About + More screens)
+  as an untinted `Image` so both brand colors show.
+- Notifications keep the single-color `ic_ephyra.xml` (now the white jellyfish
+  silhouette) as small-icon; large icons come from `@mipmap/ic_launcher`.
+- Splash (`ic_ephyra_splash.xml`): brand mark centered on `@color/splash`.

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="e48i-t e48i-d">
+  <title id="e48i-t">Ephyra (Indigo merge)</title>
+  <desc id="e48i-d">Ephyra 48 px form in the live app palette: Indigo bell with three tentacles and Cyan margin. Recolor of ephyra-mark-48.svg.</desc>
+    <polygon points="138,226 138,198 166,168 212,150 300,150 346,168 374,198 374,226" fill="#4F46E5"/>
+    <polygon points="138,206 374,206 374,226 138,226" fill="#0891B2"/>
+    <polygon points="181.0,226 211.0,226 190.0,386 174.0,386" fill="#4F46E5"/>
+    <polygon points="241.0,226 271.0,226 264.0,402 248.0,402" fill="#4F46E5"/>
+    <polygon points="301.0,226 331.0,226 338.0,386 322.0,386" fill="#4F46E5"/>
+</svg>

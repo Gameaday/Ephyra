@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="esi-t esi-d">
+  <title id="esi-t">Ephyra (Indigo merge)</title>
+  <desc id="esi-d">The Ephyra mark in the live app palette: Electric Indigo bell and tentacles with a Cyan bell margin, transparent background for light surfaces. Recolor of ephyra-symbol.svg.</desc>
+    <polygon points="138,226 138,198 166,168 212,150 300,150 346,168 374,198 374,226" fill="#4F46E5"/>
+    <polygon points="138,206 374,206 374,226 138,226" fill="#0891B2"/>
+    <polygon points="167.0,226 193.0,226 161.0,374 147.0,374" fill="#4F46E5"/>
+    <polygon points="205.0,226 231.0,226 212.0,392 198.0,392" fill="#4F46E5"/>
+    <polygon points="243.0,226 269.0,226 263.0,406 249.0,406" fill="#4F46E5"/>
+    <polygon points="281.0,226 307.0,226 314.0,392 300.0,392" fill="#4F46E5"/>
+    <polygon points="319.0,226 345.0,226 365.0,374 351.0,374" fill="#4F46E5"/>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-labelledby="m24i-t m24i-d">
+  <title id="m24i-t">Ephyra (Indigo merge)</title>
+  <desc id="m24i-d">Ephyra 24dp icon in the live app palette on the Material icon grid: Indigo bell with Cyan margin. Recolor of ephyra-24dp.svg.</desc>
+  <g transform="translate(12 12) scale(0.0862) translate(-256 -247)">
+    <polygon points="140,304 140,258 180,214 216,190 296,190 332,214 372,258 372,304" fill="#4F46E5"/>
+    <polygon points="140,278 372,278 372,304 140,304" fill="#0891B2"/>
+  </g>
+</svg>
