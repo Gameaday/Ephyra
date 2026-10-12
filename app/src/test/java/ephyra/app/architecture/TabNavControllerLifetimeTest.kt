@@ -93,7 +93,9 @@ class TabNavControllerLifetimeTest {
     @Test
     fun `back inside a tab is intercepted rather than leaving the app`() {
         val home = sourceFile("app/src/main/java/ephyra/app/ui/home/HomeScreen.kt")
-        val text = home.readText()
+        // Comments stripped: the prose above the handler *names* the old gate to explain it, so a
+        // raw readText() would let the description of the defect satisfy (or trip) a rule about it.
+        val text = codeOf(home)
 
         assertTrue(
             text.contains("BackHandler"),
@@ -181,6 +183,11 @@ class TabNavControllerLifetimeTest {
     }
 
     private fun sourceFile(relative: String): File = File(TrackedFileNames.repositoryRoot(), relative)
+
+    /** Source with comments removed, so prose describing a rule cannot satisfy or trip it. */
+    private fun codeOf(file: File): String = file.readText()
+        .replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
+        .replace(Regex("//.*"), "")
 
     private companion object {
         /**
