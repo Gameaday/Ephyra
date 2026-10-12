@@ -13,11 +13,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   headline: upstream 0.21.1 is the last version to restore Tachiyomi's `.tachibk` backups and to
   support 1.4 extensions. Ephyra already refuses pre-1.6 extensions at load time
   (`ExtensionLoader.SUPPORTED_LIB_VERSIONS = listOf(1.6)`), but still carries the now-unreachable
-  1.4/1.5 ABI (RxJava, `fetchImageUrl`/`imageUrlRequest`/`imageUrlParse`) and still **writes** the
-  legacy gzip `.tachibk` container that modern Mihon will not restore. Planned P0 work: finish the
-  1.4/1.5 ABI removal, narrow the extension `Injekt` allowlist to upstream's set, switch the backup
-  writer to the ZIP container, harden the extension installer's concurrent maps, and survive a WebView
-  renderer death.
+  1.4/1.5 ABI (RxJava, `fetchImageUrl`/`imageUrlRequest`/`imageUrlParse`). On backups, Ephyra's
+  gzip-wrapped `.tachibk` is the **same** container Mihon 0.21.1 writes and reads, so there is no
+  interop break today; upstream's replacement format is not yet published, so WS3 is a watch item.
+  Planned P0 work: finish the 1.4/1.5 ABI removal, narrow the extension `Injekt` allowlist to
+  upstream's set, harden the extension installer's concurrent maps, and survive a WebView renderer
+  death.
+
+### 🧩 Fixes
+- **WebView renderer death no longer kills the app** (WS5): the Compose webview client and the
+  Cloudflare interceptor now override `onRenderProcessGone`, log the crash, notify the user and close
+  the page; `stopLoading()`/`destroy()` are guarded when the renderer is gone. Mirrors upstream
+  `649fc83f`.
+- **Extension installs can no longer cancel each other** (WS4): active installs are keyed by package
+  name in `ConcurrentHashMap`s and cleaned up by `(key, value)`, so a stale, cancelled or superseded
+  install can only remove its own entries. Mirrors upstream `07b9fb69`/`ae749bb4`.
+
 
 
 ### 🧯 Extension Compatibility (critical fix)

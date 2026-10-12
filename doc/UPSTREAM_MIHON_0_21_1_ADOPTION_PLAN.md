@@ -31,15 +31,18 @@ and Tachiyomi's 1.4 extensions**. After it:
   then update").
 - Mihon drops compatibility with extensions made for Tachiyomi (1.4 extensions).
 
-Ephyra's position is **already stricter on extensions and behind on backups**:
+Ephyra's position is **already stricter on extensions and already interoperable on backups**:
 
 - `ExtensionLoader.SUPPORTED_LIB_VERSIONS = listOf(1.6)` — 1.4 and 1.5 are *already refused*. Ephyra
   has effectively completed the extension half of the decision.
-- But Ephyra still **writes** the legacy `.tachibk` container (gzip-wrapped protobuf, see
-  `BackupCreator.createBackup`), which is exactly the container upstream is about to stop reading.
+- Ephyra writes gzip-wrapped protobuf `.tachibk` (`BackupCreator.createBackup`), which is **exactly
+  what Mihon 0.21.1 itself writes and reads** (`BackupCreator` uses `sink().gzip()`;
+  `BackupDecoder` reads gzip or raw protobuf; there is no `ZipOutputStream` anywhere in mihon). So
+  there is **no interop break today**. What upstream is dropping is the *Tachiyomi-format* restore
+  path, and its replacement format is not yet on upstream `main`, so Ephyra cannot adopt it yet.
 
-So the headline maps to two workstreams: finish removing the now-unreachable 1.4/1.5 ABI surface
-(§3 WS1), and change the backup container Ephyra emits (§3 WS3).
+So the headline maps to one workstream — finish removing the now-unreachable 1.4/1.5 ABI surface
+(§3 WS1) — plus a **watch item** for the replacement backup format (§3 WS3).
 
 ## 3. Workstreams
 
@@ -112,28 +115,31 @@ not assert that *nothing else* is.
 **Acceptance:** the allowlist test passes both ways; an extension relying only on the upstream set
 loads and runs.
 
-### WS3 — P0 — Backup container interop (the `.tachibk` deadline)
+### WS3 — Watch — Replacement backup format (the `.tachibk` deadline)
 
-**Upstream:** 0.21.1 is the last version that *restores* Tachiyomi's `.tachibk`; the modern Mihon
-backup is the ZIP container (`backup.proto.gz` inside a zip).
+**Upstream:** 0.21.1 is the last version that *restores* Tachiyomi's `.tachibk`. Its replacement
+format is not yet on upstream `main`, so its container is currently undetermined.
 
-**Ephyra now:** `BackupCreator.createBackup` writes a **gzip-wrapped protobuf** with a `.tachibk`
-filename (`getFilename()` returns `…_<date>.tachibk`), while `BackupDecoder` can read **both** gzip
-and ZIP. Net effect: Ephyra emits the container modern Mihon will refuse to restore.
+**Ephyra now:** `BackupCreator.createBackup` writes gzip-wrapped protobuf with a `.tachibk` filename
+— the *same* container Mihon 0.21.1 writes and reads — and `BackupDecoder` additionally reads raw
+protobuf and a ZIP container. **Correction:** an earlier draft of this plan claimed Ephyra wrote a
+legacy container Mihon would refuse; that was wrong. Upstream's own writer is `sink().gzip()`
+(`BackupCreator`), its decoder reads gzip or raw protobuf, and `ZipOutputStream` does not appear
+anywhere in mihon. There is no interop break today.
 
-**Work**
+**Work (only when upstream defines the new format)**
 
-1. Switch the writer to the ZIP container matching Mihon (protobuf gzip-compressed inside a zip),
-   keeping the `.tachibk` name so existing tooling and users recognise it — or, if a distinct name
-   is preferred, add it and keep reading `.tachibk`.
-2. Keep the legacy gzip **reader** indefinitely: Ephyra's own historic backups are gzip, and the
-   decoder already handles both, so this is a preservation requirement, not a nicety.
-3. Add tests: round-trip for the new writer; legacy-gzip read still works; a fixture produced by
-   Mihon 0.21.1 restores here, and a fixture produced here restores in Mihon 0.21.1.
-4. Record the format decision in `TARGET_DATA_SCHEMA.md` / the backup contract and in the changelog.
+1. Do **not** change the writer speculatively. Monitor upstream for the new format's container and
+   extension, then adopt it while keeping the `.tachibk` writer/reader for backward compatibility.
+2. Keep the multi-format **reader** indefinitely: Ephyra's own historic backups are gzip, so this is
+   a preservation requirement, not a nicety.
+3. Add a checked-in interop fixture: a Mihon-0.21.1-produced `.tachibk` restores here, and one Ephyra
+   produces restores in Mihon 0.21.1.
+4. Revisit `BackupDecoder`'s ZIP branch: confirm what actually writes that container before relying
+   on it, since upstream does not.
 
-**Acceptance:** a backup written by Ephyra restores in Mihon 0.21.1, and vice versa; Ephyra's own
-pre-change backups still restore.
+**Acceptance:** a backup written by Ephyra restores in Mihon 0.21.1, and vice versa; the reader
+still accepts every format Ephyra has ever written.
 
 
 ### WS4 — P0 — Extension installer concurrency
@@ -298,7 +304,8 @@ refresh buttons in tracker settings; local-source `ComicInfo.xml` chapter dates.
 ## 4. Ordering and dependencies
 
 1. **WS1, WS2, WS4, WS5** are independent and can land in any order.
-2. **WS3** is independent but user-visible and should ship with a changelog note and interop tests.
+2. **WS3** is a watch item, not an implementation: no code changes until upstream publishes the
+   replacement format.
 3. **WS6, WS7, WS8** are follow-ups that touch data/reader paths.
 4. **WS9, WS10** are small parity items.
 5. **WS11, WS12** are a separate phase; do not start until P0/P1 are green.
