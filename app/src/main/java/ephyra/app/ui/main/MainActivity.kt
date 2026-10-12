@@ -75,9 +75,6 @@ import ephyra.domain.navigation.motion.MotionPolicy
 import ephyra.domain.navigation.motion.MotionRoutePair
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.source.interactor.GetIncognitoState
-import ephyra.presentation.core.components.DownloadedOnlyBannerBackgroundColor
-import ephyra.presentation.core.components.IncognitoModeBannerBackgroundColor
-import ephyra.presentation.core.components.IndexingBannerBackgroundColor
 import ephyra.presentation.core.feature.FeatureApi
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.MotionTokens
@@ -359,9 +356,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
                 val isSystemInDarkTheme = isSystemInDarkTheme()
                 val statusBarBackgroundColor = when {
-                    indexing -> IndexingBannerBackgroundColor
-                    downloadOnly -> DownloadedOnlyBannerBackgroundColor
-                    incognito -> IncognitoModeBannerBackgroundColor
+                    indexing -> MaterialTheme.colorScheme.primaryContainer
+                    downloadOnly -> MaterialTheme.colorScheme.secondaryContainer
+                    incognito -> MaterialTheme.colorScheme.tertiaryContainer
                     else -> MaterialTheme.colorScheme.surface
                 }
                 LaunchedEffect(isSystemInDarkTheme, statusBarBackgroundColor) {

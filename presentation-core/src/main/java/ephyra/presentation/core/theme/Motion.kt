@@ -10,8 +10,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.MaterialTheme
@@ -166,61 +164,9 @@ object MotionTokens {
 
     // --- Preset Navigation Transitions ---
 
-    /**
-     * Material 3 Shared Axis Z enter transition for forward screen navigation.
-     * Scales up from 92% to 100% with subtle fade in.
-     */
-    fun m3SharedAxisZEnter(): EnterTransition =
-        scaleIn(
-            initialScale = 0.92f,
-            animationSpec = tween(durationMillis = DURATION_LONG_1, easing = EasingEmphasizedDecelerate),
-        ) + fadeIn(
-            animationSpec = tween(
-                durationMillis = DURATION_MEDIUM_4,
-                delayMillis = DURATION_SHORT_1,
-                easing = EasingEmphasizedDecelerate,
-            ),
-        )
-
-    /**
-     * Material 3 Shared Axis Z exit transition for forward screen navigation.
-     * Scales up slightly from 100% to 106% with swift fade out.
-     */
-    fun m3SharedAxisZExit(): ExitTransition =
-        scaleOut(
-            targetScale = 1.06f,
-            animationSpec = tween(durationMillis = DURATION_MEDIUM_3, easing = EasingEmphasizedAccelerate),
-        ) + fadeOut(
-            animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
-        )
-
-    /**
-     * Material 3 Shared Axis Z pop enter transition for backward/up navigation.
-     * Scales down from 106% to 100% with smooth fade in.
-     */
-    fun m3SharedAxisZPopEnter(): EnterTransition =
-        scaleIn(
-            initialScale = 1.06f,
-            animationSpec = tween(durationMillis = DURATION_MEDIUM_4, easing = EasingEmphasizedDecelerate),
-        ) + fadeIn(
-            animationSpec = tween(
-                durationMillis = DURATION_MEDIUM_4,
-                delayMillis = DURATION_SHORT_1,
-                easing = EasingEmphasizedDecelerate,
-            ),
-        )
-
-    /**
-     * Material 3 Shared Axis Z pop exit transition for backward/up navigation.
-     * Scales down from 100% to 92% with swift fade out.
-     */
-    fun m3SharedAxisZPopExit(): ExitTransition =
-        scaleOut(
-            targetScale = 0.92f,
-            animationSpec = tween(durationMillis = DURATION_MEDIUM_2, easing = EasingEmphasizedAccelerate),
-        ) + fadeOut(
-            animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
-        )
+    // Shared-axis-Z (scale) tokens were removed: they had zero call sites, and a full-page scale is
+    // the modal/hierarchy cue that `containerEnter(SHARED_AXIS)` deliberately stopped using for
+    // ordinary navigation. A scale transition for a modal can be re-added when one exists to use it.
 
     /**
      * Duration shared by both halves of a shared-element transition.

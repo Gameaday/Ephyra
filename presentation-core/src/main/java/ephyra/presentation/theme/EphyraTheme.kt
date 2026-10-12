@@ -76,7 +76,7 @@ private fun BaseEphyraTheme(
 
     CompositionLocalProvider(LocalBrandedTheme provides brandedConfig) {
         MaterialTheme(
-            colorScheme = remember(appTheme, isDark, isAmoled) {
+            colorScheme = remember(appTheme, isDark, isAmoled, context) {
                 getThemeColorScheme(
                     context = context,
                     appTheme = appTheme,
