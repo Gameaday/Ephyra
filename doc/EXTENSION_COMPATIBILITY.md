@@ -277,6 +277,12 @@ which upstream keeps. MangaDex already populates `Page.imageUrl` (a relative pat
 `imageRequest`; it overrides none of the removed members, which is why it kept working on upstream
 through the removal.
 
+> **Verification note (2026-10-12).** The paragraph above has **not been confirmed against upstream
+> `main`**: as of this note, `mihonapp/mihon`'s `source-api/.../HttpSource.kt` still ships
+> `rx.Observable`, `asObservableSuccess`, `awaitSingle`, `imageUrlRequest` and `imageUrlParse`, and
+> its `CHANGELOG.md` `[Unreleased]` section does not mention removing them. Treat "upstream removes
+> them" as a **planned** change, not a landed one, and re-check before acting on it.
+
 Ephyra's `source-api` still carries the dead chain even though the minimum supported version is
 **already 1.6** and no supported extension can reach it. Its removal is a single change, currently
 **pending a build-validated edit**: it touches `SourceApiContractTest`,

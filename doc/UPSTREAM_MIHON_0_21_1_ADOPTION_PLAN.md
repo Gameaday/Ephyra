@@ -51,9 +51,11 @@ Priority: **P0** correctness/security/interop, **P1** robustness, **P2** parity/
 
 ### WS1 — P0 — Finish the 1.4/1.5 ABI removal (`source-api`)
 
-**Upstream:** drops 1.4 extensions next release; already removed `fetchImageUrl`, `imageUrlRequest`,
-`imageUrlParse` and the RxJava dependency "with no replacement" (see `EXTENSION_COMPATIBILITY.md`
-§"When upstream finishes the removal").
+**Upstream:** the 0.21.1 note says the *next* version drops 1.4 extensions. **Verified correction
+(2026-10-12):** upstream `main`'s `source-api/.../HttpSource.kt` **still ships** `rx.Observable`,
+`asObservableSuccess`, `awaitSingle`, `imageUrlRequest` and `imageUrlParse`, and upstream
+`CHANGELOG.md` `[Unreleased]` does **not** mention removing them. So this is **not** a mirror of a
+landed upstream change — it would be a deliberate Ephyra divergence, and it must be decided as one.
 
 **Ephyra now:**
 
@@ -88,9 +90,16 @@ stay green; the probe still reports the real MangaDex contract.
 anything below 1.6 at load time (a clear, reported refusal) and by upstream making the identical
 removal.
 
-**Status:** the `EXTENSION_COMPATIBILITY.md` correction has landed. The code removal itself is
-**not yet done** — it is gated on a build-validated change, because it also rewrites four test files
-(§5).
+**Status:** the `EXTENSION_COMPATIBILITY.md` correction has landed. The code removal is **not done,
+and should not be done blind.** Verified blast radius: it removes members from `Source.kt`,
+`CatalogueSource.kt`, `HttpSource.kt` and `ParsedHttpSource.kt`; rewrites `getImageUrl`'s default
+(currently `fetchImageUrl(page).awaitSingle()`, so the two cannot be removed independently); touches
+the 400-line safety-critical `PageImageAddress.kt` probe; deletes `OkHttpExtensions.asObservable*`
+and both `RxCoroutineBridge` files; drops `rxjava` from `source-api`/`core/common` and the catalog;
+and rewrites at least six tests that exercise the removed members (`SourceApiContractTest`,
+`SourceBridgeTest`, `HttpSourceImageUrlRequestTest`, `RxCoroutineBridgeTest`,
+`MangaDexOpaqueImageUrlContractTest`, `HttpPageLoaderUrlResolutionTest`). It needs a compiler and a
+deliberate divergence decision — not a copy of a landed upstream change.
 
 ### WS2 — P0 — Narrow what extensions can reach (`Injekt` bridge)
 

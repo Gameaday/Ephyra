@@ -18,7 +18,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   interop break today; upstream's replacement format is not yet published, so WS3 is a watch item.
   Planned P0 work: finish the 1.4/1.5 ABI removal, narrow the extension `Injekt` allowlist to
   upstream's set, harden the extension installer's concurrent maps, and survive a WebView renderer
-  death.
+  death. **WS1's ABI removal is deferred and reclassified:** upstream `main` still ships the
+  `rx.Observable` chain (`fetchImageUrl`/`imageUrlRequest`/`imageUrlParse`), so removing it is a
+  deliberate Ephyra divergence that needs a compiler and a product decision — not a mirror.
 
 ### 🧩 Fixes
 - **Samsung Android 9–11 launch crash guarded** (WS9): `MainActivity.reportFullyDrawn()` now catches
