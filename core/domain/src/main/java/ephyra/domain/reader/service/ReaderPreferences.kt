@@ -197,11 +197,6 @@ class ReaderPreferences(
     }
 
     enum class ReaderHideThreshold(val threshold: Int) {
-
-    #region Material & Interaction Settings
-    fun chapterTransitionEnabled() = preferenceStore.getBoolean(\"pref_enable_chapter_transitions\", true)
-    fun centerTapNeutral() = preferenceStore.getBoolean(\"pref_center_tap_neutral\", false)
-    #endregion
         HIGHEST(5),
         HIGH(13),
         LOW(31),

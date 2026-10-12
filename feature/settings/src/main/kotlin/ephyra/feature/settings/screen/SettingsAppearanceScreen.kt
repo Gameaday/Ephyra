@@ -151,6 +151,11 @@ object SettingsAppearanceScreen : SearchableSettings {
                     preference = uiPreferences.imagesInDescription(),
                     title = stringResource(ephyra.app.core.common.R.string.pref_display_images_description),
                 ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = uiPreferences.reduceMotion(),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_reduce_motion),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_reduce_motion_summary),
+                ),
             ),
         )
     }

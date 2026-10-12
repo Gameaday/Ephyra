@@ -32,6 +32,16 @@ class UiPreferences(
 
     fun relativeTime() = preferenceStore.getBoolean("relative_time_v2", true)
 
+    /**
+     * Whether the user asked this app to reduce its own motion.
+     *
+     * Separate from the system animator scale on purpose: the OS setting is a floor (reduced motion
+     * is always honoured), but a user who finds *this app's* transitions unpleasant should not have
+     * to disable animation for every app on the device. The two are merged by
+     * `effectiveReducedMotion` rather than one overwriting the other.
+     */
+    fun reduceMotion() = preferenceStore.getBoolean("pref_reduce_motion", false)
+
     fun dateFormat() = preferenceStore.getString("app_date_format", "")
 
     fun tabletUiMode() = preferenceStore.getEnum("tablet_ui_mode", TabletUiMode.AUTOMATIC)

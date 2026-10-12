@@ -92,6 +92,7 @@ import ephyra.presentation.core.ui.navigation.LocalSharedTransitionScope
 import ephyra.presentation.core.ui.navigation.NavigationCoordinator
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.ui.navigation.effectiveReducedMotion
 import ephyra.presentation.core.ui.navigation.rememberSystemReducedMotion
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.LocalAppNavigator
@@ -381,7 +382,14 @@ class MainActivity : BaseActivity(), AppReadySignal {
                         // Read once here so every transition in this graph agrees. Reading it per
                         // transition would let two screens disagree about whether the user asked
                         // for less motion.
-                        val reducedMotion = rememberSystemReducedMotion()
+                        //
+                        // Two sources, merged rather than one overriding the other: the OS animator
+                        // scale is a floor, and the in-app "Reduce motion" preference is additive on
+                        // top of it. Before this, the only way to reduce the app's motion was to
+                        // disable animation for every app on the device.
+                        val systemReducedMotion = rememberSystemReducedMotion()
+                        val appReduceMotion by uiPreferences.reduceMotion().collectAsState()
+                        val reducedMotion = effectiveReducedMotion(systemReducedMotion, appReduceMotion)
                         CompositionLocalProvider(
                             LocalMotionPreference provides reducedMotion,
                         ) {
