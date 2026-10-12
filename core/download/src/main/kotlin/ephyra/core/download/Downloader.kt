@@ -960,7 +960,7 @@ class Downloader(
                 }
 
                 // Header-only stub check for the next page (cheap: reads only image dimensions)
-                val isStub = next.openInputStream().use { ImageUtil.isSmallPage(it, currentSource) }
+                val isStub = next.openInputStream().use { ImageUtil.isSmallPage(it, currentSource, 0.02f, 0.30f) }
                 if (!isStub) {
                     i++
                     continue

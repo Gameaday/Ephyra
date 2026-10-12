@@ -11,6 +11,7 @@ import ephyra.feature.reader.viewer.navigation.EdgeNavigation
 import ephyra.feature.reader.viewer.navigation.KindlishNavigation
 import ephyra.feature.reader.viewer.navigation.LNavigation
 import ephyra.feature.reader.viewer.navigation.RightAndLeftNavigation
+import ephyra.feature.reader.viewer.navigation.CenterTapNeutralNavigation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -27,6 +28,8 @@ class WebtoonConfig(
 
     var themeChangedListener: (() -> Unit)? = null
 
+    private fun wrapIfNeeded(nav: ViewerNavigation): ViewerNavigation =
+        if (readerPreferences.centerTapNeutral()) CenterTapNeutralNavigation(nav, readerPreferences) else nav
     var imageCropBorders by mutableStateOf(false)
         private set
 

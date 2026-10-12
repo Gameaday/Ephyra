@@ -77,6 +77,18 @@ class ReaderPreferences(
 
     fun webtoonDisableZoomOut() = preferenceStore.getBoolean("webtoon_disable_zoom_out", false)
 
+    // region Smart Merge (per-series configuration)
+    fun smartMergeMinHeightFraction(mangaId: Long? = null): Float {
+        val key = mangaId?.let { \"smart_merge_min_height_${it}\" } ?: \"smart_merge_min_height_default\"
+        return preferenceStore.getFloat(key, 0.02f)
+    }
+
+    fun smartMergeMaxHeightFraction(mangaId: Long? = null): Float {
+        val key = mangaId?.let { \"smart_merge_max_height_${it}\" } ?: \"smart_merge_max_height_default\"
+        return preferenceStore.getFloat(key, 0.30f)
+    }
+    // endregion
+
     // endregion
 
     // region Split two page spread
@@ -185,6 +197,11 @@ class ReaderPreferences(
     }
 
     enum class ReaderHideThreshold(val threshold: Int) {
+
+    #region Material & Interaction Settings
+    fun chapterTransitionEnabled() = preferenceStore.getBoolean(\"pref_enable_chapter_transitions\", true)
+    fun centerTapNeutral() = preferenceStore.getBoolean(\"pref_center_tap_neutral\", false)
+    #endregion
         HIGHEST(5),
         HIGH(13),
         LOW(31),
