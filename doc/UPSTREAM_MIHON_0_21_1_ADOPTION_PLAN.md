@@ -228,6 +228,9 @@ restrictions was **reverted**.
 **Acceptance:** a deliberately failing migration leaves the app usable and reports the failure; the
 smart-update test fails if the bypass returns.
 
+**Status:** migration isolation landed. The orphan-row audit and the smart-update regression test are
+still open.
+
 ### WS7 — P1 — Reader pager page stability (verify + lock)
 
 **Upstream (`51b61a36`):** the pager keeps its page when chapters are added before first layout —
