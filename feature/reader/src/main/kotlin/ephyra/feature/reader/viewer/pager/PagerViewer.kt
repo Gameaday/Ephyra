@@ -437,7 +437,14 @@ abstract class PagerViewer(
                         val nextSourceForRef = nextStreamFn().use { Buffer().readFrom(it) }
                         if (!ImageUtil.isAnimatedAndSupported(nextSourceForRef)) {
                             val mangaId = page.chapter.mangaId
-                        val isTopStub = streamFn().use { ImageUtil.isSmallPage(it, nextSourceForRef, config.readerPreferences.smartMergeMinHeightFraction(mangaId), config.readerPreferences.smartMergeMaxHeightFraction(mangaId)) }
+                            val isTopStub = streamFn().use {
+                                ImageUtil.isSmallPage(
+                                    it,
+                                    nextSourceForRef,
+                                    config.readerPreferences.smartMergeMinHeightFraction(mangaId),
+                                    config.readerPreferences.smartMergeMaxHeightFraction(mangaId),
+                                )
+                            }
                             if (isTopStub) {
                                 val mergedBitmap = ImageUtil.mergePages(currentSource, nextSourceForRef)
                                 page.isAbsorbed = true
@@ -472,11 +479,22 @@ abstract class PagerViewer(
 
                         val isBottomStub = if (page.mergedBitmap != null) {
                             candidateStreamFn().use {
-                                ImageUtil.isSmallPage(it, page.mergedBitmap!!.width, page.mergedBitmap!!.height, config.readerPreferences.smartMergeMinHeightFraction(mangaId), config.readerPreferences.smartMergeMaxHeightFraction(mangaId))
+                                ImageUtil.isSmallPage(
+                                    it,
+                                    page.mergedBitmap!!.width,
+                                    page.mergedBitmap!!.height,
+                                    config.readerPreferences.smartMergeMinHeightFraction(mangaId),
+                                    config.readerPreferences.smartMergeMaxHeightFraction(mangaId),
+                                )
                             }
                         } else {
                             candidateStreamFn().use {
-                                ImageUtil.isSmallPage(it, currentSource, config.readerPreferences.smartMergeMinHeightFraction(mangaId), config.readerPreferences.smartMergeMaxHeightFraction(mangaId))
+                                ImageUtil.isSmallPage(
+                                    it,
+                                    currentSource,
+                                    config.readerPreferences.smartMergeMinHeightFraction(mangaId),
+                                    config.readerPreferences.smartMergeMaxHeightFraction(mangaId),
+                                )
                             }
                         }
 

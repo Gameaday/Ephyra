@@ -99,6 +99,21 @@ non-compiling, unwired center-tap feature (it can be re-implemented deliberately
 because it changes the premise of the whole report: before this, no build, test, or device run of the
 current tree was possible.
 
+**Validation found two more baseline syntax breaks**, both in modules the report did not touch:
+
+- `core/common/.../util/system/ImageUtil.kt` had a **stray `}`** after the
+  `isSmallPage(InputStream, BufferedSource, Float, Float)` overload, which closed `object ImageUtil`
+  early and left every later member as an invalid top-level declaration, plus a missing `}` after the
+  next overload. Since `core:common` is a dependency of everything, this alone made the whole app
+  uncompilable. Fixed by deleting the stray brace (the following overload's existing `}` then closes
+  the function correctly, so the file rebalances with one deletion).
+- The same `smart_merge` block also had escaped quotes in its string templates
+  (`"smart_merge_min_height_${it}"` written as `\"…\"`), and `PagerViewer.kt`'s new stub-merge call
+  sites were mis-indented. Fixed.
+
+These were found by running the repo's own linter (ktlint 1.8.0 with `.editorconfig`) over every
+Kotlin file, which parses each one — see §9.
+
 ### F1 — Back from a non-Library tab exits the app (HIGH, confirmed)
 
 `HomeScreen` installs a `BackHandler` intended to keep back *inside* a tab:
@@ -424,4 +439,30 @@ platform default) rather than the whole system, and record why in the contract.
 4. If the "not enjoyable" report persists after F1/F2, the next suspects are the surfaces over
    imagery (F5 residual) and element-level animation choreography — both need visual review, not
    more code reading.
+
+
+---
+
+## 9. Validation performed
+
+The sandbox has no Android SDK, so a full Gradle build is not possible here. The strongest available
+substitute was used, and its limits are stated.
+
+| Check | Tool | Result |
+|---|---|---|
+| Kotlin **syntax** for every file | ktlint **1.8.0** (the repo's exact version) + repo `.editorconfig` | **0 parse errors** across all 1567 `.kt` files (was: 2 files that did not parse) |
+| Kotlin **style** (the repo's `spotlessKotlinCheck` rule set) | ktlint 1.8.0, `ktlint_code_style = intellij_idea` | **0 violations** (was: 96 across 6 files) |
+| XML well-formedness | `xml.etree` | all changed XML valid |
+| Removed symbols have no remaining references | repo-wide grep | clean (`m3SharedAxisZ*`, `*BannerBackgroundColor`, `chapterTransitionEnabled`, `centerTapNeutral`, `CenterTapNeutralNavigation`, duplicate `WindowSize`) |
+| Structural balance (braces/parens, string- and comment-aware) | custom scanner | clean on touched files (the scanner has known false positives on nested string templates; ktlint is authoritative) |
+| Duplicate declarations from the botched merge | grep | none (`isSmallPage` overloads are distinct) |
+
+**What this does not prove.** ktlint parses Kotlin but does not type-check it. Unresolved references,
+wrong argument types, and Compose/Android API misuse would only surface in a real
+`./gradlew compileDebugKotlin`. That remains the first CI step to run. The changes were written
+against existing call sites and reviewed line by line, but they are **not compile-verified here**.
+
+Note on process: ktlint could only be run because a JDK was fetched into the sandbox; the repository's
+own `spotlessKotlinCheck` was the rule set being approximated, and the approximation is exact in
+version and configuration.
 

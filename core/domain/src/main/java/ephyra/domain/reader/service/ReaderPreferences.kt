@@ -79,12 +79,12 @@ class ReaderPreferences(
 
     // region Smart Merge (per-series configuration)
     fun smartMergeMinHeightFraction(mangaId: Long? = null): Float {
-        val key = mangaId?.let { \"smart_merge_min_height_${it}\" } ?: \"smart_merge_min_height_default\"
+        val key = mangaId?.let { "smart_merge_min_height_$it" } ?: "smart_merge_min_height_default"
         return preferenceStore.getFloat(key, 0.02f)
     }
 
     fun smartMergeMaxHeightFraction(mangaId: Long? = null): Float {
-        val key = mangaId?.let { \"smart_merge_max_height_${it}\" } ?: \"smart_merge_max_height_default\"
+        val key = mangaId?.let { "smart_merge_max_height_$it" } ?: "smart_merge_max_height_default"
         return preferenceStore.getFloat(key, 0.30f)
     }
     // endregion

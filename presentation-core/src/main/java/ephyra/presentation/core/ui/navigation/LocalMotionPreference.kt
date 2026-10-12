@@ -16,13 +16,6 @@ import androidx.compose.ui.platform.LocalContext
 val LocalMotionPreference = compositionLocalOf { false }
 
 /**
- * True when the platform has animations disabled or scaled to zero.
- *
- * Read from the system rather than a private in-app toggle, because the setting users actually use
- * is the OS one. A value of exactly 0 disables animation; a small non-zero scale is a speed
- * preference, not a request to remove motion, so only the zero case is treated as reduced.
- */
-/**
  * The effective reduced-motion state for this app: the OS setting **or** the in-app preference.
  *
  * Extracted as a pure function so the merge rule is asserted directly rather than only through a
@@ -33,6 +26,13 @@ val LocalMotionPreference = compositionLocalOf { false }
 fun effectiveReducedMotion(systemReducedMotion: Boolean, appReduceMotion: Boolean): Boolean =
     systemReducedMotion || appReduceMotion
 
+/**
+ * True when the platform has animations disabled or scaled to zero.
+ *
+ * Read from the system rather than a private in-app toggle, because the setting users actually use
+ * is the OS one. A value of exactly 0 disables animation; a small non-zero scale is a speed
+ * preference, not a request to remove motion, so only the zero case is treated as reduced.
+ */
 @Composable
 fun rememberSystemReducedMotion(): Boolean {
     val context = LocalContext.current

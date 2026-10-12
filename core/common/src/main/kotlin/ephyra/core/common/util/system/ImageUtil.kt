@@ -420,14 +420,20 @@ object ImageUtil {
         val heightFraction = options.outHeight.toFloat() / refOptions.outHeight.toFloat()
         return heightFraction in STUB_MIN_HEIGHT_FRACTION..<STUB_MAX_HEIGHT_FRACTION
     }
+
     /**
-      * Lightweight overload that accepts a raw [InputStream] for the candidate stub so that
-      * callers can check dimensions without having to buffer the entire image in memory first.
-      * Only the image headers are read from [imageStream].
-      * @param minHeightFraction minimum height fraction to consider as a stub (inclusive)
-      * @param maxHeightFraction maximum height fraction to consider as a stub (exclusive)
-      */
-    fun isSmallPage(imageStream: InputStream, referenceSource: BufferedSource, minHeightFraction: Float, maxHeightFraction: Float): Boolean {
+     * Lightweight overload that accepts a raw [InputStream] for the candidate stub so that
+     * callers can check dimensions without having to buffer the entire image in memory first.
+     * Only the image headers are read from [imageStream].
+     * @param minHeightFraction minimum height fraction to consider as a stub (inclusive)
+     * @param maxHeightFraction maximum height fraction to consider as a stub (exclusive)
+     */
+    fun isSmallPage(
+        imageStream: InputStream,
+        referenceSource: BufferedSource,
+        minHeightFraction: Float,
+        maxHeightFraction: Float,
+    ): Boolean {
         val options = BitmapFactory.Options().apply {
             inJustDecodeBounds = true
             BitmapFactory.decodeStream(imageStream, null, this)
@@ -440,7 +446,6 @@ object ImageUtil {
         if (!widthSimilar) return false
         val heightFraction = options.outHeight.toFloat() / refOptions.outHeight.toFloat()
         return heightFraction in minHeightFraction..<maxHeightFraction
-    }
     }
 
     /**
@@ -459,25 +464,31 @@ object ImageUtil {
         if (!widthSimilar) return false
         val heightFraction = options.outHeight.toFloat() / refHeight.toFloat()
         return heightFraction in STUB_MIN_HEIGHT_FRACTION..<STUB_MAX_HEIGHT_FRACTION
-    /**
-      * Lightweight overload for callers that have already decoded the reference image and
-      * cached its dimensions. Only the image headers are read from [imageStream]; no stream
-      * is opened for the reference.
-      * @param minHeightFraction minimum height fraction to consider as a stub (inclusive)
-      * @param maxHeightFraction maximum height fraction to consider as a stub (exclusive)
-      */
-    fun isSmallPage(imageStream: InputStream, refWidth: Int, refHeight: Int, minHeightFraction: Float, maxHeightFraction: Float): Boolean {
-        if (refWidth <= 0 || refHeight <= 0) return false
-        val options = BitmapFactory.Options().apply {
-            inJustDecodeBounds = true
-            BitmapFactory.decodeStream(imageStream, null, this)
+        /**
+         * Lightweight overload for callers that have already decoded the reference image and
+         * cached its dimensions. Only the image headers are read from [imageStream]; no stream
+         * is opened for the reference.
+         * @param minHeightFraction minimum height fraction to consider as a stub (inclusive)
+         * @param maxHeightFraction maximum height fraction to consider as a stub (exclusive)
+         */
+        fun isSmallPage(
+            imageStream: InputStream,
+            refWidth: Int,
+            refHeight: Int,
+            minHeightFraction: Float,
+            maxHeightFraction: Float,
+        ): Boolean {
+            if (refWidth <= 0 || refHeight <= 0) return false
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+                BitmapFactory.decodeStream(imageStream, null, this)
+            }
+            if (options.outWidth <= 0 || options.outHeight <= 0) return false
+            val widthSimilar = abs(options.outWidth - refWidth) <= refWidth * 0.05f
+            if (!widthSimilar) return false
+            val heightFraction = options.outHeight.toFloat() / refHeight.toFloat()
+            return heightFraction in minHeightFraction..<maxHeightFraction
         }
-        if (options.outWidth <= 0 || options.outHeight <= 0) return false
-        val widthSimilar = abs(options.outWidth - refWidth) <= refWidth * 0.05f
-        if (!widthSimilar) return false
-        val heightFraction = options.outHeight.toFloat() / refHeight.toFloat()
-        return heightFraction in minHeightFraction..<maxHeightFraction
-    }
     }
 
     /**

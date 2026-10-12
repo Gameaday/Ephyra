@@ -90,14 +90,18 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
         compilerOptions {
             jvmTarget.set(AndroidConfig.JvmTarget)
             freeCompilerArgs.addAll(
-                "-language-version", "2.3",
-                "-api-version", "2.3",
+                "-language-version",
+                "2.3",
+                "-api-version",
+                "2.3",
                 "-Xcontext-parameters",
                 "-opt-in=kotlin.RequiresOptIn",
                 "-opt-in=kotlin.ExperimentalStdlibApi",
             )
 
-            val warningsAsErrors = project.providers.gradleProperty("warningsAsErrors").map { it.toBoolean() }.orElse(false)
+            val warningsAsErrors = project.providers.gradleProperty("warningsAsErrors").map {
+                it.toBoolean()
+            }.orElse(false)
             allWarningsAsErrors.set(warningsAsErrors)
         }
     }
@@ -164,8 +168,8 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
         val hasMaterial3 = listOf("implementation", "api", "compileOnly").any { configName ->
             project.configurations.findByName(configName)?.dependencies?.any { dep ->
                 dep.name == "presentation-core" ||
-                dep.name == "material3" ||
-                dep.group == "androidx.compose.material3"
+                    dep.name == "material3" ||
+                    dep.group == "androidx.compose.material3"
             } ?: false
         }
         if (hasMaterial3) {

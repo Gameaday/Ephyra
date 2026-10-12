@@ -91,7 +91,7 @@ class GlobalSearchViewModelTest {
         Dispatchers.resetMain()
     }
 
-        @Test
+    @Test
     fun `initial state has empty query and All filter`() = runTest {
         viewModel.state.test {
             val initial = awaitItem()

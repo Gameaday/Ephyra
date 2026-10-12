@@ -257,7 +257,7 @@ abstract class SearchViewModel(
     @Immutable
     data class State(
         val from: Manga? = null,
-                val searchQuery: String? = null,
+        val searchQuery: String? = null,
         // Defaults to All so a fresh search fans out across every enabled source.
         // PinnedOnly is intentionally opt-in only — it is exposed as a filter chip
         // for users who want to limit network fan-out to their pinned sources, but
