@@ -88,6 +88,10 @@ stay green; the probe still reports the real MangaDex contract.
 anything below 1.6 at load time (a clear, reported refusal) and by upstream making the identical
 removal.
 
+**Status:** the `EXTENSION_COMPATIBILITY.md` correction has landed. The code removal itself is
+**not yet done** — it is gated on a build-validated change, because it also rewrites four test files
+(§5).
+
 ### WS2 — P0 — Narrow what extensions can reach (`Injekt` bridge)
 
 **Upstream (#3965, "Limited what extensions can access from the app"):** the Injekt container an
@@ -114,6 +118,10 @@ not assert that *nothing else* is.
 
 **Acceptance:** the allowlist test passes both ways; an extension relying only on the upstream set
 loads and runs.
+
+**Status:** the narrowing and the two-sided contract test have landed. `JavaScriptEngine` is the one
+upstream allow that could not be added because the type does not exist in Ephyra yet; that is the
+remaining divergence.
 
 ### WS3 — Watch — Replacement backup format (the `.tachibk` deadline)
 
@@ -164,6 +172,8 @@ by `extension.pkgName.hashCode().toLong()` — a collision would let one install
 
 **Acceptance:** stress test of concurrent install/cancel leaves each extension's step consistent.
 
+**Status:** landed. A dedicated concurrency stress test is still to be added.
+
 ### WS5 — P0 — Survive a WebView renderer death
 
 **Upstream (`649fc83f`):** added `onRenderProcessGone` to the WebView screen and to
@@ -182,6 +192,8 @@ guarded when the renderer is gone; a user-facing string was added.
 4. Add a test around the interceptor's gone-renderer branch.
 
 **Acceptance:** killing the WebView renderer process leaves the app running with a visible message.
+
+**Status:** landed. Device verification is still to be recorded.
 
 ### WS6 — P1 — Migration robustness and orphan cleanup
 

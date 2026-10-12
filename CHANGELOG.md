@@ -21,6 +21,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   death.
 
 ### 🧩 Fixes
+- **Samsung Android 9–11 launch crash guarded** (WS9): `MainActivity.reportFullyDrawn()` now catches
+  the `SecurityException` some Samsung builds throw from the platform's fully-drawn broadcast.
+  Mirrors upstream `abb126ad`.
 - **WebView renderer death no longer kills the app** (WS5): the Compose webview client and the
   Cloudflare interceptor now override `onRenderProcessGone`, log the crash, notify the user and close
   the page; `stopLoading()`/`destroy()` are guarded when the renderer is gone. Mirrors upstream

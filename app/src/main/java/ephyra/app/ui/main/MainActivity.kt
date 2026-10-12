@@ -276,6 +276,19 @@ class MainActivity : BaseActivity(), AppReadySignal {
         registerSecureActivity(this)
     }
 
+    /**
+     * Some Samsung Android 9 to 11 builds deny the platform's fully-drawn broadcast and throw a
+     * `SecurityException` from the superclass. The report only feeds startup metrics, so it must
+     * never crash the app (mirrors upstream `abb126ad`).
+     */
+    override fun reportFullyDrawn() {
+        try {
+            super.reportFullyDrawn()
+        } catch (e: SecurityException) {
+            logcat(LogPriority.WARN, e)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val isLaunch = savedInstanceState == null
         val splashScreen = if (isLaunch) installSplashScreen() else null
