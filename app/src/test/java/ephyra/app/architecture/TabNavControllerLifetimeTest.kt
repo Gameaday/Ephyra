@@ -150,7 +150,6 @@ class TabNavControllerLifetimeTest {
         assertNull(previousTabIn(dropLastTab("library")))
     }
 
-
     @Test
     fun `the tab root list is declared once and shared`() {
         val home = sourceFile("app/src/main/java/ephyra/app/ui/home/HomeScreen.kt")
