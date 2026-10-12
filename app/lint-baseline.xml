@@ -249,28 +249,6 @@
         errorLine1="    return configuration.screenWidthDp > MediumWidthWindowSize.value"
         errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ephyra/core/designsystem/utils/WindowSize.kt"
-            line="12"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="ConfigurationScreenWidthHeight"
-        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
-        errorLine1="    return configuration.screenWidthDp > ExpandedWidthWindowSize.value"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/core/designsystem/utils/WindowSize.kt"
-            line="19"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="ConfigurationScreenWidthHeight"
-        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
-        errorLine1="    return configuration.screenWidthDp > MediumWidthWindowSize.value"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
             file="src/main/java/ephyra/presentation/core/util/WindowSize.kt"
             line="22"
             column="12"/>
