@@ -6,6 +6,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Unreleased]
+### 🧭 Upstream alignment (plan)
+- **Adoption plan for Mihon v0.21.1** added at
+  [`doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`](doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md). It maps
+  each upstream 0.21.1 change (and the open 0.21.0 recap items) to a decision and a workstream. The
+  headline: upstream 0.21.1 is the last version to restore Tachiyomi's `.tachibk` backups and to
+  support 1.4 extensions. Ephyra already refuses pre-1.6 extensions at load time
+  (`ExtensionLoader.SUPPORTED_LIB_VERSIONS = listOf(1.6)`), but still carries the now-unreachable
+  1.4/1.5 ABI (RxJava, `fetchImageUrl`/`imageUrlRequest`/`imageUrlParse`) and still **writes** the
+  legacy gzip `.tachibk` container that modern Mihon will not restore. Planned P0 work: finish the
+  1.4/1.5 ABI removal, narrow the extension `Injekt` allowlist to upstream's set, switch the backup
+  writer to the ZIP container, harden the extension installer's concurrent maps, and survive a WebView
+  renderer death.
+
 
 ### 🧯 Extension Compatibility (critical fix)
 - **MangaDex 1.6 could not load any pages**: the reader's `HttpPageLoader.internalLoadPage` resolved a populated `Page.imageUrl` against the source's `baseUrl` and wrote the result back before fetching, and `resolvePageImage` did the same in its populated branch (so `Downloader`'s retry path inherited the corruption). A real MangaDex extension stores a **relative path** in `Page.imageUrl` (`/data/<hash>/<file>`) and an MD@Home cache key in `Page.url`, and its own overridden `imageRequest` joins them at request time (`GET(mdAtHomeServerUrl + page.imageUrl)`). The host-side rewrite turned every request into `<at-home-host>https://mangadex.org/data/...` — two URLs spliced into a host that can never resolve — so **every page of every chapter failed identically**, presenting as a DNS error (`Unable to resolve host "…mangadex.network,https"`). The recovery ladder could not escape it: a fresh page list restored a fresh relative address that was immediately rewritten again. Fixed by treating a populated `Page.imageUrl` as opaque to the host, exactly as upstream Mihon does: `ResolvedImageUrl.opaque(...)` passes it through untouched (`resolvePageImage`), and the loader no longer rewrites the field — the disk-cache key and the request are the raw string the source produced, while the base `HttpSource.imageRequest` still resolves at the request boundary where a source override inherits nothing by design. Guarded by `MangaDexOpaqueImageUrlContractTest` (a source shaped like the real extension: relative `imageUrl`, at-home cache key, overridden `imageRequest`) and by structural gates in `PageLoadRecoveryStructuralTest`. Documented in `doc/EXTENSION_COMPATIBILITY.md` under "`Page.imageUrl` is opaque to the host once populated", including the general rule: never write an interpretation back into an extension-owned field that the extension is still going to read.
