@@ -27,10 +27,14 @@ which is "the animation is bad":
    app (F1). This is the single highest-leverage fix and it is not a taste issue.
 2. **No in-app escape hatch.** Motion can only be reduced by changing the *OS* animator
    scale (F2). A user who finds the app's motion unpleasant has no recourse inside it.
-3. **A design-token and legibility risk** in the branded themes: translucent surfaces
-   are applied globally to the M3 color scheme without any contrast check (F5).
+3. **A design-token question** about the branded themes: translucent surfaces are applied
+   globally to the M3 color scheme. This was tested against the real palette and the
+   contrast is fine (F5) — so it is a recorded, measured non-issue rather than a defect.
 4. **Under-governance.** The rules are enforced by tests that can pass on dead code, and
    most back surfaces do not participate in the predictive-back gesture (F1, F8).
+
+A fifth finding, outside the original scope, turned out to matter most: **the baseline did
+not compile** (F0). It was repaired first, because nothing else could be verified until it was.
 
 **Recommendation:** do **not** remove the work wholesale. Ship an escape hatch plus the
 real bug fix first (Phase 0), then harden and finish the experience behind gates
@@ -63,6 +67,37 @@ Reader already exposes two user toggles: **Animate page transitions**
 ## 3. Findings
 
 Severity is about user-visible impact and certainty, not effort.
+
+### F0 — The baseline did not compile (CRITICAL, confirmed, fixed)
+
+Commit `e61303d` left `core/domain/.../reader/service/ReaderPreferences.kt` syntactically invalid: a
+`#region` marker (not a Kotlin comment) and two functions with escaped quotes were inserted **inside
+the `ReaderHideThreshold` enum body**, and `pref_enable_chapter_transitions` /
+`pref_center_tap_neutral` were declared there:
+
+```kotlin
+enum class ReaderHideThreshold(val threshold: Int) {
+
+#region Material & Interaction Settings
+fun chapterTransitionEnabled() = preferenceStore.getBoolean(\"pref_enable_chapter_transitions\", true)
+fun centerTapNeutral() = preferenceStore.getBoolean(\"pref_center_tap_neutral\", false)
+#endregion
+    HIGHEST(5),
+    ...
+}
+```
+
+The same commit's `CenterTapNeutralNavigation` cannot compile either: it overrides `invertMode` and
+`getAction`, which are **final** in `ViewerNavigation`, reads the base class's **private**
+`constantMenuRegion`, and references a non-existent `ViewerReaderPreferences.TappingInvertMode`. Its
+only caller (`WebtoonConfig.wrapIfNeeded`) is a private function that nothing calls and that reads a
+constructor parameter from a member function, which is also not allowed.
+
+So the tree had a broken `core:domain`, a broken `feature:reader`, and a feature that was never
+wired. Fixed by restoring `ReaderHideThreshold` to its enum constants and **removing** the
+non-compiling, unwired center-tap feature (it can be re-implemented deliberately). Recorded here
+because it changes the premise of the whole report: before this, no build, test, or device run of the
+current tree was possible.
 
 ### F1 — Back from a non-Library tab exits the app (HIGH, confirmed)
 
@@ -123,7 +158,7 @@ without turning off *all* system animations, including for other apps.
 
 Two keys, two names, one behaviour. The dead one is a trap for the next change.
 
-### F4 — Motion policy covers one route pair; unused Z-axis vocabulary (MEDIUM)
+### F4 — Motion policy covers one route pair; unused Z-axis vocabulary (MEDIUM — tokens removed)
 
 `MotionRoutePair` deliberately declares a single entry, `LIBRARY_SERIES`
 (`MotionPolicy.kt:11-22`), because tab motion, reader entry, sheets, and undeclared
@@ -131,7 +166,7 @@ routes are owned elsewhere. That is defensible, but it means the "policy" enforc
 rule. Separately, `MotionTokens.m3SharedAxisZ*` have **zero call sites** outside
 `Motion.kt` (verified by grep). The prior audit already flagged these as "delete if
 
-### F5 — Branded themes lower surface alpha globally with no contrast check (HIGH risk)
+### F5 — Translucent branded surfaces: hypothesis tested, **not** a defect (was HIGH, now RESOLVED/measured)
 
 `EphyraTheme.applyBrandedAlpha` rewrites the color scheme's surfaces to translucent:
 
@@ -141,38 +176,62 @@ surface = surface.copy(alpha = config.surfaceAlpha)            // Ephyra: 0.85
 surfaceContainer* = ...copy(alpha = config.containerAlpha)     // Ephyra: 0.78
 ```
 
-`onSurface` / `onSurfaceVariant` are left untouched, so the *declared* contrast is
-computed against an opaque surface while the *rendered* surface is a blend of the
-translucent color over the window background. For the Ephyra ("glassmorphic") theme this
-is a measurable legibility risk for body text on `surfaceContainer*`, and it is a strong
-candidate for "the material UI design is not enjoyable" — the surfaces read as washed
-out rather than layered. No test measures rendered contrast, and the three branded
-configs (`BrandedThemeConfig.kt`) are applied to every M3 component through
-`MaterialTheme`, so the effect is app-wide, not opt-in per component.
+`onSurface` / `onSurfaceVariant` are left untouched, so the *declared* contrast is computed against
+an opaque surface while the *rendered* surface is a blend over the window background. That is a real
+way to ship unreadable text, so the actual palette was measured rather than assumed.
 
-### F6 — Dynamic-color (Monet) scheme can go stale (MEDIUM)
+**Measured result: the concern does not hold for the shipped palettes.** Alpha-compositing the Ephyra
+surfaces over the Ephyra background and computing WCAG contrast:
+
+| Pair (Ephyra dark) | Ratio |
+|---|---|
+| `onSurface` on `surface` | 15.8:1 |
+| `onSurfaceVariant` on `surfaceVariant` | 11.6:1 |
+| `onSurfaceVariant` on `surfaceContainer` | 11.9:1 |
+| `onSurfaceVariant` on `surfaceContainerHigh` | 10.8:1 |
+| `onSurfaceVariant` on `surfaceContainerHighest` | 9.6:1 |
+
+The worst pair is still more than twice the WCAG AA floor of 4.5:1, and the light scheme is 8.9–14.6:1.
+No alpha change is warranted; changing the values would be motion without evidence. What *was* worth
+adding is the guarantee, since the next palette or alpha edit could break this silently:
+`BrandedContrastTest` (presentation-core) asserts the composited pairs against AA using pure ARGB
+arithmetic.
+
+**Residual risk, recorded not fixed:** the measurement assumes the surface sits on the theme
+`background`. A translucent container drawn over *arbitrary content* (e.g. a sheet over cover art) has
+a different effective background, and that case needs visual/device review rather than a formula. If
+the owner's "material UI design not enjoyable" is about surfaces over imagery, that is the place to
+look — not the flat-surface contrast, which is fine.
+
+### F6 — Dynamic-color (Monet) scheme can go stale (MEDIUM — fixed)
 
 `BaseEphyraTheme` builds the scheme under `remember(appTheme, isDark, isAmoled)`
 (`EphyraTheme.kt:79-88`) without keying on `context`. `MonetColorScheme(context)`
 therefore can retain colors from a previous configuration/context. Recorded in
 `doc/historical/UI_AUDIT.md` and still open.
 
-### F7 — Design-token leaks and no gate for them (MEDIUM)
+### F7 — Design-token leaks (partly stale, partly fixed; the missing gate remains) (LOW/MEDIUM)
 
-Still open from `doc/historical/UI_AUDIT.md`:
+The historical `UI_AUDIT.md` list was re-checked against the tree rather than carried forward:
 
-- Hardcoded banner colors + `Color.White` text, bypassing `MaterialTheme`
-  (`presentation-core/.../components/AppStateBanners.kt:19-21, 44+`).
-- Inline `tween(...)` literals outside `MotionTokens`
-  (`SettingsSearchScreen.kt:222,227`; `ReaderScreen.kt:126`; `CalendarHeader.kt:77-84`).
-- Duplicate `WindowSize` helper (`app/.../designsystem/utils/` vs
-  `presentation-core/.../util/`); the app copy is unreferenced and can drift.
-- Hardcoded cover placeholder color bypassing the token system.
+- **App-state banners** used hardcoded colors + `Color.White` (`AppStateBanners.kt:19-21, 44+`) and
+  were mirrored into `MainActivity`'s status-bar logic. **Fixed:** both now read
+  `primaryContainer` / `secondaryContainer` / `tertiaryContainer` and their `on*` pairs, so the
+  banners adapt to every theme instead of ignoring all 17.
+- **Duplicate `WindowSize` helper** (`app/.../designsystem/utils/` vs `presentation-core/.../util/`).
+  **Fixed:** the unreferenced app copy is deleted.
+- **Inline tween literals** — the cited `SettingsSearchScreen.kt` sites already use `MotionTokens`;
+  `ReaderScreen.kt:126` uses `MotionTokens.DURATION_MEDIUM_3` with a hardcoded `FastOutSlowInEasing`,
+  and `CalendarHeader.kt` uses a local `MONTH_YEAR_CHANGE_ANIMATION_DURATION = 200` constant. These
+  are minor and changing them alters behaviour, so they are left alone rather than churned.
+- **Hardcoded cover placeholder color** — no `Color(0x...)` remains in `MangaCover.kt`; the finding is
+  stale.
 
-The audit's own recommendation — a structural gate for "no raw `tween(n)` and no raw
-`Color(...)` outside the token/theme layer" — was never added.
+The finding that survives is the one the prior audit raised and never acted on: **there is no
+structural gate** for "no raw `tween(n)` / no raw `Color(...)` outside the token and theme layers", so
+the leaks that were fixed can come back.
 
-### F8 — Back surfaces do not participate in predictive back (MEDIUM)
+### F8 — Back surfaces do not participate in predictive back (MEDIUM — gate widened, surfaces documented)
 
 The manifest opts into `enableOnBackInvokedCallback="true"`. There are ~12 `BackHandler`
 call sites (selection modes in Library/Updates/Manga/Migration, search-in-tab in
@@ -330,4 +389,39 @@ platform default) rather than the whole system, and record why in the contract.
 3. **Design direction** — is the Ephyra glassmorphic look itself the complaint (→ redesign
    surfaces), or only its legibility (→ fix alpha/contrast and keep the look)?
 4. **Appetite** — Phase 0 only, or commit to Phases 1–3?
+
+
+---
+
+## 8. Implementation status (branch `cline/ejmzhbkf`)
+
+> **Build caveat:** no JDK is available in the implementation sandbox, so **nothing below was
+> compiled or test-run locally**. Each change was made against the existing APIs and reviewed by
+> reading; the first CI run is the real verification. This is called out rather than implied, because
+> the whole audit turns on not trusting unverified claims.
+
+| # | Finding | Status | Change |
+|---|---|---|---|
+| F0 | Baseline did not compile | **Fixed** | Restored `ReaderHideThreshold`; removed the non-compiling, unwired center-tap feature; removed the two dead prefs |
+| F1 | Back from a non-Library tab exits the app | **Fixed** | `HomeScreen` now walks a `rememberSaveable` tab history; back returns to the previous tab and exits only from a single-entry history. Guard test rewritten behaviourally and a structural assertion forbids the old always-false gate |
+| F2 | No in-app motion escape hatch | **Fixed** | `UiPreferences.reduceMotion()` + `effectiveReducedMotion(system, app)` merged at the root; **Reduce motion** switch added to Appearance; `EffectiveReducedMotionTest` |
+| F3 | Duplicate dead reader transition pref | **Fixed** | `chapterTransitionEnabled()` deleted |
+| F4 | Unused shared-axis-Z tokens | **Fixed** | Deleted (no call sites) with a note on how a modal scale would be re-added |
+| F5 | Translucent-surface contrast | **Measured — not a defect** | Measured AA-passing ratios; added `BrandedContrastTest`; no alpha change |
+| F6 | Monet scheme could go stale | **Fixed** | `context` added to the `remember` keys |
+| F7 | Token leaks | **Partly fixed** | Banners themed; duplicate `WindowSize` deleted; stale items corrected in this document. The structural gate for raw `tween`/`Color` is **not yet added** |
+| F8 | Non-predictive back surfaces | **Partly addressed** | `PredictiveBackGateTest` now scans every module's `src/main`; the non-previewable surfaces are enumerated in `MOTION_NAVIGATION_CONTRACT.md`. No surface was converted, because none of the remaining ones has a spatial position to preview |
+| F9 | Toast/Snackbar split | **Not done** | Out of the motion/back scope; recorded |
+| F10 | No device motion validation | **Not done** | Needs hardware; recorded |
+
+### Recommended next steps
+
+1. Run CI (`:app`, `:core:domain`, `:presentation-core` tests) to verify the above.
+2. Device pass on the tab-back behaviour and the Reduce-motion switch (F1, F2 are the two changes a
+   user will feel immediately).
+3. Add the raw-`tween`/`Color` structural gate (F7) once the two remaining inline sites are either
+   converted or explicitly exempted.
+4. If the "not enjoyable" report persists after F1/F2, the next suspects are the surfaces over
+   imagery (F5 residual) and element-level animation choreography — both need visual review, not
+   more code reading.
 
