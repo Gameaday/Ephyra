@@ -181,4 +181,44 @@ code does *not* do and no unit test can drive the transition:
   the pair resolve over one predicate.
 - `MotionConsistencyTest` — the reader animates both halves; the Activity animations travel the token
   distance; every shared-cover host provides an animated-visibility scope; and each list that opens a
+
+## Back surfaces that intercept without previewing the gesture
+
+The app opts into predictive back (`enableOnBackInvokedCallback="true"`), so every surface that
+*intercepts* back owes the user either a gesture preview or a documented reason it cannot have one.
+Intercepting without participating is the worst case: the system is told to animate its own
+transition, the in-app handler consumes the event, and the user sees nothing move until the end.
+
+Surfaces are therefore in one of three states, and the third is a deliberate, recorded choice rather
+than an oversight:
+
+- **Previewed** — drives the shared helper: the bottom sheets (`PredictiveBackDraggableProgress`) and
+  the series page (`PredictiveBackProgress`).
+- **Platform-animated** — the two `NavHost`s and the Activity window animations. These are animated
+  by the navigation library / platform, so they preview without app code.
+- **State change, not a spatial move** — selection-mode exits (Library, Updates, Manga chapter list,
+  Migration, Migrate), search-in-tab exits (Sources, Extensions, ExtensionsRoute), WebView history,
+  and onboarding step-back. There is no surface position to animate: back flips a boolean or a
+  history pointer, and inventing a translation for it would imply a spatial model the screen does not
+  have. These keep a bare `BackHandler` **on purpose**.
+
+The rule that keeps this honest is structural: `PredictiveBackGateTest` scans **every** `src/main`
+Kotlin file (not just `presentation-core`) and fails if any module hand-rolls a `PredictiveBackHandler`
+instead of calling the shared helper. A new surface that wants a preview must use the helper; a new
+surface that cannot preview must be added to the list above.
+
+## The in-app reduce-motion preference
+
+Reduced motion has two sources, merged rather than one overriding the other:
+
+- the **OS** animator scale, read from `Settings.Global.ANIMATOR_DURATION_SCALE` (a floor — it is
+  always honoured);
+- the app's own **Reduce motion** preference (`UiPreferences.reduceMotion()`), which exists so a user
+  who dislikes *this app's* transitions does not have to disable animation for every app on the
+  device.
+
+`effectiveReducedMotion(system, app)` is the merge and is asserted directly. Under reduced motion the
+navigation transitions collapse to instant, as before; the in-app preference adds no new transition
+behaviour, only a second way to ask for the existing one.
+
   series keys its cover on the id it opens.

@@ -251,7 +251,7 @@ class PredictiveBackGateTest {
     @Test
     fun `the shared helper is the only predictive back implementation`() {
         val offenders = mutableListOf<String>()
-        for (path in presentationCoreSources()) {
+        for (path in allMainSources()) {
             if (path.name == "PredictiveBack.kt") continue
             for (line in codeOf(path.absolutePath)) {
                 if (line.contains("PredictiveBackHandler(") && !line.contains("import ")) {
@@ -267,9 +267,26 @@ class PredictiveBackGateTest {
         )
     }
 
-    private fun presentationCoreSources(): List<File> {
-        val root = sourceFile("presentation-core/src/main")
-        assertTrue(root.exists(), "presentation-core/src/main not found")
-        return root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+    /**
+     * Every Kotlin file in a `src/main` source set, across every module.
+     *
+     * The rule this backs (one predictive-back implementation) used to be checked in
+     * `presentation-core` only, which is where the shared helper lives and therefore the one place
+     * it could not be violated. A feature module hand-rolling a `PredictiveBackHandler` was
+     * invisible to CI. The scan now covers the whole tree.
+     *
+     * `build` and `.git` are pruned so a stale generated copy cannot produce a false failure, and
+     * `test` is pruned because a test double is not production motion.
+     */
+    private fun allMainSources(): List<File> {
+        val root = File(ephyra.app.security.TrackedFileNames.repositoryRoot())
+        assertTrue(root.exists(), "repository root not found: $root")
+        return root.walkTopDown()
+            .onEnter { it.name != "build" && it.name != ".git" && it.name != "test" }
+            .filter {
+                it.isFile && it.extension == "kt" &&
+                    it.absolutePath.replace('\\', '/').contains("/src/main/")
+            }
+            .toList()
     }
 }
