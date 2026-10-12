@@ -1,6 +1,11 @@
 package ephyra.app.architecture
 
 import ephyra.app.security.TrackedFileNames
+import ephyra.app.ui.home.appendTabHistory
+import ephyra.app.ui.home.dropLastTab
+import ephyra.app.ui.home.previousTabIn
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -95,11 +100,54 @@ class TabNavControllerLifetimeTest {
             "HomeScreen installs no BackHandler, so pressing back inside a non-Library tab pops the " +
                 "app-level stack and leaves the app from a screen the user only navigated within.",
         )
+
+        // The gate must be the tab history, not a route-set predicate over this controller.
+        //
+        // The previous version of this test asserted only that the source *contained* `BackHandler`
+        // and a `popBackStack(` inside it. That passed while the handler was dead code: it was
+        // gated on `currentRoute !in TAB_ROOT_ROUTES`, and this controller only ever holds the tab
+        // roots, so the condition could never be true and back left the app. A structural test that
+        // cannot fail on the defect it guards is worse than none, so the rule is now about the gate
+        // itself.
         assertTrue(
-            BACK_POP_TO_ROOT.containsMatchIn(text),
-            "the back handler must return to a tab root, not merely consume the event",
+            text.contains("previousTabIn(tabHistory)"),
+            "the back handler must be gated on the tab history (`previousTabIn(tabHistory)`), not on " +
+                "a route-set predicate that this controller can never satisfy.",
+        )
+        assertTrue(
+            !text.contains("currentRoute !in TAB_ROOT_ROUTES"),
+            "the always-false `currentRoute !in TAB_ROOT_ROUTES` gate is what made back exit the " +
+                "app; it must not come back.",
         )
     }
+
+    @Test
+    fun `tab history records visits and never duplicates the current tab`() {
+        assertEquals("library", appendTabHistory("library", "library"))
+        assertEquals("library,browse", appendTabHistory("library", "browse"))
+
+        // Re-visiting an earlier tab moves it to the end rather than duplicating it, so the
+        // previous tab is where the user actually came from.
+        assertEquals("browse,library", appendTabHistory("library,browse", "library"))
+        assertEquals("history,browse", appendTabHistory("library,history,browse", "browse"))
+    }
+
+    @Test
+    fun `previous tab is the second to last, and back exits when there is none`() {
+        assertNull(previousTabIn("library"))
+        assertEquals("library", previousTabIn("library,browse"))
+        assertEquals("history", previousTabIn("library,history,browse"))
+    }
+
+    @Test
+    fun `dropping the current tab makes the previous tab current`() {
+        // The sequence a back press performs: read the previous tab, drop the current one, navigate.
+        // A single-entry history drops to empty, which disables the handler and lets back exit.
+        assertEquals("library", dropLastTab("library,browse"))
+        assertEquals("", dropLastTab("library"))
+        assertNull(previousTabIn(dropLastTab("library")))
+    }
+
 
     @Test
     fun `the tab root list is declared once and shared`() {
@@ -142,11 +190,5 @@ class TabNavControllerLifetimeTest {
          * which reads `name: Type = rememberNavController()`, cannot match.
          */
         val CREATES_CONTROLLER = Regex("""val\s+\w*NavController\w*\s*=\s*rememberNavController\(\)""")
-
-        /** A back handler that pops to a tab root rather than merely swallowing the event. */
-        val BACK_POP_TO_ROOT = Regex(
-            """BackHandler\s*\{[^}]*popBackStack\(""",
-            setOf(RegexOption.DOT_MATCHES_ALL),
-        )
     }
 }
