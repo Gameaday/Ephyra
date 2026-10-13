@@ -15,8 +15,8 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
 import java.text.DecimalFormat
-import java.util.Locale
 import java.text.DecimalFormatSymbols
+import java.util.Locale
 import ephyra.data.database.models.Track as DbTrack
 
 class Kitsu(

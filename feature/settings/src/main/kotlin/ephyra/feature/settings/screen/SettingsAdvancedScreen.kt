@@ -21,7 +21,6 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.system.GLUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.powerManager
 import ephyra.core.common.util.system.setDefaultSettings
@@ -130,7 +129,6 @@ object SettingsAdvancedScreen : SearchableSettings {
                 resetViewerFlags = viewModel.resetViewerFlags,
                 metadataUpdateScheduler = viewModel.metadataUpdateScheduler,
             ),
-            getReaderGroup(basePreferences = basePreferences),
             getExtensionsGroup(
                 appInfo = appInfo,
                 basePreferences = basePreferences,
@@ -342,41 +340,6 @@ object SettingsAdvancedScreen : SearchableSettings {
         )
     }
 
-    @Composable
-    private fun getReaderGroup(
-        basePreferences: BasePreferences,
-    ): Preference.PreferenceGroup {
-        return Preference.PreferenceGroup(
-            title = stringResource(ephyra.app.core.common.R.string.pref_category_reader),
-            preferenceItems = persistentListOf(
-                Preference.PreferenceItem.ListPreference(
-                    preference = basePreferences.hardwareBitmapThreshold(),
-                    entries = GLUtil.CUSTOM_TEXTURE_LIMIT_OPTIONS
-                        .mapIndexed { index, option ->
-                            val display = if (index == 0) {
-                                stringResource(
-                                    ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold_default,
-                                    option,
-                                )
-                            } else {
-                                option.toString()
-                            }
-                            option to display
-                        }
-                        .toMap()
-                        .toImmutableMap(),
-                    title = stringResource(ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold),
-                    subtitleProvider = { value, options ->
-                        stringResource(
-                            ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold_summary,
-                            options[value].orEmpty(),
-                        )
-                    },
-                    enabled = GLUtil.DEVICE_TEXTURE_LIMIT > GLUtil.SAFE_TEXTURE_LIMIT,
-                ),
-            ),
-        )
-    }
 
     @Composable
     private fun getExtensionsGroup(
