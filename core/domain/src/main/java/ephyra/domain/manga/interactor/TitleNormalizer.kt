@@ -1,6 +1,7 @@
 package ephyra.domain.manga.interactor
 
 import com.aallam.similarity.JaroWinkler
+import java.util.Locale
 
 /**
  * Single source of truth for all title matching across the app.
@@ -35,11 +36,11 @@ object TitleNormalizer {
 
     /** Aggressive normalization for exact-equality dedup: "Attack on Titan!" → "attackontitan". */
     fun forEquality(title: String): String =
-        equalityRegex.replace(title.lowercase().trim(), "")
+        equalityRegex.replace(title.lowercase(Locale.ROOT).trim(), "")
 
     /** Semantic normalization preserving word boundaries: "Re:Zero" → "re zero". */
     fun forMatching(title: String): String =
-        title.lowercase()
+        title.lowercase(Locale.ROOT)
             .replace(matchingPunctRegex, " ")
             .replace(multiSpaceRegex, " ")
             .trim()
@@ -75,6 +76,6 @@ object TitleNormalizer {
         }
         val digest = java.security.MessageDigest.getInstance("SHA-256")
         val hashBytes = digest.digest(rawInput.toByteArray(Charsets.UTF_8))
-        return hashBytes.joinToString("") { "%02x".format(it) }
+        return hashBytes.joinToString("") { String.format(Locale.ROOT, "%02x", it) }
     }
 }

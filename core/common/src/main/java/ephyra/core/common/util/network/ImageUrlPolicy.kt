@@ -3,6 +3,7 @@ package ephyra.core.common.util.network
 import ephyra.core.common.util.system.logcat
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.IOException
+import java.util.Locale
 
 /**
  * Raised when an image URL is structurally unusable, whatever the network does with it.
@@ -307,7 +308,7 @@ object ImageUrlPolicy {
                 '\n' -> append("\\n")
                 '\r' -> append("\\r")
                 '\t' -> append("\\t")
-                else -> if (c.isISOControl()) append("\\u%04x".format(c.code)) else append(c)
+                else -> if (c.isISOControl()) append(String.format(Locale.ROOT, "\\u%04x", c.code)) else append(c)
             }
         }
     }

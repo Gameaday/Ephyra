@@ -15,6 +15,8 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
 import java.text.DecimalFormat
+import java.util.Locale
+import java.text.DecimalFormatSymbols
 import ephyra.data.database.models.Track as DbTrack
 
 class Kitsu(
@@ -64,7 +66,7 @@ class Kitsu(
     override fun getCompletionStatus(): Long = COMPLETED
 
     override fun getScoreList(): List<String> {
-        val df = DecimalFormat("0.#")
+        val df = DecimalFormat("0.#", DecimalFormatSymbols.getInstance(Locale.ROOT))
         return (listOf("0") + IntRange(2, 20).map { df.format(it / 2f) })
     }
 
@@ -73,7 +75,7 @@ class Kitsu(
     }
 
     override fun displayScore(track: Track): String {
-        val df = DecimalFormat("0.#")
+        val df = DecimalFormat("0.#", DecimalFormatSymbols.getInstance(Locale.ROOT))
         return df.format(track.score)
     }
 
