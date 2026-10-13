@@ -70,7 +70,7 @@ class ExtensionManager(
      * one. `AndroidSourceManager` relies on that to avoid publishing a source map that contains
      * only the local source.
      */
-    val installedExtensionsMap: StateFlow<Map<String, Extension.Installed>> =
+    val installedExtensionsState: StateFlow<Map<String, Extension.Installed>> =
         installedExtensionMapFlow.asStateFlow()
 
     /**

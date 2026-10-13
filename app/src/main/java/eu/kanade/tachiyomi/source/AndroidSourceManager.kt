@@ -79,7 +79,7 @@ internal class AndroidSourceManager(
                 // Read the authoritative map synchronously instead of the value carried by the
                 // combine emission: the derived list can lag a write, and this must be the loaded
                 // set whenever `extensionsLoaded` is true.
-                val extensions = extensionManager.installedExtensionsMap.value.values
+                val extensions = extensionManager.installedExtensionsState.value.values
                 val mutableMap = ConcurrentHashMap<Long, Source>(
                     mapOf(
                         LocalSource.ID to LocalSource(
