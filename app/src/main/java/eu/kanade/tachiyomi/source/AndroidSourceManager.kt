@@ -69,7 +69,10 @@ internal class AndroidSourceManager(
 
         scope.launch {
             kotlinx.coroutines.flow.combine(
-                extensionManager.installedExtensionsMap,
+                // Collected (not just read) so the derived `installedExtensionsFlow` state stays
+                // fresh for its `.value` readers (diagnostics, crash logs, search). The loaded set
+                // itself is read from the authoritative map below, which updates synchronously.
+                extensionManager.installedExtensionsFlow,
                 heuristicProfilesFlow,
                 extensionManager.isInitialized,
             ) { _, profiles, extensionsLoaded ->
