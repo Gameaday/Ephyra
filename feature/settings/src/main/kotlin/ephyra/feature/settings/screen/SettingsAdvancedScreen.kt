@@ -340,7 +340,6 @@ object SettingsAdvancedScreen : SearchableSettings {
         )
     }
 
-
     @Composable
     private fun getExtensionsGroup(
         appInfo: AppInfo,
