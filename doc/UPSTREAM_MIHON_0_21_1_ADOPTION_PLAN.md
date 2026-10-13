@@ -255,6 +255,13 @@ aligned**; the gap is test coverage, not code.
    assert the visible page and saved progress stay on the same page.
 2. Confirm the "resume opens next chapter partway through" scenario is covered by that test.
 
+**Status:** landed as a **structural gate**, not the behavioural RTL test the plan called for.
+`ComposePagerReader` already re-seeks to the current item's new index whenever the item list changes
+(`LaunchedEffect(items)` → `items.indexOf(viewer.currentPage)` → `scrollToPage`), which is the
+behaviour upstream fixed; the realignment lives inline in a `@Composable`, so
+`PagerRealignmentStructuralTest` asserts its shape (with matcher self-tests) rather than faking a
+`PagerState`, a `PagerViewer` and a reader activity. The on-device RTL resume remains unverified.
+
 ### WS8 — P1 — Locale-safe chapter-number formatting
 
 **Upstream (`8457fb91`):** chapter refresh failed with an Arabic (or other non-ASCII-digit) app
@@ -271,6 +278,11 @@ other number-formatting paths (`ChapterNumber`, chapter display, `BackupCreator`
    an implicit locale; pin to `Locale.ROOT`/`Locale.ENGLISH` where the output is data, not UI.
 2. Add a test that runs under an Arabic locale and asserts ASCII digits and stable chapter matching.
 
+
+**Status:** landed. Chapter-number parsing, `TitleNormalizer`, alternative-title dedup, stable-id
+hex, `dHashToHex`, URL control-char escaping and Kitsu score formatting now pin `Locale.ROOT`;
+`LocaleIndependenceTest` runs the parsing and normalization inputs under `ar-EG` and `tr` and asserts
+the results match `Locale.ROOT`. `BackupCreator`/`KitsuDateHelper` already used `Locale.ENGLISH`.
 
 ### WS9 — P2 — Startup and tablet polish
 
@@ -302,6 +314,11 @@ already retired (`ReaderActivity` comment).
 
 1. Remove the obsolete hardware-bitmap-threshold setting and its plumbing, matching upstream.
 2. Confirm no dead decoder code remains in the long-strip path.
+
+**Status:** landed. The `pref_hardware_bitmap_threshold` preference, its advanced-settings row, the
+`GLUtil.CUSTOM_TEXTURE_LIMIT_OPTIONS` list and the App wiring are removed; `ImageUtil`'s texture
+threshold is applied directly from `GLUtil.DEVICE_TEXTURE_LIMIT`, which is the value the preference
+already defaulted to, so behaviour is unchanged. ICC display profiles were already retired.
 
 ### WS11 — P3 — Extension trust / content-warning model (0.21.0 recap)
 

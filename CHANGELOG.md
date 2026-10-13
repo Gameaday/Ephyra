@@ -21,6 +21,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   death. **WS1's ABI removal is deferred and reclassified:** upstream `main` still ships the
   `rx.Observable` chain (`fetchImageUrl`/`imageUrlRequest`/`imageUrlParse`), so removing it is a
   deliberate Ephyra divergence that needs a compiler and a product decision — not a mirror.
+  Since this plan was written, WS7 (pager realignment gate), WS8 (locale-safe data
+  formatting) and WS10 (obsolete settings) have landed; WS1 remains deferred.
 
 ### 🧩 Fixes
 - **Samsung Android 9–11 launch crash guarded** (WS9): `MainActivity.reportFullyDrawn()` now catches
@@ -33,6 +35,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Extension installs can no longer cancel each other** (WS4): active installs are keyed by package
   name in `ConcurrentHashMap`s and cleaned up by `(key, value)`, so a stale, cancelled or superseded
   install can only remove its own entries. Mirrors upstream `07b9fb69`/`ae749bb4`.
+- **“Source not installed” no longer flashes on resume**: `AndroidSourceManager` marked itself
+  initialized on the *first* emission of the installed-extension list — the empty list emitted before
+  the extension scan finishes — so a screen restored after a process death resolved a placeholder
+  stub and rendered it as a missing source. Readiness is now gated on `ExtensionManager.isInitialized`,
+  the authoritative extension map is read synchronously at the moment readiness flips, readiness is
+  published even if the scan throws, the manager is primed when the app is foregrounded, and the
+  browse-source screen stays on its loading state until readiness is known.
+- **Locale-safe data formatting** (WS8): chapter-number parsing, `TitleNormalizer`, alternative-title
+  dedup, stable-id hex, `dHashToHex`, URL escaping and Kitsu score formatting now pin `Locale.ROOT`,
+  so a Turkish or Arabic device locale can no longer change identity keys, dedup results or the ASCII
+  of a tracker payload. Guarded by `LocaleIndependenceTest`.
+- **Pager realignment locked** (WS7): a structural gate asserts `ComposePagerReader` re-seeks to the
+  current item's new index whenever the item list shifts.
+- **Obsolete “Custom hardware bitmap threshold” setting retired** (WS10): the preference, its
+  advanced-settings row and the option list are removed; the device texture limit is applied directly.
 
 
 
