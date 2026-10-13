@@ -294,14 +294,14 @@ class ExtensionManager(
     /**
      * Sets to "installing" status of an extension installation.
      *
-     * @param downloadId The id of the download.
+     * @param pkgName The package name of the extension.
      */
-    fun setInstalling(downloadId: Long) {
-        installer.updateInstallStep(downloadId, InstallStep.Installing)
+    fun setInstalling(pkgName: String) {
+        installer.updateInstallStep(pkgName, InstallStep.Installing)
     }
 
-    fun updateInstallStep(downloadId: Long, step: InstallStep) {
-        installer.updateInstallStep(downloadId, step)
+    fun updateInstallStep(pkgName: String, step: InstallStep) {
+        installer.updateInstallStep(pkgName, step)
     }
 
     /**

@@ -18,6 +18,7 @@ import logcat.LogPriority
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The installer which installs, updates and uninstalls the extensions.
@@ -32,8 +33,17 @@ class ExtensionInstaller(
 ) {
 
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val activeJobs = mutableMapOf<String, Job>()
-    private val activeSteps = mutableMapOf<Long, MutableStateFlow<InstallStep>>()
+
+    /**
+     * Active installs, keyed by package name.
+     *
+     * Concurrent because [downloadAndInstall] is called from the UI while [cancelInstall] can be
+     * called from any thread, and because a re-install of the same package must not be clobbered by
+     * the previous install's completion. Cleanup always removes by `(key, value)` so a stale install
+     * can only remove its own entries — the bug where cancelling one extension cancelled another.
+     */
+    private val activeJobs = ConcurrentHashMap<String, Job>()
+    private val activeSteps = ConcurrentHashMap<String, MutableStateFlow<InstallStep>>()
 
     private val httpClient: OkHttpClient = networkHelper.client
 
@@ -45,14 +55,14 @@ class ExtensionInstaller(
      * @param extension The extension to install.
      */
     fun downloadAndInstall(url: String, extension: Extension): Flow<InstallStep> {
-        val downloadId = extension.pkgName.hashCode().toLong()
-        cancelInstall(extension.pkgName)
+        val pkgName = extension.pkgName
+        cancelInstall(pkgName)
 
         val step = MutableStateFlow(InstallStep.Pending)
-        activeSteps[downloadId] = step
+        activeSteps[pkgName] = step
 
         val job = scope.launch {
-            val tmpFile = File(context.cacheDir, "extension_${extension.pkgName}.apk")
+            val tmpFile = File(context.cacheDir, "extension_$pkgName.apk")
             try {
                 step.value = InstallStep.Downloading
                 val request = Request.Builder().url(url).build()
@@ -68,7 +78,7 @@ class ExtensionInstaller(
                 }
 
                 step.value = InstallStep.Installing
-                installApk(downloadId, tmpFile)
+                installApk(pkgName, tmpFile)
             } catch (e: Exception) {
                 if (e is InterruptedException) {
                     // Canceled
@@ -79,12 +89,14 @@ class ExtensionInstaller(
             }
         }
 
-        activeJobs[extension.pkgName] = job
+        activeJobs[pkgName] = job
 
         return step.asStateFlow()
             .onCompletion {
-                activeJobs.remove(extension.pkgName)
-                activeSteps.remove(downloadId)
+                // Remove only this install's entries: a newer install for the same package may have
+                // replaced them already, and it must not be torn down by this one finishing.
+                activeJobs.remove(pkgName, job)
+                activeSteps.remove(pkgName, step)
                 job.cancel()
             }
     }
@@ -94,16 +106,16 @@ class ExtensionInstaller(
      *
      * @param tempFile The file of the extension to install. Delete after use.
      */
-    private suspend fun installApk(downloadId: Long, tempFile: File) {
+    private suspend fun installApk(pkgName: String, tempFile: File) {
         try {
             if (extensionLoader.installPrivateExtensionFile(context, tempFile)) {
-                updateInstallStep(downloadId, InstallStep.Installed)
+                updateInstallStep(pkgName, InstallStep.Installed)
             } else {
-                updateInstallStep(downloadId, InstallStep.Error)
+                updateInstallStep(pkgName, InstallStep.Error)
             }
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to read downloaded extension file." }
-            updateInstallStep(downloadId, InstallStep.Error)
+            updateInstallStep(pkgName, InstallStep.Error)
         } finally {
             tempFile.delete()
         }
@@ -129,11 +141,11 @@ class ExtensionInstaller(
     /**
      * Sets the step of the installation of an extension.
      *
-     * @param downloadId The id of the download.
+     * @param pkgName The package name of the extension being installed.
      * @param step New install step.
      */
-    fun updateInstallStep(downloadId: Long, step: InstallStep) {
-        activeSteps[downloadId]?.let { it.value = step }
+    fun updateInstallStep(pkgName: String, step: InstallStep) {
+        activeSteps[pkgName]?.let { it.value = step }
     }
 
     companion object {
