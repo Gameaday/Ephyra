@@ -443,6 +443,17 @@ class App :
     override fun onStart(owner: LifecycleOwner) {
         SecureActivityDelegateState.onApplicationStart(securityPreferences)
         restoreImageCacheSize()
+
+        // Prime the content-source map as soon as the app is foregrounded. `SourceManager` builds
+        // its source map asynchronously, and a screen restored after the system killed the process
+        // would otherwise call `getOrStub` before that work had even started, resolve a placeholder
+        // stub, and present it as "source not installed". Constructing the (singleton) manager here
+        // starts the load up front; a screen that still has to wait observes `isInitialized`.
+        try {
+            sourceManagerProvider.get()
+        } catch (e: Throwable) {
+            logcat(LogPriority.WARN, e) { "Failed to prime source manager on foreground" }
+        }
     }
 
     /**
