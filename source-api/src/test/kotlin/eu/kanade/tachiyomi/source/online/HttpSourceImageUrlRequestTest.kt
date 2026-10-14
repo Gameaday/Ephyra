@@ -147,7 +147,6 @@ class HttpSourceImageUrlRequestTest {
         assertEquals(atHome, request.url.toString())
     }
 
-
     /**
      * The reported page, characterised: an `imageUrl` that is a three-part composite of
      * `(at-home server, at-home API URL, fetch timestamp)` while `url` is empty.
@@ -231,7 +230,6 @@ class HttpSourceImageUrlRequestTest {
 
         assertEquals(true, thrown.reason.isNotBlank())
     }
-
 
     /**
      * `headersBuilder` is overridden rather than left alone because the base implementation reads
