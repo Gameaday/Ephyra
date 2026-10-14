@@ -441,8 +441,8 @@ abstract class PagerViewer(
                                 ImageUtil.isSmallPage(
                                     it,
                                     nextSourceForRef,
-                                    config.readerPreferences.smartMergeMinHeightFraction(mangaId),
-                                    config.readerPreferences.smartMergeMaxHeightFraction(mangaId),
+                                    readerPreferences.smartMergeMinHeightFraction(mangaId),
+                                    readerPreferences.smartMergeMaxHeightFraction(mangaId),
                                 )
                             }
                             if (isTopStub) {
@@ -483,8 +483,8 @@ abstract class PagerViewer(
                                     it,
                                     page.mergedBitmap!!.width,
                                     page.mergedBitmap!!.height,
-                                    config.readerPreferences.smartMergeMinHeightFraction(mangaId),
-                                    config.readerPreferences.smartMergeMaxHeightFraction(mangaId),
+                                    readerPreferences.smartMergeMinHeightFraction(mangaId),
+                                    readerPreferences.smartMergeMaxHeightFraction(mangaId),
                                 )
                             }
                         } else {
@@ -492,8 +492,8 @@ abstract class PagerViewer(
                                 ImageUtil.isSmallPage(
                                     it,
                                     currentSource,
-                                    config.readerPreferences.smartMergeMinHeightFraction(mangaId),
-                                    config.readerPreferences.smartMergeMaxHeightFraction(mangaId),
+                                    readerPreferences.smartMergeMinHeightFraction(mangaId),
+                                    readerPreferences.smartMergeMaxHeightFraction(mangaId),
                                 )
                             }
                         }

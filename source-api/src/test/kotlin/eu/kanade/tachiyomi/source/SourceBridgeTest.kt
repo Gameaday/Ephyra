@@ -34,18 +34,33 @@ class SourceBridgeTest {
         override val supportsLatest: Boolean = true
 
         override suspend fun getPopularManga(page: Int): MangasPage = MangasPage(
-            listOf(SManga.create().apply { url = "/manga/popular"; title = "Popular Manga $page" }),
+            listOf(
+                SManga.create().apply {
+                    url = "/manga/popular"
+                    title = "Popular Manga $page"
+                },
+            ),
             false,
         )
 
         override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage =
             MangasPage(
-                listOf(SManga.create().apply { url = "/manga/search"; title = "Search: $query" }),
+                listOf(
+                    SManga.create().apply {
+                        url = "/manga/search"
+                        title = "Search: $query"
+                    },
+                ),
                 false,
             )
 
         override suspend fun getLatestUpdates(page: Int): MangasPage = MangasPage(
-            listOf(SManga.create().apply { url = "/manga/latest"; title = "Latest Manga $page" }),
+            listOf(
+                SManga.create().apply {
+                    url = "/manga/latest"
+                    title = "Latest Manga $page"
+                },
+            ),
             false,
         )
 
@@ -55,11 +70,14 @@ class SourceBridgeTest {
             author = "Author"
         }
 
-        override suspend fun getChapterList(manga: SManga): List<SChapter> =
-            listOf(SChapter.create().apply { url = "/chapter/1"; name = "Chapter 1" })
+        override suspend fun getChapterList(manga: SManga): List<SChapter> = listOf(
+            SChapter.create().apply {
+                url = "/chapter/1"
+                name = "Chapter 1"
+            },
+        )
 
-        override suspend fun getPageList(chapter: SChapter): List<Page> =
-            listOf(Page(0, "url0", "img0"))
+        override suspend fun getPageList(chapter: SChapter): List<Page> = listOf(Page(0, "url0", "img0"))
     }
 
     @Test
@@ -70,13 +88,20 @@ class SourceBridgeTest {
         assertEquals("Search: yugioh", source.getSearchManga(1, "yugioh", FilterList()).mangas.first().title)
         assertEquals("Latest Manga 1", source.getLatestUpdates(1).mangas.first().title)
 
-        val dummyManga = SManga.create().apply { url = "/manga/dummy"; title = "Original" }
+        val dummyManga = SManga.create().apply {
+            url = "/manga/dummy"
+            title = "Original"
+        }
         val update = source.getMangaUpdate(dummyManga, emptyList(), fetchDetails = true, fetchChapters = true)
         assertEquals("Updated Original", update.manga().title)
         assertEquals(1, update.chapters().size)
         assertEquals("Chapter 1", update.chapters().first().name)
 
-        val pages = source.getPageList(SChapter.create().apply { url = "/chapter/dummy" })
+        val pages = source.getPageList(
+            SChapter.create().apply {
+                url = "/chapter/dummy"
+            },
+        )
         assertEquals(1, pages.size)
         assertEquals("img0", pages.first().imageUrl)
     }
@@ -84,7 +109,10 @@ class SourceBridgeTest {
     @Test
     fun `Source getMangaDetails and getChapterList default methods work via getMangaUpdate`() = runBlocking {
         val source = TestCatalogueSource()
-        val dummyManga = SManga.create().apply { url = "/manga/dummy"; title = "Direct" }
+        val dummyManga = SManga.create().apply {
+            url = "/manga/dummy"
+            title = "Direct"
+        }
 
         assertEquals("Updated Direct", source.getMangaDetails(dummyManga).title)
         assertEquals(1, source.getChapterList(dummyManga).size)
@@ -101,8 +129,12 @@ class SourceBridgeTest {
         override suspend fun getMangaDetails(manga: SManga): SManga =
             throw IllegalStateException("details endpoint is down")
 
-        override suspend fun getChapterList(manga: SManga): List<SChapter> =
-            listOf(SChapter.create().apply { url = "/chapter/1"; name = "Chapter 1" })
+        override suspend fun getChapterList(manga: SManga): List<SChapter> = listOf(
+            SChapter.create().apply {
+                url = "/chapter/1"
+                name = "Chapter 1"
+            },
+        )
 
         override suspend fun getPageList(chapter: SChapter): List<Page> = emptyList()
     }
@@ -114,7 +146,10 @@ class SourceBridgeTest {
     @Test
     fun `a failed details fetch does not cost the caller the chapter list`() = runBlocking {
         val source = DetailsFailSource()
-        val dummyManga = SManga.create().apply { url = "/manga/dummy"; title = "Original" }
+        val dummyManga = SManga.create().apply {
+            url = "/manga/dummy"
+            title = "Original"
+        }
 
         val update = source.getMangaUpdate(dummyManga, emptyList(), fetchDetails = true, fetchChapters = true)
 
@@ -139,8 +174,14 @@ class SourceBridgeTest {
                 title = "Updated ${manga.title}"
                 author = "Author 1.6"
             }
-            val ch1 = SChapter.create().apply { url = "/chapter/1"; name = "Chapter 1" }
-            val ch2 = SChapter.create().apply { url = "/chapter/2"; name = "Chapter 2" }
+            val ch1 = SChapter.create().apply {
+                url = "/chapter/1"
+                name = "Chapter 1"
+            }
+            val ch2 = SChapter.create().apply {
+                url = "/chapter/2"
+                name = "Chapter 2"
+            }
             return SMangaUpdate(
                 if (fetchDetails) updatedManga else manga,
                 if (fetchChapters) listOf(ch1, ch2) else chapters,
@@ -159,7 +200,10 @@ class SourceBridgeTest {
     fun `HttpSource 1_6 extension resolves getChapterList and getMangaDetails via getMangaUpdate`() =
         runBlocking {
             val source = TestHttpSource16()
-            val dummyManga = SManga.create().apply { url = "/manga/sample"; title = "Sample" }
+            val dummyManga = SManga.create().apply {
+                url = "/manga/sample"
+                title = "Sample"
+            }
 
             // Must resolve without UnsupportedOperationException
             val chapters = source.getChapterList(dummyManga)

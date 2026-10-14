@@ -857,7 +857,7 @@ class ReaderViewModel @Inject constructor(
             // `checkChapterCompletion`. It previously existed twice in this file, inline, and the
             // two copies could disagree. The policy also refuses to complete an out-of-range index
             // or an unresolved chapter, which the inline form did not.
-            val visiblePagesAfter = if (readerPreferences.smartCombinePaged()) {
+            val visiblePagesAfter = if (readerPreferences.smartCombinePaged().get()) {
                 (chapterPages?.size ?: 0) - pageIndex - 1
             } else {
                 chapterPages?.let { pages ->

@@ -20,6 +20,16 @@ class ReaderChapter(var chapter: Chapter) {
     var pageLoader: PageLoader? = null
 
     /**
+     * The id of the manga this chapter belongs to, for per-series reader settings.
+     *
+     * Forwarded rather than reached through `chapter.mangaId` at the call site because the reader
+     * holds a `ReaderChapter`, and `ReaderChapter.chapter` is the domain `Chapter` — so the
+     * call-site form is a confusing double hop for a value the smart-merge bounds are keyed on.
+     */
+    val mangaId: Long
+        get() = chapter.mangaId
+
+    /**
      * The chapter's bounded page-byte working set, or null before the reader supplies one.
      *
      * Chapter-scoped so [clear] is the whole teardown: no stale chapter's bytes survive into the
