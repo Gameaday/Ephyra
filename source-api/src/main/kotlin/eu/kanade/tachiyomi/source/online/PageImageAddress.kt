@@ -65,15 +65,16 @@ val HttpSource.resolvesOwnPageImages: Boolean
  * 1. `Page.imageUrl` when populated — passed through **opaquely** (`ResolvedImageUrl.opaque`), not
  *    resolved and not judged. This is the MangaDex contract: a 1.6 source may put a *relative path*
  *    there that only its own `imageRequest` can join onto a host, so the host must not touch it.
- * 2. Otherwise ask [HttpSource.getImageUrl]. The inherited default runs the deprecated chain, which
- *    *fetches* `page.url` and parses the response — so a source that relies on `imageUrlParse` still
- *    works. A source that customises none of the chain and populates neither field will hand back
- *    something unusable, and that is caught at the next step rather than spent on a request.
+ * 2. Otherwise ask [HttpSource.getImageUrl]. There is no longer an inherited default that *fetches*
+ *    `page.url` and parses the response — that chain was the 1.4/1.5 ABI and is gone — so a source
+ *    that populates neither field and does not override `getImageUrl` is refused at the next step
+ *    with the diagnostic attached, rather than having the host fetch a field the contract does not
+ *    make an address.
  * 3. The value `getImageUrl` returned is resolved against `baseUrl` and judged here, because it is
  *    the answer to *our* question and the app is the one about to request it. This is where the
- *    old gate's protection lives now: a `(host, tokenUrl, fetchTime)` at-home cache key fetched by
- *    the inherited default is rejected here, with the source and its overrides named, instead of
- *    producing a DNS error the reader cannot attribute.
+ *    old gate's protection lives now: a `(host, tokenUrl, fetchTime)` at-home cache key — which the
+ *    removed chain would have fetched — is rejected here, with the source and its overrides named,
+ *    instead of producing a DNS error the reader cannot attribute.
  *
  * **What the caller still owns.** Page-load policy — pacing, retry classification, whether a repeat
  * address is worth another round-trip — belongs to the reader and the downloader, because it depends
@@ -97,8 +98,10 @@ suspend fun HttpSource.resolvePageImage(page: Page, listOrigin: String? = null):
     }
 
     // Ask the source. A page that arrives without an address is the normal state of a source that
-    // resolves one itself, and the pre-regression code asked rather than refused — `getImageUrl`
-    // runs the chain that fetches `page.url` and parses the response. Refusing first is what made a
+    // resolves one itself, and the pre-regression code asked rather than refused. `getImageUrl` no
+    // longer has an inherited implementation that fetches `page.url` — that chain went with the
+    // 1.4/1.5 ABI — but asking is still a question put to the source, not a refusal by the host.
+    // Refusing first is what made a
     // page with no address a hard failure instead of a question for the source, and that is a
     // behavioural regression independent of any one source: it fails fast on pages it should have
     // asked about. There was a gate here to avoid pointing the chain at a value that cannot address a
@@ -147,8 +150,9 @@ suspend fun HttpSource.resolvePageImage(page: Page, listOrigin: String? = null):
  * The second case is exactly what the reported failure was. MangaDex does not override the
  * URL-resolving chain at all — it overrides `pageListParse` and `imageRequest` — so it puts a
  * **relative path** in `Page.imageUrl` and keeps an at-home token cache key in `Page.url`. A list
- * whose `imageUrl` was empty therefore could not be repaired: `getImageUrl` ran the inherited
- * chain, fetched the cache key, and threw from a method the source does not implement.
+ * whose `imageUrl` was empty therefore could not be repaired: the app asked `getImageUrl`, which
+ * this source does not implement, and the inherited chain it used to reach — fetching the cache key
+ * and parsing the response — went with the 1.4/1.5 ABI.
  *
  * A *populated* `imageUrl` is judged on its own merits and does not consult `Page.url` at all, so a list
  * carrying a malformed address is discarded whether or not its `url` happens to be fetchable. Both
@@ -243,10 +247,13 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
      * It is kept because a diagnostic nobody can see is not a diagnostic, and this one now appears in
      * the exception the reader shows on screen. It costs the same whether or not anything reads it, and
      * measurement cannot break a source the way a decision can.
+     *
+     * **One entry point, because one is what is left.** `fetchImageUrl`, `imageUrlRequest` and
+     * `imageUrlParse` were removed with the 1.4/1.5 ABI, so the only URL-resolving method a source can
+     * override now is `getImageUrl`. See [CHAIN_ENTRY_POINTS] for why the *report* still names more.
      */
     val customisesImageUrlChain: Boolean by lazy {
-        overrides("getImageUrl") || overrides("fetchImageUrl") ||
-            overrides("imageUrlRequest") || overrides("imageUrlParse")
+        overrides("getImageUrl")
     }
 
     /**
@@ -279,25 +286,26 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
 
     private companion object {
         /**
-         * Every entry point an extension can override on the image path, not just the ones the
-         * reader calls directly.
+         * Every entry point an extension can override on the image path, not just the one the reader
+         * calls directly.
          *
          * **`imageRequest` is in the list even though it is not URL-resolving**, because the
          * diagnostic reports what the source *overrides*, and a source that overrides it —
          * MangaDex, the canonical case, joins an at-home host onto a relative `Page.imageUrl`
          * there — is precisely a source whose `imageUrl` the host must not interpret. When this
-         * list named only the four chain entry points, the real MangaDex was reported as
+         * list named only the URL-resolving entry points, the real MangaDex was reported as
          * `overrides = none` in the on-screen rejection diagnostic, which contradicted the
          * failure it was explaining.
          *
-         * Kept as one list so the probe and the diagnostic cannot disagree — the mismatch is what
-         * let a customising source be reported as `none`.
+         * **The three deprecated entry points are gone.** `fetchImageUrl`, `imageUrlRequest` and
+         * `imageUrlParse` were removed from `HttpSource` with the 1.4/1.5 ABI, so a source can no
+         * longer declare them and listing them could only ever report `false`. Only `getImageUrl`
+         * feeds [customisesImageUrlChain]; the report is wider than that probe on purpose, because
+         * "what does this source override" and "does it resolve its own URLs" are different
+         * questions.
          */
         val CHAIN_ENTRY_POINTS = listOf(
             "getImageUrl",
-            "fetchImageUrl",
-            "imageUrlRequest",
-            "imageUrlParse",
             "imageRequest",
         )
 
@@ -340,29 +348,25 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
 }
 
 /**
- * The one addressable image URL for a [Page], together with where it came from.
+ * The one addressable image URL for a [Page].
  *
  * **Why this exists.** A `Page` has two URL fields and the contract does not say which one to use.
  * API sources (MangaDex is the canonical one) build `Page(index, url = cacheKey, imageUrl = "/data/…")`
  * — a **relative path**, not an absolute one — while HTML sources put the fetchable address in
- * `url` and leave `imageUrl` empty. Reading the wrong one yields either `""` or an NPE depending on
- * which method you happened to write — so the rule was implemented twice
- * inside `HttpSource` and **not at all** in the reader and the downloader, which are the two
- * consumers that actually run in production.
+ * `imageUrl`. Reading the wrong one yields either `""` or an NPE depending on which method you
+ * happened to write — so the rule was implemented twice inside `HttpSource` and **not at all** in the
+ * reader and the downloader, which are the two consumers that actually run in production.
  *
- * **The rule, and why there is no fallback.** Mihon's `HttpSource` reads two deliberately different
- * fields: `imageUrlRequest` uses `page.url`, `imageRequest` uses `page.imageUrl`. That is the
- * extension contract, and it is not an oversight — `imageUrlRequest` serves the deprecated chain in
- * which the app *fetches* `page.url` and parses the response with `imageUrlParse`, while
- * `imageRequest` is for a source that already put the address in `imageUrl`.
+ * **Which field, and why there is no longer a choice.** `Page.imageUrl`, and only that one. Mihon's
+ * `imageRequest` reads exactly this field; its companion `imageUrlRequest` — which read `page.url`
+ * and existed only to serve the deprecated fetch-and-parse chain — was removed with the 1.4/1.5 ABI.
+ * With one builder left there is no second field to keep in step and no per-caller field selection to
+ * make, so `of` reads the one field the contract gives an image address.
  *
- * An earlier version of this file tried `imageUrl` first and fell back to `url` for both builders.
- * That is a divergence from the reference implementation with no justification, and it changes the
- * request an extension actually receives: a source relying on the deprecated path got a different
- * URL, therefore a different response body, therefore a different `imageUrlParse` result. So each
- * caller now names the field it is allowed to read, and no field is ever read as a substitute for
- * another. Resolution and judgement are retained — they are what make a relative `img.attr("src")`
- * requestable — but they operate on one value and never choose it.
+ * An earlier version of this file tried `imageUrl` first and fell back to `url`, then went the other
+ * way and made every caller name a field. Both were attempts to keep two builders in step; the
+ * removal settles it by leaving one. Resolution and judgement are retained — they are what make a
+ * relative `img.attr("src")` requestable — and operate on the one value the contract names.
  *
  * **Lives in `source-api` because it needs [Page].** `core/common` cannot depend on `source-api`,
  * so the type that reasons about `Page` fields has to sit above it. The reader and downloader
@@ -371,42 +375,25 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
 data class PageImageAddress(
     /** The resolved, judged address. Holding one proves both steps ran. */
     val url: ResolvedImageUrl,
-    /** Which field it came from. */
-    val field: Field,
     /** The value the source produced, before resolution — what a diagnostic should show. */
     val raw: String,
 ) {
-    /** Which [Page] field an address came from. */
-    enum class Field {
-        /** [Page.imageUrl] — the preferred field. */
-        IMAGE_URL,
-
-        /** [Page.url] — the fallback, for sources that only populate the legacy field. */
-        URL,
-    }
-
     companion object {
 
         /**
-         * Resolves and judges exactly one named field of [page] against [baseUrl].
+         * Resolves and judges [Page.imageUrl] against [baseUrl].
          *
-         * **Which field a caller may read is the extension contract, not a preference.** Passing
-         * [Field.URL] reads [Page.url] and nothing else; passing [Field.IMAGE_URL] reads
-         * [Page.imageUrl] and nothing else. Neither falls back to the other, because the reference
-         * implementation does not and an extension written against it will not be written to tolerate
-         * it.
+         * `imageUrl` is the extension contract's image-address field; there is no fallback to
+         * [Page.url], which for an API source holds an at-home token cache key rather than an address.
          *
-         * @throws MalformedImageUrlException if the named field cannot address a host.
+         * @throws MalformedImageUrlException if the field cannot address a host.
          */
-        fun of(page: Page, baseUrl: String?, field: Field): PageImageAddress {
-            val raw = when (field) {
-                Field.IMAGE_URL -> page.imageUrl
-                Field.URL -> page.url
-            }
+        fun of(page: Page, baseUrl: String?): PageImageAddress {
+            val raw = page.imageUrl
             return try {
-                PageImageAddress(ResolvedImageUrl.of(raw, baseUrl), field, raw.orEmpty())
+                PageImageAddress(ResolvedImageUrl.of(raw, baseUrl), raw.orEmpty())
             } catch (e: MalformedImageUrlException) {
-                reportFailure(page, baseUrl, field, raw, e)
+                reportFailure(page, baseUrl, raw, e)
                 throw MalformedImageUrlException(url = raw.orEmpty(), reason = e.reason)
             }
         }
@@ -415,24 +402,22 @@ data class PageImageAddress(
          * Reports why a page yielded no address, naming **both** fields.
          *
          * The exception can carry one value, and on the reported MangaDex failure it was not
-         * possible to tell from it whether the unused field held something usable — which decides
+         * possible to tell from it whether the other field held something usable — which decides
          * whether the defect is the source's alone. Both are printed so the next report does not
          * have to be re-derived.
          */
         private fun reportFailure(
             page: Page,
             baseUrl: String?,
-            field: Field,
             raw: String?,
             cause: MalformedImageUrlException,
         ) {
             logcat {
                 buildString {
-                    append("PageImageAddress: ${field.name} cannot address a host.\n")
+                    append("PageImageAddress: imageUrl cannot address a host.\n")
                     append("  baseUrl  = $baseUrl\n")
                     append("  imageUrl = ${page.imageUrl.orEmpty().ifEmpty { "<blank>" }}\n")
                     append("  url      = ${page.url.ifEmpty { "<blank>" }}\n")
-                    append("  read     = ${field.name}\n")
                     append("  raw      = ${raw.orEmpty().ifEmpty { "<blank>" }}\n")
                     append("  reason   = ${cause.reason}")
                 }

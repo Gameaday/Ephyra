@@ -22,7 +22,6 @@ dependencies {
 
     api(libs.logcat)
     api("javax.inject:javax.inject:1")
-    api(libs.rxjava)
     api(libs.injekt.core)
     implementation(libs.material)
 

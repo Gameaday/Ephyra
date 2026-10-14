@@ -182,20 +182,4 @@ abstract class ParsedHttpSource : HttpSource() {
      * @param document the parsed document.
      */
     protected abstract fun pageListParse(document: Document): List<Page>
-
-    /**
-     * Parse the response from the site and returns the absolute url to the source image.
-     *
-     * @param response the response from the site.
-     */
-    override fun imageUrlParse(response: Response): String {
-        return imageUrlParse(response.asJsoup())
-    }
-
-    /**
-     * Returns the absolute url to the source image from the document.
-     *
-     * @param document the parsed document.
-     */
-    protected abstract fun imageUrlParse(document: Document): String
 }
