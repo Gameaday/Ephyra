@@ -1,11 +1,13 @@
 package ephyra.core.migration
 
 import ephyra.core.common.util.system.logcat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import logcat.LogPriority
 
 class MigrationJobFactory(
     private val migrationContext: MigrationContext,
@@ -21,7 +23,20 @@ class MigrationJobFactory(
                     }
                     async(start = CoroutineStart.UNDISPATCHED) {
                         val prev = acc.await()
-                        migration(migrationContext) || prev
+                        // A failure would otherwise cancel the rest of the chain and leave the app
+                        // waiting on it for good; isolate it, report it, and carry on.
+                        val ran = try {
+                            migration(migrationContext)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            logcat(LogPriority.ERROR, e) {
+                                "Migration failed: " +
+                                    "{ name = ${migration::class.simpleName}, version = ${migration.version} }"
+                            }
+                            false
+                        }
+                        ran || prev
                     }
                 } else {
                     logcat {

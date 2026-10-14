@@ -62,4 +62,38 @@ class SourceApiBoundaryTest {
         }
         return requireNotNull(directory) { "Could not locate repository root from ${File(".").absolutePath}" }
     }
+
+    /**
+     * The 1.4/1.5 ABI is gone, and this is what keeps it gone.
+     *
+     * **Why a token scan and not just the compile.** `rxjava` was an `api` dependency of
+     * `source-api`, so any file here could import `rx.*` and still build. The removal deleted the
+     * dependency, the `asObservable*` helpers, the `RxCoroutineBridge` files and every `Observable`
+     * method on `Source`/`CatalogueSource`/`HttpSource`/`ParsedHttpSource`; a later change that
+     * reintroduces one of them would also have to re-add the dependency, and this fails first with a
+     * message that says why rather than a compile error about an unresolved reference.
+     *
+     * `SourceApiContractTest` pins the same property on the compiled ABI; this one pins it on the
+     * source, so the two fail together if it ever comes back.
+     */
+    @Test
+    fun `source-api main carries no RxJava surface`() {
+        val root = repositoryRoot()
+        val offenders = File(root, "source-api/src/main")
+            .walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .flatMap { file ->
+                val text = file.readText()
+                listOf("import rx.", "rx.Observable", "asObservableSuccess", "Observable<")
+                    .filter { token -> text.contains(token) }
+                    .map { token -> "${file.relativeTo(root).invariantSeparatorsPath} contains `$token`" }
+            }
+            .toList()
+
+        assertTrue(
+            offenders.isEmpty(),
+            "source-api must not carry the removed 1.4/1.5 RxJava surface " +
+                "(see doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md, WS1):\n" + offenders.joinToString("\n"),
+        )
+    }
 }

@@ -68,7 +68,6 @@ class WebViewViewModelTest {
         override fun pageListParse(
             response: Response,
         ): List<eu.kanade.tachiyomi.source.model.Page> = throw UnsupportedOperationException()
-        override fun imageUrlParse(response: Response): String = throw UnsupportedOperationException()
     }
 
     @BeforeEach

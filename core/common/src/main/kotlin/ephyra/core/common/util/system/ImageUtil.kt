@@ -787,7 +787,7 @@ object ImageUtil {
     fun dHashDistance(a: Long, b: Long): Int = java.lang.Long.bitCount(a xor b)
 
     /** Encode a dHash [Long] as a zero-padded 16-character lowercase hex string. */
-    fun dHashToHex(hash: Long): String = "%016x".format(hash)
+    fun dHashToHex(hash: Long): String = String.format(Locale.ROOT, "%016x", hash)
 
     /**
      * Decode a 16-character hex string back to a dHash [Long].

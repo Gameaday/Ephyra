@@ -19,9 +19,10 @@ class ExtensionLoaderVersionTest {
      * The supported set is 1.6 alone, and that is a decision rather than an omission.
      *
      * Carrying 1.4 and 1.5 meant carrying their deprecated surface — `fetchImageUrl`,
-     * `imageUrlRequest`, `imageUrlParse`, the `Observable` catalogue methods — and that surface is
-     * where every reported extension failure came from. Upstream `tachiyomix` removes the same
-     * methods "with no replacement" in `[Unreleased]`, so no extension in circulation uses them.
+     * `imageUrlRequest`, `imageUrlParse`, the `Observable` catalogue methods — and that surface was
+     * where every reported extension failure came from. It has since been removed from `source-api`
+     * (WS1 of `doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`), so the refusal and the removal now say
+     * the same thing.
      *
      * **The gate.** Widen this list only alongside the source-api work that implements the new
      * generation, per `doc/EXTENSION_COMPATIBILITY.md`. An extension declaring an unsupported version

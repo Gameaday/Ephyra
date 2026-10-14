@@ -388,7 +388,5 @@ class HttpPageLoaderCdnSwapTest {
         override fun chapterListParse(response: Response): List<SChapter> = throw UnsupportedOperationException()
 
         override fun pageListParse(response: Response): List<Page> = throw UnsupportedOperationException()
-
-        override fun imageUrlParse(response: Response): String = throw UnsupportedOperationException()
     }
 }

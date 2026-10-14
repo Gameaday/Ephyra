@@ -6,6 +6,68 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Unreleased]
+### 🧭 Upstream alignment (plan)
+- **Adoption plan for Mihon v0.21.1** added at
+  [`doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`](doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md). It maps
+  each upstream 0.21.1 change (and the open 0.21.0 recap items) to a decision and a workstream. The
+  headline: upstream 0.21.1 is the last version to restore Tachiyomi's `.tachibk` backups and to
+  support 1.4 extensions. Ephyra already refuses pre-1.6 extensions at load time
+  (`ExtensionLoader.SUPPORTED_LIB_VERSIONS = listOf(1.6)`), but still carries the now-unreachable
+  1.4/1.5 ABI (RxJava, `fetchImageUrl`/`imageUrlRequest`/`imageUrlParse`). On backups, Ephyra's
+  gzip-wrapped `.tachibk` is the **same** container Mihon 0.21.1 writes and reads, so there is no
+  interop break today; upstream's replacement format is not yet published, so WS3 is a watch item.
+  Planned P0 work: finish the 1.4/1.5 ABI removal, narrow the extension `Injekt` allowlist to
+  upstream's set, harden the extension installer's concurrent maps, and survive a WebView renderer
+  death. **WS1's ABI removal is a deliberate Ephyra divergence:** upstream `main` still ships the
+  `rx.Observable` chain (`fetchImageUrl`/`imageUrlRequest`/`imageUrlParse`), so it is not a mirror of a
+  landed upstream change — but the loader refuses anything below 1.6, so no loadable extension can
+  reach it. It has since landed; see "Extension API" below.
+  Since this plan was written, WS1, WS7 (pager realignment gate), WS8 (locale-safe data
+  formatting) and WS10 (obsolete settings) have landed.
+
+### 🧩 Extension API
+- **The 1.4/1.5 ABI surface is gone from `source-api` (WS1).** The deprecated RxJava chain that no
+  loadable extension can reach — `fetchImageUrl`, `imageUrlRequest`, `imageUrlParse`, the `Observable`
+  methods on `Source`/`CatalogueSource`/`HttpSource` and `ParsedHttpSource.imageUrlParse` — was
+  removed, together with the `rxjava` dependency (version catalog, `source-api`, `core/common`), the
+  `asObservable*` helpers and both `RxCoroutineBridge` files. `HttpSource.getImageUrl` no longer has a
+  default: a 1.6 source populates `Page.imageUrl` in `getPageList` or overrides `getImageUrl`, and a
+  source that does neither is refused with the diagnostic instead of a fetch of a field that is not an
+  address. `SourceCapabilities.customisesImageUrlChain` is now `getImageUrl` alone, and
+  `PageImageAddress.of` reads `Page.imageUrl` with no per-builder field selection.
+  `HttpSource.getMangaUpdate` became the concrete implementation, so `getMangaDetails`/`getChapterList`
+  keep routing an override-only 1.6 source through it. Gated by `SourceApiContractTest` (removed
+  members absent from the compiled ABI), `SourceApiBoundaryTest` (no `rx.*`/`Observable` token in
+  `source-api/src/main`) and `ExtensionLoaderVersionTest` (`SUPPORTED_LIB_VERSIONS = listOf(1.6)`).
+
+### 🧩 Fixes
+- **Samsung Android 9–11 launch crash guarded** (WS9): `MainActivity.reportFullyDrawn()` now catches
+  the `SecurityException` some Samsung builds throw from the platform's fully-drawn broadcast.
+  Mirrors upstream `abb126ad`.
+- **WebView renderer death no longer kills the app** (WS5): the Compose webview client and the
+  Cloudflare interceptor now override `onRenderProcessGone`, log the crash, notify the user and close
+  the page; `stopLoading()`/`destroy()` are guarded when the renderer is gone. Mirrors upstream
+  `649fc83f`.
+- **Extension installs can no longer cancel each other** (WS4): active installs are keyed by package
+  name in `ConcurrentHashMap`s and cleaned up by `(key, value)`, so a stale, cancelled or superseded
+  install can only remove its own entries. Mirrors upstream `07b9fb69`/`ae749bb4`.
+- **“Source not installed” no longer flashes on resume**: `AndroidSourceManager` marked itself
+  initialized on the *first* emission of the installed-extension list — the empty list emitted before
+  the extension scan finishes — so a screen restored after a process death resolved a placeholder
+  stub and rendered it as a missing source. Readiness is now gated on `ExtensionManager.isInitialized`,
+  the authoritative extension map is read synchronously at the moment readiness flips, readiness is
+  published even if the scan throws, the manager is primed when the app is foregrounded, and the
+  browse-source screen stays on its loading state until readiness is known.
+- **Locale-safe data formatting** (WS8): chapter-number parsing, `TitleNormalizer`, alternative-title
+  dedup, stable-id hex, `dHashToHex`, URL escaping and Kitsu score formatting now pin `Locale.ROOT`,
+  so a Turkish or Arabic device locale can no longer change identity keys, dedup results or the ASCII
+  of a tracker payload. Guarded by `LocaleIndependenceTest`.
+- **Pager realignment locked** (WS7): a structural gate asserts `ComposePagerReader` re-seeks to the
+  current item's new index whenever the item list shifts.
+- **Obsolete “Custom hardware bitmap threshold” setting retired** (WS10): the preference, its
+  advanced-settings row and the option list are removed; the device texture limit is applied directly.
+
+
 
 ### 🧯 Extension Compatibility (critical fix)
 - **MangaDex 1.6 could not load any pages**: the reader's `HttpPageLoader.internalLoadPage` resolved a populated `Page.imageUrl` against the source's `baseUrl` and wrote the result back before fetching, and `resolvePageImage` did the same in its populated branch (so `Downloader`'s retry path inherited the corruption). A real MangaDex extension stores a **relative path** in `Page.imageUrl` (`/data/<hash>/<file>`) and an MD@Home cache key in `Page.url`, and its own overridden `imageRequest` joins them at request time (`GET(mdAtHomeServerUrl + page.imageUrl)`). The host-side rewrite turned every request into `<at-home-host>https://mangadex.org/data/...` — two URLs spliced into a host that can never resolve — so **every page of every chapter failed identically**, presenting as a DNS error (`Unable to resolve host "…mangadex.network,https"`). The recovery ladder could not escape it: a fresh page list restored a fresh relative address that was immediately rewritten again. Fixed by treating a populated `Page.imageUrl` as opaque to the host, exactly as upstream Mihon does: `ResolvedImageUrl.opaque(...)` passes it through untouched (`resolvePageImage`), and the loader no longer rewrites the field — the disk-cache key and the request are the raw string the source produced, while the base `HttpSource.imageRequest` still resolves at the request boundary where a source override inherits nothing by design. Guarded by `MangaDexOpaqueImageUrlContractTest` (a source shaped like the real extension: relative `imageUrl`, at-home cache key, overridden `imageRequest`) and by structural gates in `PageLoadRecoveryStructuralTest`. Documented in `doc/EXTENSION_COMPATIBILITY.md` under "`Page.imageUrl` is opaque to the host once populated", including the general rule: never write an interpretation back into an extension-owned field that the extension is still going to read.

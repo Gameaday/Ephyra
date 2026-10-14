@@ -92,10 +92,18 @@ fun BrowseSourceScreen(
     }
 
     if (source is StubSource) {
-        MissingSourceScreen(
-            source = source,
-            navigateUp = navigateUp,
-        )
+        // A stub is only evidence that the source is missing once the source map has finished
+        // loading. Before that it just means "not resolved yet", so keep showing the loading
+        // state instead of flashing "source not installed" — which is what a resumed or
+        // process-restored screen used to do.
+        if (state.sourceReady) {
+            MissingSourceScreen(
+                source = source,
+                navigateUp = navigateUp,
+            )
+        } else {
+            LoadingScreen()
+        }
         return
     }
 

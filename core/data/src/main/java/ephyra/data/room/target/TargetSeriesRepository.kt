@@ -10,6 +10,7 @@ import ephyra.domain.series.SeriesRepository
 import ephyra.domain.series.SeriesUpsertResult
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
+import java.util.Locale
 
 /**
  * Isolated target-series repository. It is not wired to the production database.
@@ -178,7 +179,7 @@ class TargetSeriesRepository(
     private fun newLocalId(identity: DurableSeriesIdentity): String {
         val digest = MessageDigest.getInstance("SHA-256")
             .digest(identity.stableKey.toByteArray())
-            .joinToString("") { "%02x".format(it) }
+            .joinToString("") { String.format(Locale.ROOT, "%02x", it) }
         return "series:$digest"
     }
 }

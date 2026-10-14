@@ -2,7 +2,6 @@ package ephyra.domain.base
 
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.util.system.GLUtil
 
 class BasePreferences(
     private val capabilityProvider: InstallerCapabilityProvider,
@@ -24,6 +23,4 @@ class BasePreferences(
         PACKAGEINSTALLER(ephyra.app.core.common.R.string.ext_installer_packageinstaller, true),
         PRIVATE(ephyra.app.core.common.R.string.ext_installer_private, false),
     }
-
-    fun hardwareBitmapThreshold() = preferenceStore.getInt("pref_hardware_bitmap_threshold", GLUtil.SAFE_TEXTURE_LIMIT)
 }

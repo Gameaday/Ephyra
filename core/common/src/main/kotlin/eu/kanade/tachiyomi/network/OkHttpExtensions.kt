@@ -11,64 +11,10 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import rx.Observable
-import rx.Producer
-import rx.Subscription
 import java.io.IOException
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resumeWithException
 
 val jsonMime = "application/json; charset=utf-8".toMediaType()
-
-@Deprecated("Use suspend APIs instead")
-fun Call.asObservable(): Observable<Response> {
-    return Observable.unsafeCreate { subscriber ->
-        // Since Call is a one-shot type, clone it for each new subscriber.
-        val call = clone()
-
-        // Wrap the call in a helper which handles both unsubscription and backpressure.
-        val requestArbiter = object : Producer, Subscription {
-            val boolean = AtomicBoolean(false)
-            override fun request(n: Long) {
-                if (n == 0L || !boolean.compareAndSet(false, true)) return
-
-                try {
-                    val response = call.execute()
-                    if (!subscriber.isUnsubscribed) {
-                        subscriber.onNext(response)
-                        subscriber.onCompleted()
-                    }
-                } catch (e: Exception) {
-                    if (!subscriber.isUnsubscribed) {
-                        subscriber.onError(e)
-                    }
-                }
-            }
-
-            override fun unsubscribe() {
-                call.cancel()
-            }
-
-            override fun isUnsubscribed(): Boolean {
-                return call.isCanceled()
-            }
-        }
-
-        subscriber.add(requestArbiter)
-        subscriber.setProducer(requestArbiter)
-    }
-}
-
-@Deprecated("Use suspend APIs instead")
-fun Call.asObservableSuccess(): Observable<Response> {
-    @Suppress("DEPRECATION")
-    return asObservable().doOnNext { response ->
-        if (!response.isSuccessful) {
-            response.close()
-            throw HttpException(response.code)
-        }
-    }
-}
 
 /**
  * Re-labels [this] with the call site that started the request and returns it.

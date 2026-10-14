@@ -3,6 +3,7 @@ package ephyra.domain.manga.interactor
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.manga.repository.MangaRepository
+import java.util.Locale
 
 /**
  * Add-to-library duplicate check (D14's matching test bed).
@@ -41,7 +42,7 @@ class GetDuplicateLibraryManga(
     }
 
     private suspend fun find(title: String, excludeId: Long): List<MangaWithChapterCount> {
-        val sqlMatches = mangaRepository.getDuplicateLibraryManga(excludeId, title.lowercase())
+        val sqlMatches = mangaRepository.getDuplicateLibraryManga(excludeId, title.lowercase(Locale.ROOT))
 
         val key = TitleNormalizer.forEquality(title)
         if (key.length < 2) return sqlMatches

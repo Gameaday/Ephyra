@@ -700,8 +700,8 @@ class Downloader(
                     if (recovery.isRetrySequence) {
                         reResolvePacer.paceReResolution().takeIf { it > 0 }?.let { delay(it) }
                     }
-                    // A source may supply `Page.imageUrl` in `pageListParse` and never implement
-                    // `imageUrlParse`, in which case asking again throws the base
+                    // A source may supply `Page.imageUrl` in `pageListParse` and not override
+                    // `getImageUrl`, in which case asking again throws the base
                     // `UnsupportedOperationException`. Letting that escape would replace the `403`
                     // that actually stopped the page, and the user would be told about the
                     // machinery instead of the cause -- the opposite of what the recovery history is

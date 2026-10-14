@@ -1,5 +1,7 @@
 package ephyra.domain.manga.model
 
+import java.util.Locale
+
 /**
  * Computes an updated alternative titles list by merging new titles into the manga's existing list.
  * Deduplicates case-insensitively, filters blanks, and excludes the primary title.
@@ -9,12 +11,14 @@ fun Manga.mergedAlternativeTitles(newTitles: List<String>): List<String>? {
     val primary = title
     val existing = alternativeTitles.toMutableList()
     val previousSize = existing.size
-    val existingLower = existing.map { it.lowercase() }.toMutableSet()
-    val primaryLower = primary.lowercase()
+    // Locale.ROOT: this is a data dedup key, not display text. Using the device locale would make
+    // two titles dedup differently depending on the phone's language (e.g. Turkish dotted/dotless I).
+    val existingLower = existing.map { it.lowercase(Locale.ROOT) }.toMutableSet()
+    val primaryLower = primary.lowercase(Locale.ROOT)
 
     for (t in newTitles) {
         if (t.isBlank()) continue
-        val lower = t.lowercase()
+        val lower = t.lowercase(Locale.ROOT)
         if (lower == primaryLower) continue
         if (!existingLower.add(lower)) continue
         existing.add(t)

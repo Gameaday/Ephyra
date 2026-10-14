@@ -18,11 +18,16 @@ Conflating them is what produced the reported MangaDex failure. The version says
 
 ## Supported versions
 
-`ExtensionLoader` accepts `1.4`, `1.5` and `1.6`, read from the `tachiyomix.extensionLib` manifest
-key, falling back to a version parsed out of the version name for older APKs. An extension declaring
-anything else is rejected with `LoadFailureReason.UNSUPPORTED_LIB_VERSION` rather than loaded and
-left to fail later - which is the right trade, because a contract we have not implemented is a class
-of failures we cannot predict.
+`ExtensionLoader` accepts **`1.6` only** (`SUPPORTED_LIB_VERSIONS = listOf(1.6)`), read from the
+`tachiyomix.extensionLib` manifest key, falling back to a version parsed out of the version name for
+older APKs. An extension declaring anything else - including `1.4` and `1.5` - is rejected with
+`LoadFailureReason.UNSUPPORTED_LIB_VERSION` rather than loaded and left to fail later, which is the
+right trade, because a contract we have not implemented is a class of failures we cannot predict.
+
+> **Correction (Mihon 0.21.1 alignment).** Earlier revisions of this document said `1.4`, `1.5` and
+> `1.6` were accepted and that keeping the 1.4/1.5 ABI was "correct while we support 1.4 and 1.5".
+> That was stale: the loader has refused pre-1.6 for some time. The dead 1.4/1.5 surface has since
+> been **removed** from `source-api` - see "The removal has landed" below.
 
 **Adding a version** is a one-line change to `SUPPORTED_LIB_VERSIONS`, but it is not sufficient on
 its own: read the "adopting a new generation" section below first.
@@ -53,34 +58,37 @@ that "helpfully" resolved `Page.imageUrl` against `baseUrl` — which is what br
 here, see "`Page.imageUrl` is opaque to the host once populated" below — spliced a second host onto
 the path and failed **every** page. Both halves of that failure, and the fact that `imageRequest`
 itself is an override point the app must respect, are why the diagnostic probe enumerates it too.
-## The image-URL chain: four entry points, and upstream is deleting them
+## The image-URL chain: one entry point
 
-| Entry point | Signature | Role | Upstream status |
+| Entry point | Signature | Role | Status |
 |---|---|---|---|
-`getImageUrl` | `suspend fun (Page): String` | modern; overrides everything | current |
-`fetchImageUrl` | `fun (Page): Observable<String>` | replaces the whole chain; no request built, no response parsed | **removed** in `[Unreleased]` |
-`imageUrlRequest` | `protected fun (Page): Request` | what to fetch | **removed** with no replacement |
-`imageUrlParse` | `protected fun (Response): String` | read the address out of the response | **removed** with no replacement |
+`getImageUrl` | `suspend fun (Page): String` | modern; the only URL-resolving override left | current |
+`fetchImageUrl` | `fun (Page): Observable<String>` | replaced the whole chain; no request built, no response parsed | **removed** (Ephyra, WS1) |
+`imageUrlRequest` | `protected fun (Page): Request` | what to fetch | **removed** (Ephyra, WS1) |
+`imageUrlParse` | `protected fun (Response): String` | read the address out of the response | **removed** (Ephyra, WS1) |
 
-`SourceCapabilities.customisesImageUrlChain` reports true for **any of the four**. When true, the
-app must not treat `Page.url` as an image address. When false, the app's own chain runs and
-`Page.url` is expected to be fetchable.
+`SourceCapabilities.customisesImageUrlChain` reports true when the source overrides `getImageUrl`.
+When true, the app must not treat `Page.url` as an image address; when false, the app resolves the
+address the source supplied in `Page.imageUrl` itself.
 
-Detection walks `getDeclaredMethods` up the hierarchy rather than using `Class.getMethods`, because
-`imageUrlRequest` and `imageUrlParse` are `protected` and `getMethods` returns public members only.
+The report the diagnostic prints names `getImageUrl` **and** `imageRequest`. `imageRequest` is not
+URL-resolving and does not feed `customisesImageUrlChain`; it is listed because a source that
+overrides it is precisely one whose `Page.imageUrl` the host must not interpret, and reporting it as
+`overrides = none` was the wrong answer that made the MangaDex failure look like a malformed URL.
 
 **Two ways this probe has already been wrong, and both were expensive.**
 
-*Missing `getMethods`.* A probe written against `Class.getMethods` silently misses both `protected`
-methods even with the right names — and reported MangaDex as uncustomising, blocking the very chain
+*Missing `getMethods`.* A probe written against `Class.getMethods` silently misses `protected`
+members even with the right names — and reported MangaDex as uncustomising, blocking the very chain
 it was written to accommodate.
 
-*Missing an entry point.* The list itself omitted `fetchImageUrl`. MangaDex overrides exactly that
-one, so the probe answered **"no" for a source that answers "yes"** and the reader refused pages
+*Missing an entry point.* The list itself once omitted `fetchImageUrl`. MangaDex overrides exactly
+that one, so the probe answered **"no" for a source that answers "yes"** and the reader refused pages
 that were perfectly readable. A probe that is wrong in that direction is worse than no probe: it
 converts a working source into a failure and attaches a confident diagnostic asserting no
-customisation existed. **The chain is closed over four names because upstream closed it over four
-names — the enumeration comes from the upstream class, not from what this app happens to call.**
+customisation existed. **The enumeration comes from the upstream class, not from what this app
+happens to call** — which is also why the three removed names are gone from it rather than kept as
+permanently-false entries.
 
 Both classes of bug were caught by a fixture shaped like the extension in question, not by reading
 the code. That is the argument for step 5 below.
@@ -213,11 +221,11 @@ probe. An enumeration derived from memory is a list of the cases someone remembe
 
 | Divergence | Why | Risk |
 |---|---|---|
-`Source.getImageUrl` still exists | Ephyra has not migrated to the 1.6 removal; extensions still use it | An extension written against the removed API keeps working. One written against only 1.6 must populate `Page.imageUrl` in `getPageList`, which our loader already reads first. |
-`fetchImageUrl` / `imageUrlRequest` / `imageUrlParse` still exist | Upstream `[Unreleased]` removes all three **with no replacement** and drops RxJava; Ephyra carries them so 1.4/1.5 extensions keep working | Correct until the minimum supported version rises. **This is the divergence that will cost us when a generation with no RxJava ships** — see below. |
+`getImageUrl` has no inherited default | The inherited default ran the removed 1.4/1.5 fetch-and-parse chain | A 1.6 source must populate `Page.imageUrl` in `getPageList` or override `getImageUrl`. A source that does neither is refused with a named diagnostic instead of a DNS error about a value that was never an address. |
+`fetchImageUrl` / `imageUrlRequest` / `imageUrlParse` are gone | Upstream still ships them, but the loader refuses anything below 1.6, so no loadable extension can reach them | Deliberate divergence, and **ahead of** upstream rather than behind it. Gated by `SourceApiContractTest`, `SourceApiBoundaryTest` and `ExtensionLoaderVersionTest`; re-examine when upstream lands its own removal. |
 `Page.url` is resolved before use (`DEF-027`) | upstream requires absolute URLs; a relative `img.attr("src")` was unrequestable | None: absolute URLs pass through byte-identical, preserving the signed-URL guarantee. |
 Image URLs are validated at the request boundary | Gives a named layer instead of a DNS error for a host that cannot exist | Only rejects values that could never be requested. |
-`PageImageAddress` reads one field per builder | Collapsing them onto one `imageUrl`-preferring rule diverged from upstream and changed what a deprecated-path extension receives | None: the reference reads `page.url` in `imageUrlRequest` and `page.imageUrl` in `imageRequest`. |
+`PageImageAddress` reads only `Page.imageUrl` | With `imageUrlRequest` gone there is only one image request builder, so there is no per-builder field choice left to make | None: `imageRequest` — the surviving builder — reads exactly `page.imageUrl`, as upstream's does. |
 
 ## Tracking upstream mechanically
 
@@ -249,46 +257,51 @@ imageRequest  setUrlWithoutDomain x2  toString
 ```
 
 Note what is **absent**: `fetchImageUrl`, `imageUrlRequest`, `imageUrlParse`, `prepareNewChapter`,
-and every `fetch*` catalogue method — those moved to `CatalogueSource`/`Source`. Our `source-api`
-still carries all of them, which is the concrete measure of how far behind we are.
+and every `fetch*` catalogue method — those moved to `CatalogueSource`/`Source`. Ephyra's
+`source-api` no longer carries the three image-chain members either; WS1 removed them ahead of the
+dump quoted above. The remaining gap is the `fetch*` catalogue methods on `Source`/`CatalogueSource`.
 
 **Procedure when checking for drift:**
 
 1. Fetch `library.api` and `CHANGELOG.md` from `master`.
 2. Diff the `HttpSource` / `Source` / `CatalogueSource` / `Page` blocks against ours.
 3. Anything removed upstream that we still carry is a candidate for removal *with* the version bump
-   that makes it legal — see "When upstream finishes the removal".
+   that makes it legal — see "The removal has landed" for how that went the last time.
 4. Anything added upstream needs a decision: implement, or record as a known divergence.
 
-## When upstream finishes the removal
+## The removal has landed
 
-Recorded now because it is a **decision**, not a task, and it should not be made by whoever happens
-to hit the first breakage.
+The 1.4/1.5 ABI surface is gone from Ephyra's `source-api`. What had been recorded as a *planned*
+change — and, per the note below, one upstream had **not** actually landed — was taken as a deliberate
+Ephyra divergence, because the minimum supported extension version is already 1.6 and no loadable
+extension could reach the chain.
 
-Upstream `[Unreleased]` removes `fetchImageUrl`, `imageUrlRequest` and `imageUrlParse` with no
-replacement, and drops RxJava entirely. After that lands, an extension can only populate
-`Page.imageUrl` in `getPageList` or override `getImageUrl` — and, as ever, override `imageRequest`,
-which upstream keeps. MangaDex already populates `Page.imageUrl` (a relative path) and overrides
-`imageRequest`; it overrides none of the removed members, which is why it kept working on upstream
-through the removal.
+> **Upstream status (2026-10-12, re-check before citing).** `mihonapp/mihon`'s
+> `source-api/.../HttpSource.kt` still ships `rx.Observable`, `asObservableSuccess`, `awaitSingle`,
+> `imageUrlRequest` and `imageUrlParse`, and its `CHANGELOG.md` `[Unreleased]` section does not mention
+> removing them. Ephyra is therefore **ahead of** upstream here rather than mirroring it — a divergence
+> to re-examine when upstream lands its own removal, not a contract upstream currently defines.
 
-Ephyra's `source-api` keeps the dead chain, which is correct while we support 1.4 and 1.5. When the
-minimum supported version rises, these go **together**:
+What was done, in one change:
 
-1. Drop `fetchImageUrl`, `imageUrlRequest`, `imageUrlParse` and the RxJava dependency in one change.
-   Keeping some without the others leaves a chain no extension can reach — the state that made the
-   reported failure look like a malformed URL when it was a contract mismatch.
-2. Reduce the probe to `getImageUrl` alone, and reconsider whether it is worth its keep: a 1.7
-   extension that populated `Page.imageUrl` never reaches the fallback the probe guards.
-3. Drop `PageImageAddress`'s per-builder field selection with them, since `imageUrlRequest` was the
-   only builder reading `page.url`.
+1. `fetchImageUrl`, `imageUrlRequest` and `imageUrlParse` were removed, along with the `Observable`
+   methods on `Source`/`CatalogueSource`/`HttpSource` and `ParsedHttpSource.imageUrlParse`.
+2. `rxjava` was dropped from the version catalog, `source-api` and `core/common`; so were the
+   `asObservable*` helpers and both `RxCoroutineBridge` files.
+3. The probe was reduced to `getImageUrl` alone, and `PageImageAddress.of` lost its per-builder field
+   selection, because `imageUrlRequest` was the only builder that read `page.url`.
+4. `HttpSource.getImageUrl` no longer has a default: a source populates `Page.imageUrl` in
+   `getPageList` or overrides `getImageUrl`, and a source that does neither is refused with the
+   diagnostic rather than having the host fetch a field the contract does not make an address.
 
-**Until then the five-entry-point probe is the correct shape, not a leftover.** (`imageRequest` is
-in the probe list even though it is not URL-resolving: the diagnostic reports what a source
-overrides, and the sources that override `imageRequest` are precisely the ones whose `Page.imageUrl`
-the host must not interpret. When the list named only the four URL-chain entry points, the real
-MangaDex was reported as `overrides = none` in the on-screen rejection diagnostic — a claim the
-failure itself contradicted.)
+**A 1.6 extension can therefore reach exactly one of two things on the image path**: it populates
+`Page.imageUrl` in `getPageList`, or it overrides `getImageUrl` — and, as ever, it may override
+`imageRequest`, which is kept. MangaDex populates `Page.imageUrl` (a relative path) and overrides
+`imageRequest`; it overrides none of the removed members, which is why it kept working.
+
+The divergence is gated three ways: `SourceApiContractTest` asserts the removed members are absent
+from the compiled ABI, `SourceApiBoundaryTest` scans `source-api/src/main` for any `rx.*`/`Observable`
+token, and `ExtensionLoaderVersionTest` pins `SUPPORTED_LIB_VERSIONS` to `listOf(1.6)`.
 
 ## Why this is a capability model and not a flag
 

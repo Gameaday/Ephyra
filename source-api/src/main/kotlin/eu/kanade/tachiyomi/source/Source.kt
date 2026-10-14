@@ -6,7 +6,6 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.SMangaUpdate
-import rx.Observable
 
 /**
  * A basic interface for creating a source. It could be an online source, a local source, etc...
@@ -116,13 +115,4 @@ interface Source {
      * @return the pages for the chapter.
      */
     suspend fun getPageList(chapter: SChapter): List<Page>
-
-    @Deprecated("Use the combined suspend API instead", ReplaceWith("getMangaUpdate"))
-    fun fetchMangaDetails(manga: SManga): Observable<SManga> = throw UnsupportedOperationException()
-
-    @Deprecated("Use the combined suspend API instead", ReplaceWith("getMangaUpdate"))
-    fun fetchChapterList(manga: SManga): Observable<List<SChapter>> = throw UnsupportedOperationException()
-
-    @Deprecated("Use the suspend API instead", ReplaceWith("getPageList"))
-    fun fetchPageList(chapter: SChapter): Observable<List<Page>> = throw UnsupportedOperationException()
 }

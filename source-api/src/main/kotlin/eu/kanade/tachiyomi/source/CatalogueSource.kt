@@ -1,15 +1,10 @@
 package eu.kanade.tachiyomi.source
 
-import eu.kanade.tachiyomi.source.model.FilterList
-import eu.kanade.tachiyomi.source.model.MangasPage
-import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.SMangaUpdate
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
-import rx.Observable
-import tachiyomi.core.common.util.lang.awaitSingle
 
 interface CatalogueSource : Source {
 
@@ -23,20 +18,24 @@ interface CatalogueSource : Source {
      */
     override val supportsLatest: Boolean
 
-    @Suppress("DEPRECATION")
-    override suspend fun getPopularManga(page: Int): MangasPage = fetchPopularManga(page).awaitSingle()
-
-    @Suppress("DEPRECATION")
-    override suspend fun getLatestUpdates(page: Int): MangasPage = fetchLatestUpdates(page).awaitSingle()
-
-    @Suppress("DEPRECATION")
-    override suspend fun getSearchManga(
-        page: Int,
-        query: String,
-        filters: FilterList,
-    ): MangasPage = fetchSearchManga(page, query, filters).awaitSingle()
-
-    @Suppress("DEPRECATION")
+    /**
+     * Fetches manga details and the chapter list **concurrently**, tolerating a details failure.
+     *
+     * **Why this is overridden here rather than left to [Source].** The base implementation asks for
+     * the two halves one after the other, so a library update pays two round trips per series where
+     * one would do. It also lets a details failure abort the chapter refresh, which is the wrong
+     * trade: the chapter list is what the update exists to obtain, and a source whose details
+     * endpoint is broken can still enumerate chapters.
+     *
+     * The two halves run in a [supervisorScope] so one failing does not cancel the other, and a
+     * details failure is answered with the manga we were given.
+     *
+     * **What this used to be.** The override was a bridge to the deprecated RxJava `fetch*`
+     * catalogue methods, including a reflection probe for extensions that overrode only
+     * `getChapterList`. Those methods are gone with the 1.4/1.5 ABI (`source-api` speaks only the
+     * suspend API now), so both halves are the source's own suspend overrides and no reflection is
+     * needed to find them.
+     */
     override suspend fun getMangaUpdate(
         manga: SManga,
         chapters: List<SChapter>,
@@ -46,74 +45,17 @@ interface CatalogueSource : Source {
         val asyncManga = if (fetchDetails) {
             async {
                 try {
-                    fetchMangaDetails(manga).awaitSingle()
+                    getMangaDetails(manga)
                 } catch (_: Exception) {
+                    // Preserve the historical tolerance: a failed details fetch must not cost the
+                    // caller the chapter list it asked for in the same call.
                     manga
                 }
             }
         } else {
             null
         }
-        val asyncChapters = if (fetchChapters) {
-            async {
-                try {
-                    fetchChapterList(manga).awaitSingle()
-                } catch (e: UnsupportedOperationException) {
-                    try {
-                        val method = this@CatalogueSource.javaClass.getMethod(
-                            "getChapterList",
-                            SManga::class.java,
-                            kotlin.coroutines.Continuation::class.java,
-                        )
-                        if (method.declaringClass != CatalogueSource::class.java &&
-                            method.declaringClass.name != "eu.kanade.tachiyomi.source.online.HttpSource" &&
-                            method.declaringClass != Source::class.java
-                        ) {
-                            getChapterList(manga)
-                        } else {
-                            throw e
-                        }
-                    } catch (_: NoSuchMethodException) {
-                        throw e
-                    }
-                }
-            }
-        } else {
-            null
-        }
+        val asyncChapters = if (fetchChapters) async { getChapterList(manga) } else null
         SMangaUpdate(asyncManga?.await() ?: manga, asyncChapters?.await() ?: chapters)
     }
-
-    @Suppress("DEPRECATION")
-    override suspend fun getPageList(chapter: SChapter): List<Page> = fetchPageList(chapter).awaitSingle()
-
-    /**
-     * Returns an observable containing a page with a list of manga.
-     *
-     * @param page the page number to retrieve.
-     */
-    @Deprecated("Use the suspend API instead", ReplaceWith("getPopularManga"))
-    fun fetchPopularManga(page: Int): Observable<MangasPage> = throw UnsupportedOperationException()
-
-    /**
-     * Returns an observable containing a page with a list of manga.
-     *
-     * @param page the page number to retrieve.
-     * @param query the search query.
-     * @param filters the list of filters to apply.
-     */
-    @Deprecated("Use the suspend API instead", ReplaceWith("getSearchManga"))
-    fun fetchSearchManga(
-        page: Int,
-        query: String,
-        filters: FilterList,
-    ): Observable<MangasPage> = throw UnsupportedOperationException()
-
-    /**
-     * Returns an observable containing a page with a list of latest manga updates.
-     *
-     * @param page the page number to retrieve.
-     */
-    @Deprecated("Use the suspend API instead", ReplaceWith("getLatestUpdates"))
-    fun fetchLatestUpdates(page: Int): Observable<MangasPage> = throw UnsupportedOperationException()
 }

@@ -2,21 +2,22 @@ package eu.kanade.tachiyomi.source.online
 
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.asObservableSuccess
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.newCachelessCallWithProgress
 import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.source.model.SMangaUpdate
+import kotlinx.coroutines.async
+import kotlinx.coroutines.supervisorScope
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import rx.Observable
-import tachiyomi.core.common.util.lang.awaitSingle
 import uy.kohesive.injekt.injectLazy
 import java.net.URI
 import java.net.URISyntaxException
@@ -115,20 +116,14 @@ abstract class HttpSource : CatalogueSource {
     override fun toString(): String = "$name (${lang.uppercase()})"
 
     /**
-     * Returns an observable containing a page with a list of manga. Normally it's not needed to
-     * override this method.
+     * Get a page with a list of manga. Normally it's not needed to override this method.
      *
+     * @since tachiyomix 1.6
      * @param page the page number to retrieve.
      */
     @Suppress("DEPRECATION")
-    @Deprecated("Use the suspend API instead", ReplaceWith("getPopularManga"))
-    override fun fetchPopularManga(page: Int): Observable<MangasPage> {
-        return client.newCall(popularMangaRequest(page))
-            .asObservableSuccess()
-            .map { response ->
-                popularMangaParse(response)
-            }
-    }
+    override suspend fun getPopularManga(page: Int): MangasPage =
+        client.newCall(popularMangaRequest(page)).awaitSuccess().use { popularMangaParse(it) }
 
     /**
      * Returns the request for the popular manga given the page.
@@ -153,22 +148,16 @@ abstract class HttpSource : CatalogueSource {
     protected open fun popularMangaParse(response: Response): MangasPage = throw UnsupportedOperationException()
 
     /**
-     * Returns an observable containing a page with a list of manga. Normally it's not needed to
-     * override this method.
+     * Get a page with a list of manga. Normally it's not needed to override this method.
      *
+     * @since tachiyomix 1.6
      * @param page the page number to retrieve.
      * @param query the search query.
      * @param filters the list of filters to apply.
      */
     @Suppress("DEPRECATION")
-    @Deprecated("Use the suspend API instead", ReplaceWith("getSearchManga"))
-    override fun fetchSearchManga(page: Int, query: String, filters: FilterList): Observable<MangasPage> {
-        return client.newCall(searchMangaRequest(page, query, filters))
-            .asObservableSuccess()
-            .map { response ->
-                searchMangaParse(response)
-            }
-    }
+    override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage =
+        client.newCall(searchMangaRequest(page, query, filters)).awaitSuccess().use { searchMangaParse(it) }
 
     /**
      * Returns the request for the search manga given the page.
@@ -199,19 +188,14 @@ abstract class HttpSource : CatalogueSource {
     protected open fun searchMangaParse(response: Response): MangasPage = throw UnsupportedOperationException()
 
     /**
-     * Returns an observable containing a page with a list of latest manga updates.
+     * Get a page with a list of latest manga updates. Normally it's not needed to override this method.
      *
+     * @since tachiyomix 1.6
      * @param page the page number to retrieve.
      */
     @Suppress("DEPRECATION")
-    @Deprecated("Use the suspend API instead", ReplaceWith("getLatestUpdates"))
-    override fun fetchLatestUpdates(page: Int): Observable<MangasPage> {
-        return client.newCall(latestUpdatesRequest(page))
-            .asObservableSuccess()
-            .map { response ->
-                latestUpdatesParse(response)
-            }
-    }
+    override suspend fun getLatestUpdates(page: Int): MangasPage =
+        client.newCall(latestUpdatesRequest(page)).awaitSuccess().use { latestUpdatesParse(it) }
 
     /**
      * Returns the request for latest manga given the page.
@@ -236,27 +220,75 @@ abstract class HttpSource : CatalogueSource {
     protected open fun latestUpdatesParse(response: Response): MangasPage = throw UnsupportedOperationException()
 
     /**
-     * Returns an observable with the updated details for a manga. Normally it's not needed to
-     * override this method.
+     * Fetches manga details and the chapter list **concurrently**, tolerating a failed details fetch.
      *
-     * @param manga the manga to be updated.
+     * **Why the concrete implementation lives here.** `CatalogueSource`'s default asks
+     * [getMangaDetails] and [getChapterList]; for an HTTP source both of those route back through this
+     * method, so it has to be the one that knows how to build the requests. Keeping it here also
+     * preserves the contract that a 1.6 source overriding *only* this method still has its details and
+     * chapter list served when the app calls the split methods directly — `LibraryUpdateJob`,
+     * `MetadataUpdateJob` and the migration flow all do.
+     *
+     * The two halves run in a [supervisorScope] so one failing does not cancel the other.
      */
     @Suppress("DEPRECATION")
-    @Deprecated("Use the combined suspend API instead", replaceWith = ReplaceWith("getMangaUpdate"))
-    override fun fetchMangaDetails(manga: SManga): Observable<SManga> {
-        return client.newCall(mangaDetailsRequest(manga))
-            .asObservableSuccess()
-            .map { response ->
-                mangaDetailsParse(response).apply { initialized = true }
+    override suspend fun getMangaUpdate(
+        manga: SManga,
+        chapters: List<SChapter>,
+        fetchDetails: Boolean,
+        fetchChapters: Boolean,
+    ): SMangaUpdate = supervisorScope {
+        val asyncManga = if (fetchDetails) {
+            async {
+                try {
+                    client.newCall(mangaDetailsRequest(manga)).awaitSuccess()
+                        .use { mangaDetailsParse(it).apply { initialized = true } }
+                } catch (_: Exception) {
+                    // A source may have no details endpoint; the manga it was given is the answer.
+                    manga
+                }
             }
+        } else {
+            null
+        }
+        val asyncChapters = if (fetchChapters) {
+            async {
+                try {
+                    client.newCall(chapterListRequest(manga)).awaitSuccess().use { chapterListParse(it) }
+                } catch (e: UnsupportedOperationException) {
+                    // A source may implement the chapter list by overriding `getChapterList` itself
+                    // rather than the request/parse pair. `getChapterList` routes back through this
+                    // method, so it is only called when the source's own class declares it — the same
+                    // guard the removed Rx bridge used, kept because it is what makes an
+                    // override-only 1.6 source work rather than throw.
+                    val declared = javaClass
+                        .getMethod(
+                            "getChapterList",
+                            SManga::class.java,
+                            kotlin.coroutines.Continuation::class.java,
+                        )
+                        .declaringClass
+                    if (declared != HttpSource::class.java && declared != CatalogueSource::class.java &&
+                        declared != Source::class.java
+                    ) {
+                        getChapterList(manga)
+                    } else {
+                        throw e
+                    }
+                }
+            }
+        } else {
+            null
+        }
+        SMangaUpdate(asyncManga?.await() ?: manga, asyncChapters?.await() ?: chapters)
     }
 
     /**
      * Get the updated details for a manga.
      *
      * @since extensions-lib 1.5
+     * @param manga the manga to be updated.
      */
-    @Suppress("DEPRECATION")
     override suspend fun getMangaDetails(manga: SManga): SManga =
         getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga()
 
@@ -286,26 +318,11 @@ abstract class HttpSource : CatalogueSource {
     protected open fun mangaDetailsParse(response: Response): SManga = throw UnsupportedOperationException()
 
     /**
-     * Returns an observable with the chapter list for a manga.
-     *
-     * @param manga the manga to look for chapters.
-     */
-    @Suppress("DEPRECATION")
-    @Deprecated("Use the combined suspend API instead", replaceWith = ReplaceWith("getMangaUpdate"))
-    override fun fetchChapterList(manga: SManga): Observable<List<SChapter>> {
-        return client.newCall(chapterListRequest(manga))
-            .asObservableSuccess()
-            .map { response ->
-                chapterListParse(response)
-            }
-    }
-
-    /**
      * Get all the available chapters for a manga.
      *
      * @since extensions-lib 1.5
+     * @param manga the manga to look for chapters.
      */
-    @Suppress("DEPRECATION")
     override suspend fun getChapterList(manga: SManga): List<SChapter> =
         getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true).chapters()
 
@@ -335,25 +352,14 @@ abstract class HttpSource : CatalogueSource {
     protected open fun chapterListParse(response: Response): List<SChapter> = throw UnsupportedOperationException()
 
     /**
-     * Returns an observable with the page list for a chapter.
+     * Get the list of pages a chapter has. Normally it's not needed to override this method.
      *
+     * @since tachiyomix 1.6
      * @param chapter the chapter whose page list has to be fetched.
      */
     @Suppress("DEPRECATION")
-    @Deprecated("Use the suspend API instead", ReplaceWith("getPageList"))
-    override fun fetchPageList(chapter: SChapter): Observable<List<Page>> {
-        return client.newCall(pageListRequest(chapter))
-            .asObservableSuccess()
-            .map { response ->
-                pageListParse(response)
-            }
-    }
-
-    /**
-     * Get the list of pages a chapter has.
-     */
-    @Suppress("DEPRECATION")
-    override suspend fun getPageList(chapter: SChapter): List<Page> = fetchPageList(chapter).awaitSingle()
+    override suspend fun getPageList(chapter: SChapter): List<Page> =
+        client.newCall(pageListRequest(chapter)).awaitSuccess().use { pageListParse(it) }
 
     /**
      * Returns the request for getting the page list. Override only if it's needed to override the
@@ -381,26 +387,18 @@ abstract class HttpSource : CatalogueSource {
     protected open fun pageListParse(response: Response): List<Page> = throw UnsupportedOperationException()
 
     /**
-     * Returns an observable with the page containing the source url of the image.
-     *
-     * @param page the page whose source image has to be fetched.
-     */
-    @Suppress("DEPRECATION")
-    @Deprecated("Use the suspend API instead", ReplaceWith("getImageUrl"))
-    open fun fetchImageUrl(page: Page): Observable<String> {
-        return client.newCall(imageUrlRequest(page))
-            .asObservableSuccess()
-            .map { imageUrlParse(it) }
-    }
-
-    /**
      * Returns the image url for the provided [page]. The function is only called if [Page.imageUrl] is null.
+     *
+     * **No default, deliberately.** The inherited implementation fetched [Page.url] and handed the
+     * response to `imageUrlParse` — the 1.4/1.5 chain, removed with the rest of that ABI. A 1.6 source
+     * must therefore either populate [Page.imageUrl] in `getPageList` or override this method; a
+     * source that does neither is refused here, rather than having the host guess an address from a
+     * field the contract does not make an address (see [PageImageAddress]).
      *
      * @since tachiyomix 1.6
      * @param page the page whose source image has to be fetched.
      */
-    @Suppress("DEPRECATION")
-    open suspend fun getImageUrl(page: Page): String = fetchImageUrl(page).awaitSingle()
+    open suspend fun getImageUrl(page: Page): String = throw UnsupportedOperationException()
 
     /**
      * What this source actually implements, probed once per instance.
@@ -415,57 +413,6 @@ abstract class HttpSource : CatalogueSource {
      * See [SourceCapabilities] for the probes and what the app must do differently for each.
      */
     val capabilities: SourceCapabilities by lazy { SourceCapabilities(javaClass) }
-
-    /**
-     * Returns the request for getting the url to the source image. Override only if it's needed to
-     * override the url, send different headers or request method like POST.
-     *
-     * [Page.url] is resolved against [baseUrl] here, at the boundary, rather than by each source.
-     * A source that names its page relatively — `img.attr("src")` instead of `absUrl("src")`, or the
-     * protocol-relative `//cdn…` a `<base>`-tagged site emits — is ordinary source code, and OkHttp
-     * answers a scheme-less URL with `Expected URL scheme 'http' or 'https' but no scheme was found
-     * for …` while *building* the request. No request is sent, so the page can be neither retried nor
-     * cached nor blamed on the network, and the reader showed that string to the user verbatim. The
-     * missing half of the address is a value this class already holds, so forming the address is
-     * strictly cheaper than reporting its absence. Overrides that build their own request inherit
-     * nothing from this, which is why `HttpPageLoader` resolves the resolved URL again before use.
-     *
-     * When [Page.imageUrl] is already populated it is preferred over [Page.url]. API sources
-     * When both fields are populated, the first one that can actually address a host wins.
-     * [Page.imageUrl] is preferred, because API sources (MangaDex is the canonical one) build
-     * `Page(index, imageUrl = absolute)` with `url` left at its `""` default, so resolving `url`
-     * alone can only produce `""`. But *preferring* is not the same as *trusting*: a source that
-     * sets `imageUrl` to something the contract does not allow — a composite of its own, rather
-     * than an address — must not be able to hide a perfectly good `url` behind it. So the other
-     * field is still tried, and the exception raised when neither works names the preferred one,
-     * because that is the value the source should have fixed. The rule itself lives in
-     * [PageImageAddress]; this is only its use.
-     *
-     * @param page the chapter whose page list has to be fetched
-     */
-    @Deprecated(
-        message = "The helper functions are inherently limiting and hides the underlying implementation. " +
-            "Source developers should make their own implementation according to their needs.",
-    )
-    protected open fun imageUrlRequest(page: Page): Request {
-        // `page.url`, and nothing else — Mihon's `imageUrlRequest` reads exactly this field. This is
-        // the deprecated chain: the request below is a *real fetch* of `page.url` whose response is
-        // handed to `imageUrlParse`. Substituting `page.imageUrl` here changes which URL is fetched,
-        // therefore what `imageUrlParse` receives, therefore the value the source returns. The
-        // resolution and judgement are ours and are kept; the choice of field is not.
-        return GET(PageImageAddress.of(page, baseUrl, PageImageAddress.Field.URL).url.value, headers)
-    }
-
-    /**
-     * Parses the response from the site and returns the absolute url to the source image.
-     *
-     * @param response the response from the site.
-     */
-    @Deprecated(
-        message = "The helper functions are inherently limiting and hides the underlying implementation. " +
-            "Source developers should make their own implementation according to their needs.",
-    )
-    protected open fun imageUrlParse(response: Response): String = throw UnsupportedOperationException()
 
     suspend fun getImage(page: Page, existingSize: Long = 0L): Response {
         return client.newCachelessCallWithProgress(imageRequest(page), page, existingSize)
@@ -486,20 +433,12 @@ abstract class HttpSource : CatalogueSource {
         // `TransientErrors.shouldReResolveUrl` as "ask the source again", which is the only thing
         // that can recover: the source built the string and may build a different one next time.
         //
-        // Deliberately the *same* expression as [imageUrlRequest], not a second copy of the rule.
-        // The two were byte-identical loops until this collapsed, and the fact that duplication was
-        // invisible is the argument against reintroducing it: a source that populated only `url`
-        // used to work through one builder and throw a bare `NullPointerException` through the
-        // other, with no layer attribution and no recovery.
         // `page.imageUrl`, and nothing else — Mihon's `imageRequest` reads exactly this field, and
-        // this is the path for a source that already set the address in `getPageList`.
-        //
-        // **Deliberately the same expression shape as [imageUrlRequest] but not the same field.**
-        // These two were once byte-identical, and that is precisely how they drifted from the
-        // reference implementation unnoticed. Mihon reads `url` in one and `imageUrl` in the other,
-        // and that asymmetry is load-bearing rather than an oversight: collapsing it changed which
-        // request a deprecated-path extension actually receives.
-        return GET(PageImageAddress.of(page, baseUrl, PageImageAddress.Field.IMAGE_URL).url.value, headers)
+        // this is the path for a source that already set the address in `getPageList`. The companion
+        // builder that read `page.url` (`imageUrlRequest`) is gone with the 1.4/1.5 ABI, so there is
+        // no second field to keep in step any more and `PageImageAddress` no longer has to be told
+        // which one to read.
+        return GET(PageImageAddress.of(page, baseUrl).url.value, headers)
     }
 
     /**

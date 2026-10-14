@@ -7,6 +7,7 @@ import ephyra.domain.series.CanonicalLinkState
 import ephyra.domain.series.CanonicalSeriesLink
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
+import java.util.Locale
 
 /** Isolated Room implementation of the explicitly reviewed canonical-link lifecycle. */
 class TargetSeriesLinkRepository(
@@ -75,7 +76,7 @@ class TargetSeriesLinkRepository(
     private fun linkId(candidate: CanonicalLinkCandidate): String {
         val key = "${candidate.canonicalSeriesId}\u0000${candidate.sourceIdentity.stableKey}"
         val digest = MessageDigest.getInstance("SHA-256").digest(key.toByteArray())
-        return "link:" + digest.joinToString("") { "%02x".format(it) }
+        return "link:" + digest.joinToString("") { String.format(Locale.ROOT, "%02x", it) }
     }
 
     private fun CanonicalSeriesLink.toEntity() = TargetSeriesLinkEntity(

@@ -1,5 +1,7 @@
 package ephyra.domain.chapter.service
 
+import java.util.Locale
+
 /**
  * -R> = regex conversion.
  */
@@ -40,10 +42,12 @@ object ChapterRecognition {
             return chapterNumber
         }
 
-        // Get chapter title with lower case
-        val cleanChapterName = chapterName.lowercase()
+        // Get chapter title with lower case. Pinned to Locale.ROOT: this is data normalization for
+        // regex matching, not user-facing text, so the device locale must not change the result
+        // (the Turkish "I"→"ı" rule would otherwise break matches for titles containing I).
+        val cleanChapterName = chapterName.lowercase(Locale.ROOT)
             // Remove manga title from chapter title.
-            .replace(mangaTitle.lowercase(), "").trim()
+            .replace(mangaTitle.lowercase(Locale.ROOT), "").trim()
             // Remove comma's or hyphens.
             .replace(',', '.')
             .replace('-', '.')

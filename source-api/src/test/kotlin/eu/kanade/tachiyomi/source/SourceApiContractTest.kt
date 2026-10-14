@@ -9,6 +9,7 @@ import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.UriType
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -42,6 +43,22 @@ class SourceApiContractTest {
         )
     }
 
+    /**
+     * Pins that a removed 1.4/1.5 member has **not** come back.
+     *
+     * The loader refuses anything below 1.6, so the deprecated surface is unreachable: re-adding a
+     * member would revive a contract the host no longer implements and re-open the divergence the
+     * removal closed. The positive assertions above cover what extensions may still link against;
+     * these cover what they may not.
+     */
+    private fun assertAbsentMember(type: Class<*>, name: String) {
+        assertFalse(
+            type.declaredMethods.any { it.name == name },
+            "Removed 1.4/1.5 ABI member `$type.$name` is back. `ExtensionLoader.SUPPORTED_LIB_VERSIONS` " +
+                "is `listOf(1.6)`, so no loadable extension can reach it.",
+        )
+    }
+
     @Test
     fun `Source suspend surface matches tachiyomix 1_6`() {
         val source = Source::class.java
@@ -52,18 +69,19 @@ class SourceApiContractTest {
         assertSuspendMember(source, "getPageList")
         assertSuspendMember(source, "getMangaDetails")
         assertSuspendMember(source, "getChapterList")
-        // Deprecated Observable bridge kept for extensions on the fetch* API
-        assertMember(source, "fetchMangaDetails")
-        assertMember(source, "fetchChapterList")
-        assertMember(source, "fetchPageList")
+        // The 1.4/1.5 Observable bridge was removed with WS1: `ExtensionLoader` refuses anything
+        // below 1.6, so the deprecated surface is unreachable. Pinned absent so it cannot return.
+        assertAbsentMember(source, "fetchMangaDetails")
+        assertAbsentMember(source, "fetchChapterList")
+        assertAbsentMember(source, "fetchPageList")
     }
 
     @Test
-    fun `CatalogueSource declares fetch observables`() {
+    fun `CatalogueSource no longer declares the deprecated fetch observables`() {
         val catalogue = CatalogueSource::class.java
-        assertMember(catalogue, "fetchPopularManga")
-        assertMember(catalogue, "fetchSearchManga")
-        assertMember(catalogue, "fetchLatestUpdates")
+        assertAbsentMember(catalogue, "fetchPopularManga")
+        assertAbsentMember(catalogue, "fetchSearchManga")
+        assertAbsentMember(catalogue, "fetchLatestUpdates")
     }
 
     @Test
@@ -88,9 +106,13 @@ class SourceApiContractTest {
         assertMember(http, "chapterListParse")
         assertMember(http, "pageListRequest")
         assertMember(http, "pageListParse")
-        assertMember(http, "imageUrlRequest")
-        assertMember(http, "imageUrlParse")
         assertSuspendMember(http, "getImageUrl")
+        // Removed with the 1.4/1.5 ABI (WS1). The image chain is now `Page.imageUrl` plus
+        // `getImageUrl`; `fetchImageUrl`/`imageUrlRequest`/`imageUrlParse` served the legacy
+        // fetch-and-parse path that no loadable extension can reach.
+        assertAbsentMember(http, "fetchImageUrl")
+        assertAbsentMember(http, "imageUrlRequest")
+        assertAbsentMember(http, "imageUrlParse")
         // member-extension helpers used pervasively by extension sources
         assertTrue(
             http.declaredMethods.any {
