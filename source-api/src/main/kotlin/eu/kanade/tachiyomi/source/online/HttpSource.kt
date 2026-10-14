@@ -262,7 +262,11 @@ abstract class HttpSource : CatalogueSource {
                     // guard the removed Rx bridge used, kept because it is what makes an
                     // override-only 1.6 source work rather than throw.
                     val declared = javaClass
-                        .getMethod("getChapterList", SManga::class.java, Continuation::class.java)
+                        .getMethod(
+                            "getChapterList",
+                            SManga::class.java,
+                            kotlin.coroutines.Continuation::class.java,
+                        )
                         .declaringClass
                     if (declared != HttpSource::class.java && declared != CatalogueSource::class.java &&
                         declared != Source::class.java
