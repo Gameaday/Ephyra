@@ -432,11 +432,13 @@ abstract class PagerViewer(
                         continue
                     }
 
+                    // mangaId is needed by both the top-stub check and the bottom-stub loop
+                    val mangaId = page.chapter.mangaId
+
                     // 1. Check if the CURRENT page is a top-banner stub of the NEXT page
                     if (page.mergedBitmap == null) {
                         val nextSourceForRef = nextStreamFn().use { Buffer().readFrom(it) }
                         if (!ImageUtil.isAnimatedAndSupported(nextSourceForRef)) {
-                            val mangaId = page.chapter.mangaId
                             val isTopStub = streamFn().use {
                                 ImageUtil.isSmallPage(
                                     it,
