@@ -90,16 +90,20 @@ stay green; the probe still reports the real MangaDex contract.
 anything below 1.6 at load time (a clear, reported refusal) and by upstream making the identical
 removal.
 
-**Status:** the `EXTENSION_COMPATIBILITY.md` correction has landed. The code removal is **not done,
-and should not be done blind.** Verified blast radius: it removes members from `Source.kt`,
-`CatalogueSource.kt`, `HttpSource.kt` and `ParsedHttpSource.kt`; rewrites `getImageUrl`'s default
-(currently `fetchImageUrl(page).awaitSingle()`, so the two cannot be removed independently); touches
-the 400-line safety-critical `PageImageAddress.kt` probe; deletes `OkHttpExtensions.asObservable*`
-and both `RxCoroutineBridge` files; drops `rxjava` from `source-api`/`core/common` and the catalog;
-and rewrites at least six tests that exercise the removed members (`SourceApiContractTest`,
-`SourceBridgeTest`, `HttpSourceImageUrlRequestTest`, `RxCoroutineBridgeTest`,
-`MangaDexOpaqueImageUrlContractTest`, `HttpPageLoaderUrlResolutionTest`). It needs a compiler and a
-deliberate divergence decision — not a copy of a landed upstream change.
+**Status:** **landed.** Both halves are done: the `EXTENSION_COMPATIBILITY.md` correction (earlier) and
+the code removal (this change). Verified blast radius, as executed: members removed from `Source.kt`,
+`CatalogueSource.kt`, `HttpSource.kt` and `ParsedHttpSource.kt`; `getImageUrl`'s default replaced with a
+refusal; `PageImageAddress.kt`'s probe reduced to `getImageUrl` and its per-builder field selection
+dropped; `OkHttpExtensions.asObservable*` deleted and both `RxCoroutineBridge` files (with their test)
+removed; `rxjava` dropped from `source-api`/`core/common` and the version catalog; and the tests that
+exercised the removed members rewritten (`SourceApiContractTest`, `SourceBridgeTest`,
+`HttpSourceImageUrlRequestTest`, `MangaDexOpaqueImageUrlContractTest`, `HttpPageLoaderUrlResolutionTest`,
+`RxCoroutineBridgeTest` deleted). `HttpSource.getMangaUpdate` became the concrete implementation so the
+split methods keep routing an override-only 1.6 source through it.
+
+**Not compiled here.** The environment this landed from has no JDK or Android SDK, so the removal was
+validated by inspection, by token scans and by the structural gates it adds — not by a build. Run
+`:source-api:test`, `:core:common:test`, `:feature:reader:test` and `ktlintCheck` before merging.
 
 ### WS2 — P0 — Narrow what extensions can reach (`Injekt` bridge)
 

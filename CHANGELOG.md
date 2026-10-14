@@ -18,11 +18,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   interop break today; upstream's replacement format is not yet published, so WS3 is a watch item.
   Planned P0 work: finish the 1.4/1.5 ABI removal, narrow the extension `Injekt` allowlist to
   upstream's set, harden the extension installer's concurrent maps, and survive a WebView renderer
-  death. **WS1's ABI removal is deferred and reclassified:** upstream `main` still ships the
-  `rx.Observable` chain (`fetchImageUrl`/`imageUrlRequest`/`imageUrlParse`), so removing it is a
-  deliberate Ephyra divergence that needs a compiler and a product decision — not a mirror.
-  Since this plan was written, WS7 (pager realignment gate), WS8 (locale-safe data
-  formatting) and WS10 (obsolete settings) have landed; WS1 remains deferred.
+  death. **WS1's ABI removal is a deliberate Ephyra divergence:** upstream `main` still ships the
+  `rx.Observable` chain (`fetchImageUrl`/`imageUrlRequest`/`imageUrlParse`), so it is not a mirror of a
+  landed upstream change — but the loader refuses anything below 1.6, so no loadable extension can
+  reach it. It has since landed; see "Extension API" below.
+  Since this plan was written, WS1, WS7 (pager realignment gate), WS8 (locale-safe data
+  formatting) and WS10 (obsolete settings) have landed.
+
+### 🧩 Extension API
+- **The 1.4/1.5 ABI surface is gone from `source-api` (WS1).** The deprecated RxJava chain that no
+  loadable extension can reach — `fetchImageUrl`, `imageUrlRequest`, `imageUrlParse`, the `Observable`
+  methods on `Source`/`CatalogueSource`/`HttpSource` and `ParsedHttpSource.imageUrlParse` — was
+  removed, together with the `rxjava` dependency (version catalog, `source-api`, `core/common`), the
+  `asObservable*` helpers and both `RxCoroutineBridge` files. `HttpSource.getImageUrl` no longer has a
+  default: a 1.6 source populates `Page.imageUrl` in `getPageList` or overrides `getImageUrl`, and a
+  source that does neither is refused with the diagnostic instead of a fetch of a field that is not an
+  address. `SourceCapabilities.customisesImageUrlChain` is now `getImageUrl` alone, and
+  `PageImageAddress.of` reads `Page.imageUrl` with no per-builder field selection.
+  `HttpSource.getMangaUpdate` became the concrete implementation, so `getMangaDetails`/`getChapterList`
+  keep routing an override-only 1.6 source through it. Gated by `SourceApiContractTest` (removed
+  members absent from the compiled ABI), `SourceApiBoundaryTest` (no `rx.*`/`Observable` token in
+  `source-api/src/main`) and `ExtensionLoaderVersionTest` (`SUPPORTED_LIB_VERSIONS = listOf(1.6)`).
 
 ### 🧩 Fixes
 - **Samsung Android 9–11 launch crash guarded** (WS9): `MainActivity.reportFullyDrawn()` now catches

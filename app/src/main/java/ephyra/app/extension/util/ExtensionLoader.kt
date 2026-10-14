@@ -64,7 +64,9 @@ class ExtensionLoader(
          * meant carrying their whole deprecated surface — `fetchImageUrl`, `imageUrlRequest`,
          * `imageUrlParse`, the `Observable` catalogue methods — and that surface is where every
          * reported extension failure came from: an app-side probe enumerating methods that upstream
-         * has since deleted, disagreeing with what the extension actually overrides.
+         * has since deleted, disagreeing with what the extension actually overrides. That surface is
+         * now **gone from `source-api`** (WS1 of `doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`), so the
+         * refusal is no longer the only thing standing between the app and the dead chain.
          *
          * Upstream `tachiyomix` makes the same call. Its `[Unreleased]` changelog removes
          * `HttpSource.fetchImageUrl`, `HttpSource.xxxRequest`/`xxxParse` (except `imageRequest`) and

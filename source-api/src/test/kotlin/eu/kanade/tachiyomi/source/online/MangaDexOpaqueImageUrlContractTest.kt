@@ -160,7 +160,6 @@ class MangaDexOpaqueImageUrlContractTest {
         override fun mangaDetailsParse(response: Response): SManga = throw UnsupportedOperationException()
         override fun chapterListParse(response: Response): List<SChapter> = throw UnsupportedOperationException()
         override fun pageListParse(response: Response): List<Page> = throw UnsupportedOperationException()
-        override fun imageUrlParse(response: Response): String = throw UnsupportedOperationException()
     }
 
     private companion object {

@@ -128,7 +128,7 @@ class PageLoadRecoveryTest {
      * The regression this property exists to prevent, in the form it actually occurred.
      *
      * A replacement URL could not be obtained — the source supplies `Page.imageUrl` in
-     * `pageListParse` and never implements `imageUrlParse`, so the base throws. That exception
+     * `pageListParse` and does not override `getImageUrl`, so the base throws. That exception
      * arrived with no URL in hand, and used to become the error the user was shown, replacing the
      * `403` that had actually stopped their page. The reader reported the machinery; the cause was
      * only in the recovery history.
@@ -142,7 +142,7 @@ class PageLoadRecoveryTest {
         // The resolution attempt fails with nothing in hand: the caller had already dropped the URL.
         val decision = recovery.onFailure(
             null,
-            UnsupportedOperationException("Base imageUrlParse not implemented"),
+            UnsupportedOperationException("Base getImageUrl not implemented"),
         )
 
         assertEquals(PageLoadRecoveryAction.GIVE_UP, decision.action)
@@ -158,7 +158,7 @@ class PageLoadRecoveryTest {
     fun `a failure to obtain a replacement is still in the history`() {
         val recovery = recovery()
         recovery.onFailure("https://cdn-a.example/1.jpg", HttpException(403))
-        recovery.onFailure(null, UnsupportedOperationException("Base imageUrlParse not implemented"))
+        recovery.onFailure(null, UnsupportedOperationException("Base getImageUrl not implemented"))
 
         val summary = recovery.summary()
 

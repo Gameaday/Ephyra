@@ -190,8 +190,8 @@ class PageLoadRecovery(
      * replacement, so a resolution that then throws arrives here with nothing in hand.
      *
      * That is a real fault and it is recorded, but it is not the one the user needs to hear. The
-     * common shape is a source that supplies `Page.imageUrl` in `pageListParse` and never implements
-     * `imageUrlParse`, so the base `UnsupportedOperationException` replaces the `403` that actually
+     * common shape is a source that supplies `Page.imageUrl` in `pageListParse` and does not override
+     * `getImageUrl`, so the base `UnsupportedOperationException` replaces the `403` that actually
      * stopped the page — the reader reports the machinery instead of the cause. So only a failure
      * that happened with a URL in hand becomes the error surfaced on giving up; a resolution failure
      * is detail, and [summary] carries it.

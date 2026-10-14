@@ -5,11 +5,15 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.newCachelessCallWithProgress
 import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.source.model.SMangaUpdate
+import kotlinx.coroutines.async
+import kotlinx.coroutines.supervisorScope
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -216,15 +220,73 @@ abstract class HttpSource : CatalogueSource {
     protected open fun latestUpdatesParse(response: Response): MangasPage = throw UnsupportedOperationException()
 
     /**
-     * Get the updated details for a manga. Normally it's not needed to override this method.
+     * Fetches manga details and the chapter list **concurrently**, tolerating a failed details fetch.
+     *
+     * **Why the concrete implementation lives here.** `CatalogueSource`'s default asks
+     * [getMangaDetails] and [getChapterList]; for an HTTP source both of those route back through this
+     * method, so it has to be the one that knows how to build the requests. Keeping it here also
+     * preserves the contract that a 1.6 source overriding *only* this method still has its details and
+     * chapter list served when the app calls the split methods directly — `LibraryUpdateJob`,
+     * `MetadataUpdateJob` and the migration flow all do.
+     *
+     * The two halves run in a [supervisorScope] so one failing does not cancel the other.
+     */
+    @Suppress("DEPRECATION")
+    override suspend fun getMangaUpdate(
+        manga: SManga,
+        chapters: List<SChapter>,
+        fetchDetails: Boolean,
+        fetchChapters: Boolean,
+    ): SMangaUpdate = supervisorScope {
+        val asyncManga = if (fetchDetails) {
+            async {
+                try {
+                    client.newCall(mangaDetailsRequest(manga)).awaitSuccess()
+                        .use { mangaDetailsParse(it).apply { initialized = true } }
+                } catch (_: Exception) {
+                    // A source may have no details endpoint; the manga it was given is the answer.
+                    manga
+                }
+            }
+        } else {
+            null
+        }
+        val asyncChapters = if (fetchChapters) {
+            async {
+                try {
+                    client.newCall(chapterListRequest(manga)).awaitSuccess().use { chapterListParse(it) }
+                } catch (e: UnsupportedOperationException) {
+                    // A source may implement the chapter list by overriding `getChapterList` itself
+                    // rather than the request/parse pair. `getChapterList` routes back through this
+                    // method, so it is only called when the source's own class declares it — the same
+                    // guard the removed Rx bridge used, kept because it is what makes an
+                    // override-only 1.6 source work rather than throw.
+                    val declared = javaClass
+                        .getMethod("getChapterList", SManga::class.java, Continuation::class.java)
+                        .declaringClass
+                    if (declared != HttpSource::class.java && declared != CatalogueSource::class.java &&
+                        declared != Source::class.java
+                    ) {
+                        getChapterList(manga)
+                    } else {
+                        throw e
+                    }
+                }
+            }
+        } else {
+            null
+        }
+        SMangaUpdate(asyncManga?.await() ?: manga, asyncChapters?.await() ?: chapters)
+    }
+
+    /**
+     * Get the updated details for a manga.
      *
      * @since extensions-lib 1.5
      * @param manga the manga to be updated.
      */
-    @Suppress("DEPRECATION")
     override suspend fun getMangaDetails(manga: SManga): SManga =
-        client.newCall(mangaDetailsRequest(manga)).awaitSuccess()
-            .use { mangaDetailsParse(it).apply { initialized = true } }
+        getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga()
 
     /**
      * Returns the request for the details of a manga. Override only if it's needed to change the
@@ -252,14 +314,13 @@ abstract class HttpSource : CatalogueSource {
     protected open fun mangaDetailsParse(response: Response): SManga = throw UnsupportedOperationException()
 
     /**
-     * Get all the available chapters for a manga. Normally it's not needed to override this method.
+     * Get all the available chapters for a manga.
      *
      * @since extensions-lib 1.5
      * @param manga the manga to look for chapters.
      */
-    @Suppress("DEPRECATION")
     override suspend fun getChapterList(manga: SManga): List<SChapter> =
-        client.newCall(chapterListRequest(manga)).awaitSuccess().use { chapterListParse(it) }
+        getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true).chapters()
 
     /**
      * Returns the request for updating the chapter list. Override only if it's needed to override

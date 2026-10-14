@@ -4,7 +4,6 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
-import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -29,7 +28,6 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import rx.Observable
 import java.io.File
 import java.nio.file.Path
 
@@ -113,7 +111,6 @@ class HttpPageLoaderUrlResolutionTest {
                 PageImageAddress.of(
                     fixture.pageForTheResolvedAssertion(),
                     BASE,
-                    PageImageAddress.Field.IMAGE_URL,
                 ).url.value,
             )
         }
@@ -140,7 +137,6 @@ class HttpPageLoaderUrlResolutionTest {
                 PageImageAddress.of(
                     fixture.pageForTheResolvedAssertion(),
                     BASE,
-                    PageImageAddress.Field.IMAGE_URL,
                 ).url.value,
             )
         }
@@ -233,9 +229,9 @@ class HttpPageLoaderUrlResolutionTest {
      * the source populate addresses?", read from a class probe and then a recorded flag. Both are gone:
      * a list is stale exactly when asking the source cannot help, which is visible on the page itself.
      *
-     * MangaDex overrides none of `getImageUrl` / `fetchImageUrl` / `imageUrlRequest` / `imageUrlParse`
-     * — it cannot, because upstream removed that chain from the extension API — so it puts the address
-     * in `Page.imageUrl` and keeps an at-home token cache key in `Page.url`. A list whose `imageUrl` is
+     * MangaDex overrides neither `getImageUrl` nor the request/parse chain that preceded it — that
+     * chain is gone from `source-api` altogether — so it puts the address in `Page.imageUrl` and keeps
+     * an at-home token cache key in `Page.url`. A list whose `imageUrl` is
      * empty and whose `url` is that key cannot be repaired by asking: the fix is to refetch the list,
      * not to refuse it or to spend a round-trip on a value that is not an address.
      */
@@ -305,12 +301,12 @@ class HttpPageLoaderUrlResolutionTest {
      * chapter is re-fetched when the cached one is stale. The reported value is exactly that shape —
      * `(at-home server, at-home API URL, fetch timestamp)`.
      *
-     * **Why this is our bug and not the extension's.** The app treats `Page.url` as an image address
-     * in one place only: the deprecated chain, where `imageUrlRequest` *fetches* it and hands the
-     * response to `imageUrlParse`. That is correct for a legacy extension and wrong for this one, and
-     * the difference is invisible until a source uses the field for something else. So the loader now
-     * resolves `page.url` before asking, and reports the contract violation instead of spending a
-     * request on a cache key.
+     * **Why this is our bug and not the extension's.** The app used to treat `Page.url` as an image
+     * address in one place: the deprecated chain, where `imageUrlRequest` fetched it and handed the
+     * response to `imageUrlParse`. That was correct for a legacy extension and wrong for this one, and
+     * the difference was invisible until a source used the field for something else. That chain is
+     * gone, and the loader resolves the page's own address before asking — so the contract violation
+     * is reported rather than a request being spent on a cache key.
      *
      * Asserted in both directions, because either half alone would pass while the app is wrong:
      *  - a source that **overrides** `getImageUrl` is still asked, whatever `url` holds, because the
@@ -552,47 +548,17 @@ class HttpPageLoaderUrlResolutionTest {
     }
 
     /**
-     * The three ways to customise the image-URL chain, and each one alone must count.
+     * The one entry point left, and the shape the probe exists to detect.
      *
-     * **Why all three are tested separately.** The gate in `HttpPageLoader` refuses to spend a request
-     * on a `Page.url` that cannot address a host, but only for a source that customises *nothing*.
-     * An earlier version of the capability probe checked `getImageUrl` alone, so a source that
-     * customised the chain through `imageUrlRequest` or `imageUrlParse` — both of which are `open` on
-     * `HttpSource` and both of which MangaDex uses — was mistaken for a plain one and blocked. The
-     * symptom was our own error text appearing for a source that was doing everything correctly.
-     *
-     * Each case below customises exactly one entry point and must be recognised, because a source that
-     * overrides only `imageUrlParse` still needs the app to fetch the page and hand it over.
+     * **What this replaced.** The probe once enumerated four entry points (`getImageUrl`,
+     * `fetchImageUrl`, `imageUrlRequest`, `imageUrlParse`) and each was tested separately, because
+     * missing one reported a customising source as `overrides=none` and refused pages that were
+     * perfectly readable. Three of those four were removed with the 1.4/1.5 ABI, so a source can no
+     * longer declare them and the probe has a single entry point to answer.
      */
-    @Test
-    fun `a source that overrides only imageUrlParse is recognised`() {
-        assertTrue(ParseOnlySource("https://cdn.example.com/1.jpg").capabilities.customisesImageUrlChain)
-    }
-
-    @Test
-    fun `a source that overrides only imageUrlRequest is recognised`() {
-        assertTrue(RequestOnlySource("https://cdn.example.com/1.jpg").capabilities.customisesImageUrlChain)
-    }
-
     @Test
     fun `a source that overrides getImageUrl is recognised`() {
         assertTrue(ModernSource("https://cdn.example.com/1.jpg").capabilities.customisesImageUrlChain)
-    }
-
-    /**
-     * The fourth entry point, and the one the reported failure turned on.
-     *
-     * `fetchImageUrl` replaces the entire chain — no request is built, no response is parsed — so a
-     * source resolving its own addressing reaches for it first. MangaDex does, to read the at-home
-     * cache key it keeps in `Page.url`.
-     *
-     * The probe omitted it, so MangaDex was reported as `overrides=none` and the reader refused pages
-     * that were perfectly readable. A probe that answers "no" for a source that answers "yes" is
-     * worse than no probe: it breaks a working source and does so while sounding confident.
-     */
-    @Test
-    fun `a source that overrides only fetchImageUrl is recognised`() {
-        assertTrue(FetchOnlySource("https://cdn.example.com/1.jpg").capabilities.customisesImageUrlChain)
     }
 
     /** The counterweight: a source that customises nothing is still reported as not customising. */
@@ -604,12 +570,18 @@ class HttpPageLoaderUrlResolutionTest {
         )
     }
 
-    /** The probe and the diagnostic read the same list, so they cannot disagree. */
+    /**
+     * The diagnostic names `getImageUrl` for a source that declares it.
+     *
+     * `imageRequest` is reported too — it remains an override point, and a source that overrides it is
+     * one whose `imageUrl` the host must not interpret — but only `getImageUrl` feeds
+     * `customisesImageUrlChain`.
+     */
     @Test
-    fun `the reported entry points include fetchImageUrl`() {
-        val reported = FetchOnlySource("https://cdn.example.com/1.jpg")
+    fun `the reported entry points include getImageUrl`() {
+        val reported = ModernSource("https://cdn.example.com/1.jpg")
             .capabilities.overriddenChainMethods()
-        assertTrue(reported.contains("fetchImageUrl"), "reported entry points were: $reported")
+        assertTrue(reported.contains("getImageUrl"), "reported entry points were: $reported")
     }
 
     /**
@@ -625,38 +597,6 @@ class HttpPageLoaderUrlResolutionTest {
         private val url: String,
     ) : PlainImageUrlSource(url, null) {
         override suspend fun getImageUrl(page: Page): String = url
-    }
-
-    private class ParseOnlySource(
-        private val url: String,
-    ) : PlainImageUrlSource(url, null) {
-        override fun imageUrlParse(response: Response): String = url
-    }
-
-    private class RequestOnlySource(
-        private val url: String,
-    ) : PlainImageUrlSource(url, null) {
-        override fun imageUrlRequest(page: Page): Request = GET(url, headers)
-    }
-
-    /**
-     * A source that replaces the whole chain by overriding `fetchImageUrl`.
-     *
-     * **This is the shape that was missed, and the reason the reported MangaDex failure happened.**
-     * The capability probe originally listed three entry points and omitted this one, so a source
-     * resolving its own addressing this way was reported as `overrides=none`. The reader then refused
-     * its pages as unreadable — the probe did not merely fail to help, it converted a working source
-     * into a failure and attached a confident diagnostic saying no customisation existed.
-     *
-     * It is the most direct override available: no request is built and no response is parsed, so it
-     * is what a source reaches for when it already knows the address from its own state. MangaDex
-     * does exactly this to read the at-home cache key it keeps in `Page.url`.
-     */
-    private class FetchOnlySource(
-        private val url: String,
-    ) : PlainImageUrlSource(url, null) {
-        @Suppress("DEPRECATION")
-        override fun fetchImageUrl(page: Page): Observable<String> = Observable.just(url)
     }
 
     /**
