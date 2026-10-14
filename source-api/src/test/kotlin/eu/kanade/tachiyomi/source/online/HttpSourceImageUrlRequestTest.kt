@@ -289,4 +289,3 @@ class HttpSourceImageUrlRequestTest {
         override fun pageListParse(response: Response): List<Page> = throw UnsupportedOperationException()
     }
 }
-

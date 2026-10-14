@@ -260,9 +260,10 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
      * Which of the chain entry points this source declares, for a diagnostic.
      *
      * Reported rather than assumed, because "the URL is bad" is true of every malformed URL and
-     * distinguishes nothing. A source that overrides none of them is the one case where the app''s own
-     * chain runs, and therefore the only case where Page.url has to be fetchable — which is what the
-     * reported failure turned on, and what its error message did not say.
+     * distinguishes nothing. The interesting case is a source that overrides `getImageUrl`: the app
+     * asked it and the answer could not address a host, which is a different finding from the app
+     * refusing a value it never asked about. `imageRequest` is reported for the same reason — a
+     * source that overrides it is one whose `Page.imageUrl` the host must not interpret.
      */
     fun overriddenChainMethods(): String =
         CHAIN_ENTRY_POINTS.filter { overrides(it) }.ifEmpty { listOf("none") }.joinToString("+")

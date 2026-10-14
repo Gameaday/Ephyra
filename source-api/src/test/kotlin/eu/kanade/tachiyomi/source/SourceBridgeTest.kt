@@ -172,4 +172,3 @@ class SourceBridgeTest {
             assertEquals("Author 1.6", details.author)
         }
 }
-
