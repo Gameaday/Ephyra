@@ -13,6 +13,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -214,7 +215,7 @@ class FindContentSource(
 
         // First pass: one per provider
         for (match in sorted) {
-            val provider = match.source.name.lowercase()
+            val provider = match.source.name.lowercase(Locale.ROOT)
             if (provider !in seenProviders) {
                 selected.add(match)
                 seenProviders.add(provider)

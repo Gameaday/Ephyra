@@ -47,18 +47,4 @@ object GLUtil {
     }
 
     const val SAFE_TEXTURE_LIMIT: Int = 2048
-
-    val CUSTOM_TEXTURE_LIMIT_OPTIONS: List<Int> by lazy {
-        val steps = DEVICE_TEXTURE_LIMIT / MULTIPLIER
-        buildList(steps) {
-            add(DEVICE_TEXTURE_LIMIT)
-            for (step in steps downTo 2) {
-                val value = step * MULTIPLIER
-                if (value >= DEVICE_TEXTURE_LIMIT) continue
-                add(value)
-            }
-        }
-    }
-
-    private const val MULTIPLIER: Int = 1024
 }

@@ -2,21 +2,15 @@ package ephyra.app.di
 
 import android.app.Application
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.preference.PreferenceManager
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import dev.mihon.injekt.patchInjekt
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.data.cache.CoverCache
-import ephyra.domain.base.BasePreferences
-import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
 import nl.adaptivity.xmlutil.serialization.XML
-import okhttp3.OkHttpClient
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.addSingleton
 import uy.kohesive.injekt.api.addSingletonFactory
@@ -24,16 +18,13 @@ import uy.kohesive.injekt.api.addSingletonFactory
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 interface ExtensionBridgeEntryPoint {
-    // Singletons for legacy extension bridge
-    fun basePreferences(): BasePreferences
-    fun coverCache(): CoverCache
-    fun sourceManager(): SourceManager
+    // Singletons for the legacy extension bridge
     fun networkHelper(): NetworkHelper
-    fun preferenceStore(): PreferenceStore
 
     // Serialization
     fun json(): Json
     fun xml(): XML
+    fun protoBuf(): ProtoBuf
 }
 
 @Deprecated("Use ExtensionBridgeEntryPoint instead.", ReplaceWith("ExtensionBridgeEntryPoint"))
@@ -50,20 +41,20 @@ fun initializeExtensionBridge(context: Context) {
     // Initialize canonical Injekt
     patchInjekt()
 
-    // Register with official Injekt for dynamic extensions
+    // The extension ABI deliberately exposes a minimal set: exactly what a source needs and nothing
+    // else, mirroring upstream Mihon's restriction. Internal singletons — CoverCache, SourceManager,
+    // PreferenceStore, BasePreferences, SharedPreferences and OkHttpClient — are intentionally NOT
+    // registered, so an extension cannot reach app internals it has no business touching.
+    //
+    // `JavaScriptEngine` is part of upstream's allowlist but does not exist in Ephyra yet; an
+    // extension that resolves it will fail to load. That is a known, recorded divergence — see
+    // doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md (WS2).
     Injekt.addSingleton<Context>(appContext)
     Injekt.addSingleton<Application>(appContext as Application)
-    Injekt.addSingletonFactory<SharedPreferences> {
-        PreferenceManager.getDefaultSharedPreferences(appContext)
-    }
     Injekt.addSingletonFactory<NetworkHelper> { entryPoint.networkHelper() }
-    Injekt.addSingletonFactory<OkHttpClient> { entryPoint.networkHelper().client }
-    Injekt.addSingletonFactory<PreferenceStore> { entryPoint.preferenceStore() }
-    Injekt.addSingletonFactory<BasePreferences> { entryPoint.basePreferences() }
-    Injekt.addSingletonFactory<CoverCache> { entryPoint.coverCache() }
-    Injekt.addSingletonFactory<SourceManager> { entryPoint.sourceManager() }
     Injekt.addSingletonFactory<Json> { entryPoint.json() }
     Injekt.addSingletonFactory<XML> { entryPoint.xml() }
+    Injekt.addSingletonFactory<ProtoBuf> { entryPoint.protoBuf() }
 }
 
 @Deprecated("Use initializeExtensionBridge instead.", ReplaceWith("initializeExtensionBridge(context)"))

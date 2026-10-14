@@ -125,6 +125,11 @@ class BrowseSourceViewModel @Inject constructor(
             it.copy(
                 sourceId = sourceId,
                 source = src,
+                // Only trust the resolved source once the source map has finished loading. Until
+                // then `getOrStub` can hand back a placeholder, and the screen must not present
+                // that placeholder as "source not installed" — see the `sourceReady` guard in
+                // `BrowseSourceScreen`.
+                sourceReady = sourceManager.isInitialized.value,
                 listing = resolvedListing,
                 filters = initialFilters,
                 toolbarQuery = query,
@@ -148,6 +153,7 @@ class BrowseSourceViewModel @Inject constructor(
             updateState { current ->
                 current.copy(
                     source = realSrc,
+                    sourceReady = true,
                     filters = if (current.filters.isEmpty()) filters else current.filters,
                 )
             }
@@ -408,6 +414,11 @@ class BrowseSourceViewModel @Inject constructor(
         val listing: Listing = Listing.Popular,
         val sourceId: Long = -1L,
         val source: eu.kanade.tachiyomi.source.Source? = null,
+        /**
+         * True once the source map has finished loading, so [source] can be trusted. Until then a
+         * stub source only means "not loaded yet", not "not installed".
+         */
+        val sourceReady: Boolean = false,
         val filters: FilterList = FilterList(),
         val toolbarQuery: String? = null,
         val dialog: Dialog? = null,

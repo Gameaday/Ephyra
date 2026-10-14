@@ -18,11 +18,16 @@ Conflating them is what produced the reported MangaDex failure. The version says
 
 ## Supported versions
 
-`ExtensionLoader` accepts `1.4`, `1.5` and `1.6`, read from the `tachiyomix.extensionLib` manifest
-key, falling back to a version parsed out of the version name for older APKs. An extension declaring
-anything else is rejected with `LoadFailureReason.UNSUPPORTED_LIB_VERSION` rather than loaded and
-left to fail later - which is the right trade, because a contract we have not implemented is a class
-of failures we cannot predict.
+`ExtensionLoader` accepts **`1.6` only** (`SUPPORTED_LIB_VERSIONS = listOf(1.6)`), read from the
+`tachiyomix.extensionLib` manifest key, falling back to a version parsed out of the version name for
+older APKs. An extension declaring anything else - including `1.4` and `1.5` - is rejected with
+`LoadFailureReason.UNSUPPORTED_LIB_VERSION` rather than loaded and left to fail later, which is the
+right trade, because a contract we have not implemented is a class of failures we cannot predict.
+
+> **Correction (Mihon 0.21.1 alignment).** Earlier revisions of this document said `1.4`, `1.5` and
+> `1.6` were accepted and that keeping the 1.4/1.5 ABI was "correct while we support 1.4 and 1.5".
+> That was stale: the loader has refused pre-1.6 for some time. The dead 1.4/1.5 surface is therefore
+> unreachable and scheduled for removal - see "When upstream finishes the removal" below.
 
 **Adding a version** is a one-line change to `SUPPORTED_LIB_VERSIONS`, but it is not sufficient on
 its own: read the "adopting a new generation" section below first.
@@ -272,8 +277,18 @@ which upstream keeps. MangaDex already populates `Page.imageUrl` (a relative pat
 `imageRequest`; it overrides none of the removed members, which is why it kept working on upstream
 through the removal.
 
-Ephyra's `source-api` keeps the dead chain, which is correct while we support 1.4 and 1.5. When the
-minimum supported version rises, these go **together**:
+> **Verification note (2026-10-12).** The paragraph above has **not been confirmed against upstream
+> `main`**: as of this note, `mihonapp/mihon`'s `source-api/.../HttpSource.kt` still ships
+> `rx.Observable`, `asObservableSuccess`, `awaitSingle`, `imageUrlRequest` and `imageUrlParse`, and
+> its `CHANGELOG.md` `[Unreleased]` section does not mention removing them. Treat "upstream removes
+> them" as a **planned** change, not a landed one, and re-check before acting on it.
+
+Ephyra's `source-api` still carries the dead chain even though the minimum supported version is
+**already 1.6** and no supported extension can reach it. Its removal is a single change, currently
+**pending a build-validated edit**: it touches `SourceApiContractTest`,
+`HttpSourceImageUrlRequestTest`, `MangaDexOpaqueImageUrlContractTest` and
+`HttpPageLoaderUrlResolutionTest`, which all exercise the removed members. When it lands, these go
+**together**:
 
 1. Drop `fetchImageUrl`, `imageUrlRequest`, `imageUrlParse` and the RxJava dependency in one change.
    Keeping some without the others leaves a chain no extension can reach — the state that made the

@@ -3,8 +3,10 @@ package ephyra.feature.webview
 import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.os.Message
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -43,7 +45,9 @@ import com.kevinnzou.web.WebView
 import com.kevinnzou.web.WebViewNavigator
 import com.kevinnzou.web.WebViewState
 import ephyra.core.common.util.system.getHtml
+import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.setDefaultSettings
+import ephyra.core.common.util.system.toast
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
@@ -52,6 +56,7 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
+import logcat.LogPriority
 
 class WebViewWindow(webContent: WebContent, val navigator: WebViewNavigator) {
     var state by mutableStateOf(WebViewState(webContent))
@@ -149,6 +154,17 @@ fun WebViewScreenContent(
                 }
 
                 return false
+            }
+
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                // Not handling it kills the app along with the page
+                logcat(LogPriority.ERROR) {
+                    "WebView renderer gone: crashed=${detail.didCrash()}, " +
+                        "priority=${detail.rendererPriorityAtExit()}, url=$currentUrl"
+                }
+                view.context.toast(ephyra.app.core.common.R.string.information_webview_crashed, Toast.LENGTH_LONG)
+                onNavigateUp()
+                return true
             }
         }
     }

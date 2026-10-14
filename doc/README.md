@@ -54,6 +54,7 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
 | [`PERFORMANCE_BUDGETS.md`](PERFORMANCE_BUDGETS.md) | Resource and frame targets. | Update with budget changes. |
 | [`DOCUMENTATION_GOVERNANCE.md`](DOCUMENTATION_GOVERNANCE.md) | Document states and change protocol. | Update with governance changes. |
 | [`phase2-search-v1-spec.md`](phase2-search-v1-spec.md) | Unified search v1 acceptance spec (Stages B-E). | Delete when search v1 ships. |
+| [`UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`](UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md) | Proposed adoption of upstream Mihon 0.21.1 changes. | Update as workstreams land; delete when the last one does. |
 | [`evidence/`](evidence/) | Retained device-evidence records. | Append-only. |
 
 ## Historical

@@ -61,6 +61,19 @@ class ExtensionManager(
     override val installedExtensionsFlow = installedExtensionMapFlow.mapExtensions(scope)
 
     /**
+     * The authoritative installed-extension map.
+     *
+     * [installedExtensionsFlow] is a derived list updated asynchronously through a `stateIn`
+     * collector, so its `value` can lag a write. This StateFlow's `value` is updated synchronously
+     * on assignment, which lets a consumer that is deciding "have the extensions loaded yet?" read
+     * the loaded set at the exact moment [isInitialized] becomes true instead of the stale empty
+     * one. `AndroidSourceManager` relies on that to avoid publishing a source map that contains
+     * only the local source.
+     */
+    val installedExtensionsState: StateFlow<Map<String, Extension.Installed>> =
+        installedExtensionMapFlow.asStateFlow()
+
+    /**
      * A flat map from source ID → extension package name, derived from [installedExtensionMapFlow].
      * Rebuilt whenever the installed extension list changes; avoids O(n×m) scan in
      * [getExtensionPackage] / [getExtensionPackageAsFlow].
@@ -136,36 +149,43 @@ class ExtensionManager(
      */
     private fun initExtensions() {
         scope.launch {
-            val extensions = extensionLoader.loadExtensions(context)
+            try {
+                val extensions = extensionLoader.loadExtensions(context)
 
-            installedExtensionMapFlow.value = extensions
-                .filterIsInstance<LoadResult.Success>()
-                .associate { it.extension.pkgName to it.extension }
+                installedExtensionMapFlow.value = extensions
+                    .filterIsInstance<LoadResult.Success>()
+                    .associate { it.extension.pkgName to it.extension }
 
-            untrustedExtensionMapFlow.value = extensions
-                .filterIsInstance<LoadResult.Untrusted>()
-                .associate { it.extension.pkgName to it.extension }
+                untrustedExtensionMapFlow.value = extensions
+                    .filterIsInstance<LoadResult.Untrusted>()
+                    .associate { it.extension.pkgName to it.extension }
 
-            // Every recognized-but-broken extension must be visible — never dropped
-            // silently. Display name is derived from the package name since the APK
-            // metadata could not be trusted/parsed.
-            failedExtensionMapFlow.value = extensions
-                .filterIsInstance<LoadResult.Error>()
-                .mapNotNull { result ->
-                    val pkgName = result.pkgName ?: return@mapNotNull null
-                    Extension.Failed(
-                        name = pkgName.substringAfterLast('.'),
-                        pkgName = pkgName,
-                        versionName = "",
-                        versionCode = 0,
-                        libVersion = 0.0,
-                        reason = result.reason,
-                        detail = result.detail,
-                    )
-                }
-                .associateBy { it.pkgName }
-
-            _isInitialized.value = true
+                // Every recognized-but-broken extension must be visible — never dropped
+                // silently. Display name is derived from the package name since the APK
+                // metadata could not be trusted/parsed.
+                failedExtensionMapFlow.value = extensions
+                    .filterIsInstance<LoadResult.Error>()
+                    .mapNotNull { result ->
+                        val pkgName = result.pkgName ?: return@mapNotNull null
+                        Extension.Failed(
+                            name = pkgName.substringAfterLast('.'),
+                            pkgName = pkgName,
+                            versionName = "",
+                            versionCode = 0,
+                            libVersion = 0.0,
+                            reason = result.reason,
+                            detail = result.detail,
+                        )
+                    }
+                    .associateBy { it.pkgName }
+            } catch (e: Throwable) {
+                logcat(LogPriority.ERROR, e) { "Failed to load installed extensions" }
+            } finally {
+                // Always publish readiness. `AndroidSourceManager` waits on this before it marks
+                // the source map complete, so a failed scan must not leave every source unresolved
+                // and presented as "source not installed".
+                _isInitialized.value = true
+            }
         }
     }
 
@@ -294,14 +314,14 @@ class ExtensionManager(
     /**
      * Sets to "installing" status of an extension installation.
      *
-     * @param downloadId The id of the download.
+     * @param pkgName The package name of the extension.
      */
-    fun setInstalling(downloadId: Long) {
-        installer.updateInstallStep(downloadId, InstallStep.Installing)
+    fun setInstalling(pkgName: String) {
+        installer.updateInstallStep(pkgName, InstallStep.Installing)
     }
 
-    fun updateInstallStep(downloadId: Long, step: InstallStep) {
-        installer.updateInstallStep(downloadId, step)
+    fun updateInstallStep(pkgName: String, step: InstallStep) {
+        installer.updateInstallStep(pkgName, step)
     }
 
     /**

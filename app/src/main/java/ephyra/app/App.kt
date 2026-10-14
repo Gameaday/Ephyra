@@ -262,14 +262,10 @@ class App :
                 .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor crashlytics" } }
                 .launchIn(scope)
 
-            basePreferences.hardwareBitmapThreshold().let { preference ->
-                if (!preference.isSet()) preference.set(GLUtil.DEVICE_TEXTURE_LIMIT)
-            }
-
-            basePreferences.hardwareBitmapThreshold().changes()
-                .onEach { ImageUtil.hardwareBitmapThreshold = it }
-                .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor hardware bitmap threshold" } }
-                .launchIn(scope)
+            // The "Custom hardware bitmap threshold" advanced setting was retired in the Mihon
+            // 0.21.1 adoption (WS10): the device's real texture limit is the only value that makes
+            // sense, so it is applied directly instead of being a user-tunable preference.
+            ImageUtil.hardwareBitmapThreshold = GLUtil.DEVICE_TEXTURE_LIMIT
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "Startup reactive binding setup failed" }
         }
@@ -443,6 +439,17 @@ class App :
     override fun onStart(owner: LifecycleOwner) {
         SecureActivityDelegateState.onApplicationStart(securityPreferences)
         restoreImageCacheSize()
+
+        // Prime the content-source map as soon as the app is foregrounded. `SourceManager` builds
+        // its source map asynchronously, and a screen restored after the system killed the process
+        // would otherwise call `getOrStub` before that work had even started, resolve a placeholder
+        // stub, and present it as "source not installed". Constructing the (singleton) manager here
+        // starts the load up front; a screen that still has to wait observes `isInitialized`.
+        try {
+            sourceManagerProvider.get()
+        } catch (e: Throwable) {
+            logcat(LogPriority.WARN, e) { "Failed to prime source manager on foreground" }
+        }
     }
 
     /**
