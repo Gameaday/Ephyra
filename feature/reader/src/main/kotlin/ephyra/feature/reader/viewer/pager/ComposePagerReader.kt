@@ -35,6 +35,7 @@ import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.model.resolveReaderStartIndex
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import ephyra.presentation.reader.ChapterTransition
@@ -86,29 +87,8 @@ fun ComposePagerReader(
         return
     }
 
-    val initialIndex = remember(currentChapterId, items) {
-        val currChapter = chapters?.currChapter
-        if (currChapter?.startFromEnd == true) {
-            val lastPageIdx = items.indexOfLast { it is ReaderPage }
-            if (lastPageIdx != -1) lastPageIdx else (items.size - 1).coerceAtLeast(0)
-        } else if (currChapter?.startingAtBeginning == true) {
-            if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
-        } else {
-            val requested = currChapter?.requestedPage ?: 0
-            val targetPage = currChapter?.pages?.getOrNull(requested)
-            if (targetPage != null) {
-                val idx = items.indexOf(targetPage)
-                if (idx != -1) {
-                    idx
-                } else if (items.firstOrNull() is ChapterTransition.Prev) {
-                    1
-                } else {
-                    0
-                }
-            } else {
-                if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
-            }
-        }
+    val initialIndex = remember(currentChapterId, items, chapters) {
+        resolveReaderStartIndex(items, chapters?.currChapter)
     }
 
     androidx.compose.runtime.key(currentChapterId) {
@@ -117,9 +97,16 @@ fun ComposePagerReader(
             pageCount = { items.size },
         )
 
-        // Handle external page navigation requests (slider scrubbing, d-pad, volume keys)
-        LaunchedEffect(viewer, pagerState) {
+        // Handle external page navigation requests (slider scrubbing, d-pad, volume keys).
+        //
+        // The request is scoped to a chapter because the flow replays its last value: an index
+        // computed against the previous chapter's item list (which includes its transition cards)
+        // must never be replayed into this chapter's pager, where the same index is one page
+        // further in. Ignoring a foreign chapter's request is what keeps "swiping off the
+        // transition" from changing where the next chapter opens.
+        LaunchedEffect(viewer, pagerState, currentChapterId) {
             viewer.targetPageRequest.collect { request ->
+                if (request.chapterId != currentChapterId) return@collect
                 try {
                     if (request.index in 0 until pagerState.pageCount) {
                         if (request.animate) {

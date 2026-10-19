@@ -61,6 +61,7 @@ import ephyra.feature.reader.model.NavigationVector
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
+import ephyra.feature.reader.model.resolveChapterStartRequest
 import ephyra.feature.reader.model.selectNextNavigationItem
 import ephyra.feature.reader.model.selectPreviousNavigationItem
 import ephyra.feature.reader.viewer.Viewer
@@ -256,19 +257,32 @@ class ReaderViewModel @Inject constructor(
             .distinctUntilChanged()
             .filterNotNull()
             .onEach { currentChapter ->
-                if (!hasAppliedSavedPageIndex && chapterPageIndex >= 0) {
-                    // Restore from SavedState
-                    currentChapter.requestedPage = chapterPageIndex
-                    // Apply the saved page index only once on restore, then keep the persisted
-                    // value in sync with real progress via onPageSelected().
-                    hasAppliedSavedPageIndex = true
-                } else if (!currentChapter.startingAtBeginning && !currentChapter.startFromEnd &&
-                    !currentChapter.chapter.read && currentChapter.chapter.lastPageRead > 0
-                ) {
-                    currentChapter.requestedPage = currentChapter.chapter.lastPageRead.toInt()
-                }
+                val startRequest = resolveChapterStartRequest(
+                    chapterId = currentChapter.chapter.id,
+                    chapterRead = currentChapter.chapter.read,
+                    lastPageRead = currentChapter.chapter.lastPageRead,
+                    startingAtBeginning = currentChapter.startingAtBeginning,
+                    startFromEnd = currentChapter.startFromEnd,
+                    savedChapterId = chapterId,
+                    savedPageIndex = chapterPageIndex,
+                    savedRestoreApplied = hasAppliedSavedPageIndex,
+                )
+                startRequest.requestedPage?.let { currentChapter.requestedPage = it }
+                // The restore decision is made for the first chapter that resolves — whether or not
+                // there was an index to restore — so a later chapter can never be mistaken for the
+                // restored one. Progress stays synchronized through onPageSelected().
+                hasAppliedSavedPageIndex = startRequest.savedRestoreResolved
                 chapterId = currentChapter.chapter.id
                 trackReadingWindow(currentChapter.chapter)
+
+                // The indicator and slider describe the *current* chapter. Carrying the previous
+                // chapter's number across a boundary is how a fresh chapter could present as
+                // "page 2" while nothing had reported a page yet (the pager was still showing the
+                // transition card). Clear it until the first page selection reports the real
+                // position; the indicator is hidden at 0 rather than showing a stale number.
+                updateState { current ->
+                    if (current.currentPage == 0) current else current.copy(currentPage = 0)
+                }
             }
             .launchIn(viewModelScope)
     }

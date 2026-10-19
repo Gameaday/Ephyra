@@ -313,6 +313,31 @@ class ViewerNavigationTest {
     }
 
     @Test
+    fun `page requests carry the chapter that produced them`() = runTest(testDispatcher) {
+        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+        val first = createViewerChapters(chapterId = 1L, pageCount = 4)
+        viewer.setChapters(first)
+
+        val requests = mutableListOf<ephyra.feature.reader.viewer.pager.PagerViewer.TargetPage>()
+        backgroundScope.launch {
+            viewer.targetPageRequest.collect { requests.add(it) }
+        }
+
+        viewer.moveToNext()
+        assertEquals(1L, requests.last().chapterId)
+
+        // Replace the chapter the way ReaderViewModel does on a transition. The next request must
+        // describe the new chapter, so the replay cache cannot be mistaken for its position.
+        val second = createViewerChapters(chapterId = 2L, pageCount = 4, prevChapterId = 1L)
+        second.currChapter.startingAtBeginning = true
+        viewer.setChapters(second)
+
+        assertEquals(2L, requests.last().chapterId)
+        viewer.moveToNext()
+        assertEquals(2L, requests.last().chapterId)
+    }
+
+    @Test
     fun `PagerViewer startingAtBeginning always positions at first page even with previous lastPageRead`() = runTest(
         testDispatcher,
     ) {

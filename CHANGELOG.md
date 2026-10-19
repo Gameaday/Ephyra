@@ -41,6 +41,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `source-api/src/main`) and `ExtensionLoaderVersionTest` (`SUPPORTED_LIB_VERSIONS = listOf(1.6)`).
 
 ### 🧩 Fixes
+- **Chapters start at the first page again.** The reader addressed content by *item* index — the
+  chapter's pages plus a `ChapterTransition.Prev` before them and a `ChapterTransition.Next` after
+  them — but derived "start at the beginning" from a fixed offset (`item 1`). That holds only while
+  the list is exactly `[Prev, page0, …]`; with a hidden leading page it lands on the second page,
+  and before the page list arrives `[Prev, Next]` makes index 1 the *end-of-chapter* card, which is
+  how a forward transition could continue straight into the following chapter. Both Compose readers
+  now resolve the first displayed page object through `resolveReaderStartIndex` instead. Three
+  related leaks are closed: `TargetPage` requests carry their chapter id, so the flow's replayed
+  item index can no longer be applied to a different chapter's list (the transition "affecting the
+  numbers" when swiping off it); `ChapterTransition` no longer treats `Prev(N, N+1)` and
+  `Next(N+1, N)` as equal, which made `items.indexOf` resolve the opposite transition after a
+  boundary and broke the equals/hashCode contract; and `ReaderViewModel` only restores a saved page
+  index into the chapter that was saved, instead of writing the previous chapter's live progress
+  into the next chapter's start position (and clears the page indicator across a chapter boundary so
+  a stale "2 / 40" is never shown). Policies and contracts are pinned by
+  `ReaderStartPositionTest`, `ChapterStartPolicyTest` and `ChapterTransitionEqualityTest`.
 - **Samsung Android 9–11 launch crash guarded** (WS9): `MainActivity.reportFullyDrawn()` now catches
   the `SecurityException` some Samsung builds throw from the platform's fully-drawn broadcast.
   Mirrors upstream `abb126ad`.

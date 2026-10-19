@@ -56,7 +56,18 @@ abstract class PagerViewer(
     private val _itemsState = MutableStateFlow<List<Any>>(emptyList())
     val itemsState = _itemsState.asStateFlow()
 
-    data class TargetPage(val index: Int, val animate: Boolean = false)
+    /**
+     * A request to settle the pager on [index] of the item list belonging to [chapterId].
+     *
+     * The flow replays its latest value, so the chapter id is what keeps a request emitted for one
+     * chapter from being applied to another: item indices include the chapter-transition cards and
+     * therefore mean different pages in a different chapter's list.
+     */
+    data class TargetPage(
+        val chapterId: Long,
+        val index: Int,
+        val animate: Boolean = false,
+    )
 
     // Conflated to the newest value, deliberately.
     //
@@ -236,7 +247,11 @@ abstract class PagerViewer(
             pendingTargetIndex = null
             currentPage = page
             _targetPageRequest.tryEmit(
-                TargetPage(position, animate = config.sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH),
+                TargetPage(
+                    chapterId = page.chapter.chapter.id,
+                    index = position,
+                    animate = config.sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH,
+                ),
             )
         } else {
             logcat { "Page $page not found in items list" }
@@ -248,8 +263,13 @@ abstract class PagerViewer(
         val count = _itemsState.value.size
         if (current < count - 1) {
             val next = current + 1
-            pendingTargetIndex = next
-            _targetPageRequest.tryEmit(TargetPage(next, animate = config.usePageTransitions))
+            val chapterId = currentChapterId()
+            if (chapterId != null) {
+                pendingTargetIndex = next
+                _targetPageRequest.tryEmit(
+                    TargetPage(chapterId, next, animate = config.usePageTransitions),
+                )
+            }
         } else if (count > 0 && current >= count - 1) {
             pendingTargetIndex = null
             onNextChapter?.invoke()
@@ -260,12 +280,32 @@ abstract class PagerViewer(
         val current = stepOriginIndex()
         if (current > 0) {
             val prev = current - 1
-            pendingTargetIndex = prev
-            _targetPageRequest.tryEmit(TargetPage(prev, animate = config.usePageTransitions))
+            val chapterId = currentChapterId()
+            if (chapterId != null) {
+                pendingTargetIndex = prev
+                _targetPageRequest.tryEmit(
+                    TargetPage(chapterId, prev, animate = config.usePageTransitions),
+                )
+            }
         } else if (current <= 0) {
             pendingTargetIndex = null
             onPreviousChapter?.invoke()
         }
+    }
+
+    /**
+     * The chapter the currently displayed item belongs to.
+     *
+     * A [ChapterTransition] belongs to the chapter it leaves ([ChapterTransition.from]), which is
+     * the chapter on screen. Every page request is scoped to this id because the target flow
+     * replays its last value: an item index produced against one chapter's item list — which
+     * includes its transition cards — must never be applied to another chapter's list, where the
+     * same index addresses a different page.
+     */
+    private fun currentChapterId(): Long? = when (val item = currentPage) {
+        is ReaderPage -> item.chapter.chapter.id
+        is ChapterTransition -> item.from.chapter.id
+        else -> _chaptersState.value?.currChapter?.chapter?.id
     }
 
     open fun moveRight() {

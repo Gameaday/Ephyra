@@ -88,6 +88,7 @@ import ephyra.domain.reader.media.toPageImageFormat
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.model.resolveReaderStartIndex
 import ephyra.feature.reader.viewer.ChapterPositionTracker
 import ephyra.feature.reader.viewer.ReaderPageErrorView
 import ephyra.feature.reader.viewer.ReaderPageLoadingView
@@ -160,29 +161,8 @@ fun ComposeWebtoonReader(
         return
     }
 
-    val initialIndex = remember(currentChapterId, items) {
-        val currChapter = chapters?.currChapter
-        if (currChapter?.startFromEnd == true) {
-            val lastPageIdx = items.indexOfLast { it is ReaderPage }
-            if (lastPageIdx != -1) lastPageIdx else (items.size - 1).coerceAtLeast(0)
-        } else if (currChapter?.startingAtBeginning == true) {
-            if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
-        } else {
-            val requested = currChapter?.requestedPage ?: 0
-            val targetPage = currChapter?.pages?.getOrNull(requested)
-            if (targetPage != null) {
-                val idx = items.indexOf(targetPage)
-                if (idx != -1) {
-                    idx
-                } else if (items.firstOrNull() is ChapterTransition.Prev) {
-                    1
-                } else {
-                    0
-                }
-            } else {
-                if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
-            }
-        }
+    val initialIndex = remember(currentChapterId, items, chapters) {
+        resolveReaderStartIndex(items, chapters?.currChapter)
     }
 
     val isCurrentChapterDownloaded = remember(chapters) {
