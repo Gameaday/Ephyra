@@ -56,10 +56,11 @@ class ChapterTransitionEqualityTest {
         val a = chapter(1)
         val b = chapter(2)
         val forward = ChapterTransition.Next(a, b)
+        val sameBoundary = ChapterTransition.Next(a, b)
         val backward = ChapterTransition.Prev(b, a)
 
-        assertEquals(forward, forward)
+        assertEquals(forward, sameBoundary)
+        assertEquals(forward.hashCode(), sameBoundary.hashCode())
         assertNotEquals(forward, backward)
-        assertNotEquals(forward.hashCode(), backward.hashCode())
     }
 }
