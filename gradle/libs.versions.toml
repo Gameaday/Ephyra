@@ -21,7 +21,7 @@ hilt = "2.60.1"
 ksp = "2.3.12"
 room = "2.8.5"
 media3 = "1.11.1"
-paging = "3.5.1"
+paging = "3.5.3"
 injekt = "1.16.1"
 
 
