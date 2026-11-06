@@ -66,7 +66,6 @@ import ephyra.data.chapter.ChapterRepositoryImpl
 import ephyra.data.content.ContentDatabaseImpl
 import ephyra.data.content.ContentRepositoryImpl
 import ephyra.data.content.ContentUnitRepositoryImpl
-import ephyra.data.content.merge.OpportunisticMergeManager
 import ephyra.data.history.HistoryRepositoryImpl
 import ephyra.data.manga.ExcludedScanlatorRepositoryImpl
 import ephyra.data.manga.MangaRepositoryImpl
@@ -81,13 +80,11 @@ import ephyra.data.room.daos.ExtensionRepoDao
 import ephyra.data.room.daos.HistoryDao
 import ephyra.data.room.daos.MangaDao
 import ephyra.data.room.daos.SourceDao
-import ephyra.data.room.daos.SourceProfileDao
 import ephyra.data.room.daos.TrackDao
 import ephyra.data.room.daos.UpdateDao
 import ephyra.data.saver.ImageSaverImpl
 import ephyra.data.source.SourceRepositoryImpl
 import ephyra.data.source.StubSourceRepositoryImpl
-import ephyra.data.sourcing.RoomSourceProfileStore
 import ephyra.data.track.TrackRepositoryImpl
 import ephyra.data.track.TrackerManagerImpl
 import ephyra.data.track.TrackingServiceImpl
@@ -125,10 +122,6 @@ import ephyra.domain.content.interactor.GetContentUnits
 import ephyra.domain.content.repository.ContentDatabase
 import ephyra.domain.content.repository.ContentRepository
 import ephyra.domain.content.repository.ContentUnitRepository
-import ephyra.domain.content.source.ContentSourceEngine
-import ephyra.domain.content.source.ContentSourceOrchestrator
-import ephyra.domain.content.source.RemoteSource
-import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.download.interactor.DeleteDownload
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.extension.interactor.GetExtensionLanguages
@@ -364,10 +357,6 @@ object AppModule {
     @Singleton
     fun provideExcludedScanlatorDao(database: EphyraDatabase) = database.excludedScanlatorDao()
 
-    @Provides
-    @Singleton
-    fun provideSourceProfileDao(database: EphyraDatabase) = database.sourceProfileDao()
-
     // 3. Shared Preferences Providers
     @Provides
     @Singleton
@@ -457,61 +446,11 @@ object AppModule {
         preferenceStore: PreferenceStore,
     ) = BasePreferences(capabilityProvider, preferenceStore)
 
-    // 4. Content Source Engine & Orchestrator Providers
-
-    @Provides
-    @Singleton
-    fun provideSourceProfileCache(
-        sourceProfileDao: SourceProfileDao,
-        json: Json,
-    ): SourceProfileCache =
-        SourceProfileCache(RoomSourceProfileStore(sourceProfileDao, json))
-
-    @Provides
-    @Singleton
-    fun provideOpportunisticMergeManager(): OpportunisticMergeManager =
-        OpportunisticMergeManager()
-
-    /**
-     * The engine set the orchestrator resolves against — currently **empty**.
-     *
-     * The heuristic engine was removed (`ADR-0015`) and it was the only one bound, so there is
-     * deliberately nothing here until Jellyfin lands. That is a normal state rather than a
-     * misconfiguration, and two things make it safe:
-     *
-     * - Extension-APK sources never consult the orchestrator. `AndroidSourceManager` registers them
-     *   straight from the installed extensions; only *profiled* domains went through the profile path,
-     *   and the heuristic engine was the only thing that ever created a profile.
-     * - With no engine bound, the orchestrator raises `NoEngineBoundException` naming the unbound type
-     *   rather than substituting a substitute. A missing binding must be legible, not silently routed.
-     *
-     * Built as an explicit provider rather than `@IntoSet` because this project's KSP/Dagger setup
-     * does not honour the multibinding annotation on an `object` module — it generates the per-method
-     * factory but never wires a set binding. Adding Jellyfin means adding one line here; the
-     * orchestrator does not change.
-     */
-    @Provides
-    @Singleton
-    fun provideContentSourceEngines(): List<ContentSourceEngine> = emptyList()
-
-    @Provides
-    @Singleton
-    fun provideContentSourceOrchestrator(
-        profileCache: SourceProfileCache,
-        // `@JvmSuppressWildcards` is load-bearing, not decorative. Kotlin erases `List<ContentSourceEngine>`
-        // to `List<? extends ContentSourceEngine>` at the injection site, so this parameter's key
-        // differs by exactly that wildcard from `provideContentSourceEngines`'s key and Dagger reports
-        // the binding as missing. Suppressing it on the type makes both sides agree.
-        engines: @JvmSuppressWildcards List<ContentSourceEngine>,
-        preferenceStore: PreferenceStore,
-    ): ContentSourceOrchestrator =
-        ContentSourceOrchestrator(profileCache, engines, preferenceStore)
-
-    @Provides
-    @Singleton
-    fun provideRemoteSource(
-        orchestrator: ContentSourceOrchestrator,
-    ): RemoteSource = orchestrator
+    // 4. (removed) Content source engine & orchestrator providers
+    // ADR-0017 deleted the profile path these served: the profile cache, the orchestrator,
+    // the RemoteSource alias and the (always-empty) engine set all went with it. Extension
+    // sources never consulted them; the Jellyfin engine will bring its own wiring when it
+    // lands (see doc/adr/0017-delete-the-unreachable-profile-path.md).
 
     // 5. Shared Core Services & Managers
     @Provides
@@ -592,9 +531,6 @@ object AppModule {
         localSourceFileSystem: LocalSourceFileSystem,
         localCoverManager: LocalCoverManager,
         downloadManagerProvider: Provider<DownloadManager>,
-        orchestratorProvider: Provider<ContentSourceOrchestrator>,
-        profileCache: SourceProfileCache,
-        preferenceStore: PreferenceStore,
         json: Json,
         xml: XML,
     ): SourceManager = AndroidSourceManager(
@@ -604,9 +540,6 @@ object AppModule {
         fileSystem = localSourceFileSystem,
         coverManager = localCoverManager,
         downloadManagerProvider = downloadManagerProvider,
-        orchestratorProvider = orchestratorProvider,
-        profileCache = profileCache,
-        preferenceStore = preferenceStore,
         json = json,
         xml = xml,
     )
@@ -1205,7 +1138,6 @@ object AppModule {
         getTracks: GetTracks,
         insertTrack: InsertTrack,
         coverCache: ephyra.domain.manga.service.CoverCache,
-        orchestrator: ephyra.domain.content.source.ContentSourceOrchestrator,
     ) = MigrateMangaUseCase(
         sourcePreferences,
         trackerManager,
@@ -1220,7 +1152,6 @@ object AppModule {
         getTracks,
         insertTrack,
         coverCache,
-        orchestrator,
     )
 
     @Provides

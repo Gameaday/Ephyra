@@ -61,6 +61,9 @@ class GlobalSearchViewModelTest {
         every { changes() } returns flowOf(false)
     }
 
+    // Use a MutableStateFlow for the library flow so it never completes (real getLibraryManga.subscribe() is infinite)
+    private val libraryFlow = MutableStateFlow(emptyList<LibraryManga>())
+
     private lateinit var viewModel: GlobalSearchViewModel
 
     @BeforeEach
@@ -71,7 +74,7 @@ class GlobalSearchViewModelTest {
         every { sourcePreferences.disabledSources() } returns disabledSourcesPref
         every { sourcePreferences.pinnedSources() } returns pinnedSourcesPref
         every { sourcePreferences.globalSearchFilterState() } returns filterStatePref
-        every { getLibraryManga.subscribe() } returns flowOf(emptyList())
+        every { getLibraryManga.subscribe() } returns libraryFlow
         every { recentSearches.get() } returns listOf("One Piece", "Naruto")
 
         viewModel = GlobalSearchViewModel(
@@ -147,7 +150,7 @@ class GlobalSearchViewModelTest {
             chapterFetchedAt = 0L,
             lastRead = 0L,
         )
-        every { getLibraryManga.subscribe() } returns flowOf(listOf(libraryManga))
+        libraryFlow.value = listOf(libraryManga)
 
         viewModel.libraryMatches.test {
             // Query is blank -> no library matches (section is hidden).

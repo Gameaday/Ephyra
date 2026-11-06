@@ -5,47 +5,19 @@ import org.junit.jupiter.api.Test
 import java.io.File
 
 /**
- * Structural gate for `ADR-0013`: adding a source type must not require editing the orchestrator.
+ * Structural gate for the persisted `SourceType` name list.
  *
- * **What the coupling was.** Engine selection lived in an exhaustive `when` over `SourceType` inside
- * `ContentSourceOrchestrator`. Every source type added since had to be remembered by that branch, and
- * forgetting failed silently: an unmatched type fell through to the heuristic engine, so a Jellyfin
- * profile would be "configured" and quietly scraped as HTML, returning nothing.
- *
- * Selection is now a registry — each engine declares the types it serves via
- * `ContentSourceEngine.handles`. The behavioural half is covered by `ContentSourceOrchestratorTest`
- * (an unbound type falls back visibly). What is left to assert here is the thing a behaviour test
- * cannot see: that nobody has reintroduced the exhaustive branch.
- *
- * **What it does not claim.** It does not prove Jellyfin works. It proves that adding Jellyfin does
- * not require touching the orchestrator.
+ * `fromString` parses a string an install may have persisted years ago, so an unrecognised value
+ * cannot fail loudly — it falls back to `REMOTE_EXTENSION`, meaning an install that had a type
+ * configured would silently change behaviour after a rename. Every declared enum name is therefore
+ * asserted present in `fromString`, and the retired names (`ADR-0013`, `ADR-0015`) are pinned to
+ * still map to a live type while staying out of the enum body.
  */
 class SourceTypeRegistryStructuralTest {
 
     @Test
-    fun `the orchestrator does not switch exhaustively over source types`() {
-        val text = code(ORCHESTRATOR)
-
-        val exhaustiveSwitch = Regex("""when\s*\(\s*[\w.]*sourceType[\w.]*\s*\)""")
-        assertTrue(
-            !exhaustiveSwitch.containsMatchIn(text),
-            "ContentSourceOrchestrator must resolve engines through the registry " +
-                "(ContentSourceEngine.handles), not a `when` over SourceType. A new source type has " +
-                "to be additive: an arm nobody remembers to write fails silently by falling through " +
-                "to the heuristic engine.",
-        )
-    }
-
-    /**
-     * `fromString` is the other exhaustive list, and the more dangerous one.
-     *
-     * It parses a persisted string, so an unrecognised value cannot fail loudly — it falls back to
-     * `HEURISTIC`, meaning an install that had a type configured would silently start scraping it as
-     * HTML after a rename. Every declared name is therefore asserted present.
-     */
-    @Test
     fun `every declared source type is handled by fromString`() {
-        val text = code(SOURCE_PROFILE)
+        val text = code(SOURCE_TYPE)
 
         val enumBody = text.substringAfter("enum class SourceType").substringBefore("companion object")
         val declared = Regex("""^\s{4}([A-Z][A-Z_]+),?\s*$""", RegexOption.MULTILINE)
@@ -62,8 +34,8 @@ class SourceTypeRegistryStructuralTest {
         declared.forEach { name ->
             assertTrue(
                 fromString.contains("\"$name\""),
-                "SourceType.$name is declared but absent from fromString, so a profile persisted " +
-                    "with it would resolve to HEURISTIC instead of itself",
+                "SourceType.$name is declared but absent from fromString, so a persisted value " +
+                    "would resolve to REMOTE_EXTENSION instead of itself",
             )
         }
     }
@@ -78,7 +50,7 @@ class SourceTypeRegistryStructuralTest {
      */
     @Test
     fun `retired source-type names map to a live source type`() {
-        val text = code(SOURCE_PROFILE)
+        val text = code(SOURCE_TYPE)
 
         val fromString = text.substringAfter("fun fromString").substringBefore("}")
         // The retired names share one `when` branch with the live ones, so the check is that each is
@@ -106,28 +78,6 @@ class SourceTypeRegistryStructuralTest {
         }
     }
 
-    /**
-     * The registry must not become decorative.
-     *
-     * The plausible regression is restoring the `when` while leaving the registry in place: it
-     * compiles, and every test that only exercises the heuristic path still passes while the registry
-     * does nothing. Asserting the map is actually read catches that.
-     */
-    @Test
-    fun `engine selection reads the registry rather than deciding inline`() {
-        val text = code(ORCHESTRATOR)
-
-        assertTrue(
-            text.contains("enginesByType[profile.sourceType]"),
-            "resolveEngineForProfile must look the type up in the registry it was given",
-        )
-        assertTrue(
-            text.contains("engine.handles"),
-            "the registry must be built from each engine's own declaration, not a list held in the " +
-                "orchestrator — otherwise the two can disagree about what serves what",
-        )
-    }
-
     private fun code(path: String): String {
         val candidates = sequenceOf(
             File(System.getProperty("user.dir"), path),
@@ -139,9 +89,7 @@ class SourceTypeRegistryStructuralTest {
     }
 
     private companion object {
-        const val ORCHESTRATOR =
-            "core/domain/src/main/java/ephyra/domain/content/source/ContentSourceOrchestrator.kt"
-        const val SOURCE_PROFILE =
-            "core/domain/src/main/java/ephyra/domain/content/source/SourceProfile.kt"
+        const val SOURCE_TYPE =
+            "core/domain/src/main/java/ephyra/domain/content/source/SourceType.kt"
     }
 }

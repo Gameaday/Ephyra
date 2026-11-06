@@ -31,8 +31,8 @@ dependencies {
     // AndroidX DataStore for preference-backed stores
     implementation(libs.datastore)
     // Explicit fallbacks in case version catalog alias doesn't resolve in this module
-    implementation("androidx.datastore:datastore-preferences:1.2.1")
-    implementation("androidx.datastore:datastore-core:1.2.1")
+    implementation("androidx.datastore:datastore-preferences:1.3.0")
+    implementation("androidx.datastore:datastore-core:1.3.0")
 
     implementation(kotlinx.bundles.serialization)
 

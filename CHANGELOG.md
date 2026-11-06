@@ -41,6 +41,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `source-api/src/main`) and `ExtensionLoaderVersionTest` (`SUPPORTED_LIB_VERSIONS = listOf(1.6)`).
 
 ### 🧩 Fixes
+- **Resuming from another app no longer crashes the reader mid-retry.** The recovery ladder's
+  replacement-address fetch — a fresh page list, taken when a page's failure indicted its URL —
+  ran unguarded from inside `HttpPageLoader.internalLoadPage`'s `catch` block. Right after the
+  app returns from the background, DNS is often not ready again yet, so the image request failed
+  with `UnknownHostException` **and so did the replacement fetch** (`Unable to resolve host
+  "api.mangadex.org"`), and a throw from a `catch` block escapes the retry loop and its worker
+  coroutine (a standalone coroutine with no `CoroutineExceptionHandler`), killing the process —
+  `StartupFailureActivity` then presented the crash on the next launch. The fetch now goes
+  through `FreshPageAddresses.atOrNull`, the guarded form: a page that cannot get a replacement
+  is left address-less and still flagged, and the ladder's own decision still runs — a GIVE_UP
+  surfaces the failure that actually stopped the page (the image request, not the replacement
+  machinery) and a retry re-asks the source for a fresh list once the network is back.
+  `loadPage`'s proactive fetch of the same list was already guarded; the ladder's was the one
+  unguarded call site. Guarded by `HttpPageLoaderFreshAddressFailureTest`.
+- **Chapters start at the first page again.** The reader addressed content by *item* index — the
+  chapter's pages plus a `ChapterTransition.Prev` before them and a `ChapterTransition.Next` after
+  them — but derived "start at the beginning" from a fixed offset (`item 1`). That holds only while
+  the list is exactly `[Prev, page0, …]`; with a hidden leading page it lands on the second page,
+  and before the page list arrives `[Prev, Next]` makes index 1 the *end-of-chapter* card, which is
+  how a forward transition could continue straight into the following chapter. Both Compose readers
+  now resolve the first displayed page object through `resolveReaderStartIndex` instead. Three
+  related leaks are closed: `TargetPage` requests carry their chapter id, so the flow's replayed
+  item index can no longer be applied to a different chapter's list (the transition "affecting the
+  numbers" when swiping off it); `ChapterTransition` no longer treats `Prev(N, N+1)` and
+  `Next(N+1, N)` as equal, which made `items.indexOf` resolve the opposite transition after a
+  boundary and broke the equals/hashCode contract; and `ReaderViewModel` only restores a saved page
+  index into the chapter that was saved, instead of writing the previous chapter's live progress
+  into the next chapter's start position (and clears the page indicator across a chapter boundary so
+  a stale "2 / 40" is never shown). Policies and contracts are pinned by
+  `ReaderStartPositionTest`, `ChapterStartPolicyTest` and `ChapterTransitionEqualityTest`.
 - **Samsung Android 9–11 launch crash guarded** (WS9): `MainActivity.reportFullyDrawn()` now catches
   the `SecurityException` some Samsung builds throw from the platform's fully-drawn broadcast.
   Mirrors upstream `abb126ad`.
@@ -65,9 +95,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Pager realignment locked** (WS7): a structural gate asserts `ComposePagerReader` re-seeks to the
   current item's new index whenever the item list shifts.
 - **Obsolete “Custom hardware bitmap threshold” setting retired** (WS10): the preference, its
-  advanced-settings row and the option list are removed; the device texture limit is applied directly.
+  advanced-settings row and the option list are removed; the device texture limit is applied directly.- **Source existence and identity have one owner, so an entry stops orphaning the moment a
+  URL's spelling changes.** `SRC-011` (`ADR-0012`) closes the mechanism behind `DEF-029`: a new
+  `SourceRegistry` is the only reader of the profiled-domains preference, and identity is derived
+  once, from the canonical origin (`SourceOriginPolicy`/`SourceIdentityPolicy`) instead of each
+  component hashing whatever spelling it happened to see. `DynamicHttpSource`, the Sources list
+  and the source map now agree by construction; a spelling change resolves as `SpellingChanged`
+  naming the claiming origin instead of an unexplained "source not registered"; health failures
+  degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
+  a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🗑️ Deleted (D1 executes `ADR-0017` — the profile path is gone)
 
+- **The unreachable custom-source profile path is deleted, not deprecated.** `ADR-0017` recorded
+  that the profile pipeline could not execute — nothing creates a profile since the UI stopped
+  offering custom sources — and `SRC-011` completed its precondition by giving source existence
+  and identity one owner: every consumer now projects from `SourceRegistry`, so the residual
+  profile code was strictly dead. Deleted in full: `SourceProfile`, `SourceProfileCache`,
+  `SourceProfileStore`, `RoomSourceProfileStore`, the Room `SourceProfileEntity` and
+  `SourceProfileDao` (database version 5; `MIGRATION_4_5` drops the `source_profiles` table),
+  `RemoteSource`, `ContentSourceOrchestrator`, `DynamicHttpSource`, `SourceIdentityPolicy`,
+  `MigrationCandidate`, the `UpdateCustomSource` and `RemoveCustomSource` interactors, and their
+  tests. **What survives, and why:** `SourceType` moves to its own file with the retired
+  `fromString` aliases intact so persisted spellings stay readable; `ContentSourceEngine` remains
+  as the profile-free engine contract `SRC-012` targets; `SourceOriginPolicy` and its test stay,
+  because the canonical origin is how the registry derives identity. Consumers shrank with the
+  deletion: `GetAvailableSources` is `combine(catalogueSources, installedExtensionsFlow)`,
+  `AndroidSourceManager` derives readiness from the extension flow and
+  `ExtensionManager.isInitialized`, and `MigrateMangaUseCase` syncs chapters only through
+  resolvable `CatalogueSource`s — an unresolvable source syncs no chapters, by test. **Stated
+  openly:** the `DEF-029` ledger row is deleted with the code it described, and its
+  device-reproduction obligation dies with it; per `ADR-0017` the defect's mechanism is closed at
+  E2 and no shipped path can trigger it again.
 
 ### 🧯 Extension Compatibility (critical fix)
 - **MangaDex 1.6 could not load any pages**: the reader's `HttpPageLoader.internalLoadPage` resolved a populated `Page.imageUrl` against the source's `baseUrl` and wrote the result back before fetching, and `resolvePageImage` did the same in its populated branch (so `Downloader`'s retry path inherited the corruption). A real MangaDex extension stores a **relative path** in `Page.imageUrl` (`/data/<hash>/<file>`) and an MD@Home cache key in `Page.url`, and its own overridden `imageRequest` joins them at request time (`GET(mdAtHomeServerUrl + page.imageUrl)`). The host-side rewrite turned every request into `<at-home-host>https://mangadex.org/data/...` — two URLs spliced into a host that can never resolve — so **every page of every chapter failed identically**, presenting as a DNS error (`Unable to resolve host "…mangadex.network,https"`). The recovery ladder could not escape it: a fresh page list restored a fresh relative address that was immediately rewritten again. Fixed by treating a populated `Page.imageUrl` as opaque to the host, exactly as upstream Mihon does: `ResolvedImageUrl.opaque(...)` passes it through untouched (`resolvePageImage`), and the loader no longer rewrites the field — the disk-cache key and the request are the raw string the source produced, while the base `HttpSource.imageRequest` still resolves at the request boundary where a source override inherits nothing by design. Guarded by `MangaDexOpaqueImageUrlContractTest` (a source shaped like the real extension: relative `imageUrl`, at-home cache key, overridden `imageRequest`) and by structural gates in `PageLoadRecoveryStructuralTest`. Documented in `doc/EXTENSION_COMPATIBILITY.md` under "`Page.imageUrl` is opaque to the host once populated", including the general rule: never write an interpretation back into an extension-owned field that the extension is still going to read.

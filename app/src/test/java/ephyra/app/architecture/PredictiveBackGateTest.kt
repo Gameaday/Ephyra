@@ -279,7 +279,7 @@ class PredictiveBackGateTest {
      * `test` is pruned because a test double is not production motion.
      */
     private fun allMainSources(): List<File> {
-        val root = File(ephyra.app.security.TrackedFileNames.repositoryRoot())
+        val root = ephyra.app.security.TrackedFileNames.repositoryRoot()
         assertTrue(root.exists(), "repository root not found: $root")
         return root.walkTopDown()
             .onEnter { it.name != "build" && it.name != ".git" && it.name != "test" }

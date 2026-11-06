@@ -3,16 +3,12 @@ package eu.kanade.tachiyomi.source
 import android.content.Context
 import ephyra.app.extension.ExtensionManager
 import ephyra.core.common.i18n.stringResource
-import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.system.logcat
 import ephyra.core.download.DownloadManager
-import ephyra.domain.content.source.ContentSourceOrchestrator
-import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.StubSourceRepository
 import ephyra.domain.source.service.SourceManager
 import ephyra.source.local.LocalSource
-import eu.kanade.tachiyomi.source.online.DynamicHttpSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,9 +34,6 @@ internal class AndroidSourceManager(
     private val fileSystem: ephyra.source.local.io.LocalSourceFileSystem,
     private val coverManager: ephyra.source.local.image.LocalCoverManager,
     private val downloadManagerProvider: Provider<DownloadManager>,
-    private val orchestratorProvider: Provider<ContentSourceOrchestrator>,
-    private val profileCache: SourceProfileCache,
-    private val preferenceStore: PreferenceStore,
     private val json: Json,
     private val xml: XML,
 ) : SourceManager {
@@ -59,23 +52,14 @@ internal class AndroidSourceManager(
     }
 
     init {
-        val heuristicProfilesFlow = preferenceStore.getStringSet("profiled_domains_list", emptySet())
-            .changes()
-            .map { domains ->
-                domains.mapNotNull { domain ->
-                    profileCache.get(domain)
-                }
-            }
-
         scope.launch {
             kotlinx.coroutines.flow.combine(
                 // Collected (not just read) so the derived `installedExtensionsFlow` state stays
                 // fresh for its `.value` readers (diagnostics, crash logs, search). The loaded set
                 // itself is read from the authoritative map below, which updates synchronously.
                 extensionManager.installedExtensionsFlow,
-                heuristicProfilesFlow,
                 extensionManager.isInitialized,
-            ) { _, profiles, extensionsLoaded ->
+            ) { _, extensionsLoaded ->
                 // Read the authoritative map synchronously instead of the value carried by the
                 // combine emission: the derived list can lag a write, and this must be the loaded
                 // set whenever `extensionsLoaded` is true.
@@ -105,24 +89,6 @@ internal class AndroidSourceManager(
                             "Failed to load extension sources for ${extension.name}",
                             e,
                         )
-                    }
-                }
-
-                // Add custom JS scrapers and heuristic sources
-                val orchestrator = orchestratorProvider.get()
-                profiles.forEach { profile ->
-                    if (profile.enabled) {
-                        try {
-                            val source = eu.kanade.tachiyomi.source.online.DynamicHttpSource(profile, orchestrator)
-                            mutableMap[source.id] = source
-                            registerStubSource(StubSource.from(source))
-                        } catch (e: Throwable) {
-                            android.util.Log.e(
-                                "AndroidSourceManager",
-                                "Failed to load dynamic source for profile: ${profile.displayName}",
-                                e,
-                            )
-                        }
                     }
                 }
 

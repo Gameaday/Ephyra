@@ -144,7 +144,10 @@ private const val TAB_HISTORY_SEPARATOR = ","
  */
 internal fun appendTabHistory(history: String, route: String): String {
     val parts = history.split(TAB_HISTORY_SEPARATOR).filter { it.isNotEmpty() }
-    if (parts.lastOrNull() == route) return history
+    if (parts.lastOrNull() == route) {
+        // Re-visiting the current tab: drop the oldest entry to maintain a max history of 2.
+        return if (parts.size > 2) parts.drop(1).joinToString(TAB_HISTORY_SEPARATOR) else history
+    }
     return (parts.filterNot { it == route } + route).joinToString(TAB_HISTORY_SEPARATOR)
 }
 
