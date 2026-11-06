@@ -1,8 +1,7 @@
 name: CI Diagnose (temporary)
 on:
   pull_request:
-    branches:
-      - program/15-a2-reader-session-wiring
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -14,6 +13,7 @@ concurrency:
 
 jobs:
   diagnose:
+    if: github.event.pull_request.number == 317
     name: Diagnose Build and Test failure
     runs-on: 'ubuntu-24.04'
     env:
