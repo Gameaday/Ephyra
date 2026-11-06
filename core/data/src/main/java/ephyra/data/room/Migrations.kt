@@ -24,6 +24,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - **v3**: add the canonical Room-backed `source_profiles` table — see [MIGRATION_2_3].
  * - **v4**: drop `source_profiles.scraper_filename`, the last trace of the removed JS runtime
  *   (see [MIGRATION_3_4]).
+ * - **v5**: drop the `source_profiles` table entirely — the unreachable profile path is deleted
+ *   (ADR-0017; see [MIGRATION_4_5]).
  */
 object Migrations {
 
@@ -31,7 +33,7 @@ object Migrations {
      * The schema version this registry is aligned with. Must equal the `version` of
      * [EphyraDatabase]'s `@Database` annotation (asserted in `MigrationCoverageTest`).
      */
-    const val DB_VERSION = 4
+    const val DB_VERSION = 5
 
     /**
      * 1 → 2: upgrades legacy SQLDelight-era databases and normalizes Room-v1 databases.
@@ -166,7 +168,27 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf<Migration>(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    /**
+     * 4 → 5: drops the `source_profiles` table.
+     *
+     * The table backed the custom-source profile path that ADR-0017 deletes: nothing reachable
+     * wrote a profile since the JS runtime removal (ADR-0013), and with the profile path gone no
+     * reader remains either, so the table is dead weight in every install's database. The data
+     * is not migrated anywhere — it was unreachable in life and is discarded in death; a user
+     * who re-adds a source rediscovers it through the extension pipeline.
+     *
+     * Migrations 2 → 3 (create) and 3 → 4 (reshape) are kept so the chain 1 → 5 stays walkable
+     * from any install version: create, reshape, then drop. `DROP TABLE IF EXISTS` keeps the
+     * step idempotent for databases that never had the table (fresh v5 installs walk this only
+     * if Room re-invokes it, and a no-op is the correct answer there).
+     */
+    internal val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("DROP TABLE IF EXISTS `source_profiles`")
+        }
+    }
+
+    val ALL = arrayOf<Migration>(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
 
     /**
      * Drops the SQLDelight-named indices and recreates the Room-expected ones. The partial

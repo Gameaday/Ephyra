@@ -3,6 +3,7 @@ package ephyra.data.room
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.testing.MigrationTestHelper
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -173,25 +174,24 @@ class EphyraDatabaseMigrationTest {
     }
 
     /**
-     * 3 → 4 drops `source_profiles.scraper_filename`, and this is the test that proves an existing
-     * install keeps its source profiles across that upgrade.
+     * 3 → 4 reshapes `source_profiles`; 4 → 5 (ADR-0017) drops it. A v3 install — the last
+     * version whose schema still had the table — must walk the whole chain without crashing and
+     * end with the table gone.
      *
      * **Why a row is inserted rather than only validating the schema.** `runMigrationsAndValidate`
-     * on an empty database would pass even if the rebuild copied nothing, because an empty table
-     * trivially satisfies the schema. The rebuild is a `CREATE … / INSERT SELECT … / DROP /
-     * RENAME` sequence, and the failure mode that matters is losing every configured source while
-     * the schema still validates perfectly. So the row must exist before the migration and be
-     * read back afterwards.
+     * on an empty database would pass even if a migration step mishandled data, because an empty
+     * table trivially satisfies the schema. The row proves the drop step executes against a
+     * database that actually holds profile data — the state every pre-ADR-0017 install is in.
      *
-     * The row is given a non-null `scraper_filename` deliberately: that is the state a build from
-     * the JS era would have left behind, and it proves the value is discarded rather than
-     * blocking the upgrade.
+     * The row keeps a non-null `scraper_filename` deliberately: that is the state a build from
+     * the JS era would have left behind, and it proves the 3 → 4 rebuild discards the value
+     * rather than blocking the upgrade on the way to the 4 → 5 drop.
      */
     @Test
     @Throws(IOException::class)
-    fun testMigrateV3ToV4DropsScraperFilenameAndKeepsProfiles() {
+    fun testMigrateV3ThroughV5EndsWithSourceProfilesDropped() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val dbPath = context.getDatabasePath("migration-test-v3-to-v4").absolutePath
+        val dbPath = context.getDatabasePath("migration-test-v3-to-v5").absolutePath
 
         helper.createDatabase(dbPath, 3).use { db ->
             val values = ContentValues().apply {
@@ -220,26 +220,56 @@ class EphyraDatabaseMigrationTest {
 
         val db = helper.runMigrationsAndValidate(dbPath, Migrations.DB_VERSION, true, *Migrations.ALL)
 
-        // The profile survives the rebuild.
-        db.query(
-            "SELECT display_name, source_type, rate_limit_ms FROM source_profiles WHERE base_url = 'https://mangadex.org'",
-        )
-            .use { c ->
-                assertTrue("the profile row must survive the table rebuild", c.moveToFirst())
-                assertEquals("MangaDex", c.getString(0))
-                assertEquals("REMOTE_EXTENSION", c.getString(1))
-                assertEquals(500L, c.getLong(2))
-            }
-
-        // And the column is genuinely gone, not merely unused.
-        val columns = mutableListOf<String>()
-        db.query("PRAGMA table_info(`source_profiles`)").use { c ->
-            while (c.moveToNext()) columns += c.getString(1)
-        }
-        assertTrue(
-            "scraper_filename should have been dropped: $columns",
-            !columns.contains("scraper_filename"),
-        )
+        // The profile table is gone at v5 — the path it served is unreachable and deleted (ADR-0017).
+        assertTrue("source_profiles must not survive the 4 → 5 migration", !tableExists(db, "source_profiles"))
         db.close()
+    }
+
+    /**
+     * 4 → 5 drops `source_profiles` (ADR-0017). A v4 install holding profile rows — the state
+     * every current install is in — must migrate cleanly and end with the table gone.
+     */
+    @Test
+    @Throws(IOException::class)
+    fun testMigrateV4ToV5DropsSourceProfiles() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val dbPath = context.getDatabasePath("migration-test-v4-to-v5").absolutePath
+
+        helper.createDatabase(dbPath, 4).use { db ->
+            val values = ContentValues().apply {
+                put("base_url", "https://mangadex.org")
+                put("display_name", "MangaDex")
+                put("content_type", "MANGA")
+                put("source_type", "REMOTE_EXTENSION")
+                put("enabled", 1)
+                put("response_type", "JSON")
+                put("pagination", "PAGE_BASED")
+                put("failure_count", 0)
+                put("verified", 1)
+                put("last_health_check", 0L)
+                put("last_updated", 1000L)
+                put("repository_id", null as String?)
+                put("endpoints_json", "{}")
+                put("selectors_json", null as String?)
+                put("json_path_json", null as String?)
+                put("headers_json", "{}")
+                put("auth_type", "NONE")
+                put("rate_limit_ms", 500L)
+            }
+            assertTrue(db.insert("source_profiles", SQLiteDatabase.CONFLICT_REPLACE, values) > 0)
+        }
+
+
+        val db = helper.runMigrationsAndValidate(dbPath, Migrations.DB_VERSION, true, *Migrations.ALL)
+
+        assertTrue("source_profiles must be dropped by MIGRATION_4_5", !tableExists(db, "source_profiles"))
+        db.close()
+    }
+
+    private fun tableExists(db: SupportSQLiteDatabase, table: String): Boolean {
+        db.query(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+            arrayOf(table),
+        ).use { c -> return c.moveToFirst() }
     }
 }
