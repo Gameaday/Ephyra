@@ -9,10 +9,15 @@ import java.io.File
  *
  * **Why a source scan rather than a compile error.** `profiled_domains_list` is a preference
  * *key* — the compiler cannot see who reads it, and neither the type system nor any IDE
- * inspection distinguishes one reader of the key from another. Before `SRC-011`, three components
- * answered "which sources exist" by reading this key independently, and their disagreement was
- * indistinguishable from corruption at the point of use. This test fails first, with a message
- * that says who is allowed and why, instead of failing later as a user-visible defect.
+ * inspection distinguishes one reader of the key from another. Before `SRC-011`, three
+ * components answered "which sources exist" by reading this key independently, and their
+ * disagreement was indistinguishable from corruption at the point of use.
+ *
+ * After `ADR-0017` the registry itself no longer reads the key: `profiled_domains_list` had no
+ * writer since the heuristic engine was removed (`ADR-0015`), so the preference — and the
+ * profile path behind it — was deleted outright. The gate stays, tightened to *nobody*: the day
+ * someone reintroduces a reader of the dead key, this fails first with a message that says why,
+ * instead of failing later as a user-visible defect.
  *
  * Tests, not just production code, keep the gate honest: only `src/main` is scanned, because a
  * test may set up state through the preference in order to observe it.
@@ -20,18 +25,9 @@ import java.io.File
 class SourceRegistryOwnershipTest {
 
     @Test
-    fun `only the registry reads the profiled-domains preference`() {
+    fun `nobody reads the profiled-domains preference`() {
         val root = repositoryRoot()
-        val allowed = setOf(
-            // The owner — the only production reader of the key.
-            "core/domain/src/main/java/ephyra/domain/source/registry/SourceRegistry.kt",
-            // The ADR-0017 deletion target. Its save/invalidate are the persistence the registry
-            // reads through `SourceProfileStore`; it dies with D1, and the gate allows exactly
-            // that file so removing it cannot silently widen the gate.
-            "core/domain/src/main/java/ephyra/domain/content/source/SourceProfileCache.kt",
-        )
         val offenders = productionSources(root)
-            .filter { it.relativeTo(root).invariantSeparatorsPath !in allowed }
             .mapNotNull { file ->
                 if (file.readText().contains("profiled_domains_list")) {
                     file.relativeTo(root).invariantSeparatorsPath
@@ -42,9 +38,9 @@ class SourceRegistryOwnershipTest {
 
         assertTrue(
             offenders.isEmpty(),
-            "profiled_domains_list must have one owner (ADR-0012, SRC-011):\n" +
+            "profiled_domains_list is dead (ADR-0017 deleted the profile path that read it):\n" +
                 offenders.joinToString("\n") { " - $it reads the key directly" } +
-                "\nExistence and identity belong to SourceRegistry; read them from it.",
+                "\nSource existence belongs to SourceRegistry; read it from it.",
         )
     }
 
