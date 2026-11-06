@@ -50,6 +50,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   naming the claiming origin instead of an unexplained "source not registered"; health failures
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
+- **Resuming from another app no longer crashes the reader mid-retry.** The recovery ladder's
+  replacement-address fetch — a fresh page list, taken when a page's failure indicted its URL —
+  ran unguarded from inside `HttpPageLoader.internalLoadPage`'s `catch` block. Right after the
+  app returns from the background, DNS is often not ready again yet, so the image request failed
+  with `UnknownHostException` **and so did the replacement fetch** (`Unable to resolve host
+  "api.mangadex.org"`), and a throw from a `catch` block escapes the retry loop and its worker
+  coroutine (a standalone coroutine with no `CoroutineExceptionHandler`), killing the process —
+  `StartupFailureActivity` then presented the crash on the next launch. The fetch now goes
+  through `FreshPageAddresses.atOrNull`, the guarded form: a page that cannot get a replacement
+  is left address-less and still flagged, and the ladder's own decision still runs — a GIVE_UP
+  surfaces the failure that actually stopped the page (the image request, not the replacement
+  machinery) and a retry re-asks the source for a fresh list once the network is back.
+  `loadPage`'s proactive fetch of the same list was already guarded; the ladder's was the one
+  unguarded call site. Guarded by `HttpPageLoaderFreshAddressFailureTest`.
 - **Chapters start at the first page again.** The reader addressed content by *item* index — the
   chapter's pages plus a `ChapterTransition.Prev` before them and a `ChapterTransition.Next` after
   them — but derived "start at the beginning" from a fixed offset (`item 1`). That holds only while
