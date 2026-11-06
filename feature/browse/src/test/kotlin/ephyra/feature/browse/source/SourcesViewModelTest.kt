@@ -2,7 +2,6 @@ package ephyra.feature.browse.source
 
 import app.cash.turbine.test
 import ephyra.core.common.util.Result
-import ephyra.domain.content.source.SourceProfile
 import ephyra.domain.source.interactor.GetEnabledSources
 import ephyra.domain.source.interactor.ToggleSource
 import ephyra.domain.source.interactor.ToggleSourcePin

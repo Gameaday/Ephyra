@@ -26,13 +26,13 @@
       "id": "content-source-engine",
       "path": "core/domain/src/main/java/ephyra/domain/content/source/ContentSourceEngine.kt",
       "classification": "compatibility",
-      "decision": "Replace with capability-gated SourceGateway."
+      "decision": "Replace with capability-gated SourceGateway; the profile-free contract survives D1 for SRC-012."
     },
     {
       "id": "content-source-orchestrator",
       "path": "core/domain/src/main/java/ephyra/domain/content/source/ContentSourceOrchestrator.kt",
-      "classification": "target",
-      "decision": "Retain orchestration role; separate descriptor, health, profile, and execution."
+      "classification": "delete",
+      "decision": "Deleted 2026-11-06 by D1 (ADR-0017): the profile path it orchestrated was unreachable once SRC-011 gave existence and identity one owner."
     },
     {
       "id": "scriptable-engine",
@@ -49,8 +49,8 @@
     {
       "id": "dynamic-http-source",
       "path": "app/src/main/java/eu/kanade/tachiyomi/source/online/DynamicHttpSource.kt",
-      "classification": "compatibility",
-      "decision": "Isolate and remove after features use modern gateway."
+      "classification": "delete",
+      "decision": "Deleted 2026-11-06 by D1 (ADR-0017): AndroidSourceManager builds the source map from SourceRegistry registrations; no dynamic profile source remains."
     },
     {
       "id": "source-manager",
