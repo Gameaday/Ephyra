@@ -1,20 +1,23 @@
-name: CI Diagnose (temporary)
+name: CI Diagnose B (temporary)
 on:
   push:
     branches:
       - program/15-a2-reader-session-wiring
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
   pull-requests: write
 
 concurrency:
-  group: ci-diagnose-${{ github.ref }}
+  group: ci-diag2-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   diagnose:
-    name: Diagnose Build and Test failure
+    name: Diagnose targeted suites
+    if: github.event_name == 'push' || github.event.pull_request.number == 317
     runs-on: 'ubuntu-24.04'
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
