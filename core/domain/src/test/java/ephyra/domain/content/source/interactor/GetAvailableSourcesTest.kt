@@ -3,13 +3,14 @@ package ephyra.domain.content.source.interactor
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.domain.content.model.ContentType
-import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.SourceProfile
 import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.model.StubSource
+import ephyra.domain.source.registry.SourceIdentityPolicy
+import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -48,7 +49,6 @@ class GetAvailableSourcesTest {
     // recorder entirely.
     private val sourceManager: SourceManager = FakeSourceManager(catalogueSourcesFlow)
     private val extensionManager: ExtensionManager = mockk(relaxed = true)
-    private val orchestrator: ContentSourceOrchestrator = mockk(relaxed = true)
     private val profileCache: SourceProfileCache = mockk(relaxed = true)
     private val preferenceStore: PreferenceStore = mockk(relaxed = true)
     private val sourcePreferences: SourcePreferences = mockk(relaxed = true)
@@ -82,12 +82,17 @@ class GetAvailableSourcesTest {
         every { sourcePreferences.disabledSources() } returns disabledSourcesPref
         coEvery { disabledSourcesPref.get() } returns emptySet()
 
+        // The registry is the real one over the mocked preference (SRC-011): the Sources UI
+        // is pinned against the existence/identity owner, not against a mock of it.
+        val registry = SourceRegistry(
+            extensionManager = extensionManager,
+            preferenceStore = preferenceStore,
+            profileCache = profileCache,
+        )
         getAvailableSources = GetAvailableSources(
             sourceManager = sourceManager,
             extensionManager = extensionManager,
-            orchestrator = orchestrator,
-            profileCache = profileCache,
-            preferenceStore = preferenceStore,
+            registry = registry,
             sourcePreferences = sourcePreferences,
         )
     }
@@ -210,6 +215,11 @@ class GetAvailableSourcesTest {
         val names = result.map { it.name }
         assertTrue(names.contains("Single Extension"))
         assertTrue(names.contains("Heuristic Source"))
+        // SRC-011/ADR-0012: the row's id is the registry's id — the same id DynamicHttpSource
+        // carries — so a row tap resolves in the source map instead of orphaning the entry by
+        // hashing a different spelling of the same URL.
+        val heuristic = result.first { it.name == "Heuristic Source" }
+        assertEquals(SourceIdentityPolicy.identityOf("https://heuristic.org"), heuristic.id)
     }
 
     /**

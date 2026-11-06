@@ -95,7 +95,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Pager realignment locked** (WS7): a structural gate asserts `ComposePagerReader` re-seeks to the
   current item's new index whenever the item list shifts.
 - **Obsolete “Custom hardware bitmap threshold” setting retired** (WS10): the preference, its
-  advanced-settings row and the option list are removed; the device texture limit is applied directly.
+  advanced-settings row and the option list are removed; the device texture limit is applied directly.- **Source existence and identity have one owner, so an entry stops orphaning the moment a
+  URL's spelling changes.** `SRC-011` (`ADR-0012`) closes the mechanism behind `DEF-029`: a new
+  `SourceRegistry` is the only reader of the profiled-domains preference, and identity is derived
+  once, from the canonical origin (`SourceOriginPolicy`/`SourceIdentityPolicy`) instead of each
+  component hashing whatever spelling it happened to see. `DynamicHttpSource`, the Sources list
+  and the source map now agree by construction; a spelling change resolves as `SpellingChanged`
+  naming the claiming origin instead of an unexplained "source not registered"; health failures
+  degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
+  a new ownership gate fails the build if any component opens the preference directly again.
+
 
 
 
