@@ -1,6 +1,6 @@
 name: CI Diagnose (temporary)
 on:
-  push:
+  pull_request:
     branches:
       - program/15-a2-reader-session-wiring
 
@@ -9,7 +9,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: ci-diagnose-${{ github.ref }}
+  group: ci-diagnose-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
