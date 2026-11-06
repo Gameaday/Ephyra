@@ -105,8 +105,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🗑️ Deleted (D1 executes `ADR-0017` — the profile path is gone)
 
-
+- **The unreachable custom-source profile path is deleted, not deprecated.** `ADR-0017` recorded
+  that the profile pipeline could not execute — nothing creates a profile since the UI stopped
+  offering custom sources — and `SRC-011` completed its precondition by giving source existence
+  and identity one owner: every consumer now projects from `SourceRegistry`, so the residual
+  profile code was strictly dead. Deleted in full: `SourceProfile`, `SourceProfileCache`,
+  `SourceProfileStore`, `RoomSourceProfileStore`, the Room `SourceProfileEntity` and
+  `SourceProfileDao` (database version 5; `MIGRATION_4_5` drops the `source_profiles` table),
+  `RemoteSource`, `ContentSourceOrchestrator`, `DynamicHttpSource`, `SourceIdentityPolicy`,
+  `MigrationCandidate`, the `UpdateCustomSource` and `RemoveCustomSource` interactors, and their
+  tests. **What survives, and why:** `SourceType` moves to its own file with the retired
+  `fromString` aliases intact so persisted spellings stay readable; `ContentSourceEngine` remains
+  as the profile-free engine contract `SRC-012` targets; `SourceOriginPolicy` and its test stay,
+  because the canonical origin is how the registry derives identity. Consumers shrank with the
+  deletion: `GetAvailableSources` is `combine(catalogueSources, installedExtensionsFlow)`,
+  `AndroidSourceManager` derives readiness from the extension flow and
+  `ExtensionManager.isInitialized`, and `MigrateMangaUseCase` syncs chapters only through
+  resolvable `CatalogueSource`s — an unresolvable source syncs no chapters, by test. **Stated
+  openly:** the `DEF-029` ledger row is deleted with the code it described, and its
+  device-reproduction obligation dies with it; per `ADR-0017` the defect's mechanism is closed at
+  E2 and no shipped path can trigger it again.
 
 ### 🧯 Extension Compatibility (critical fix)
 - **MangaDex 1.6 could not load any pages**: the reader's `HttpPageLoader.internalLoadPage` resolved a populated `Page.imageUrl` against the source's `baseUrl` and wrote the result back before fetching, and `resolvePageImage` did the same in its populated branch (so `Downloader`'s retry path inherited the corruption). A real MangaDex extension stores a **relative path** in `Page.imageUrl` (`/data/<hash>/<file>`) and an MD@Home cache key in `Page.url`, and its own overridden `imageRequest` joins them at request time (`GET(mdAtHomeServerUrl + page.imageUrl)`). The host-side rewrite turned every request into `<at-home-host>https://mangadex.org/data/...` — two URLs spliced into a host that can never resolve — so **every page of every chapter failed identically**, presenting as a DNS error (`Unable to resolve host "…mangadex.network,https"`). The recovery ladder could not escape it: a fresh page list restored a fresh relative address that was immediately rewritten again. Fixed by treating a populated `Page.imageUrl` as opaque to the host, exactly as upstream Mihon does: `ResolvedImageUrl.opaque(...)` passes it through untouched (`resolvePageImage`), and the loader no longer rewrites the field — the disk-cache key and the request are the raw string the source produced, while the base `HttpSource.imageRequest` still resolves at the request boundary where a source override inherits nothing by design. Guarded by `MangaDexOpaqueImageUrlContractTest` (a source shaped like the real extension: relative `imageUrl`, at-home cache key, overridden `imageRequest`) and by structural gates in `PageLoadRecoveryStructuralTest`. Documented in `doc/EXTENSION_COMPATIBILITY.md` under "`Page.imageUrl` is opaque to the host once populated", including the general rule: never write an interpretation back into an extension-owned field that the extension is still going to read.
