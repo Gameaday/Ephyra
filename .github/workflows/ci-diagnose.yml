@@ -47,6 +47,9 @@ jobs:
 
       - name: Run checks and capture output
         run: |
+          # The Actions default shell is 'bash -e': a failing gradle invocation below is
+          # the entire point of this workflow, so failures must be recorded, not fatal.
+          set +e
           TEST_TASK="testDebug""UnitTest"
           ./gradlew spotlessCheck --build-cache --parallel --no-daemon > spotless.log 2>&1
           SPOTLESS_EXIT=$?
@@ -57,7 +60,7 @@ jobs:
             cat spotless.log
             echo
             echo "### unit tests (exit $TESTS_EXIT) — failure digest"
-            grep -E 'FAILED|error: |e: |What went wrong|Execution failed for task|Caused by:' tests.log | head -n 200 || true
+            grep -E 'FAILED|error: |e: |What went wrong|Execution failed for task|Caused by:' tests.log | head -n 200
             echo
             echo "### unit tests — last 400 log lines"
             tail -n 400 tests.log
@@ -66,9 +69,9 @@ jobs:
             for f in $(find . -path '*/build/test-results/*/TEST-*.xml' 2>/dev/null); do
               if grep -q '<failure\|<error' "$f"; then
                 echo "--- $f"
-                grep -o 'testcase name="[^"]*"[^>]*' "$f" | head -n 100 || true
-                grep -o '<failure[^>]\{0,400\}' "$f" | head -n 30 || true
-                grep -o '<error[^>]\{0,400\}' "$f" | head -n 30 || true
+                grep -o 'testcase name="[^"]*"[^>]*' "$f" | head -n 100
+                grep -o '<failure[^>]\{0,400\}' "$f" | head -n 30
+                grep -o '<error[^>]\{0,400\}' "$f" | head -n 30
               fi
             done
           } > diagnose-output.txt
