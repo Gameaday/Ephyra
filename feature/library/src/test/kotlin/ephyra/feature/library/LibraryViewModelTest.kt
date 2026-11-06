@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibraryViewModelTest {
@@ -290,6 +291,14 @@ class LibraryViewModelTest {
     /**
      * Re-tapping Random writes a new seed. That seed was read outside the flow, so the shuffle never
      * reached the grid and the control appeared dead.
+     *
+     * The grid order is deterministic -- `applySort` shuffles the grouped ids with
+     * `Random(randomSortSeed)` -- so this computes the exact order for each seed instead of sampling
+     * emissions. The previous form accepted the *first* emission tagged with the new seed, which can
+     * still carry the previous `groupedFavorites` (two independent writers update the state, see
+     * [awaitStateWithIds]); when that stale emission was the one observed for every candidate seed the
+     * test failed even though the shuffle worked (2026-11-06 CI run). Awaiting the computed order also
+     * drains past the stale emission, so the wait is an assertion, not a race.
      */
     @Test
     fun `a new random seed reshuffles the library`() = runTest(testDispatcher) {
@@ -303,23 +312,21 @@ class LibraryViewModelTest {
         every { getLibraryManga.subscribe() } returns flowOf(items)
         every { getCategories.subscribe() } returns flowOf(emptyList())
 
+        // `applySort` groups the ids in favorites order, then shuffles with Random(seed).
+        fun orderFor(seed: Int): List<Long> = listOf(1L, 2L, 3L, 4L, 5L, 6L).shuffled(Random(seed))
+
+        // Pick a seed whose order provably differs from seed 0's, so the assertion cannot pass on a
+        // stale emission alone.
+        val before = orderFor(0)
+        val newSeed = (1..10).first { orderFor(it) != before }
+
         val viewModel = createViewModel()
 
         viewModel.state.test {
-            val before = awaitAnyIds(count = 6, seed = 0)
+            awaitStateWithIds(before, seed = 0)
 
-            // Try a handful of seeds: one particular seed can reproduce the same order by chance, so
-            // this asserts that *some* seed moves the order rather than that any single one does.
-            var changed = false
-            for (seed in 1..10) {
-                seedFlow.value = seed
-                val shuffled = awaitAnyIds(count = 6, seed = seed)
-                if (shuffled != before) {
-                    changed = true
-                    break
-                }
-            }
-            assertTrue(changed, "changing the random seed never changed the library order")
+            seedFlow.value = newSeed
+            awaitStateWithIds(orderFor(newSeed), seed = newSeed)
         }
     }
 
@@ -358,21 +365,6 @@ class LibraryViewModelTest {
     private fun LibraryViewModel.State.displayedIds(): List<Long> =
         displayedCategories.firstOrNull()?.let { getItemsForCategory(it).map { item -> item.id } }
             ?: emptyList()
-
-    /** Waits for the first grid that holds [count] items, without asserting their order. */
-    private suspend fun app.cash.turbine.ReceiveTurbine<LibraryViewModel.State>.awaitAnyIds(
-        count: Int,
-        seed: Int? = null,
-    ): List<Long> {
-        repeat(200) {
-            val state = awaitItem()
-            if (seed != null && state.libraryData.sortPreferences.randomSortSeed != seed) return@repeat
-            val category = state.displayedCategories.firstOrNull() ?: return@repeat
-            val ids = state.getItemsForCategory(category).map { it.id }
-            if (ids.size == count) return ids
-        }
-        error("the library never published a grouped list of $count items")
-    }
 
     /**
      * The sort dialog must highlight the sort that produced the order on screen.
