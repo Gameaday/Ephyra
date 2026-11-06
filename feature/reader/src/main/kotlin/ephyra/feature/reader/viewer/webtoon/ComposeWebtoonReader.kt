@@ -76,12 +76,16 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.domain.reader.gesture.ReaderGestureEffect
+import ephyra.domain.reader.media.AnimationKind
 import ephyra.domain.reader.media.AnimationPolicy
 import ephyra.domain.reader.media.AnimationVerdict
 import ephyra.domain.reader.media.PageDecodeWidth
 import ephyra.domain.reader.media.PageImageFormat
+import ephyra.domain.reader.media.PageMetadata
 import ephyra.domain.reader.media.PageRenderPath
+import ephyra.domain.reader.media.PageSource
 import ephyra.domain.reader.media.PageZoomPolicy
+import ephyra.domain.reader.media.PixelSize
 import ephyra.domain.reader.media.RenderPathPolicy
 import ephyra.domain.reader.media.supportsRegionDecode
 import ephyra.domain.reader.media.toPageImageFormat
@@ -740,14 +744,18 @@ private fun WebtoonPageItem(
                 //
                 // `contentRect` is null because production does not compute a crop rectangle --
                 // `BorderCropTransformation` measures insets during decode and never exposes them
-                // as data, which is *why* the old guard said `!cropBorders`. That exclusion is
-                // preserved here, but it is now visibly a missing input rather than an
-                // unexplained term: with crop requested and no rect, the policy reports
-                // CROP_UNDECIDED and the whole-image path is taken. Slicing a cropped page needs
-                // the rect threaded into `SlicedWebtoonImage`, which is the actual follow-up.
+                // as data. That exclusion is preserved, but it is now visibly a missing input
+                // rather than an unexplained term: with crop requested and no rect, the policy
+                // reports CROP_UNDECIDED and the whole-image path is taken. A1 threads the rect
+                // into the tuple from here (`PageMetadata.contentRect`), so once measurement
+                // exposes one, sliced rendering becomes crop-aware through
+                // `RenderPathPolicy.sliceSourceRect` with no further wiring at this site.
                 val hasKnownSize = intrinsicDimensions != null || (page.width > 0 && page.height > 0)
+                // Empty bytes are no bytes: an empty array would otherwise reach
+                // PageSource.InMemory(0), which rejects it. hasBytes decides via the policy.
+                val hasBytes = readyBytes?.isNotEmpty() == true
                 val renderPathKey = animationVerdict to imageFormat to cropBorders to
-                    page.mergedBitmap to (readyBytes != null) to hasKnownSize
+                    page.mergedBitmap to hasBytes to hasKnownSize
                 val renderPath = remember(renderPathKey) {
                     RenderPathPolicy.choose(
                         verdict = animationVerdict,
@@ -755,7 +763,7 @@ private fun WebtoonPageItem(
                         cropRequested = cropBorders,
                         contentRect = null,
                         hasMergedBitmap = page.mergedBitmap != null,
-                        hasBytes = readyBytes != null,
+                        hasBytes = hasBytes,
                         hasKnownSize = hasKnownSize,
                     )
                 }
@@ -783,15 +791,30 @@ private fun WebtoonPageItem(
                     )
                 } else if (renderPath == PageRenderPath.SLICED && readyBytes != null) {
                     val (knownW, knownH) = intrinsicDimensions ?: (page.width to page.height)
+                    // A1: the tuple is threaded, not re-derived — metadata carries the three
+                    // facts the policies read (size, animation, format) plus the crop rect, the
+                    // source asserts the bytes are resident, and the render path is the decision
+                    // RenderPathPolicy already made above. SlicedWebtoonImage renders the plan.
                     SlicedWebtoonImage(
                         page = page,
                         bytes = readyBytes!!,
-                        srcWidth = knownW,
-                        srcHeight = knownH,
+                        metadata = PageMetadata(
+                            intrinsicSize = PixelSize(
+                                knownW.coerceAtLeast(1),
+                                knownH.coerceAtLeast(1),
+                            ),
+                            animation = if (animationVerdict == AnimationVerdict.Detected(true)) {
+                                AnimationKind.ANIMATED
+                            } else {
+                                AnimationKind.STATIC
+                            },
+                            format = imageFormat,
+                            contentRect = null,
+                        ),
+                        source = PageSource.InMemory(readyBytes!!.size),
+                        renderPath = renderPath,
                         targetWidthPx = targetWidthPx,
                         viewportHeightPx = viewportHeightPx,
-                        cropBorders = cropBorders,
-                        isAnimated = animationVerdict == AnimationVerdict.Detected(true),
                         fallback = {
                             SingleWebtoonImage(
                                 page = page,

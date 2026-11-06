@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
 import android.graphics.Rect
+import ephyra.domain.reader.media.PixelRect
+import ephyra.domain.reader.media.SampleSize
 import java.io.ByteArrayInputStream
 import kotlin.math.max
 
@@ -13,6 +15,11 @@ import kotlin.math.max
  * Each slice is small enough to stay under the GPU texture ceiling, so — unlike a single
  * full-strip Coil request (which forces a global `inSampleSize` downscale) — text stays sharp.
  * Callers share the page bytes they already buffered; no extra network fetch per slice.
+ *
+ * A1: the sample size and the rectangle to slice are decisions made upstream by
+ * [WebtoonSlicePlanner] (width fit plus hysteresis, crop-aware rect). This object only
+ * executes them against BitmapRegionDecoder — it no longer derives a sample of its own, so
+ * the policy and the decoder cannot disagree about how finely a strip is fetched.
  */
 object WebtoonRegionDecoder {
 
@@ -53,24 +60,31 @@ object WebtoonRegionDecoder {
     }
 
     /**
-     * Decodes every [slices] rect with a single shared [BitmapRegionDecoder]: one header
-     * parse and one backing stream for the whole strip instead of N open/parse cycles.
-     * Returns `null` when region decoding is unsupported so the caller falls back.
+     * Decodes every [slices] rect of [sliceRect] with a single shared [BitmapRegionDecoder]:
+     * one header parse and one backing stream for the whole strip instead of N open/parse
+     * cycles. Returns `null` when region decoding is unsupported so the caller falls back.
+     *
+     * [slices] are local to [sliceRect] (they partition it exactly); each is offset by the
+     * rect's origin before decoding, which is what makes a cropped page slice from its
+     * artwork rather than from raw image coordinates.
+     *
+     * [sampleSize] comes from the caller's plan: [WebtoonSlicePlanner] owns the choice, so the
+     * width-fit rule and its hysteresis live in one testable place.
      *
      * Cooperative cancellation: checks [isActive] between slices so a fast fling (1→5)
      * abandons stale page decodes instead of racing them against the visible strip.
      */
     suspend fun decodeSlices(
         bytes: ByteArray,
-        srcWidth: Int,
+        sliceRect: PixelRect,
         slices: List<WebtoonSlicer.SliceRect>,
-        targetWidthPx: Int,
+        sampleSize: SampleSize,
         isActive: () -> Boolean = { true },
     ): List<Bitmap?>? {
-        if (bytes.isEmpty() || srcWidth <= 0 || targetWidthPx <= 0 || slices.isEmpty()) return null
-        val sampleSize = sampleSizeForWidth(srcWidth, targetWidthPx)
+        if (bytes.isEmpty() || slices.isEmpty()) return null
+        if (sliceRect.width <= 0 || sliceRect.height <= 0) return null
         val options = BitmapFactory.Options().apply {
-            inSampleSize = sampleSize
+            inSampleSize = sampleSize.inSampleSize
             inPreferredConfig = Bitmap.Config.ARGB_8888
         }
         var decoder: BitmapRegionDecoder? = null
@@ -81,7 +95,12 @@ object WebtoonRegionDecoder {
             val activeDecoder = decoder ?: return null
             slices.map { slice ->
                 if (!isActive()) return null
-                val rect = Rect(0, slice.top, srcWidth, slice.bottom)
+                val rect = Rect(
+                    sliceRect.left,
+                    sliceRect.top + slice.top,
+                    sliceRect.right,
+                    sliceRect.top + slice.bottom,
+                )
                 if (rect.height() <= 0 || rect.width() <= 0) {
                     null
                 } else {
@@ -97,7 +116,8 @@ object WebtoonRegionDecoder {
 
     /**
      * Largest power-of-two divisor that keeps `srcWidth / sample >= targetWidthPx`
-     * (minimum 1). Pure math extracted for JVM unit tests.
+     * (minimum 1). Pure math extracted for JVM unit tests. Consumed by [WebtoonSlicePlanner]
+     * as the width-fit rule its hysteresis refines within.
      */
     fun sampleSizeForWidth(srcWidth: Int, targetWidthPx: Int): Int {
         if (srcWidth <= 0 || targetWidthPx <= 0) return 1

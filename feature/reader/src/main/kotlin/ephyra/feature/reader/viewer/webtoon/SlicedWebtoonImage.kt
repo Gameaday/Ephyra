@@ -5,14 +5,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
+import ephyra.domain.reader.media.PageMetadata
+import ephyra.domain.reader.media.PageRenderPath
+import ephyra.domain.reader.media.PageSource
+import ephyra.domain.reader.media.PixelRect
+import ephyra.domain.reader.media.SampleSize
 import ephyra.feature.reader.model.ReaderPage
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
@@ -20,12 +28,19 @@ import kotlinx.coroutines.isActive
 /**
  * Renders a long webtoon strip as a [Column] of full-resolution slices.
  *
+ * A1 — the render decision arrives as the media tuple: [metadata] and [source] describe the
+ * page, and [renderPath] is the decision RenderPathPolicy already made upstream. This composable
+ * no longer re-derives a crop/animation guard of its own: [WebtoonSlicePlanner] turns the tuple
+ * into concrete geometry (an exact partition of the slice rect) and a region decode sample,
+ * against BitmapRegionDecoder. The composable renders the plan it was handed, so it cannot
+ * disagree with the call site about what is sliceable.
+ *
  * Each slice is region-decoded from [bytes] at screen width, so no global downscale is needed
  * and every slice stays under the GPU texture ceiling. Slices form an exact partition
  * ([WebtoonSlicer.computeSlices]): every source row is decoded and displayed exactly once.
  *
- * Calls [fallback] (the regular single-image path) when slicing does not apply: short pages,
- * animated images, border-cropped pages, or when region decoding fails / would need more than
+ * Calls [fallback] (the regular single-image path) when the plan yields no slices: short pages,
+ * animated images, a non-resident source, or when region decoding fails / would need more than
  * [WebtoonSlicer.MAX_SLICES] slices.
  *
  * Zoom and long-press gestures are handled by the owning page item — slices render bare
@@ -36,28 +51,51 @@ import kotlinx.coroutines.isActive
 fun SlicedWebtoonImage(
     page: ReaderPage,
     bytes: ByteArray,
-    srcWidth: Int,
-    srcHeight: Int,
+    metadata: PageMetadata,
+    source: PageSource,
+    renderPath: PageRenderPath,
     targetWidthPx: Float,
     viewportHeightPx: Float?,
-    cropBorders: Boolean,
-    isAnimated: Boolean,
     fallback: @Composable () -> Unit,
 ) {
+    val srcWidth = metadata.intrinsicSize.width
+    val srcHeight = metadata.intrinsicSize.height
+    val targetWidth = targetWidthPx.toInt().coerceAtLeast(1)
+    val viewportHeight = viewportHeightPx?.toInt()
+
     // Stable per-page identity. Keyed on the bytes *instance* (referential compare, no
     // main-thread hashing of multi-MB strips): a fresh decode/retry yields a new array and
     // recomputes, while scroll revisits with the same cached instance stay stable instead of
-    // reusing the previous page's rects/bitmaps via a recycled composition.
-    val pageKey = remember(page, bytes) {
-        "${page.chapter.chapter.id}:${page.index}:${page.number}:${bytes.size}:$srcWidth:$srcHeight"
+    // reusing the previous page's rects/bitmaps via a recycled composition. The content rect
+    // is part of the identity because it selects which pixels are decoded.
+    val pageKey = remember(page, bytes, metadata.contentRect) {
+        val crop = metadata.contentRect
+            ?.let { "${it.left},${it.top},${it.right},${it.bottom}" }
+            ?: "full"
+        "${page.chapter.chapter.id}:${page.index}:${page.number}:${bytes.size}:$srcWidth:$srcHeight:$crop"
     }
-    val targetWidth = targetWidthPx.toInt().coerceAtLeast(1)
-    val viewportHeight = viewportHeightPx?.toInt()
-    val slicingEnabled = !cropBorders && !isAnimated &&
-        bytes.isNotEmpty() && srcWidth > 0 && srcHeight > 0 && targetWidth > 0
 
-    val slices = rememberSlices(pageKey, srcWidth, srcHeight, targetWidth, viewportHeight, slicingEnabled)
+    // Sample continuity across re-plans (rotation, viewport change): SampleSizePolicy's deadband
+    // keeps the previous region sample while it is still legal for the new demand, so a small
+    // width change does not re-decode every slice of the strip. Null until the first plan.
+    var previousSample by remember(pageKey) { mutableStateOf<SampleSize?>(null) }
 
+    val plan = remember(pageKey, targetWidth, viewportHeight, renderPath, source) {
+        WebtoonSlicePlanner.plan(
+            metadata = metadata,
+            source = source,
+            renderPath = renderPath,
+            targetWidthPx = targetWidth,
+            viewportHeightPx = viewportHeight,
+            maxTextureSize = ImageUtil.hardwareBitmapThreshold,
+            previousSample = previousSample,
+        )
+    }
+    LaunchedEffect(plan.sampleSize) {
+        previousSample = plan.sampleSize
+    }
+
+    val slices = plan.slices
     if (slices == null) {
         fallback()
         return
@@ -68,7 +106,15 @@ fun SlicedWebtoonImage(
         slices.joinToString(";") { "${it.top}-${it.bottom}" }
     }
 
-    val decoded = rememberDecodedSlices(pageKey, targetWidth, sliceKey, bytes, srcWidth, slices)
+    val decoded = rememberDecodedSlices(
+        pageKey = pageKey,
+        targetWidth = targetWidth,
+        sliceKey = sliceKey,
+        sampleSize = plan.sampleSize,
+        bytes = bytes,
+        sliceRect = plan.sliceRect,
+        slices = slices,
+    )
 
     if (decoded == null) {
         // Still decoding: render the fallback (single AsyncImage path with its own
@@ -94,40 +140,12 @@ fun SlicedWebtoonImage(
 }
 
 /**
- * Geometry: exact tiling for a page, or `null` when slicing does not apply (caller renders
- * its single-image fallback). Pure remember wrapper so the layout stays dumb.
- */
-@Composable
-private fun rememberSlices(
-    pageKey: String,
-    srcWidth: Int,
-    srcHeight: Int,
-    targetWidth: Int,
-    viewportHeight: Int?,
-    slicingEnabled: Boolean,
-): List<WebtoonSlicer.SliceRect>? {
-    return remember(pageKey, targetWidth, viewportHeight, slicingEnabled) {
-        if (!slicingEnabled) {
-            null
-        } else {
-            val textureLimit = ImageUtil.hardwareBitmapThreshold
-            if (!WebtoonSlicer.needsSlicing(srcWidth, srcHeight, targetWidth, textureLimit)) {
-                null
-            } else {
-                val maxSlice = WebtoonSlicer.maxSliceDisplayPx(
-                    textureLimitPx = textureLimit,
-                    viewportHeightPx = viewportHeight,
-                )
-                WebtoonSlicer.computeSlices(srcWidth, srcHeight, targetWidth, maxSlice)
-                    .ifEmpty { null }
-            }
-        }
-    }
-}
-
-/**
  * Decode: all slices via one shared region decoder (one header parse), cooperatively
  * cancellable so flinging between sections abandons stale decodes on key change.
+ *
+ * The sample and the rect to slice come from the plan ([WebtoonSlicePlanner]), not from the
+ * decoder: sample choice is a policy decision (width fit plus hysteresis), and the decoder
+ * only executes it.
  *
  * No manual recycle(): Compose may still hold an asImageBitmap() snapshot when the caller
  * disposes during a fast fling — recycling then crashes with "trying to use a recycled
@@ -139,21 +157,22 @@ private fun rememberDecodedSlices(
     pageKey: String,
     targetWidth: Int,
     sliceKey: String,
+    sampleSize: SampleSize,
     bytes: ByteArray,
-    srcWidth: Int,
+    sliceRect: PixelRect,
     slices: List<WebtoonSlicer.SliceRect>,
 ): List<android.graphics.Bitmap?>? {
     val decoded by produceState<List<android.graphics.Bitmap?>?>(
         initialValue = null,
         key1 = pageKey,
-        key2 = "$targetWidth:$sliceKey",
+        key2 = "$targetWidth:$sliceKey:${sampleSize.inSampleSize}",
     ) {
         value = withIOContext {
             // produceState's block runs in a coroutine: capture its context once for the
             // cooperative isActive check (cannot call suspend currentCoroutineContext
             // from inside the non-suspend isActive lambda).
             val hostContext = currentCoroutineContext()
-            WebtoonRegionDecoder.decodeSlices(bytes, srcWidth, slices, targetWidth) {
+            WebtoonRegionDecoder.decodeSlices(bytes, sliceRect, slices, sampleSize) {
                 hostContext.isActive
             }
         }
