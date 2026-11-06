@@ -5,14 +5,10 @@ import ephyra.app.extension.ExtensionManager
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
 import ephyra.core.download.DownloadManager
-import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.source.model.StubSource
-import ephyra.domain.source.registry.SourceRegistrationKind
-import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.repository.StubSourceRepository
 import ephyra.domain.source.service.SourceManager
 import ephyra.source.local.LocalSource
-import eu.kanade.tachiyomi.source.online.DynamicHttpSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,8 +34,6 @@ internal class AndroidSourceManager(
     private val fileSystem: ephyra.source.local.io.LocalSourceFileSystem,
     private val coverManager: ephyra.source.local.image.LocalCoverManager,
     private val downloadManagerProvider: Provider<DownloadManager>,
-    private val orchestratorProvider: Provider<ContentSourceOrchestrator>,
-    private val sourceRegistry: SourceRegistry,
     private val json: Json,
     private val xml: XML,
 ) : SourceManager {
@@ -58,22 +52,14 @@ internal class AndroidSourceManager(
     }
 
     init {
-        val originRegistrationsFlow = sourceRegistry.registrations.map { registrations ->
-            // No hardcoded fallback: an empty registry means the user removed every
-            // profile (or none was created yet) and injecting built-ins here
-            // made removed sources resurrect and default sources undeletable.
-            registrations.filter { it.kind == SourceRegistrationKind.ORIGIN_ADDRESSED }
-        }
-
         scope.launch {
             kotlinx.coroutines.flow.combine(
                 // Collected (not just read) so the derived `installedExtensionsFlow` state stays
                 // fresh for its `.value` readers (diagnostics, crash logs, search). The loaded set
                 // itself is read from the authoritative map below, which updates synchronously.
                 extensionManager.installedExtensionsFlow,
-                originRegistrationsFlow,
                 extensionManager.isInitialized,
-            ) { _, originRegistrations, extensionsLoaded ->
+            ) { _, extensionsLoaded ->
                 // Read the authoritative map synchronously instead of the value carried by the
                 // combine emission: the derived list can lag a write, and this must be the loaded
                 // set whenever `extensionsLoaded` is true.
@@ -103,25 +89,6 @@ internal class AndroidSourceManager(
                             "Failed to load extension sources for ${extension.name}",
                             e,
                         )
-                    }
-                }
-
-                // Add custom JS scrapers and heuristic sources
-                val orchestrator = orchestratorProvider.get()
-                originRegistrations.forEach { registration ->
-                    val profile = registration.profile ?: return@forEach
-                    if (profile.enabled) {
-                        try {
-                            val source = eu.kanade.tachiyomi.source.online.DynamicHttpSource(profile, orchestrator)
-                            mutableMap[source.id] = source
-                            registerStubSource(StubSource.from(source))
-                        } catch (e: Throwable) {
-                            android.util.Log.e(
-                                "AndroidSourceManager",
-                                "Failed to load dynamic source for profile: ${profile.displayName}",
-                                e,
-                            )
-                        }
                     }
                 }
 
