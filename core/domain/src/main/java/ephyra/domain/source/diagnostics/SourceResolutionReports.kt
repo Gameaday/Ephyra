@@ -1,5 +1,7 @@
 package ephyra.domain.source.diagnostics
 
+import ephyra.domain.source.registry.SourceEntryResolution
+
 /**
  * What the app's authorities say about the sources it has, captured for one reading.
  *
@@ -9,11 +11,11 @@ package ephyra.domain.source.diagnostics
 data class SourceRegistrationReport(
     /** Whether [ephyra.domain.source.service.SourceManager] had finished populating its map. */
     val sourceManagerReady: Boolean,
-    /** What the profile cache claims is profiled — including its hardcoded fallback trio. */
+    /** The origins the registry registers — what existence actually is, post-`SRC-011`. */
     val profiledDomains: Set<String>,
-    /** Profiled domains with no source registered under the same origin. `DEF-029`'s signature. */
+    /** Registry origins with no source in the map under the same origin. `DEF-029`'s signature. */
     val domainsWithoutRegisteredSource: Set<String>,
-    /** Domains whose registered source id disagrees with the identity rule derived from the origin. */
+    /** Origins where the map holds a source whose id disagrees with the registry's identity. */
     val domainsWithIdentityMismatch: Set<String>,
     /** Every registered online source id. */
     val registeredSourceIds: Set<Long>,
@@ -34,14 +36,15 @@ data class InstalledExtensionSummary(
 /**
  * How one entry's stored source id resolves.
  *
- * [domainsClaimingId] is the decisive field: empty means the id was written against a base URL that
- * no longer exists in that spelling (the orphaning `ADR-0012` describes), non-empty means the source
- * is genuinely absent and re-registering it recovers the entry.
+ * [resolution] is the answer. [domainsClaimingId] is its derived projection — non-empty exactly
+ * when the resolution is [SourceEntryResolution.SpellingChanged] — kept so log readers and tests
+ * can read the claim without re-matching the sealed type.
  */
 data class SourceEntryReport(
     val sourceId: Long,
     val resolvedClass: String?,
     val isStub: Boolean,
     val stubName: String?,
+    val resolution: SourceEntryResolution,
     val domainsClaimingId: Set<String>,
 )

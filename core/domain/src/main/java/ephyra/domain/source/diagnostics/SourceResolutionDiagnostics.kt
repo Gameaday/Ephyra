@@ -1,9 +1,12 @@
 package ephyra.domain.source.diagnostics
 
 import ephyra.core.common.util.system.logcat
-import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.model.StubSource
+import ephyra.domain.source.registry.SourceEntryResolution
+import ephyra.domain.source.registry.SourceOriginPolicy
+import ephyra.domain.source.registry.SourceRegistrationKind
+import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.service.SourceManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
@@ -12,42 +15,42 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Instruments the one fact this app has three owners for: which sources exist, and what each
- * source's identity is.
+ * Audits the registry-to-map projection: whether the sources [SourceRegistry] says exist are the
+ * sources the legacy [SourceManager] map actually holds.
  *
- * **Why this exists.** `DEF-029` is owner-reported as "an entry that opened yesterday cannot be
- * opened today, and the error it produces exists nowhere in this repository". Reading the tree
- * produced the mechanism but no reproduction: `AndroidSourceManager` builds the source map from the
- * preference set `profiled_domains_list` alone, `GetAvailableSources` reads the same set for the UI,
- * and `SourceProfileCache.getAllProfiledDomains()` returns that set *or* a hardcoded domain list —
- * while identity is derived as `baseUrl.hashCode()` in two independent places, and one failed health
- * check deletes the domain outright. Each of those is a *state* condition, so the symptom is a
- * function of preference and database state at launch rather than of the build, which is why it
- * presents as "worked yesterday".
+ * **Why this still exists after `SRC-011`.** The registry is now the one owner of existence and
+ * identity (`ADR-0012`), but the map is a *projection* of it — `AndroidSourceManager` rebuilds
+ * the map from registry registrations, and a projection can drift from its source (a map-build
+ * failure for one profile, a constructor throwing for another). This instrument reports that
+ * drift, so a user report answers "did the projection lose a source the registry has?" instead of
+ * re-litigating which of three owners is lying. There is one, and this watches it.
  *
- * **What it does, and does not do.** It only observes: it reads the authorities the failing path
- * reads and reports where they disagree, so one reproduction names the owner that lost the fact. It
- * deliberately re-derives the legacy `hashCode()` identity instead of importing it, because a
- * diagnostic that shares the rule it audits cannot detect a disagreement about that rule. The
- * mapping lookup uses the `baseUrl_scraper_mapping_<origin>` key idiom the sourcing hub used;
- * `SRC-011` moves that read into the registry and this call site moves with it.
+ * **Deliberate non-owner.** It reads both sides and re-derives nothing: the identity rule is the
+ * registry's ([SourceRegistry.resolveEntry]), imported rather than re-implemented, because the
+ * disagreement being audited is now projection disagreement, not rule disagreement. A diagnostic
+ * that shares the rule it audits cannot detect a disagreement about that rule.
  *
- * **Removal condition.** A defect instrument, not architecture: `DEF-029` closes with a reproduction
- * that names the owner, and `SRC-011` makes the disagreement it reports unrepresentable.
+ * **Removal condition.** A defect instrument, not architecture: it stays while `DEF-029`'s device
+ * reproduction is owed, and it is deleted when the entry-resolution outcome it reports is
+ * surfaced to the user directly.
  */
 @Singleton
 class SourceResolutionDiagnostics @Inject constructor(
     private val sourceManager: SourceManager,
     private val extensionManager: ExtensionManager,
-    private val profileCache: SourceProfileCache,
+    private val sourceRegistry: SourceRegistry,
 ) {
 
     /**
-     * Reports whether the source map agrees with the profiled-domain list.
+     * Reports whether the source map agrees with the registry.
      *
-     * Awaits [SourceManager] readiness with a bounded wait: reading the map before it is populated
-     * would report every domain as unregistered, and a false positive on the one defect this exists
-     * to detect is worse than no reading at all.
+     * Awaits [SourceManager] readiness with a bounded wait: reading the map before it is
+     * populated would report every registration as unregistered, and a false positive on the one
+     * defect this exists to detect is worse than no reading at all.
+     *
+     * A registration with a *disabled* profile is a deliberate absence, not a disagreement — the
+     * map is right to omit it. A payload-less registration is reported: the registry says the
+     * source exists, so the map must say so too.
      */
     suspend fun inspectRegistration(): SourceRegistrationReport {
         val ready = withTimeoutOrNull(SOURCE_MANAGER_READY_TIMEOUT_MS) {
@@ -55,18 +58,32 @@ class SourceResolutionDiagnostics @Inject constructor(
             true
         } ?: false
 
-        val domains = profileCache.getAllProfiledDomains()
+        val originRegistrations = sourceRegistry.currentRegistrations()
+            .filter { it.kind == SourceRegistrationKind.ORIGIN_ADDRESSED }
+        val expected = originRegistrations.filter { it.profile == null || it.profile.enabled }
         val onlineSources = sourceManager.getOnlineSources()
-        val sourceByOrigin = onlineSources.associateBy { it.baseUrl }
-        val idByOrigin = onlineSources.associate { it.baseUrl to it.id }
+
+        val missing = expected.mapNotNull { registration ->
+            val origin = registration.origin ?: return@mapNotNull null
+            val registered = onlineSources.any { source ->
+                SourceOriginPolicy.isSameOrigin(source.baseUrl, origin.value)
+            }
+            if (registered) null else origin.value
+        }.toSet()
+
+        val mismatched = expected.mapNotNull { registration ->
+            val origin = registration.origin ?: return@mapNotNull null
+            val registered = onlineSources.firstOrNull { source ->
+                SourceOriginPolicy.isSameOrigin(source.baseUrl, origin.value)
+            } ?: return@mapNotNull null
+            if (registered.id != registration.id) origin.value else null
+        }.toSet()
 
         return SourceRegistrationReport(
             sourceManagerReady = ready,
-            profiledDomains = domains,
-            domainsWithoutRegisteredSource = domains.filterNot { sourceByOrigin.containsKey(it) }.toSet(),
-            domainsWithIdentityMismatch = domains
-                .filter { origin -> idByOrigin[origin]?.let { it != legacyIdentity(origin) } == true }
-                .toSet(),
+            profiledDomains = originRegistrations.mapNotNull { it.origin?.value }.toSet(),
+            domainsWithoutRegisteredSource = missing,
+            domainsWithIdentityMismatch = mismatched,
             registeredSourceIds = onlineSources.map { it.id }.toSet(),
             stubSourceIds = sourceManager.getStubSources().map { it.id }.toSet(),
             installedExtensions = extensionManager.installedExtensionsFlow.value.map { extension ->
@@ -81,14 +98,11 @@ class SourceResolutionDiagnostics @Inject constructor(
     }
 
     /**
-     * Reports how one entry's stored source id resolves — the entry-level half of `DEF-029`.
-     *
-     * [SourceEntryReport.domainsClaimingId] is what separates the two causes: empty means the id was
-     * written against a base URL that no longer exists in that spelling (the orphaning `ADR-0012`
-     * describes), non-empty means the source is genuinely absent and re-registering it recovers the
-     * entry.
+     * Reports how one entry's stored source id resolves — the registry's answer plus the map view
+     * (resolved class / stub) for the same reading.
      */
     suspend fun inspectEntry(sourceId: Long): SourceEntryReport {
+        val resolution = sourceRegistry.resolveEntry(sourceId)
         val resolved = sourceManager.get(sourceId)
         val stub = resolved as? StubSource
             ?: sourceManager.getStubSources().firstOrNull { it.id == sourceId }
@@ -97,15 +111,19 @@ class SourceResolutionDiagnostics @Inject constructor(
             resolvedClass = resolved?.javaClass?.name,
             isStub = stub != null,
             stubName = stub?.name,
-            domainsClaimingId = profileCache.getAllProfiledDomains()
-                .filter { legacyIdentity(it) == sourceId }
-                .toSet(),
+            resolution = resolution,
+            domainsClaimingId = (resolution as? SourceEntryResolution.SpellingChanged)
+                ?.claimedOrigins
+                ?.map { it.value }
+                ?.toSet()
+                ?: emptySet(),
         )
     }
 
     /**
-     * Logs a registration reading. WARN when the authorities disagree, DEBUG otherwise, and the full
-     * inventory at DEBUG in both cases so a user report can be matched against the launch state.
+     * Logs a registration reading. WARN when the projection disagrees with the registry, DEBUG
+     * otherwise, and the full inventory at DEBUG in both cases so a user report can be matched
+     * against the launch state.
      */
     suspend fun reportRegistration(label: String) {
         val report = inspectRegistration()
@@ -114,8 +132,8 @@ class SourceResolutionDiagnostics @Inject constructor(
 
         if (disagreeing) {
             logcat(LogPriority.WARN) {
-                "Source registration defect [$label]: ${report.profiledDomains.size} profiled " +
-                    "domain(s); without a registered source ${report.domainsWithoutRegisteredSource}; " +
+                "Source registration defect [$label]: ${report.profiledDomains.size} registered " +
+                    "origin(s); without a registered source ${report.domainsWithoutRegisteredSource}; " +
                     "identity mismatch ${report.domainsWithIdentityMismatch}; " +
                     "${report.registeredSourceIds.size} registered source id(s); " +
                     "${report.stubSourceIds.size} stub source(s); " +
@@ -125,40 +143,32 @@ class SourceResolutionDiagnostics @Inject constructor(
 
         logcat(LogPriority.DEBUG) {
             "Source registration [$label]: ready=${report.sourceManagerReady}, " +
-                "domains=${report.profiledDomains}, " +
+                "origins=${report.profiledDomains}, " +
                 "extensions=${report.installedExtensions.joinToString { it.pkgName + ":" + it.sourceIds }}"
         }
     }
 
     /**
-     * Logs an entry-source reading. WARN when the entry's source is absent, DEBUG when it resolves.
+     * Logs an entry-source reading — exhaustive over [SourceEntryResolution], so a new case is a
+     * compile error here until it is reported.
      */
     suspend fun reportEntry(sourceId: Long) {
         val report = inspectEntry(sourceId)
-        val claiming = report.domainsClaimingId.joinToString(",").ifEmpty { "none" }
-
-        if (report.resolvedClass == null) {
-            logcat(LogPriority.WARN) {
-                "Entry source is not registered: sourceId=$sourceId, stub=${report.isStub} " +
-                    "(${report.stubName}), profiled domains claiming this id=$claiming; " +
-                    "empty claim means the entry's id came from a baseUrl whose spelling changed " +
-                    "(SRC-011, ADR-0012)"
-            }
-        } else {
-            logcat(LogPriority.DEBUG) {
+        when (val resolution = report.resolution) {
+            is SourceEntryResolution.Resolved -> logcat(LogPriority.DEBUG) {
                 "Entry source resolved: sourceId=$sourceId -> ${report.resolvedClass}"
+            }
+            is SourceEntryResolution.SpellingChanged -> logcat(LogPriority.WARN) {
+                "Entry source id changed spelling (SRC-011, ADR-0012): sourceId=$sourceId is " +
+                    "claimed by ${resolution.claimedOrigins.joinToString(",") { it.value }}; " +
+                    "re-registering one of those origins recovers the entry"
+            }
+            is SourceEntryResolution.Absent -> logcat(LogPriority.WARN) {
+                "Entry source is not registered and no registration claims its id: " +
+                    "sourceId=$sourceId, stub=${report.isStub} (${report.stubName})"
             }
         }
     }
-
-    /**
-     * The identity rule this app currently applies, re-derived rather than imported.
-     *
-     * Kept verbatim on purpose: it must go stale *with* `DynamicHttpSource` and
-     * `GetAvailableSources`, and the day those two change is the day this reports an identity
-     * mismatch instead of silently agreeing with them.
-     */
-    private fun legacyIdentity(origin: String): Long = origin.hashCode().toLong()
 
     private companion object {
         /**
