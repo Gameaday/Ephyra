@@ -4,6 +4,7 @@ import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.Result
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.SourceProfile
+import ephyra.domain.source.registry.SourceRegistry
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,6 +14,7 @@ import javax.inject.Singleton
 @Singleton
 class RemoveCustomSource @Inject constructor(
     private val orchestrator: ContentSourceOrchestrator,
+    private val sourceRegistry: SourceRegistry,
     private val preferenceStore: PreferenceStore,
 ) {
 
@@ -32,14 +34,10 @@ class RemoveCustomSource @Inject constructor(
             val mappingKey = "baseUrl_scraper_mapping_$target"
             preferenceStore.getString(mappingKey, "").delete()
 
-            // Remove the domain from the profiled-domains set. Without this the
-            // profile cache rebuilds the profile on next launch and the "removed"
-            // source resurrects.
-            val domainsKey = "profiled_domains_list"
-            val domains = preferenceStore.getStringSet(domainsKey, emptySet()).get()
-            preferenceStore.getStringSet(domainsKey, emptySet()).set(
-                domains.filterNot { normalizeUrl(it) == target }.toSet(),
-            )
+            // Erase the origin through the registry (SRC-011): the registry owns the
+            // profiled-domains set, and `unregister` removes every spelling of the
+            // origin — and only the origin — so no second spelling can resurrect it.
+            sourceRegistry.unregister(baseUrl)
 
             // Invalidate the cached profile
             orchestrator.invalidateProfile(baseUrl)

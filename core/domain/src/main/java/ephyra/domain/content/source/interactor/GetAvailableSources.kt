@@ -1,11 +1,10 @@
 package ephyra.domain.content.source.interactor
 
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.domain.content.source.ContentSourceOrchestrator
-import ephyra.domain.content.source.SourceProfile
-import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.extension.service.ExtensionManager
+import ephyra.domain.source.registry.SourceRegistration
+import ephyra.domain.source.registry.SourceRegistrationKind
+import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -17,34 +16,34 @@ import javax.inject.Singleton
 
 /**
  * Gets all available sources across all source types (legacy extensions, JS scrapers, heuristics, repositories).
+ *
+ * SRC-011/ADR-0012: this interactor no longer decides which sources exist and no longer derives
+ * their identity. Both facts come from [SourceRegistry] — the one owner — and this class only
+ * projects them into row models. The id in every row is the registry's id, which is the same id
+ * `DynamicHttpSource` carries, so a row tap resolves in the source map by construction instead
+ * of by two components happening to hash the same spelling of a URL.
  */
 @Singleton
 class GetAvailableSources @Inject constructor(
     private val sourceManager: SourceManager,
     private val extensionManager: ExtensionManager,
-    private val orchestrator: ContentSourceOrchestrator,
-    private val profileCache: SourceProfileCache,
-    private val preferenceStore: PreferenceStore,
+    private val registry: SourceRegistry,
     private val sourcePreferences: SourcePreferences,
 ) {
     operator fun invoke(): Flow<List<UnifiedSource>> {
-        val heuristicProfilesFlow: Flow<List<SourceProfile>> = preferenceStore.getStringSet(
-            "profiled_domains_list",
-            emptySet(),
-        )
-            .changes()
-            .map { domains ->
-                // No hardcoded fallback: an empty set means the user removed every
+        val originRegistrationsFlow: Flow<List<SourceRegistration>> = registry.registrations
+            .map { registrations ->
+                // No hardcoded fallback: an empty registry means the user removed every
                 // profile (or none was created yet) and injecting built-ins here
                 // made removed sources resurrect and default sources undeletable.
-                domains.mapNotNull { profileCache.get(it) }
+                registrations.filter { it.kind == SourceRegistrationKind.ORIGIN_ADDRESSED }
             }
 
         return combine(
             sourceManager.catalogueSources,
             extensionManager.installedExtensionsFlow,
-            heuristicProfilesFlow,
-        ) { catalogueSources, extensions, heuristicProfiles ->
+            originRegistrationsFlow,
+        ) { catalogueSources, extensions, originRegistrations ->
             val unifiedSources = mutableListOf<UnifiedSource>()
 
             // Legacy extension sources - represent each installed extension package once
@@ -66,18 +65,19 @@ class GetAvailableSources @Inject constructor(
                 )
             }
 
-            // Heuristic/JS scraper profiles
-            for (profile in heuristicProfiles) {
+            // Origin-addressed sources (JS scrapers, heuristics), projected from the registry.
+            // Existence and identity are the registry's; this only shapes rows.
+            for (registration in originRegistrations) {
                 unifiedSources.add(
                     UnifiedSource(
-                        id = profile.baseUrl.hashCode().toLong(),
-                        name = profile.displayName,
-                        baseUrl = profile.baseUrl,
-                        sourceType = profile.sourceType,
-                        enabled = profile.enabled,
+                        id = registration.id,
+                        name = registration.displayName,
+                        baseUrl = registration.origin?.value ?: "",
+                        sourceType = registration.sourceType,
+                        enabled = registration.enabled,
                         extensionId = null,
-                        lastHealthCheck = profile.lastHealthCheck,
-                        failureCount = profile.failureCount,
+                        lastHealthCheck = registration.lastHealthCheck,
+                        failureCount = registration.failureCount,
                     ),
                 )
             }

@@ -3,12 +3,12 @@ package eu.kanade.tachiyomi.source
 import android.content.Context
 import ephyra.app.extension.ExtensionManager
 import ephyra.core.common.i18n.stringResource
-import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.system.logcat
 import ephyra.core.download.DownloadManager
 import ephyra.domain.content.source.ContentSourceOrchestrator
-import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.source.model.StubSource
+import ephyra.domain.source.registry.SourceRegistrationKind
+import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.repository.StubSourceRepository
 import ephyra.domain.source.service.SourceManager
 import ephyra.source.local.LocalSource
@@ -39,8 +39,7 @@ internal class AndroidSourceManager(
     private val coverManager: ephyra.source.local.image.LocalCoverManager,
     private val downloadManagerProvider: Provider<DownloadManager>,
     private val orchestratorProvider: Provider<ContentSourceOrchestrator>,
-    private val profileCache: SourceProfileCache,
-    private val preferenceStore: PreferenceStore,
+    private val sourceRegistry: SourceRegistry,
     private val json: Json,
     private val xml: XML,
 ) : SourceManager {
@@ -59,13 +58,12 @@ internal class AndroidSourceManager(
     }
 
     init {
-        val heuristicProfilesFlow = preferenceStore.getStringSet("profiled_domains_list", emptySet())
-            .changes()
-            .map { domains ->
-                domains.mapNotNull { domain ->
-                    profileCache.get(domain)
-                }
-            }
+        val originRegistrationsFlow = sourceRegistry.registrations.map { registrations ->
+            // No hardcoded fallback: an empty registry means the user removed every
+            // profile (or none was created yet) and injecting built-ins here
+            // made removed sources resurrect and default sources undeletable.
+            registrations.filter { it.kind == SourceRegistrationKind.ORIGIN_ADDRESSED }
+        }
 
         scope.launch {
             kotlinx.coroutines.flow.combine(
@@ -73,9 +71,9 @@ internal class AndroidSourceManager(
                 // fresh for its `.value` readers (diagnostics, crash logs, search). The loaded set
                 // itself is read from the authoritative map below, which updates synchronously.
                 extensionManager.installedExtensionsFlow,
-                heuristicProfilesFlow,
+                originRegistrationsFlow,
                 extensionManager.isInitialized,
-            ) { _, profiles, extensionsLoaded ->
+            ) { _, originRegistrations, extensionsLoaded ->
                 // Read the authoritative map synchronously instead of the value carried by the
                 // combine emission: the derived list can lag a write, and this must be the loaded
                 // set whenever `extensionsLoaded` is true.
@@ -110,7 +108,8 @@ internal class AndroidSourceManager(
 
                 // Add custom JS scrapers and heuristic sources
                 val orchestrator = orchestratorProvider.get()
-                profiles.forEach { profile ->
+                originRegistrations.forEach { registration ->
+                    val profile = registration.profile ?: return@forEach
                     if (profile.enabled) {
                         try {
                             val source = eu.kanade.tachiyomi.source.online.DynamicHttpSource(profile, orchestrator)

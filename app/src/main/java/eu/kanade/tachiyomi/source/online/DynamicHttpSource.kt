@@ -5,6 +5,7 @@ import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.SourceProfile
+import ephyra.domain.source.registry.SourceIdentityPolicy
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -27,7 +28,11 @@ class DynamicHttpSource(
     override val baseUrl: String = profile.baseUrl
     override val name: String = profile.displayName
     override val lang: String = "en"
-    override val id: Long = profile.baseUrl.hashCode().toLong()
+    // SRC-011/ADR-0012: identity is the registry's rule, not a local hash of whatever
+    // spelling this profile carries. SourceIdentityPolicy derives it from the canonical
+    // origin, so two spellings of the same source are one source — and the id here is
+    // the id the Sources list and the source map already project.
+    override val id: Long = SourceIdentityPolicy.identityOf(profile.baseUrl)
     override val supportsLatest: Boolean = true
 
     override fun headersBuilder(): okhttp3.Headers.Builder = okhttp3.Headers.Builder().apply {

@@ -189,6 +189,7 @@ import ephyra.domain.source.interactor.ToggleIncognito
 import ephyra.domain.source.interactor.ToggleLanguage
 import ephyra.domain.source.interactor.ToggleSource
 import ephyra.domain.source.interactor.ToggleSourcePin
+import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.repository.SourceRepository
 import ephyra.domain.source.repository.StubSourceRepository
 import ephyra.domain.source.service.SourceManager
@@ -593,8 +594,7 @@ object AppModule {
         localCoverManager: LocalCoverManager,
         downloadManagerProvider: Provider<DownloadManager>,
         orchestratorProvider: Provider<ContentSourceOrchestrator>,
-        profileCache: SourceProfileCache,
-        preferenceStore: PreferenceStore,
+        sourceRegistry: SourceRegistry,
         json: Json,
         xml: XML,
     ): SourceManager = AndroidSourceManager(
@@ -605,8 +605,7 @@ object AppModule {
         coverManager = localCoverManager,
         downloadManagerProvider = downloadManagerProvider,
         orchestratorProvider = orchestratorProvider,
-        profileCache = profileCache,
-        preferenceStore = preferenceStore,
+        sourceRegistry = sourceRegistry,
         json = json,
         xml = xml,
     )
