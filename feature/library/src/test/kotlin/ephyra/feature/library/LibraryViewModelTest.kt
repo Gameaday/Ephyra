@@ -366,7 +366,6 @@ class LibraryViewModelTest {
         displayedCategories.firstOrNull()?.let { getItemsForCategory(it).map { item -> item.id } }
             ?: emptyList()
 
-
     /**
      * The sort dialog must highlight the sort that produced the order on screen.
      *
