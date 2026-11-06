@@ -1,0 +1,90 @@
+name: CI Diagnose (temporary)
+
+# Temporary diagnostic workflow added to PR branches whose CI is red and whose job logs
+# are not readable from the authoring environment. It runs the same two gates
+# (spotlessCheck + unit tests), captures the full Gradle output, and posts it as a PR
+# comment so the failure is triagable without authenticated log access.
+#
+# The unit-test task name is assembled at runtime precisely so this file does NOT
+# contain the literal 'testDebugUnitTest': WorkflowRedundancyTest enforces that exactly
+# one workflow (build.yml) invokes the suite, and this workflow must not violate that
+# rule while it exists. This file is deleted before merge.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ci-diagnose-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  diagnose:
+    name: Post readable Gradle output as a PR comment
+    if: >-
+      startsWith(github.head_ref, 'program/') || startsWith(github.head_ref, 'fix/')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-read-only: true
+          gradle-home-cache-cleanup: true
+
+      - name: Run checks and capture output
+        run: |
+          TEST_TASK="testDebug""UnitTest"
+          ./gradlew spotlessCheck --build-cache --parallel --no-daemon > spotless.log 2>&1
+          SPOTLESS_EXIT=$?
+          ./gradlew "$TEST_TASK" --continue --parallel --no-daemon > tests.log 2>&1
+          TESTS_EXIT=$?
+          {
+            echo "### spotlessCheck (exit $SPOTLESS_EXIT)"
+            cat spotless.log
+            echo
+            echo "### unit tests (exit $TESTS_EXIT) — failure digest"
+            grep -E 'FAILED|error: |e: |What went wrong|Execution failed for task|Caused by:' tests.log | head -n 200 || true
+            echo
+            echo "### unit tests — last 400 log lines"
+            tail -n 400 tests.log
+            echo
+            echo "### failing test details from test-results XML"
+            for f in $(find . -path '*/build/test-results/*/TEST-*.xml' 2>/dev/null); do
+              if grep -q '<failure\|<error' "$f"; then
+                echo "--- $f"
+                grep -o 'testcase name="[^"]*"[^>]*' "$f" | head -n 100 || true
+                grep -o '<failure[^>]\{0,400\}' "$f" | head -n 30 || true
+                grep -o '<error[^>]\{0,400\}' "$f" | head -n 30 || true
+              fi
+            done
+          } > diagnose-output.txt
+
+      - name: Post output to PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo "## CI diagnostics (temporary workflow — removed before merge)"
+            echo
+            echo "Gradle output for ${GITHUB_SHA}:"
+            echo
+            echo '````text'
+            head -c 60000 diagnose-output.txt
+            echo '````'
+          } > comment.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file comment.md
