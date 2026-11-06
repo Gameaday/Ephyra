@@ -57,11 +57,11 @@ class SourceOriginPolicyTest {
     @Test
     fun `what is not an http(s) origin does not canonicalize`() {
         val rejected = listOf(
-            "",                            // nothing at all
-            "mangadex.org",                // no scheme
-            "ftp://mangadex.org",          // non-http scheme
-            "https://",                    // no host
-            "https://user@mangadex.org",   // userinfo is a credential, not identity
+            "", // nothing at all
+            "mangadex.org", // no scheme
+            "ftp://mangadex.org", // non-http scheme
+            "https://", // no host
+            "https://user@mangadex.org", // userinfo is a credential, not identity
             "https://mangadex.org:notaport", // a port that is not a number
             "https://mangadex.org:443x",
         )
