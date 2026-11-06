@@ -28,6 +28,7 @@ class DynamicHttpSource(
     override val baseUrl: String = profile.baseUrl
     override val name: String = profile.displayName
     override val lang: String = "en"
+
     // SRC-011/ADR-0012: identity is the registry's rule, not a local hash of whatever
     // spelling this profile carries. SourceIdentityPolicy derives it from the canonical
     // origin, so two spellings of the same source are one source — and the id here is

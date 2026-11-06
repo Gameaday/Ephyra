@@ -3,6 +3,7 @@ package ephyra.domain.content.source.interactor
 import ephyra.core.common.util.Result
 import ephyra.domain.content.model.ContentType
 import ephyra.domain.content.source.ContentSourceOrchestrator
+import ephyra.domain.content.source.PreferenceSourceProfileStore
 import ephyra.domain.content.source.SourceProfile
 import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.extension.service.ExtensionManager
@@ -15,6 +16,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -32,7 +34,8 @@ class RemoveCustomSourceTest {
 
     private val orchestrator = mockk<ContentSourceOrchestrator>(relaxed = true)
     private val store = FakePreferenceStore()
-    private val profileCache = SourceProfileCache(mockk(relaxed = true))
+    private val json = Json { ignoreUnknownKeys = true }
+    private val profileCache = SourceProfileCache(PreferenceSourceProfileStore(store, json))
 
     private val baseUrl = "https://mangadex.org"
 
