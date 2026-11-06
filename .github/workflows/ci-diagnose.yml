@@ -76,6 +76,25 @@ jobs:
             done
           } > diagnose-output.txt
 
+      - name: Export Room schema 5.json (temporary)
+        run: |
+          # The v5 schema JSON is a committed artifact (see the schema note in Migrations.kt):
+          # KSP exports it while compiling, but the write is a side effect that is not a
+          # build-cache output, so a fresh runner may never materialize the file. Re-run the
+          # KSP task explicitly and base64 the file so it can be recovered and committed from
+          # the PR comment. Temporary, like the rest of this workflow.
+          set +e
+          ./gradlew :core:data:kspDebugKotlin --rerun-tasks --no-configuration-cache --no-daemon > ksp.log 2>&1
+          echo "kspDebugKotlin exit: $?"
+          SCHEMA=core/data/schemas/ephyra.data.room.EphyraDatabase/5.json
+          if [ -f "$SCHEMA" ]; then
+            base64 -w 0 "$SCHEMA" > schema.b64
+            echo "schema b64 chars: $(wc -c < schema.b64)"
+          else
+            echo "SCHEMA 5.json MISSING - ksp.log tail:"
+            tail -n 30 ksp.log
+          fi
+
       - name: Post output to PR
         env:
           GH_TOKEN: ${{ github.token }}
@@ -91,3 +110,20 @@ jobs:
             echo '````'
           } > comment.md
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file comment.md
+
+      - name: Post exported schema to PR (temporary)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -f schema.b64 ]; then
+            {
+              echo "## Exported Room schema 5.json (base64, temporary comment - removed before merge)"
+              echo
+              echo '````text'
+              cat schema.b64
+              echo
+              echo '````'
+            } > schema-comment.md
+            gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file schema-comment.md
+          fi
