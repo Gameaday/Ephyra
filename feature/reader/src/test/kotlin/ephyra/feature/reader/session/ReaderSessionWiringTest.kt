@@ -30,8 +30,11 @@ import ephyra.feature.reader.ReaderViewModel
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.source.local.image.LocalCoverManager
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +61,14 @@ import org.junit.jupiter.api.Test
  * No JDK runs locally; every gate here is CI's. When a gate here is red, the temporary
  * diagnose workflow on this branch re-runs the targeted suites and posts the failure
  * (with its stack trace) as a pull request comment; it is removed before merge.
+ *
+ * Quiescence: onPageSelected persists progress through launchNonCancellable, which runs on the
+ * real Dispatchers.IO pool -- a thread this test cannot join. If that coroutine were still
+ * in flight when the next test's BeforeEach stubs the same mocks, the stub registry would be
+ * mutated concurrently with a live call, and the exception surfaces in the *next* test as
+ * UncaughtExceptionsBeforeTest rather than in the test that leaked it. The smart-combine read is
+ * the last stubbed-mock call on that path, so the selection test awaits it before finishing;
+ * what remains on the IO coroutine afterwards is pure code and never-stubbed mocks.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReaderSessionWiringTest {
@@ -92,15 +103,46 @@ class ReaderSessionWiringTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
+    /** Counted down by the smart-combine read, the last stubbed call of the progress write. */
+    private lateinit var progressWriteReached: CountDownLatch
+
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        progressWriteReached = CountDownLatch(1)
 
         every { defaultReadingModePref.stateIn(any()) } returns MutableStateFlow(0)
         every { readerPreferences.defaultReadingMode() } returns defaultReadingModePref
 
         every { defaultOrientationPref.stateIn(any()) } returns MutableStateFlow(0)
         every { readerPreferences.defaultOrientationType() } returns defaultOrientationPref
+
+        // Parity with ReaderViewModelTest: the completion path reads these through the same
+        // view model, so they are pinned here too in case the seams under test move.
+        val autoUpdateTrackPref: Preference<Boolean> = mockk(relaxed = true) {
+            every { getSync() } returns false
+            coEvery { get() } returns false
+        }
+        every { trackPreferences.autoUpdateTrack() } returns autoUpdateTrackPref
+
+        val removeAfterReadSlotsPref: Preference<Int> = mockk(relaxed = true) {
+            coEvery { get() } returns -1
+        }
+        every { downloadPreferences.removeAfterReadSlots() } returns removeAfterReadSlotsPref
+
+        val markDuplicatePref: Preference<Set<String>> = mockk(relaxed = true) {
+            coEvery { get() } returns emptySet()
+        }
+        every { libraryPreferences.markDuplicateReadChapterAsRead() } returns markDuplicatePref
+
+        // The last stubbed-mock call of the IO progress write; see the class KDoc.
+        val smartCombinePref: Preference<Boolean> = mockk(relaxed = true) {
+            coEvery { get() } coAnswers {
+                progressWriteReached.countDown()
+                false
+            }
+        }
+        every { readerPreferences.smartCombinePaged() } returns smartCombinePref
     }
 
     @AfterEach
@@ -166,6 +208,14 @@ class ReaderSessionWiringTest {
         readerChapter.state = ReaderChapter.State.Loaded(pages)
 
         viewModel.onEvent(ReaderEvent.PageSelected(pages.first()))
+
+        // The selection persists progress on Dispatchers.IO; wait for that coroutine to pass
+        // its last stubbed call so it cannot race the next test's stubbing (class KDoc).
+        assertTrue(
+            progressWriteReached.await(5, TimeUnit.SECONDS),
+            "the IO progress write must reach the smart-combine read within the deadline",
+        )
+        Thread.sleep(100)
 
         assertTrue(
             viewModel.sessionState.phase is ReaderSessionPhase.Closed,
