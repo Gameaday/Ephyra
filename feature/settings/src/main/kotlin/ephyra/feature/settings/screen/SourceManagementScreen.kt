@@ -20,31 +20,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Autorenew
-import androidx.compose.material.icons.outlined.CloudDownload
-import androidx.compose.material.icons.outlined.Code
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material.icons.outlined.UploadFile
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -81,8 +67,6 @@ fun SourceManagementScreen(
     val error = state.error
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
-    var showRemoveConfirmDialog by remember { mutableStateOf(false) }
-    var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
 
     LaunchedEffect(error) {
         if (error != null) {
@@ -132,13 +116,6 @@ fun SourceManagementScreen(
                 onSourceLongClick = { source ->
                     snackbarMessage = "Long-press actions coming soon for ${source.name}"
                 },
-                onForceRediscover = { source ->
-                    viewModel.onEvent(SourceManagementEvent.ForceRediscover(source.baseUrl))
-                },
-                onRemoveSource = { source ->
-                    selectedSourceToRemove = source
-                    showRemoveConfirmDialog = true
-                },
             )
         }
 
@@ -155,46 +132,6 @@ fun SourceManagementScreen(
                 },
             )
         }
-
-        // Remove source confirmation dialog
-        if (showRemoveConfirmDialog && selectedSourceToRemove != null) {
-            AlertDialog(
-                onDismissRequest = {
-                    showRemoveConfirmDialog = false
-                    selectedSourceToRemove = null
-                },
-                title = { Text("Remove Source") },
-                text = {
-                    Text(
-                        "Are you sure you want to remove \"${selectedSourceToRemove!!.name}\"? " +
-                            "This action cannot be undone.",
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            selectedSourceToRemove?.let { source ->
-                                viewModel.onEvent(SourceManagementEvent.RemoveSource(source.baseUrl))
-                            }
-                            showRemoveConfirmDialog = false
-                            selectedSourceToRemove = null
-                        },
-                    ) {
-                        Text("Remove", color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showRemoveConfirmDialog = false
-                            selectedSourceToRemove = null
-                        },
-                    ) {
-                        Text("Cancel")
-                    }
-                },
-            )
-        }
     }
 }
 
@@ -206,8 +143,6 @@ private fun SourceManagementLayout(
     onRefresh: () -> Unit,
     onSourceClick: (UnifiedSource) -> Unit,
     onSourceLongClick: (UnifiedSource) -> Unit,
-    onForceRediscover: (UnifiedSource) -> Unit,
-    onRemoveSource: (UnifiedSource) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -248,8 +183,6 @@ private fun SourceManagementLayout(
                         sources = typeSources,
                         onSourceClick = onSourceClick,
                         onSourceLongClick = onSourceLongClick,
-                        onForceRediscover = onForceRediscover,
-                        onRemoveSource = onRemoveSource,
                     )
                 }
             }
@@ -338,8 +271,6 @@ private fun SourceTypeSection(
     sources: List<UnifiedSource>,
     onSourceClick: (UnifiedSource) -> Unit,
     onSourceLongClick: (UnifiedSource) -> Unit,
-    onForceRediscover: (UnifiedSource) -> Unit,
-    onRemoveSource: (UnifiedSource) -> Unit,
 ) {
     val (icon, color) = when (sourceType) {
         SourceType.REMOTE_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
@@ -407,8 +338,6 @@ private fun SourceTypeSection(
                         source = source,
                         onClick = { onSourceClick(source) },
                         onLongClick = { onSourceLongClick(source) },
-                        onForceRediscover = { onForceRediscover(source) },
-                        onRemoveSource = { onRemoveSource(source) },
                     )
                 }
             }
@@ -421,8 +350,6 @@ private fun SourceRow(
     source: UnifiedSource,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onForceRediscover: () -> Unit,
-    onRemoveSource: () -> Unit,
 ) {
     val statusColor = if (source.enabled) {
         MaterialTheme.colorScheme.primary
@@ -556,86 +483,8 @@ private fun SourceRow(
                     }
                 }
             }
-
-            // Actions
-            Column(
-                horizontalAlignment = Alignment.End,
-            ) {
-                IconButton(onClick = onForceRediscover) {
-                    Icon(
-                        imageVector = Icons.Outlined.Refresh,
-                        contentDescription = "Force rediscover",
-                        tint = MaterialTheme.colorScheme.outline,
-                    )
-                }
-                if (source.sourceType != SourceType.REMOTE_EXTENSION) {
-                    IconButton(onClick = onRemoveSource) {
-                        Icon(
-                            imageVector = Icons.Outlined.DeleteOutline,
-                            contentDescription = "Remove source",
-                            tint = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
-            }
         }
     }
-}
-
-@Composable
-private fun AddHeuristicDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String?) -> Unit,
-    url: String,
-    onUrlChange: (String) -> Unit,
-    name: String,
-    onNameChange: (String) -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Heuristic Profile") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = onUrlChange,
-                    label = { Text("Website Base URL") },
-                    placeholder = { Text("https://example.com") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = onNameChange,
-                    label = { Text("Display Name (optional)") },
-                    placeholder = { Text("Auto-detected from page title") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "The adaptive heuristic engine will analyze the page structure on first use.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (url.isNotBlank()) {
-                    onConfirm(url, name.ifBlank { null })
-                }
-            }) {
-                Text("Add")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
 }
 
 // Extensions

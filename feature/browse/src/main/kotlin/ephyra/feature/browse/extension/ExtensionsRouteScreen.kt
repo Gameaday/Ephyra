@@ -78,8 +78,6 @@ fun ExtensionsRouteScreen(
             state = state,
             contentPadding = contentPadding,
             searchQuery = state.searchQuery,
-            onForceRediscover = viewModel::forceRediscover,
-            onRemoveSource = viewModel::removeSource,
             onRefresh = viewModel::refreshAll,
             onAddRepository = viewModel::addRepository,
             onDeleteRepository = viewModel::deleteRepository,

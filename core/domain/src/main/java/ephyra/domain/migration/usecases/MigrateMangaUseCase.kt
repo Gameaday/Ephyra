@@ -1,6 +1,5 @@
 package ephyra.domain.migration.usecases
 
-import ephyra.core.common.util.getOrNull
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
@@ -9,7 +8,6 @@ import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.toChapterUpdate
 import ephyra.domain.chapter.service.ChapterNumber
-import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
@@ -44,7 +42,6 @@ class MigrateMangaUseCase(
     private val getTracks: GetTracks,
     private val insertTrack: InsertTrack,
     private val coverCache: CoverCache,
-    private val orchestrator: ContentSourceOrchestrator? = null,
 ) {
 
     suspend operator fun invoke(current: Manga, target: Manga, replace: Boolean) {
@@ -54,51 +51,20 @@ class MigrateMangaUseCase(
         val enhancedServices = trackerManager.loggedInTrackers().filterIsInstance<EnhancedTracker>()
 
         try {
-            val chapters: List<SChapter> = if (targetSource is CatalogueSource) {
-                targetSource.getChapterList(target.toSManga())
-            } else if (orchestrator != null) {
-                val profiles = orchestrator.getAllProfiles()
-                val profile = profiles.firstOrNull { it.baseUrl.hashCode().toLong() == target.source }
-                    ?: profiles.firstOrNull { target.url.startsWith(it.baseUrl) }
-                if (profile != null) {
-                    val fullUrl = if (target.url.startsWith(
-                            "http",
-                        )
-                    ) {
-                        target.url
-                    } else {
-                        "${profile.baseUrl.trimEnd('/')}/${target.url.trimStart('/')}"
-                    }
-                    val units = orchestrator.getChapters(profile.baseUrl, fullUrl).getOrNull() ?: emptyList()
-                    units.map { unit ->
-                        SChapter.create().apply {
-                            url =
-                                if (unit.url.startsWith(
-                                        profile.baseUrl,
-                                    )
-                                ) {
-                                    unit.url.removePrefix(profile.baseUrl)
-                                } else {
-                                    unit.url
-                                }
-                            name = unit.title
-                            chapter_number = unit.number.toFloat()
-                            date_upload = unit.dateUpload
-                            scanlator = unit.scanlator
-                        }
-                    }
-                } else {
-                    emptyList()
-                }
-            } else {
-                emptyList()
-            }
+            // ADR-0017: the profile path (JS scrapers and heuristic sources) is deleted, so
+            // every reachable source is a CatalogueSource. A target that is not a
+            // CatalogueSource is a stub the manager could not resolve: it has no chapter
+            // provider, and syncing an empty chapter list would delete the target's existing
+            // chapters, so the migration completes without touching them.
+            if (targetSource is CatalogueSource) {
+                val chapters: List<SChapter> = targetSource.getChapterList(target.toSManga())
 
-            try {
-                syncChaptersWithSource.await(chapters, target, targetSource)
-            } catch (e: Exception) {
-                logcat(LogPriority.WARN, e) {
-                    "Chapter sync failed during migration to '${target.title}'; chapters may be incomplete"
+                try {
+                    syncChaptersWithSource.await(chapters, target, targetSource)
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) {
+                        "Chapter sync failed during migration to '${target.title}'; chapters may be incomplete"
+                    }
                 }
             }
 
