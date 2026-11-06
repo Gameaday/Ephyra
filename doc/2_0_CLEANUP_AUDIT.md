@@ -21,6 +21,12 @@ plus `grep` for consumers in `src/main`). No claim is taken from a PR descriptio
 
 ### CU-1 — `ReaderSessionCoordinator` / `ReaderSessionIdentity` are built but unwired
 
+> **Update 2026-11-06 (A2): resolved — wired.** `ReaderViewModel` now constructs
+> `ReaderSessionCoordinator` (with `ReaderSessionEffectLog` as the effect handler) and drives it
+> at every reader seam; `sessionState` is exposed. The `UnwiredTargetComponentTest` ceiling is
+> not re-measured here — wiring only lowers the count, and the ceiling is the ratchet's metric,
+> not its proof.
+
 - **Evidence.** Both files exist in `feature/reader/src/main/kotlin/ephyra/feature/reader/session/`
   and are referenced **only by themselves and their tests** — no production consumer.
 - **Impact.** This is the exact "built but never wired" shape the new
@@ -80,6 +86,12 @@ plus `grep` for consumers in `src/main`). No claim is taken from a PR descriptio
   `SourceContentItem` directly (plan **B6** / `SRC-007`).
 
 ### CU-7 — Two reader-session abstractions, no single owner
+
+> **Update 2026-11-06 (A2): partially resolved.** The session is now the state authority for the
+> wired slice (chapter/page identity, index, direction, menu visibility, phase) via
+> `ReaderSessionCoordinator`; the legacy `ReaderViewModel` fields remain the effect executors
+> until the owner migration completes, so the single-owner end state this row asks for is not yet
+> fully reached.
 
 - **Evidence.** `ReaderSession` (pure reducer) + `ReaderSessionCoordinator` + `ReaderSessionIdentity`
   + the loose fields still in `ReaderViewModel`.
