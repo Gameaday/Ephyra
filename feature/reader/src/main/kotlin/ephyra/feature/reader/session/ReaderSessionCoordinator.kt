@@ -92,7 +92,16 @@ class ReaderSessionCoordinator(
             ),
         )
 
-    /** Records that the reader landed on [page], and in which direction it arrived. */
+    /**
+     * Records that the reader landed on [page], and in which direction it arrived.
+     *
+     * The machine records arrival direction only through a move command, because direction is
+     * state about a transition -- it is what `checkChapterCompletion` gates on, and a jump does
+     * not name one. An adjacent selection therefore dispatches the move, recording the
+     * direction with the page; a jump, or a landing that states no direction, dispatches
+     * [ReaderCommand.SelectPage], which records the identity and index and leaves the
+     * direction unclaimed. The caller settles the page with [pageLoaded].
+     */
     fun selectPage(
         page: Page,
         chapter: Chapter,
@@ -101,19 +110,17 @@ class ReaderSessionCoordinator(
     ): ReaderSessionState {
         val chapterId = ReaderSessionIdentity.chapterId(chapter.url, sourceId)
         val pageId = ReaderSessionIdentity.pageId(page.url, page.index, chapterId)
-        // The session tracks arrival direction as state rather than as an argument, so the first
-        // move after opening a chapter has to be stated or the machine cannot tell a forward arrival
-        // from a backward one -- which is exactly the distinction `checkChapterCompletion` gates on.
-        if (state.direction != direction) {
-            dispatch(ReaderCommand.SelectPage(sessionId, pageId))
+        if (state.phase is ReaderSessionPhase.Ready && state.pageId != null) {
+            val currentIndex = state.pageIds.indexOfFirst { it == state.pageId }
+            val targetIndex = state.pageIds.indexOfFirst { it == pageId }
+            val adjacentForward =
+                direction == ReaderNavigationDirection.FORWARD && targetIndex == currentIndex + 1
+            val adjacentBackward =
+                direction == ReaderNavigationDirection.BACKWARD && targetIndex == currentIndex - 1
+            if (adjacentForward) return dispatch(ReaderCommand.MoveForward(sessionId))
+            if (adjacentBackward) return dispatch(ReaderCommand.MoveBackward(sessionId))
         }
-        return dispatch(
-            when (direction) {
-                ReaderNavigationDirection.FORWARD -> ReaderCommand.MoveForward(sessionId)
-                ReaderNavigationDirection.BACKWARD -> ReaderCommand.MoveBackward(sessionId)
-                ReaderNavigationDirection.NONE -> ReaderCommand.SelectPage(sessionId, pageId)
-            },
-        )
+        return dispatch(ReaderCommand.SelectPage(sessionId, pageId))
     }
 
     fun pageLoaded(page: Page, chapter: Chapter, sourceId: Long): ReaderSessionState {

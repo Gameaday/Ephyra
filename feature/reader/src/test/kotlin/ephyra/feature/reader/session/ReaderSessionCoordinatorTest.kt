@@ -160,6 +160,78 @@ class ReaderSessionCoordinatorTest {
             "and the rejection has to be reported rather than swallowed: $calls",
         )
     }
+
+    /**
+     * Direction is the state the completion gate reads, so the composite has to record it -- and
+     * the machine records direction only through a move command. An adjacent selection
+     * dispatches that move; a jump cannot name one and lands as a direction-less selection.
+     */
+    @Test
+    fun `an adjacent forward selection records the arrival direction`() {
+        coordinator.openChapterForTest("/chapter/1", 7L)
+        coordinator.chapterLoadedForTest("/chapter/1", 7L, listOf("/a.jpg", "/b.jpg"))
+        coordinator.pageLoadedForTest("/a.jpg", 0)
+        calls.clear()
+
+        val state = coordinator.selectPageForTest("/b.jpg", 1, ReaderNavigationDirection.FORWARD)
+
+        assertEquals(ReaderNavigationDirection.FORWARD, state.direction)
+        assertEquals(state.pageIds[1], state.pageId)
+        assertTrue(state.phase is ReaderSessionPhase.LoadingPage, "expected a loading page: " + state.phase)
+        assertTrue(calls.any { it.startsWith("loadPage:") }, "the move must ask for the page: " + calls)
+    }
+
+    @Test
+    fun `an adjacent backward selection records the arrival direction`() {
+        coordinator.openChapterForTest("/chapter/1", 7L)
+        coordinator.chapterLoadedForTest("/chapter/1", 7L, listOf("/a.jpg", "/b.jpg"))
+        coordinator.pageLoadedForTest("/a.jpg", 0)
+        coordinator.selectPageForTest("/b.jpg", 1, ReaderNavigationDirection.FORWARD)
+        coordinator.pageLoadedForTest("/b.jpg", 1)
+
+        val state = coordinator.selectPageForTest("/a.jpg", 0, ReaderNavigationDirection.BACKWARD)
+
+        assertEquals(ReaderNavigationDirection.BACKWARD, state.direction)
+        assertEquals(state.pageIds[0], state.pageId)
+    }
+
+    /**
+     * A jump is not a transition with a direction -- the machine records the identity and index
+     * and leaves the direction unclaimed, which is why the wiring settles pages with pageLoaded
+     * and completion gating stays on the caller vector for jumps.
+     */
+    @Test
+    fun `a multi-page jump records the page but not a direction`() {
+        coordinator.openChapterForTest("/chapter/1", 7L)
+        coordinator.chapterLoadedForTest("/chapter/1", 7L, listOf("/a.jpg", "/b.jpg", "/c.jpg"))
+        coordinator.pageLoadedForTest("/a.jpg", 0)
+
+        val state = coordinator.selectPageForTest("/c.jpg", 2, ReaderNavigationDirection.FORWARD)
+
+        assertEquals(2, state.pageIndex)
+        assertEquals(state.pageIds[2], state.pageId)
+        assertEquals(ReaderNavigationDirection.NONE, state.direction)
+    }
+
+    /** The machine's own recovery path: a selection from Error re-arms the page it names. */
+    @Test
+    fun `a selection from the error phase recovers the page`() {
+        coordinator.openChapterForTest("/chapter/1", 7L)
+        coordinator.chapterLoadedForTest("/chapter/1", 7L, listOf("/a.jpg"))
+        coordinator.pageFailedForTest(
+            "/a.jpg",
+            0,
+            "/chapter/1",
+            7L,
+            ReaderSessionError(ReaderErrorCode.PAGE_LOAD_FAILED),
+        )
+
+        val selected = coordinator.selectPageForTest("/a.jpg", 0, ReaderNavigationDirection.NONE)
+        assertTrue(selected.phase is ReaderSessionPhase.LoadingPage, "expected a loading page: " + selected.phase)
+
+        val settled = coordinator.pageLoadedForTest("/a.jpg", 0)
+        assertTrue(settled.phase is ReaderSessionPhase.Ready, "expected the page to settle ready: " + settled.phase)
+    }
 }
 
 /* The coordinator's surface takes the real `Chapter` and `Page`, so this exercises the real types
@@ -184,3 +256,14 @@ private fun ReaderSessionCoordinator.pageFailedForTest(
     sourceId: Long,
     error: ReaderSessionError,
 ) = pageFailed(Page(index, pageUrl), chapter(chapterUrl), sourceId, error)
+
+private fun ReaderSessionCoordinator.pageLoadedForTest(
+    pageUrl: String,
+    index: Int,
+) = pageLoaded(Page(index, pageUrl), chapter("/chapter/1"), 7L)
+
+private fun ReaderSessionCoordinator.selectPageForTest(
+    pageUrl: String,
+    index: Int,
+    direction: ReaderNavigationDirection,
+) = selectPage(Page(index, pageUrl), chapter("/chapter/1"), 7L, direction)
