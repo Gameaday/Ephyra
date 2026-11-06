@@ -227,17 +227,6 @@ class AppModuleImplementationContractTest {
     }
 
     @Test
-    fun `ContentSourceOrchestrator implements RemoteSource`() {
-        assertTrue(
-            ephyra.domain.content.source.RemoteSource::class.java.isAssignableFrom(
-                ephyra.domain.content.source.ContentSourceOrchestrator::class.java,
-            ),
-        ) {
-            "ContentSourceOrchestrator must implement RemoteSource to abstract scraping engines"
-        }
-    }
-
-    @Test
     fun `TrackingServiceImpl implements TrackingService`() {
         assertTrue(
             ephyra.domain.track.service.TrackingService::class.java.isAssignableFrom(

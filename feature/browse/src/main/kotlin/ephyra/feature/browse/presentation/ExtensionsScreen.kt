@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CloudDownload
@@ -39,21 +38,17 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -89,8 +84,6 @@ fun ExtensionScreen(
     state: ExtensionsViewModel.State,
     contentPadding: PaddingValues,
     searchQuery: String?,
-    onForceRediscover: (String) -> Unit,
-    onRemoveSource: (String) -> Unit,
     onRefresh: () -> Unit,
     onAddRepository: (String) -> Unit,
     onDeleteRepository: (String) -> Unit,
@@ -103,9 +96,7 @@ fun ExtensionScreen(
     navController: NavController = LocalNavController.current,
 ) {
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
-    var showRemoveConfirmDialog by remember { mutableStateOf(false) }
     var showAddRepoDialog by remember { mutableStateOf(false) }
-    var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
     var showUninstallConfirmDialog by remember { mutableStateOf(false) }
     var selectedExtensionToUninstall by remember { mutableStateOf<Extension.Installed?>(null) }
     var showDeleteRepoConfirmDialog by remember { mutableStateOf(false) }
@@ -205,13 +196,6 @@ fun ExtensionScreen(
                     }
                 }
             },
-            onForceRediscover = { source ->
-                onForceRediscover(source.baseUrl)
-            },
-            onRemoveSource = { source ->
-                selectedSourceToRemove = source
-                showRemoveConfirmDialog = true
-            },
             navController = navController,
             searchQuery = searchQuery,
         )
@@ -237,46 +221,6 @@ fun ExtensionScreen(
             confirmButton = {
                 TextButton(onClick = { snackbarMessage = null }) {
                     Text("OK")
-                }
-            },
-        )
-    }
-
-    // Remove source confirmation dialog
-    if (showRemoveConfirmDialog && selectedSourceToRemove != null) {
-        AlertDialog(
-            onDismissRequest = {
-                showRemoveConfirmDialog = false
-                selectedSourceToRemove = null
-            },
-            title = { Text("Remove Source") },
-            text = {
-                Text(
-                    "Are you sure you want to remove \"${selectedSourceToRemove!!.name}\"? " +
-                        "This action cannot be undone.",
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedSourceToRemove?.let { source ->
-                            onRemoveSource(source.baseUrl)
-                        }
-                        showRemoveConfirmDialog = false
-                        selectedSourceToRemove = null
-                    },
-                ) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showRemoveConfirmDialog = false
-                        selectedSourceToRemove = null
-                    },
-                ) {
-                    Text("Cancel")
                 }
             },
         )
@@ -383,8 +327,6 @@ private fun ExtensionScraperManagementLayout(
     onClickExtension: (String) -> Unit,
     onRefresh: () -> Unit,
     onSourceClick: (UnifiedSource) -> Unit,
-    onForceRediscover: (UnifiedSource) -> Unit,
-    onRemoveSource: (UnifiedSource) -> Unit,
     navController: NavController,
     searchQuery: String? = null,
 ) {
@@ -487,8 +429,6 @@ private fun ExtensionScraperManagementLayout(
                 onToggleExpand = { showDevTools = !showDevTools },
                 sources = sources,
                 onSourceClick = onSourceClick,
-                onForceRediscover = onForceRediscover,
-                onRemoveSource = onRemoveSource,
             )
         }
 
@@ -592,8 +532,6 @@ private fun DeveloperToolsSection(
     onToggleExpand: () -> Unit,
     sources: List<UnifiedSource>,
     onSourceClick: (UnifiedSource) -> Unit,
-    onForceRediscover: (UnifiedSource) -> Unit,
-    onRemoveSource: (UnifiedSource) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),

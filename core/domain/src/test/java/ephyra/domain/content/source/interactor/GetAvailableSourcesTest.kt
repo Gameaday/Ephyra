@@ -1,11 +1,6 @@
 package ephyra.domain.content.source.interactor
 
 import ephyra.core.common.preference.Preference
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.domain.content.model.ContentType
-import ephyra.domain.content.source.ContentSourceOrchestrator
-import ephyra.domain.content.source.SourceProfile
-import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.service.ExtensionManager
@@ -37,7 +32,6 @@ class GetAvailableSourcesTest {
 
     private val catalogueSourcesFlow = MutableStateFlow<List<CatalogueSource>>(emptyList())
     private val installedExtensionsFlow = MutableStateFlow<List<Extension.Installed>>(emptyList())
-    private val profiledDomainsFlow = MutableStateFlow<Set<String>>(emptySet())
 
     // A hand-written fake instead of mockk: `SourceManager` exposes both a
     // `catalogueSources: Flow<List<CatalogueSource>>` property and a
@@ -48,13 +42,9 @@ class GetAvailableSourcesTest {
     // recorder entirely.
     private val sourceManager: SourceManager = FakeSourceManager(catalogueSourcesFlow)
     private val extensionManager: ExtensionManager = mockk(relaxed = true)
-    private val orchestrator: ContentSourceOrchestrator = mockk(relaxed = true)
-    private val profileCache: SourceProfileCache = mockk(relaxed = true)
-    private val preferenceStore: PreferenceStore = mockk(relaxed = true)
     private val sourcePreferences: SourcePreferences = mockk(relaxed = true)
 
     private val disabledSourcesPref: Preference<Set<String>> = mockk(relaxed = true)
-    private val profiledDomainsPref: Preference<Set<String>> = mockk(relaxed = true)
 
     private lateinit var getAvailableSources: GetAvailableSources
 
@@ -77,17 +67,12 @@ class GetAvailableSourcesTest {
     @BeforeEach
     fun setUp() {
         every { extensionManager.installedExtensionsFlow } returns installedExtensionsFlow
-        every { preferenceStore.getStringSet("profiled_domains_list", emptySet()) } returns profiledDomainsPref
-        every { profiledDomainsPref.changes() } returns profiledDomainsFlow
         every { sourcePreferences.disabledSources() } returns disabledSourcesPref
         coEvery { disabledSourcesPref.get() } returns emptySet()
 
         getAvailableSources = GetAvailableSources(
             sourceManager = sourceManager,
             extensionManager = extensionManager,
-            orchestrator = orchestrator,
-            profileCache = profileCache,
-            preferenceStore = preferenceStore,
             sourcePreferences = sourcePreferences,
         )
     }
@@ -165,51 +150,6 @@ class GetAvailableSourcesTest {
         assertEquals(SourceType.REMOTE_EXTENSION, unified.sourceType)
         assertEquals("eu.kanade.tachiyomi.extension.all.mangadex", unified.extensionId)
         assertTrue(unified.enabled)
-    }
-
-    @Test
-    fun `includes heuristic profile alongside legacy extension`() = runTest {
-        val subSources = listOf(
-            TestCatalogueSource(id = 101L, name = "Extension Source", lang = "en"),
-        )
-        val extension = Extension.Installed(
-            name = "Single Extension",
-            pkgName = "eu.kanade.tachiyomi.extension.single",
-            versionName = "1.0",
-            versionCode = 1L,
-            libVersion = 1.0,
-            lang = "en",
-            isNsfw = false,
-            hasUpdate = false,
-            isObsolete = false,
-            isShared = false,
-            pkgFactory = null,
-            repoUrl = null,
-            sources = subSources,
-            icon = null,
-        )
-
-        val profile = SourceProfile(
-            baseUrl = "https://heuristic.org",
-            contentType = ContentType.MANGA,
-            sourceType = SourceType.REMOTE_EXTENSION,
-            displayName = "Heuristic Source",
-            enabled = true,
-        )
-
-        installedExtensionsFlow.value = listOf(extension)
-        catalogueSourcesFlow.value = subSources
-        every { extensionManager.getExtensionPackage(101L) } returns "eu.kanade.tachiyomi.extension.single"
-
-        coEvery { profileCache.get("https://heuristic.org") } returns profile
-        profiledDomainsFlow.value = setOf("https://heuristic.org")
-
-        val result = getAvailableSources().first()
-
-        assertEquals(2, result.size)
-        val names = result.map { it.name }
-        assertTrue(names.contains("Single Extension"))
-        assertTrue(names.contains("Heuristic Source"))
     }
 
     /**

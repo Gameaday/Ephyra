@@ -4,90 +4,41 @@ import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentUnit
 
 /**
- * Sealed abstraction over how content is resolved from URLs.
+ * Abstraction over how content is resolved from a base URL — reshaped profile-free by
+ * `ADR-0017`, which deleted the profile path (`SourceProfile`, the cache, the orchestrator)
+ * this contract used to be written against. The engine set is deliberately empty until
+ * Jellyfin lands; the contract survives so the first real implementer shapes it, not the
+ * memory of a removed path.
  *
- * The app core never knows which engine is active. Each implementation
- * (heuristic, known-adapter, WASM, etc.) is completely isolated behind
- * this interface. This allows:
- *
- * 1. **Known adapter** — hand-tuned implementation for a specific source
- * 2. **HeuristicEngine** — auto-discovers interaction patterns at runtime
- * 3. **WasmEngine** — sandboxed JavaScript/WASM execution for complex sources
- *
- * All engines share the same contract: URL → SourceProfile → ContentItem.
- *
- * @see SourceProfile
- * @see ContentSourceOrchestrator
+ * The methods are addressed by `baseUrl` rather than a profile object: a profile was a cached
+ * *answer* about a source, and passing the answer back into every call was how the profile
+ * path stayed reachable (and kept a second copy of existence) long after nothing wrote it.
  */
 interface ContentSourceEngine {
 
     /**
      * The [SourceType]s this engine serves.
      *
-     * **Why the engine declares this rather than the orchestrator switching on it.** Selection used to
-     * be an exhaustive `when` inside `ContentSourceOrchestrator`, which meant a new source type was
-     * incomplete until someone remembered to edit that branch — and nothing failed when they forgot,
-     * because an unmatched type fell through to the heuristic engine and a Jellyfin request would
-     * quietly be scraped as HTML. Declaring the types here makes the set data, so an unbound type is
-     * visible in the registry rather than silently misrouted.
-     *
      * Overlap is tolerated: the first engine registered for a type wins.
      */
     val handles: Set<SourceType>
         get() = emptySet()
 
-    /**
-     * Discover how to interact with a content source at [baseUrl].
-     * Returns a [SourceProfile] describing endpoints, patterns, and selectors.
-     *
-     * This is called once per source URL and the result is cached persistently.
-     */
-    suspend fun discover(baseUrl: String): SourceProfile
+    /** Perform a search against a source. @param page Page number (1-based, for paginated results). */
+    suspend fun search(baseUrl: String, query: String, page: Int): List<ContentItem>
 
-    /**
-     * Perform a search against a previously discovered source.
-     *
-     * @param profile The cached [SourceProfile] describing the source's API.
-     * @param query The user's search query.
-     * @param page Page number (1-based, for paginated results).
-     * @return A list of matching [ContentItem]s.
-     */
-    suspend fun search(profile: SourceProfile, query: String, page: Int): List<ContentItem>
+    /** Fetch full details for a single content item. */
+    suspend fun getItem(baseUrl: String, url: String): ContentItem
 
-    /**
-     * Fetch full details for a single content item.
-     *
-     * @param profile The cached [SourceProfile] describing the source's API.
-     * @param url The specific content item's URL.
-     * @return The fully populated [ContentItem].
-     */
-    suspend fun getItem(profile: SourceProfile, url: String): ContentItem
+    /** Fetch popular/trending items from a source. */
+    suspend fun getPopular(baseUrl: String, page: Int): List<ContentItem>
 
-    /**
-     * Fetch popular/trending items from a source.
-     *
-     * @param profile The cached [SourceProfile].
-     * @param page Page number.
-     * @return A list of [ContentItem]s.
-     */
-    suspend fun getPopular(profile: SourceProfile, page: Int): List<ContentItem>
+    /** Fetch the latest/updated items from a source. */
+    suspend fun getLatest(baseUrl: String, page: Int): List<ContentItem>
 
-    /**
-     * Fetch the latest/updated items from a source.
-     *
-     * @param profile The cached [SourceProfile].
-     * @param page Page number.
-     * @return A list of [ContentItem]s.
-     */
-    suspend fun getLatest(profile: SourceProfile, page: Int): List<ContentItem>
+    /** Fetch sequential content units (chapters/episodes/tracks) for a content item URL. */
+    suspend fun getChapters(baseUrl: String, url: String): List<ContentUnit>
 
-    /**
-     * Fetch sequential content units (chapters/episodes/tracks) for a content item URL.
-     */
-    suspend fun getChapters(profile: SourceProfile, url: String): List<ContentUnit>
-
-    /**
-     * Fetch the page images or media resource paths for a unit URL.
-     */
-    suspend fun getPages(profile: SourceProfile, url: String): List<String>
+    /** Fetch the page images or media resource paths for a unit URL. */
+    suspend fun getPages(baseUrl: String, url: String): List<String>
 }

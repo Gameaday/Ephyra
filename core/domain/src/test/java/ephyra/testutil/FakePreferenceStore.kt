@@ -16,8 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Unlike [ephyra.core.common.preference.InMemoryPreferenceStore] (which hands
  * out fresh defaults for keys that were never seeded), this fake keeps a single
  * backing store keyed by preference [key], so a `set` is observable by a later
- * independent `getString`/`get` call — exactly what the [SourceProfileCache]
- * and [ContentSourceOrchestrator] round-trip tests need.
+ * independent `getString`/`get` call.
  */
 class FakePreferenceStore : PreferenceStore {
 

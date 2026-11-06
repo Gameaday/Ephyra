@@ -4,15 +4,10 @@ import android.app.Application
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.preference.getAndSet
-import ephyra.core.common.util.Result
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
-import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.GetAvailableSources
-import ephyra.domain.content.source.interactor.RemoveCustomSource
 import ephyra.domain.content.source.interactor.UnifiedSource
-import ephyra.domain.content.source.interactor.UpdateCustomSource
 import ephyra.domain.extension.interactor.GetExtensionsByType
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
@@ -21,7 +16,6 @@ import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.AppInfo
 import kotlinx.coroutines.flow.collectLatest
@@ -33,15 +27,12 @@ import javax.inject.Inject
 class ExtensionsViewModel @Inject constructor(
     private val context: Application,
     private val getAvailableSources: GetAvailableSources,
-    private val updateCustomSource: UpdateCustomSource,
-    private val removeCustomSource: RemoveCustomSource,
     private val getExtensionRepo: GetExtensionRepo,
     private val createExtensionRepo: CreateExtensionRepo,
     private val deleteExtensionRepo: DeleteExtensionRepo,
     private val updateExtensionRepo: UpdateExtensionRepo,
     private val getExtensionsByType: GetExtensionsByType,
     private val preferenceStore: PreferenceStore,
-    private val sourcePreferences: SourcePreferences,
     private val trustExtension: ephyra.domain.extension.interactor.TrustExtension,
     private val extensionManager: ephyra.domain.extension.service.ExtensionManager,
     private val appInfo: AppInfo,
@@ -160,9 +151,6 @@ class ExtensionsViewModel @Inject constructor(
     fun uninstallExtension(extension: Extension.Available) {
         viewModelScope.launch {
             updateState { it.copy(isLoading = true) }
-            extension.sources.forEach { source ->
-                removeCustomSource.removeSource(source.baseUrl)
-            }
 
             // Ensure APK is uninstalled from sandboxed private storage
             extensionManager.uninstallExtensionByPkgName(extension.pkgName)
@@ -216,44 +204,6 @@ class ExtensionsViewModel @Inject constructor(
         }
     }
 
-    fun forceRediscover(baseUrl: String) {
-        viewModelScope.launch {
-            updateState { it.copy(isLoading = true) }
-            val result = updateCustomSource.forceRediscover(baseUrl)
-            updateState { it.copy(isLoading = false) }
-            when (result) {
-                is Result.Success -> loadSources()
-                is Result.Error -> updateState { it.copy(error = result.exception.message ?: "Failed to rediscover") }
-                else -> {}
-            }
-        }
-    }
-
-    fun removeSource(baseUrl: String) {
-        viewModelScope.launch {
-            updateState { it.copy(isLoading = true) }
-            val matchingSource = state.value.sources.firstOrNull { it.baseUrl == baseUrl }
-            if (matchingSource?.sourceType == SourceType.REMOTE_EXTENSION) {
-                matchingSource.extensionId?.let { pkgName ->
-                    extensionManager.uninstallExtensionByPkgName(pkgName)
-                }
-                sourcePreferences.disabledSources().getAndSet { it + matchingSource.id.toString() }
-                updateState { it.copy(isLoading = false) }
-                loadSources()
-            } else {
-                val result = removeCustomSource.removeSource(baseUrl)
-                updateState { it.copy(isLoading = false) }
-                when (result) {
-                    is Result.Success -> loadSources()
-                    is Result.Error -> updateState {
-                        it.copy(error = result.exception.message ?: "Failed to remove source")
-                    }
-                    else -> {}
-                }
-            }
-        }
-    }
-
     fun search(query: String?) {
         updateState { it.copy(searchQuery = query) }
     }
@@ -298,8 +248,6 @@ class ExtensionsViewModel @Inject constructor(
             is ExtensionsScreenEvent.UninstallExtension -> uninstallExtension(event.extension)
             ExtensionsScreenEvent.LoadSources -> loadSources()
             ExtensionsScreenEvent.RefreshAll -> refreshAll()
-            is ExtensionsScreenEvent.ForceRediscover -> forceRediscover(event.baseUrl)
-            is ExtensionsScreenEvent.RemoveSource -> removeSource(event.baseUrl)
             is ExtensionsScreenEvent.Search -> search(event.query)
             is ExtensionsScreenEvent.TrustExtension -> trustExtension(event.extension)
             is ExtensionsScreenEvent.UninstallFailedExtension -> {
@@ -339,8 +287,6 @@ sealed interface ExtensionsScreenEvent {
     data class UninstallExtension(val extension: Extension.Available) : ExtensionsScreenEvent
     data object LoadSources : ExtensionsScreenEvent
     data object RefreshAll : ExtensionsScreenEvent
-    data class ForceRediscover(val baseUrl: String) : ExtensionsScreenEvent
-    data class RemoveSource(val baseUrl: String) : ExtensionsScreenEvent
     data class Search(val query: String?) : ExtensionsScreenEvent
     data class TrustExtension(val extension: Extension.Untrusted) : ExtensionsScreenEvent
     data class UninstallFailedExtension(val pkgName: String) : ExtensionsScreenEvent

@@ -49,11 +49,11 @@ marked **[corrected]**.
 - **Deletion done:** `DocumentViewport`, `DocumentTilePartition`, `TileScalePolicy`,
   `WebtoonViewport` no longer exist. `ADR-0010` is executed.
 - **`MED-002` byte store is production-wired** via `feature/reader/.../model/PageByteStoreOwner.kt`.
-- **[corrected] `ADR-0017` is accepted but not executed.** All seven targets still exist:
+- **[executed 2026-11-06 — D1] `ADR-0017` is executed.** All seven targets are deleted:
   `SourceProfile.kt`, `SourceProfileCache.kt`, `SourceProfileStore.kt`,
   `RoomSourceProfileStore.kt`, `DynamicHttpSource.kt`, `RemoteSource.kt`,
-  `ContentSourceOrchestrator.kt`. The profile path is still live code that cannot execute — the
-  exact condition the ADR was written to remove. This is the single largest cleanup item.
+  `ContentSourceOrchestrator.kt`, with the Room entity/DAO (database v5 drops `source_profiles`),
+  the custom-source interactors and their tests. See the D1 row in §4.
 - **Media tuple still unwired:** `DecodePlanner`, `DecodePlan`, `SampleSizePolicy`,
   `RenderPathPolicy`, `AnimationPolicy` have no consumers outside `core/domain`.
 - **`ReaderSession` still unconsumed** — it lives in `feature/reader/session/` but nothing uses it.
@@ -90,7 +90,7 @@ is not done until that evidence exists. `E2` = JVM/Robolectric, `E3` = emulator/
 | ID | Action | Evidence | Depends on |
 |---|---|---|---|
 | B1 | Finish `ARC-002`: close the remaining dependency-graph rows. | `ModuleDependencyGraphTest` | — |
-| B2 | `SRC-011` one owner for source existence/identity (`ADR-0012`); close `DEF-029`. | `SourceResolutionDiagnosticsTest` + device reproduction | — |
+| B2 | `SRC-011` one owner for source existence/identity (`ADR-0012`); close `DEF-029`. | E2 landed 2026-11-06: registry + policies + consumer rewiring + ownership gate; `DEF-029`'s row was then deleted by D1 (2026-11-06) with the profile path, per `ADR-0017` — see the D1 row. | — |
 | B3 | `SRC-012` MangaDex-shaped gateway adapter; fix the producer named by the sourcing Phase 1 repro. | capability + typed-outcome tests; `ImageUrlPolicyResolveTest` | B2 |
 | B4 | `DATA-001` clean-slate schema policy. Decide the `SChapter.chapter_number: Float` question (`DEF-017`): widen to `Double` **or** keep the tolerant `ChapterNumber` policy — with a test either way. | schema tests | — |
 | B5 | `OPS-001` one startup state model; split `Application` responsibilities. | startup tests | A3 |
@@ -114,7 +114,7 @@ Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](
 
 | ID | Action | Evidence | Depends on |
 |---|---|---|---|
-| D1 | **Execute `ADR-0017`:** delete `SourceProfile`, `SourceProfileCache`, `SourceProfileStore`, `RoomSourceProfileStore`, the Room entity + migration, `DynamicHttpSource`, `RemoteSource`, `ContentSourceOrchestrator`, `GetAvailableSources`'s profile branch, and `DEF-029`. | compile + `SourceApiBoundaryTest` + migration tests | B2 (identity owner must exist first) |
+| D1 | **Execute `ADR-0017`:** delete `SourceProfile`, `SourceProfileCache`, `SourceProfileStore`, `RoomSourceProfileStore`, the Room entity + migration, `DynamicHttpSource`, `RemoteSource`, `ContentSourceOrchestrator`, `GetAvailableSources`'s profile branch, and `DEF-029`. | Done 2026-11-06: all seven targets deleted with the entity/DAO, the custom-source interactors and their tests; Room v5 (`MIGRATION_4_5`) drops `source_profiles`; `SourceType` and `ContentSourceEngine` survive on named reasons; remote CI is the verification channel (no JDK in the authoring environment) | B2 (identity owner must exist first) |
 | D2 | `CLEAN-001`: delete superseded reader/navigation/media code; retire the unwired `macrobenchmark` module. | dependency/import scan; build green | A6, D1 |
 | D3 | Retire the five DI-orphans: bind + call, or delete. Decide per item; do not leave "tested, unwired". | `LedgerWiringClaimTest` + build | - |
 | D4 | Re-audit the `B-032` contract surface; every remaining unwired contract is either wired or deleted. | wiring audit (read the tree, not a count) | A1, D3 |
