@@ -1,10 +1,15 @@
 package ephyra.domain.source.diagnostics
 
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.content.source.PreferenceSourceProfileStore
+import ephyra.domain.content.source.SourceProfile
 import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.model.StubSource
+import ephyra.domain.source.registry.SourceEntryResolution
+import ephyra.domain.source.registry.SourceIdentityPolicy
+import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.service.SourceManager
 import ephyra.testutil.FakePreferenceStore
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -15,14 +20,17 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * Pins what `DEF-029`'s instrument reports, including the state that produces the reported defect:
- * a domain the profile cache claims while the source map holds no source for it.
+ * Pins what `DEF-029`'s instrument reports now that the registry is the one owner: the
+ * registry-to-map projection is audited where it can drift, and an entry resolution is the
+ * registry's typed answer rather than a re-derived rule.
  *
- * The profile cache is the **real** implementation over [FakePreferenceStore], not a mock, because
- * the divergence being instrumented lives in that class's fallback rather than in any caller.
+ * The registry is the **real** implementation over [FakePreferenceStore] and the real
+ * preference-backed profile store, not a mock, because the instrument exists to watch real
+ * ownership — auditing a mock of the owner would assert the mock, not the fact.
  */
 class SourceResolutionDiagnosticsTest {
 
@@ -35,14 +43,20 @@ class SourceResolutionDiagnosticsTest {
         every { getStubSources() } returns emptyList()
         every { get(any<Long>()) } returns null
     }
+    private val installedExtensions = MutableStateFlow(emptyList<Extension.Installed>())
     private val extensionManager: ExtensionManager = mockk(relaxed = true) {
-        every { installedExtensionsFlow } returns MutableStateFlow(emptyList<Extension.Installed>())
+        every { installedExtensionsFlow } returns installedExtensions
     }
 
+    /** Built inside each test, after that test's seeding: the registry snapshots its preference at construction. */
     private fun diagnostics() = SourceResolutionDiagnostics(
         sourceManager = sourceManager,
         extensionManager = extensionManager,
-        profileCache = SourceProfileCache(PreferenceSourceProfileStore(store, Json)),
+        sourceRegistry = SourceRegistry(
+            extensionManager = extensionManager,
+            preferenceStore = store,
+            profileCache = SourceProfileCache(PreferenceSourceProfileStore(store, Json)),
+        ),
     )
 
     private fun httpSource(sourceOrigin: String, sourceId: Long): HttpSource = mockk(relaxed = true) {
@@ -53,7 +67,9 @@ class SourceResolutionDiagnosticsTest {
     private fun legacyIdentity(url: String): Long = url.hashCode().toLong()
 
     @Test
-    fun `a profiled domain with no registered source is reported as unregistered`() = runTest {
+    fun `a payload-less registered domain with no map source is reported as unregistered`() = runTest {
+        // In the list (so the registry registers it, degraded) and deliberately absent from the
+        // map: the projection lost a source the registry says exists — the DEF-029 signature.
         store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
 
         val report = diagnostics().inspectRegistration()
@@ -61,52 +77,27 @@ class SourceResolutionDiagnosticsTest {
         report.profiledDomains shouldBe setOf(origin)
         report.domainsWithoutRegisteredSource shouldBe setOf(origin)
         report.domainsWithIdentityMismatch shouldBe emptySet()
-    }
-
-    /**
-     * A profiled domain with no registered source is the DEF-029 signature, and the diagnostic must
-     * report it rather than pass.
-     *
-     * This test used to reach that state through the cache's *hardcoded fallback* — writing no
-     * preference and asserting the invented trio came back unregistered. That fallback is gone
-     * (`ADR-0015` removed the only engine that could create a profile, so it was permanently the
-     * answer rather than a fallback), which means the scenario has to be set up honestly: a domain
-     * really is in the list, and really is absent from the source map. That is the actual defect —
-     * "the resolution machinery claims domains the map does not have" — rather than an artifact of
-     * where the claim came from.
-     */
-    @Test
-    fun `a profiled domain with no registered source is reported as missing`() = runTest {
-        // Written to the preference, and deliberately *not* registered in the source map.
-        store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
-
-        val report = diagnostics().inspectRegistration()
-
-        report.profiledDomains shouldBe setOf(origin)
-        report.domainsWithoutRegisteredSource shouldBe setOf(origin)
         report.sourceManagerReady shouldBe true
     }
 
-    /**
-     * With nothing profiled there is nothing to disagree about.
-     *
-     * Worth pinning separately because the old fallback made this state impossible to reach: the
-     * cache always answered with three domains, so "no sources configured" was never observable and
-     * a healthy install looked identical to a broken one.
-     */
     @Test
     fun `an unprofiled install reports no disagreement at all`() = runTest {
-        // No preference written, and the cache now honestly answers empty.
+        // No preference written: nothing exists, so nothing can disagree. Worth pinning because
+        // the pre-ADR-0015 fallback made this state unobservable — a healthy install looked
+        // identical to a broken one.
         val report = diagnostics().inspectRegistration()
 
         report.profiledDomains shouldBe emptySet()
         report.domainsWithoutRegisteredSource shouldBe emptySet()
+        report.domainsWithIdentityMismatch shouldBe emptySet()
         report.sourceManagerReady shouldBe true
     }
 
     @Test
-    fun `a source registered under the origin hash is neither missing nor mismatched`() = runTest {
+    fun `a map source under the registry identity is neither missing nor mismatched`() = runTest {
         store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
+        // Compat property: for a clean spelling the registry's id equals the legacy raw hash,
+        // so this simulates exactly what a correctly projected map entry looks like.
         every { sourceManager.getOnlineSources() } returns listOf(httpSource(origin, legacyIdentity(origin)))
 
         val report = diagnostics().inspectRegistration()
@@ -117,46 +108,73 @@ class SourceResolutionDiagnosticsTest {
     }
 
     @Test
-    fun `a source whose id is not the origin hash is reported as an identity mismatch`() = runTest {
+    fun `a map source with a foreign id is an identity mismatch, not an absence`() = runTest {
         store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
         every { sourceManager.getOnlineSources() } returns listOf(httpSource(origin, 42L))
 
         val report = diagnostics().inspectRegistration()
 
         // Registered, so it is not "missing", and that is exactly why the mismatch needs its own
-        // field: an entry written against the other id would resolve to nothing while the source
-        // looks present.
+        // field: an entry written against the registry's id would resolve to nothing while the
+        // source looks present.
         report.domainsWithoutRegisteredSource shouldBe emptySet()
         report.domainsWithIdentityMismatch shouldBe setOf(origin)
     }
 
     @Test
-    fun `an entry whose source is missing reports the domain that claims its id`() = runTest {
-        store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
+    fun `a disabled profile is a deliberate absence, not a disagreement`() = runTest {
+        // The registry registers the domain; its profile is disabled, so the map is right to
+        // omit it. Reporting it would make "the user turned this off" indistinguishable from the
+        // defect this instrument exists to catch.
+        PreferenceSourceProfileStore(store, Json).save(
+            SourceProfile(baseUrl = origin, contentType = ContentType.MANGA, enabled = false),
+        )
 
-        val report = diagnostics().inspectEntry(legacyIdentity(origin))
+        val report = diagnostics().inspectRegistration()
 
-        report.resolvedClass shouldBe null
-        report.isStub shouldBe false
-        // A non-empty claim means the source is genuinely absent: re-registering the domain
-        // recovers this entry.
-        report.domainsClaimingId shouldBe setOf(origin)
+        report.domainsWithoutRegisteredSource shouldBe emptySet()
+        report.domainsWithIdentityMismatch shouldBe emptySet()
     }
 
     @Test
-    fun `an entry whose id matches no profiled domain reports no claiming domain`() = runTest {
+    fun `an entry whose id the registry owns resolves with no claiming origin`() = runTest {
         store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
 
-        val report = diagnostics().inspectEntry(12345L)
+        val report = diagnostics().inspectEntry(SourceIdentityPolicy.identityOf(origin))
 
-        report.resolvedClass shouldBe null
-        // Empty claim is the orphaning ADR-0012 describes: the id was written against a baseUrl
-        // whose spelling no longer exists, so no domain can even be named as its owner.
+        assertTrue(report.resolution is SourceEntryResolution.Resolved)
         report.domainsClaimingId shouldBe emptySet()
     }
 
     @Test
+    fun `an entry id from an old spelling reports the canonical origin that claims it`() = runTest {
+        // The stored spelling carries a trailing slash; the pre-SRC-011 entry was written against
+        // that spelling's hash. The registry now canonicalizes, so the entry resolves as a
+        // spelling change naming the origin — "re-register this and the entry recovers" instead
+        // of an unexplained "source not registered".
+        store.getStringSet("profiled_domains_list", emptySet()).set(setOf("$origin/"))
+
+        val report = diagnostics().inspectEntry(legacyIdentity("$origin/"))
+
+        assertTrue(report.resolution is SourceEntryResolution.SpellingChanged)
+        report.domainsClaimingId shouldBe setOf(origin)
+    }
+
+    @Test
+    fun `an entry id nothing claims is absent`() = runTest {
+        store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
+
+        val report = diagnostics().inspectEntry(12345L)
+
+        assertTrue(report.resolution is SourceEntryResolution.Absent)
+        report.domainsClaimingId shouldBe emptySet()
+        report.resolvedClass shouldBe null
+        report.isStub shouldBe false
+    }
+
+    @Test
     fun `a stub-held entry is reported as a stub with its name`() = runTest {
+        store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
         every { sourceManager.getStubSources() } returns
             listOf(StubSource(id = legacyIdentity(origin), lang = "en", name = "MangaDex"))
 
@@ -165,27 +183,25 @@ class SourceResolutionDiagnosticsTest {
         report.resolvedClass shouldBe null
         report.isStub shouldBe true
         report.stubName shouldBe "MangaDex"
+        assertTrue(report.resolution is SourceEntryResolution.Resolved)
     }
 
     @Test
-    fun `the loaded-component inventory and scraper mapping are reported`() = runTest {
+    fun `the loaded-component inventory is reported`() = runTest {
         store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
-        store.getString("baseUrl_scraper_mapping_mangadex.org", "").set("mangadex_scraper.js")
-        every { extensionManager.installedExtensionsFlow } returns MutableStateFlow(
-            listOf(
-                Extension.Installed(
-                    name = "MangaDex",
-                    pkgName = "eu.kanade.tachiyomi.extension.all.mangadex",
-                    versionName = "1.5.0",
-                    versionCode = 15L,
-                    libVersion = 1.5,
-                    lang = "all",
-                    isNsfw = false,
-                    pkgFactory = null,
-                    sources = emptyList(),
-                    icon = null,
-                    isShared = false,
-                ),
+        installedExtensions.value = listOf(
+            Extension.Installed(
+                name = "MangaDex",
+                pkgName = "eu.kanade.tachiyomi.extension.all.mangadex",
+                versionName = "1.5.0",
+                versionCode = 15L,
+                libVersion = 1.5,
+                lang = "all",
+                isNsfw = false,
+                pkgFactory = null,
+                sources = emptyList(),
+                icon = null,
+                isShared = false,
             ),
         )
 
