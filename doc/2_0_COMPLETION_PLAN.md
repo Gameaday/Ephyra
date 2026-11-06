@@ -90,7 +90,7 @@ is not done until that evidence exists. `E2` = JVM/Robolectric, `E3` = emulator/
 | ID | Action | Evidence | Depends on |
 |---|---|---|---|
 | B1 | Finish `ARC-002`: close the remaining dependency-graph rows. | `ModuleDependencyGraphTest` | — |
-| B2 | `SRC-011` one owner for source existence/identity (`ADR-0012`); close `DEF-029`. | `SourceResolutionDiagnosticsTest` + device reproduction | — |
+| B2 | `SRC-011` one owner for source existence/identity (`ADR-0012`); close `DEF-029`. | E2 landed 2026-11-06: registry + policies + consumer rewiring + ownership gate; the device reproduction `DEF-029` owes remains open on its ledger row. D1 unblocked. | — |
 | B3 | `SRC-012` MangaDex-shaped gateway adapter; fix the producer named by the sourcing Phase 1 repro. | capability + typed-outcome tests; `ImageUrlPolicyResolveTest` | B2 |
 | B4 | `DATA-001` clean-slate schema policy. Decide the `SChapter.chapter_number: Float` question (`DEF-017`): widen to `Double` **or** keep the tolerant `ChapterNumber` policy — with a test either way. | schema tests | — |
 | B5 | `OPS-001` one startup state model; split `Application` responsibilities. | startup tests | A3 |

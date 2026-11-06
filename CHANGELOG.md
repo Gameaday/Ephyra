@@ -41,6 +41,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `source-api/src/main`) and `ExtensionLoaderVersionTest` (`SUPPORTED_LIB_VERSIONS = listOf(1.6)`).
 
 ### 🧩 Fixes
+- **Source existence and identity have one owner, so an entry stops orphaning the moment a
+  URL's spelling changes.** `SRC-011` (`ADR-0012`) closes the mechanism behind `DEF-029`: a new
+  `SourceRegistry` is the only reader of the profiled-domains preference, and identity is derived
+  once, from the canonical origin (`SourceOriginPolicy`/`SourceIdentityPolicy`) instead of each
+  component hashing whatever spelling it happened to see. `DynamicHttpSource`, the Sources list
+  and the source map now agree by construction; a spelling change resolves as `SpellingChanged`
+  naming the claiming origin instead of an unexplained "source not registered"; health failures
+  degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
+  a new ownership gate fails the build if any component opens the preference directly again.
 - **Chapters start at the first page again.** The reader addressed content by *item* index — the
   chapter's pages plus a `ChapterTransition.Prev` before them and a `ChapterTransition.Next` after
   them — but derived "start at the beginning" from a fixed offset (`item 1`). That holds only while
