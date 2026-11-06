@@ -54,8 +54,6 @@ fun extensionsTab(
                 state = state,
                 contentPadding = contentPadding,
                 searchQuery = state.searchQuery,
-                onForceRediscover = extensionsViewModel::forceRediscover,
-                onRemoveSource = extensionsViewModel::removeSource,
                 onRefresh = extensionsViewModel::refreshAll,
                 onAddRepository = extensionsViewModel::addRepository,
                 onDeleteRepository = extensionsViewModel::deleteRepository,
