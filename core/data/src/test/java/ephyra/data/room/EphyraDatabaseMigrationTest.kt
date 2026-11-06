@@ -259,7 +259,6 @@ class EphyraDatabaseMigrationTest {
             assertTrue(db.insert("source_profiles", SQLiteDatabase.CONFLICT_REPLACE, values) > 0)
         }
 
-
         val db = helper.runMigrationsAndValidate(dbPath, Migrations.DB_VERSION, true, *Migrations.ALL)
 
         assertTrue("source_profiles must be dropped by MIGRATION_4_5", !tableExists(db, "source_profiles"))
