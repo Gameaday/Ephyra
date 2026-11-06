@@ -59,11 +59,18 @@ import ephyra.feature.reader.loader.DownloadPageLoader
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.NavigationVector
 import ephyra.feature.reader.model.ReaderChapter
+import ephyra.feature.reader.model.ReaderChapterWindowAdapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.model.resolveChapterStartRequest
-import ephyra.feature.reader.model.selectNextNavigationItem
-import ephyra.feature.reader.model.selectPreviousNavigationItem
+import ephyra.feature.reader.session.ReaderErrorCode
+import ephyra.feature.reader.session.ReaderNavigationDirection
+import ephyra.feature.reader.session.ReaderSessionCoordinator
+import ephyra.feature.reader.session.ReaderSessionEffectLog
+import ephyra.feature.reader.session.ReaderSessionError
+import ephyra.feature.reader.session.ReaderSessionId
+import ephyra.feature.reader.session.ReaderSessionState
+import ephyra.feature.reader.session.ReaderViewportMode
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.manga.editCover
@@ -177,6 +184,32 @@ class ReaderViewModel @Inject constructor(
      */
     var lastNavigationVector: NavigationVector = NavigationVector.FORWARD
         private set
+
+    /**
+     * The effects the reader session emits, recorded in order (RDR-001 wiring).
+     *
+     * In this migration step every effect names work the dispatching path already performs -- the
+     * chapter load is in flight when OpenChapter is dispatched, progress persists through
+     * updateChapterProgress/updateHistory on the same seams, and page bytes are bounded by the
+     * chapter window ref/unref. Re-issuing them would duplicate loads, persists and prefetches,
+     * so the log acknowledges each request instead of executing it; it is the seam the
+     * replacement resource owners delegate through when they land.
+     */
+    val sessionEffects = ReaderSessionEffectLog()
+
+    /**
+     * The reader session this view model drives (RDR-001). The session owns chapter/page
+     * identity, page index, arrival direction, menu visibility and phase for the wired slice --
+     * the loose-fields shape that produced DEF-011 and DEF-015.
+     *
+     * lastSelectedChapterId and chapterPageIndex deliberately stay view-model-local: the
+     * session model cannot express opened-but-nothing-selected-yet, and absorbing that changes
+     * ReaderSession and its reducer table (see [resolveNavigationVector]).
+     */
+    private val readerSession = ReaderSessionCoordinator(ReaderSessionId("reader-session"), sessionEffects)
+
+    /** The authoritative reader session state (RDR-001): identity, index, direction, menu, phase. */
+    val sessionState: ReaderSessionState get() = readerSession.state
 
     /**
      * The chapter loader for the loaded manga. It'll be null until [manga] is set.
@@ -362,6 +395,10 @@ class ReaderViewModel @Inject constructor(
      * trigger deletion of the downloaded chapters.
      */
     private fun onActivityFinish() {
+        // RDR-001: close the session first. Its CloseChapter transition is the
+        // persist-and-release hand-off; the effects it emits are acknowledged by [sessionEffects]
+        // while the history persistence below owns the actual write in this step.
+        readerSession.closeChapter()
         // Persist the final chapter's history (read-at time + session duration) before exiting,
         // as [updateHistory] is otherwise only invoked when switching chapters.
         viewModelScope.launchNonCancellable {
@@ -420,6 +457,10 @@ class ReaderViewModel @Inject constructor(
                 if (e is CancellationException) {
                     throw e
                 }
+                recordChapterLoadFailure(
+                    chapterListCache?.firstOrNull { it.chapter.id == chapterId },
+                    e,
+                )
                 Result.failure(e)
             }
         }
@@ -433,6 +474,15 @@ class ReaderViewModel @Inject constructor(
         loader: ChapterLoader,
         chapter: ReaderChapter,
     ): ViewerChapters {
+        // RDR-001: the session owns the chapter-open transition (persist the prior chapter
+        // progress, release its working resources, then LoadingChapter). The effects it emits
+        // are acknowledged by [sessionEffects], not re-issued -- the load below is the work.
+        readerSession.openChapter(
+            chapter = chapter.chapter,
+            sourceId = sessionSourceId(),
+            initialPageIndex = chapter.requestedPage ?: 0,
+            viewportMode = sessionViewportMode(),
+        )
         loader.loadChapter(chapter)
 
         // When the pre-processor blocks a page during online loading (after the image
@@ -449,17 +499,20 @@ class ReaderViewModel @Inject constructor(
         chapter.pageLoader?.preloadAllPages()
 
         val chapterList = getChapterList()
-        val previousChapter = selectPreviousNavigationItem(chapterList, chapter)
+        // RDR-002: the prev/next window is selected through the domain ReaderChapterWindowPolicy
+        // (via the adapter), replacing the feature-local sibling helpers. The pinned contracts
+        // -- nulls at the boundaries, read chapters still eligible backwards, no head-of-list
+        // fallback for a missing current -- are characterised in ReaderChapterWindowAdapterTest.
         val skipRead = readerPreferences.skipRead().get()
-        val nextChapter = selectNextNavigationItem(
-            items = chapterList,
+        val neighbours = ReaderChapterWindowAdapter.neighbours(
+            chapters = chapterList,
             current = chapter,
-            eligible = { !skipRead || !it.chapter.read },
+            skipReadForward = skipRead,
         )
         val newChapters = ViewerChapters(
             chapter,
-            previousChapter,
-            nextChapter,
+            neighbours.previous,
+            neighbours.next,
         )
 
         // MutableStateFlow.update is thread-safe — no UI-thread dispatch needed.
@@ -493,6 +546,15 @@ class ReaderViewModel @Inject constructor(
         }
         restartReadTimer()
 
+        // RDR-001: report the loaded pages to the session. A chapter with no pages is rejected
+        // by the machine (its own contract) -- the rejection is acknowledged in [sessionEffects].
+        readerSession.chapterLoaded(
+            chapter = chapter.chapter,
+            sourceId = sessionSourceId(),
+            pages = chapter.pages ?: emptyList(),
+            initialPageIndex = 0,
+        )
+
         return newChapters
     }
 
@@ -515,6 +577,7 @@ class ReaderViewModel @Inject constructor(
                 if (e is CancellationException) {
                     throw e
                 }
+                recordChapterLoadFailure(chapter, e)
                 logcat(LogPriority.ERROR, e)
             }
         }
@@ -554,6 +617,7 @@ class ReaderViewModel @Inject constructor(
             if (e is CancellationException) {
                 throw e
             }
+            recordChapterLoadFailure(chapter, e)
             logcat(LogPriority.ERROR, e)
         } finally {
             updateState { it.copy(isLoadingAdjacentChapter = false) }
@@ -660,6 +724,7 @@ class ReaderViewModel @Inject constructor(
         // scrolling back within one) must never mark it read.
         val navigationVector = resolveNavigationVector(selectedChapter, page)
         lastNavigationVector = navigationVector
+        recordSessionSelection(page, selectedChapter.chapter, navigationVector)
 
         // Save last page read and mark as read if needed
         viewModelScope.launchNonCancellable {
@@ -832,6 +897,56 @@ class ReaderViewModel @Inject constructor(
         // resolution compares against the chapter this vector was computed for.
         lastSelectedChapterId = selectedChapter.chapter.id
         return vector
+    }
+
+    /**
+     * Records a page selection in the reader session (RDR-001). The machine records arrival
+     * direction only through adjacent moves -- a jump lands as a direction-less selection,
+     * which is the machine semantics rather than a tracking loss; completion gating keeps
+     * using [NavigationVector] until the session model grows a jump-with-direction command.
+     */
+    private fun recordSessionSelection(
+        page: ReaderPage,
+        chapter: Chapter,
+        navigationVector: NavigationVector,
+    ) {
+        val sourceId = sessionSourceId()
+        readerSession.selectPage(page, chapter, sourceId, navigationVector.toSessionDirection())
+        // The session settles the selected page with the selection itself: page-load completion
+        // is owned by the chapter loaders and viewers in this step and gets its own completion
+        // channel when the viewport owner migrates. When the session is not awaiting this page
+        // (a selection racing a chapter switch), the machine rejects the commands and the
+        // rejection is acknowledged in [sessionEffects] rather than acted on.
+        readerSession.pageLoaded(page, chapter, sourceId)
+    }
+
+    private fun NavigationVector.toSessionDirection(): ReaderNavigationDirection =
+        when (this) {
+            NavigationVector.FORWARD -> ReaderNavigationDirection.FORWARD
+            NavigationVector.BACKWARD -> ReaderNavigationDirection.BACKWARD
+        }
+
+    /** The source identity for the session; 0L before the manga resolves (no pages exist yet). */
+    private fun sessionSourceId(): Long = manga?.source ?: 0L
+
+    /**
+     * The session record of the viewport mode, from the resolved reading mode. Best-effort in
+     * this step: the session viewport mode is not yet consumed by render decisions.
+     */
+    private fun sessionViewportMode(): ReaderViewportMode =
+        if (ReadingMode.isPagerType(getMangaReadingMode())) {
+            ReaderViewportMode.PAGED
+        } else {
+            ReaderViewportMode.CONTINUOUS
+        }
+
+    private fun recordChapterLoadFailure(chapter: ReaderChapter?, e: Throwable) {
+        if (chapter == null) return
+        readerSession.chapterFailed(
+            chapter = chapter.chapter,
+            sourceId = sessionSourceId(),
+            error = ReaderSessionError(ReaderErrorCode.CHAPTER_LOAD_FAILED, e.message),
+        )
     }
 
     /**
@@ -1195,6 +1310,10 @@ class ReaderViewModel @Inject constructor(
     }
 
     private fun showMenus(visible: Boolean) {
+        // RDR-001: menu visibility is session state. The compose snapshot below stays the
+        // render source of truth; the session records the same fact for the wired slice, and
+        // while no chapter is open the machine rejects the toggle and the log acknowledges it.
+        readerSession.toggleMenu(visible)
         updateState { it.copy(menuVisible = visible) }
     }
 

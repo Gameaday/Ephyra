@@ -127,6 +127,47 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   covered by the new `WebtoonSlicePlannerTest` (13 tests); the `E3` slice-render obligation is
   `BLOCKED` naming the channel (no emulator in this environment, `B-050`), never claimed.
 
+### 📖 Reader Session Wiring (A2: `ReaderSession` drives the reader, `ReaderChapterWindowPolicy` selects the window)
+
+- **`ReaderViewModel` drives `ReaderSessionCoordinator` (RDR-001).** The session now owns chapter/page
+  identity, page index, arrival direction, menu visibility and phase for the wired slice — the
+  loose-fields shape that produced `DEF-011` and `DEF-015`. `loadChapter` opens the session before
+  the load, `chapterLoaded` reports the resolved pages, the three load-failure catch sites report
+  `chapterFailed`, `onPageSelected` records the selection and settles it with `pageLoaded`, and
+  `showMenus`/`onActivityFinish` drive `toggleMenu`/`closeChapter`. `sessionState` is exposed.
+  `lastSelectedChapterId` and `chapterPageIndex` deliberately stay view-model-local: the session
+  cannot express opened-but-nothing-selected-yet, and absorbing that is a `ReaderSession` change,
+  not a wiring change.
+- **`ReaderSessionEffectLog` acknowledges effects rather than executing them.** Every effect the
+  session emits names work the dispatching path already performs — the load is in flight when
+  `OpenChapter` is dispatched, progress persists through the same seams, and page bytes are
+  bounded by the chapter window ref/unref — so re-issuing would duplicate loads, persists and
+  prefetches. The log is the seam the replacement resource owners delegate through when they
+  land; the choice is documented in the handler rather than dressed up as execution.
+- **`selectPage` can finally record direction (coordinator fix).** The old composite dispatched
+  `SelectPage` then `Move`, but `SelectPage` lands in `LoadingPage` and `Move` requires `Ready`,
+  so the move was always rejected and no direction was ever recorded. An adjacent selection now
+  dispatches the move itself from `Ready`, recording the direction with the page; a jump lands as
+  a direction-less `SelectPage`, which is the machine's semantics — completion gating keeps the
+  caller's `NavigationVector` for jumps.
+- **`ReaderChapterWindowAdapter` selects the prev/next window through the domain
+  `ReaderChapterWindowPolicy` (RDR-002).** Candidates are pinned positionally (`SOURCE` order
+  reproduces the caller's canonical list order — a chapter-number re-sort would reorder
+  scanlator-filled chapters and change behaviour), `skipReadForward` is threaded, DB-unknown
+  numbers (`-1.0`) become null candidates rather than policy rejections, and the series-screen
+  filters stay upstream in `getChapterList` with `skipFilteredForward` off by the documented
+  decision. The feature-local `selectPreviousNavigationItem`/`selectNextNavigationItem` helpers
+  are deleted with `ViewerChapters` slimmed to the window type; the contracts of the deleted
+  `ChapterNavigationPolicyTest` moved to `ReaderChapterWindowAdapterTest` (6 tests) rather than
+  silently disappearing with their subjects, and the coordinator suite gained 4
+  direction/recovery tests.
+- **Wiring honesty.** `ReaderSessionWiringTest` pins the JVM-reachable seams of the full view
+  model: the menu event drives compose state while the closed session's rejection is *reported*
+  through the effect log, a page selection before any chapter is open is rejected and reported,
+  and activity finish closes the session. The chapter-open lifecycle seams need a real
+  `ChapterLoader` and are CI's to run. No JDK locally — remote CI is the verification channel, and
+  the `UnwiredTargetComponentTest` ceiling is not re-measured (wiring only lowers the count).
+
 ### 🗑️ Deleted (D1 executes `ADR-0017` — the profile path is gone)
 
 - **The unreachable custom-source profile path is deleted, not deprecated.** `ADR-0017` recorded
