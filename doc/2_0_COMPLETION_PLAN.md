@@ -54,8 +54,10 @@ marked **[corrected]**.
   `RoomSourceProfileStore.kt`, `DynamicHttpSource.kt`, `RemoteSource.kt`,
   `ContentSourceOrchestrator.kt`, with the Room entity/DAO (database v5 drops `source_profiles`),
   the custom-source interactors and their tests. See the D1 row in §4.
-- **Media tuple still unwired:** `DecodePlanner`, `DecodePlan`, `SampleSizePolicy`,
-  `RenderPathPolicy`, `AnimationPolicy` have no consumers outside `core/domain`.
+- **[executed 2026-11-06 — A1] Media tuple wired.** `DecodePlanner`, `DecodePlan`,
+  `SampleSizePolicy`, `RenderPathPolicy` and `AnimationPolicy` now have a production consumer:
+  `ComposeWebtoonReader` threads `PageMetadata`/`PageSource`/`PageRenderPath` into
+  `SlicedWebtoonImage` through the new pure `WebtoonSlicePlanner` (see the A1 row in §4).
 - **`ReaderSession` still unconsumed** — it lives in `feature/reader/session/` but nothing uses it.
 - **`IngestEngine` still greenfield** (own file + test only).
 - **Five DI-orphans still unwired:** `TargetSeriesRepository`, `TargetMigrationWriter`,
@@ -78,7 +80,7 @@ is not done until that evidence exists. `E2` = JVM/Robolectric, `E3` = emulator/
 
 | ID | Action | Evidence | Depends on |
 |---|---|---|---|
-| A1 | Wire the media tuple (`PageSource`/`PageMetadata`/`DecodePlan`/`SampleSizePolicy`/`RenderPathPolicy`/`AnimationPolicy`) into `SlicedWebtoonImage` against `BitmapRegionDecoder`. | `E2` decode-plan tests + `E3` slice render | — |
+| A1 | Wire the media tuple (`PageSource`/`PageMetadata`/`DecodePlan`/`SampleSizePolicy`/`RenderPathPolicy`/`AnimationPolicy`) into `SlicedWebtoonImage` against `BitmapRegionDecoder`. | Done 2026-11-06: the call site threads the tuple into `SlicedWebtoonImage` via the new pure `WebtoonSlicePlanner`; `sliceSourceRect`/`isSliceRectValid` are consumed (crop-aware geometry), `DecodePlanner` records the page plan, `SampleSizePolicy` hysteresis is clamped to the width-fit rule, and `WebtoonRegionDecoder` takes the slice rect + planned sample. `E2` via `WebtoonSlicePlannerTest` on CI. `E3` slice render: BLOCKED naming the channel — no emulator/device in this environment (`B-050`), never claimed. Production passes `contentRect = null` (`BorderCropTransformation` exposes no rect), so rendered pixels are unchanged; the seam is the deliverable. | — |
 | A2 | Migrate `ReaderSession` onto `ReaderViewModel` (consume `RDR-001`/`RDR-002`). | reducer-table tests + wiring test | — |
 | A3 | Migrate `StartupReducer` onto `App.kt`; add the missing `RECONCILE_SOURCES` implementation the audit found absent (`B-034`). | startup tests | — |
 | A4 | Complete `RDR-005`: continuous reader on the media tuple; one container transform. | `E3` + `E4-lab` capture | A1 |

@@ -105,6 +105,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🖼️ Reader Media Pipeline (A1: the media tuple is wired into the slice renderer)
+
+- **The webtoon slice renderer consumes the media tuple instead of re-deriving its own guard.**
+  `ComposeWebtoonReader` already decided *whether* a page is sliceable with `RenderPathPolicy`;
+  `SlicedWebtoonImage` then re-derived a `!cropBorders && !isAnimated` conjunction from raw
+  booleans — a second, untestable copy of the same decision. The call site now threads
+  `PageMetadata`, `PageSource` and the chosen `PageRenderPath` into the composable, and a new
+  pure `WebtoonSlicePlanner` turns them into concrete geometry and a decode sample against
+  `BitmapRegionDecoder`. Every tuple member is wired: `RenderPathPolicy.sliceSourceRect` and
+  `isSliceRectValid` (previously tested but dead) select and validate the rectangle the slices
+  tile, so a measured crop rect makes slicing crop-aware instead of crop-forbidden;
+  `DecodePlanner` records the whole-page plan (for a long strip it names
+  `EXCEEDS_TEXTURE_LIMIT` — the failure slicing exists to avoid); `SampleSizePolicy` hysteresis
+  refines the region sample across re-plans, clamped to the width-fit rule so it can never
+  decode a strip narrower than the screen; `AnimationPolicy`/`PageMetadata.animation` keep
+  animated content on the whole-image path. `WebtoonRegionDecoder.decodeSlices` takes the slice
+  rect and the planned `SampleSize` instead of computing its own sample. Production still
+  passes `contentRect = null` — `BorderCropTransformation` never exposes its measured insets —
+  so every page renders exactly as before; the change is the seam, not the pixels. `E2` is
+  covered by the new `WebtoonSlicePlannerTest` (13 tests); the `E3` slice-render obligation is
+  `BLOCKED` naming the channel (no emulator in this environment, `B-050`), never claimed.
+
 ### 🗑️ Deleted (D1 executes `ADR-0017` — the profile path is gone)
 
 - **The unreachable custom-source profile path is deleted, not deprecated.** `ADR-0017` recorded
