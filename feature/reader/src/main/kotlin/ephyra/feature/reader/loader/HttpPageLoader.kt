@@ -74,6 +74,38 @@ private class FreshPageAddresses(
         }
         return list.getOrNull(index)?.imageUrl
     }
+
+    /**
+     * [at] for error paths: a fetch that cannot be made returns `null` rather than throwing.
+     *
+     * **Why the guard lives here rather than at the call site.** Every caller asks for a
+     * replacement address *because something has already failed*, so an exception from this fetch
+     * arrives from inside a failure handler — and at `internalLoadPage`'s call site that is fatal
+     * in a way the original failure was not. A throw from a `catch` block escapes the retry loop
+     * and its worker coroutine (a standalone coroutine with no `CoroutineExceptionHandler`), and
+     * with it the process. The reported resume-from-background crash was exactly this shape: the
+     * page failed with `UnknownHostException` — the device back from another app, DNS not ready
+     * again yet — the ladder indicted the URL, and the fresh-list fetch threw the same
+     * `UnknownHostException` (`Unable to resolve host "api.mangadex.org"`) from inside the catch
+     * block, killing the reader rather than failing the page. One failed page must fail *a page*.
+     *
+     * A failed fetch is not memoised, so a later call re-asks the source; a succeeded one is, so
+     * repeated asks after a success stay free.
+     *
+     * [CancellationException] is rethrown rather than reported as "no address": a cancelled load
+     * is not a failed one.
+     */
+    suspend fun atOrNull(index: Int): String? = try {
+        at(index)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        logcat(LogPriority.WARN, e) {
+            "Could not obtain a replacement address for page ${index + 1} of ${chapter.name}; " +
+                "leaving the page to the recovery ladder"
+        }
+        null
+    }
 }
 
 /**
@@ -765,8 +797,17 @@ internal class HttpPageLoader(
                     // `Page.imageUrl` in `getPageList` is a call it does not implement — the reported
                     // failure. The replacement has to come from a page list, the only place those
                     // addresses exist.
-                    page.imageUrl = freshAddresses.at(page.index)
-                    page.needsFreshAddress = false
+                    // Through [FreshPageAddresses.atOrNull], never a bare `at`: this is a network
+                    // fetch made from inside a `catch` block, where a second throw escapes the retry
+                    // loop and its worker coroutine and takes the process down — the
+                    // resume-from-background crash (`UnknownHostException` for `api.mangadex.org`,
+                    // reported from this call). A page that cannot get a replacement is left with
+                    // no address and its fresh-address flag, and the decision still stands: a
+                    // GIVE_UP surfaces the failure that actually stopped the page (`onFailure`
+                    // keeps the headline from the failure that held a URL, not this fetch's error),
+                    // and a retry re-runs the ladder with the page still asking for a fresh list.
+                    page.imageUrl = freshAddresses.atOrNull(page.index)
+                    page.needsFreshAddress = page.imageUrl == null
                 }
 
                 if (decision.action == PageLoadRecoveryAction.GIVE_UP) {
