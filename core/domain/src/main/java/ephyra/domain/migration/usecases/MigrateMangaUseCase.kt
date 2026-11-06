@@ -52,18 +52,19 @@ class MigrateMangaUseCase(
 
         try {
             // ADR-0017: the profile path (JS scrapers and heuristic sources) is deleted, so
-            // every reachable source is a CatalogueSource; anything else has no chapters to sync.
-            val chapters: List<SChapter> = if (targetSource is CatalogueSource) {
-                targetSource.getChapterList(target.toSManga())
-            } else {
-                emptyList()
-            }
+            // every reachable source is a CatalogueSource. A target that is not a
+            // CatalogueSource is a stub the manager could not resolve: it has no chapter
+            // provider, and syncing an empty chapter list would delete the target's existing
+            // chapters, so the migration completes without touching them.
+            if (targetSource is CatalogueSource) {
+                val chapters: List<SChapter> = targetSource.getChapterList(target.toSManga())
 
-            try {
-                syncChaptersWithSource.await(chapters, target, targetSource)
-            } catch (e: Exception) {
-                logcat(LogPriority.WARN, e) {
-                    "Chapter sync failed during migration to '${target.title}'; chapters may be incomplete"
+                try {
+                    syncChaptersWithSource.await(chapters, target, targetSource)
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) {
+                        "Chapter sync failed during migration to '${target.title}'; chapters may be incomplete"
+                    }
                 }
             }
 
