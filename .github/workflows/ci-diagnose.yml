@@ -71,7 +71,7 @@ jobs:
                 grep -o '<failure[^>]*message="[^"]*"' "$f" | head -10 || true
                 echo "--- failure stack traces ---"
                 grep -o '<failure[^>]*>[^<]*</failure>' "$f" | head -3 \
-                  | sed 's/&#10;/\n/g; s/&#9;/\t/g' | head -100 || true
+                  | sed 's/&#10;/\n/g; s/&#9;/\t/g' | head -120 || true
                 echo "--- system-err ---"
                 grep -o '<system-err>[^<]*</system-err>' "$f" \
                   | sed 's/&#10;/\n/g; s/&#9;/\t/g' | head -50 || true
