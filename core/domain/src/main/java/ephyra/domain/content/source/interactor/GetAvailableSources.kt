@@ -50,7 +50,6 @@ class GetAvailableSources @Inject constructor(
                 )
             }
 
-
             // Index all source IDs belonging to installed extensions
             val extensionSourceIds = buildSet {
                 for (ext in extensions) {
@@ -111,3 +110,4 @@ data class UnifiedSource(
     val lastHealthCheck: Long,
     val failureCount: Int,
 )
+
