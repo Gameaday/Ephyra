@@ -290,4 +290,3 @@ private class SimpleMarkdownMarkerProcessor(
 }
 
 val DISALLOWED_MARKDOWN_TYPES = arrayOf(HTML_TAG)
-
