@@ -157,7 +157,7 @@ class HttpPageLoaderFreshAddressFailureTest {
                 listOf(Page(0, "/page/1.jpg", "https://" + IMAGE_HOST + "/data/1.jpg"))
             } else {
                 throw UnknownHostException(
-                    "Unable to resolve host "" + API_HOST + "": No address associated with hostname",
+                    "Unable to resolve host " + API_HOST + ": No address associated with hostname",
                 )
             }
         }
@@ -219,7 +219,7 @@ class HttpPageLoaderFreshAddressFailureTest {
 
         override suspend fun fetchAndCacheImage(imageUrl: String, fetchImage: suspend () -> Response) {
             throw UnknownHostException(
-                "Unable to resolve host "" + IMAGE_HOST + "": No address associated with hostname",
+                "Unable to resolve host " + IMAGE_HOST + ": No address associated with hostname",
             )
         }
 
