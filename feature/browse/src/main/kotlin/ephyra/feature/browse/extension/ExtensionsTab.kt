@@ -1,4 +1,5 @@
 package ephyra.feature.browse.extension
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddLink
@@ -18,6 +19,7 @@ import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
+
 @Composable
 fun extensionsTab(
     extensionsViewModel: ExtensionsViewModel,
@@ -77,3 +79,4 @@ fun extensionsTab(
         },
     )
 }
+
