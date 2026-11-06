@@ -151,6 +151,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Extension zstd Crash (`Lokhttp3/zstd/Zstd;`)**: Bundled `com.squareup.okhttp3:okhttp-zstd` (5.5.0) via `core:common`. Dynamically loaded extension APKs (MangaDex, Mangabat, and most modern Mihon/Keiyoushi extensions) reference the `okhttp3.zstd` package, which OkHttp ships in a separate optional module. Without it, every source network call failed with `NoClassDefFoundError` (wrapped by `ExtensionCallBoundary` as "Source 'X' encountered an error"), breaking chapter loading, search results, covers, and making library buttons appear unresponsive on source-driven screens.
 - **Silent Chapter-Sync Failures**: `MangaChapterInteractor.syncChaptersWithSource` no longer swallows source fetch failures. Failed manga-details/chapter-list fetches are logged, manual refreshes now surface a toast via `MangaScreenEffect.ShowToast`, and background refreshes keep the local chapter list instead of wiping it.
 - **Markdown Renderer Build Break**: Implemented the new `alert: MarkdownAlertPadding` property required by `multiplatform-markdown-renderer` 0.45.0's `MarkdownPadding` interface in `MarkdownRender.kt` (fixes `:feature:manga:compileDebugKotlin`).
+- **Markdown Renderer Build Break (0.46.0 highlight API)**: the dependency sweep bumped
+  `com.mikepenz:multiplatform-markdown-renderer` to 0.46.0, whose new highlight-span feature made
+  `highlightText` and `highlightBackground` required parameters of `DefaultMarkdownColors`, so
+  `:feature:manga:compileReleaseKotlin` stopped compiling with `No value passed for parameter
+  'highlightText'`. `getMarkdownColors()` now passes both, styled to match Mihon: highlighted
+  (`==marked==`) text renders `onSecondaryContainer` over `secondaryContainer`, so it follows the
+  Material scheme in light and dark themes. Compile-time adaptation only — content without
+  highlight spans renders exactly as before.
 - **Instant Launch Crash / Silent Exit**: The Shizuku purge dropped `dev.rikka.shizuku:provider` from the build but left its `<provider android:name="rikka.shizuku.ShizukuProvider">` declaration behind in `app/src/main/AndroidManifest.xml`. Android instantiates manifest-declared providers in `ActivityThread.handleBindApplication` *before* `Application.onCreate()`, so every launch died with `ClassNotFoundException: rikka.shizuku.ShizukuProvider` before `GlobalExceptionHandler` or `StartupFailureActivity` could run — the process closed instantly with no crash dialog and no error screen. Removed the stale provider entry and added `ManifestComponentClassTest`, which fails the build whenever a manifest-declared Android component class is missing from the app classpath.
 
 ### 🧹 Anti-Pattern & Correctness Sweep (core audit)
@@ -238,3 +246,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`ROADMAP.md`**: Updated to reflect completed Phase 1 (Pure DI), in-progress Phase 3
   (Content-Agnostic UI) and Phase 4 (Build Config), and planned Phase 2 (Sandboxed Scripting).
 - **`CHANGELOG.md`**: This file — initialized.
+
