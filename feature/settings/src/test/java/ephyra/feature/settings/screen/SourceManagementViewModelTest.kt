@@ -1,14 +1,9 @@
 package ephyra.feature.settings.screen
 
 import app.cash.turbine.test
-import ephyra.core.common.util.Result
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.GetAvailableSources
-import ephyra.domain.content.source.interactor.RemoveCustomSource
 import ephyra.domain.content.source.interactor.UnifiedSource
-import ephyra.domain.content.source.interactor.UpdateCustomSource
-import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -29,8 +24,6 @@ import org.junit.jupiter.api.Test
 class SourceManagementViewModelTest {
 
     private val getAvailableSources: GetAvailableSources = mockk()
-    private val updateCustomSource: UpdateCustomSource = mockk(relaxed = true)
-    private val removeCustomSource: RemoveCustomSource = mockk(relaxed = true)
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private val sourcesFlow = MutableStateFlow<List<UnifiedSource>>(emptyList())
@@ -59,34 +52,13 @@ class SourceManagementViewModelTest {
     @Test
     fun `initialization loads sources and updates state`() = runTest {
         sourcesFlow.value = listOf(sampleSource)
-        val viewModel = SourceManagementViewModel(
-            getAvailableSources,
-            updateCustomSource,
-            removeCustomSource,
-        )
+        val viewModel = SourceManagementViewModel(getAvailableSources)
 
         viewModel.state.test {
             val state = awaitItem()
             assertEquals(listOf(sampleSource), state.sources)
             assertFalse(state.isLoading)
             assertNull(state.error)
-        }
-    }
-
-    @Test
-    fun `RemoveSource event removes source and reloads sources`() = runTest {
-        coEvery { removeCustomSource.removeSource("https://example.com") } returns Result.Success(Unit)
-
-        val viewModel = SourceManagementViewModel(
-            getAvailableSources,
-            updateCustomSource,
-            removeCustomSource,
-        )
-
-        viewModel.onEvent(SourceManagementEvent.RemoveSource("https://example.com"))
-
-        coVerify(exactly = 1) {
-            removeCustomSource.removeSource("https://example.com")
         }
     }
 }
