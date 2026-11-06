@@ -38,8 +38,8 @@ import java.nio.file.Path
  *
  * ```
 java.net.UnknownHostException: Unable to resolve host "api.mangadex.org": No address associated with hostname
-    at ephyra.feature.reader.loader.FreshPageAddresses.at(HttpPageLoader.kt:73)
-    at ephyra.feature.reader.loader.HttpPageLoader.internalLoadPage(HttpPageLoader.kt:768)
+ at ephyra.feature.reader.loader.FreshPageAddresses.at(HttpPageLoader.kt:73)
+ at ephyra.feature.reader.loader.HttpPageLoader.internalLoadPage(HttpPageLoader.kt:768)
 ```
  *
  * A device that has just returned from the background often does not have DNS ready again yet, so
