@@ -7,9 +7,6 @@ import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.content.model.ContentUnit
-import ephyra.domain.content.source.ContentSourceOrchestrator
-import ephyra.domain.content.source.SourceProfile
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
@@ -47,7 +44,6 @@ class MigrateMangaUseCaseTest {
     private val getTracks = mockk<GetTracks>(relaxed = true)
     private val insertTrack = mockk<InsertTrack>(relaxed = true)
     private val coverCache = mockk<CoverCache>(relaxed = true)
-    private val orchestrator = mockk<ContentSourceOrchestrator>(relaxed = true)
 
     private val migrationFlagsPref = mockk<Preference<Set<MigrationFlag>>>(relaxed = true)
 
@@ -72,7 +68,6 @@ class MigrateMangaUseCaseTest {
             getTracks = getTracks,
             insertTrack = insertTrack,
             coverCache = coverCache,
-            orchestrator = orchestrator,
         )
     }
 
@@ -115,47 +110,24 @@ class MigrateMangaUseCaseTest {
     }
 
     @Test
-    fun `migrating with non-CatalogueSource falls back to ContentSourceOrchestrator`() = runTest {
+    fun `migrating with a source the manager cannot resolve syncs no chapters`() = runTest {
+        // ADR-0017 removed the profile path, so a target the source manager cannot resolve has no
+        // chapter provider: the migration must complete without syncing chapters rather than
+        // routing the manga through a heuristic engine that no longer exists.
         val currentManga = Manga.create().copy(id = 1L, source = 100L, title = "Tower of God", favorite = true)
         val targetManga = Manga.create().copy(
             id = 2L,
-            source = "https://heuristic-manga.org".hashCode().toLong(),
-            url = "https://heuristic-manga.org/tower-of-god",
+            source = "https://unresolvable.example.org".hashCode().toLong(),
+            url = "https://unresolvable.example.org/tower-of-god",
             title = "Tower of God",
             favorite = false,
         )
 
-        // targetSource is null in legacy sourceManager
         every { sourceManager.get(targetManga.source) } returns null
-
-        val profile = SourceProfile(
-            baseUrl = "https://heuristic-manga.org",
-            contentType = ephyra.domain.content.model.ContentType.MANGA,
-            displayName = "Heuristic Manga",
-        )
-        coEvery { orchestrator.getAllProfiles() } returns listOf(profile)
-        val contentUnits = listOf(
-            ContentUnit(
-                id = -1L,
-                contentItemId = -1L,
-                url = "https://heuristic-manga.org/tower-of-god/ch1",
-                title = "Chapter 1",
-                number = 1.0,
-                dateUpload = 0L,
-                progress = 0L,
-                totalLength = 0L,
-                lastRead = 0L,
-            ),
-        )
-        coEvery { orchestrator.getChapters("https://heuristic-manga.org", any()) } returns
-            ephyra.core.common.util.Result.Success(contentUnits)
 
         useCase.invoke(currentManga, targetManga, replace = true)
 
-        coVerify { orchestrator.getChapters("https://heuristic-manga.org", any()) }
-        coVerify {
-            syncChaptersWithSource.await(match { it.size == 1 && it[0].name == "Chapter 1" }, targetManga, any())
-        }
+        coVerify(exactly = 0) { syncChaptersWithSource.await(any(), targetManga, any()) }
         coVerify { updateManga.awaitAll(any()) }
     }
 }

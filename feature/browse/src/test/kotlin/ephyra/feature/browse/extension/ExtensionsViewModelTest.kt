@@ -2,14 +2,8 @@ package ephyra.feature.browse.extension
 
 import android.app.Application
 import app.cash.turbine.test
-import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.util.Result
-import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.GetAvailableSources
-import ephyra.domain.content.source.interactor.RemoveCustomSource
-import ephyra.domain.content.source.interactor.UnifiedSource
-import ephyra.domain.content.source.interactor.UpdateCustomSource
 import ephyra.domain.extension.interactor.GetExtensionsByType
 import ephyra.domain.extension.interactor.TrustExtension
 import ephyra.domain.extension.model.Extension
@@ -21,9 +15,7 @@ import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.presentation.core.ui.AppInfo
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -48,19 +40,15 @@ class ExtensionsViewModelTest {
 
     private val context: Application = mockk(relaxed = true)
     private val getAvailableSources: GetAvailableSources = mockk(relaxed = true)
-    private val updateCustomSource: UpdateCustomSource = mockk(relaxed = true)
-    private val removeCustomSource: RemoveCustomSource = mockk(relaxed = true)
     private val getExtensionRepo: GetExtensionRepo = mockk(relaxed = true)
     private val createExtensionRepo: CreateExtensionRepo = mockk(relaxed = true)
     private val deleteExtensionRepo: DeleteExtensionRepo = mockk(relaxed = true)
     private val updateExtensionRepo: UpdateExtensionRepo = mockk(relaxed = true)
     private val getExtensionsByType: GetExtensionsByType = mockk(relaxed = true)
     private val preferenceStore: PreferenceStore = mockk(relaxed = true)
-    private val sourcePreferences: SourcePreferences = mockk(relaxed = true)
     private val trustExtension: TrustExtension = mockk(relaxed = true)
     private val extensionManager: ExtensionManager = mockk(relaxed = true)
     private val appInfo: AppInfo = mockk(relaxed = true)
-    private val disabledSourcesPref: Preference<Set<String>> = mockk(relaxed = true)
 
     private val reposFlow = MutableSharedFlow<List<ExtensionRepo>>(replay = 1)
     private val extensionsFlow = MutableSharedFlow<Extensions>(replay = 1)
@@ -73,8 +61,6 @@ class ExtensionsViewModelTest {
         every { getExtensionRepo.subscribeAll() } returns reposFlow
         every { getExtensionsByType.subscribe() } returns extensionsFlow
         every { getAvailableSources() } returns flowOf(emptyList())
-        every { sourcePreferences.disabledSources() } returns disabledSourcesPref
-        coEvery { disabledSourcesPref.get() } returns emptySet()
     }
 
     @AfterEach
@@ -85,15 +71,12 @@ class ExtensionsViewModelTest {
     private fun createViewModel() = ExtensionsViewModel(
         context,
         getAvailableSources,
-        updateCustomSource,
-        removeCustomSource,
         getExtensionRepo,
         createExtensionRepo,
         deleteExtensionRepo,
         updateExtensionRepo,
         getExtensionsByType,
         preferenceStore,
-        sourcePreferences,
         trustExtension,
         extensionManager,
         appInfo,
@@ -163,51 +146,6 @@ class ExtensionsViewModelTest {
 
         coVerify { extensionManager.trust(untrusted) }
         verify(atLeast = 1) { getAvailableSources() }
-    }
-
-    @Test
-    fun `RemoveSource event uninstalls extension if source is remote extension`() = runTest {
-        val remoteSource = UnifiedSource(
-            id = 123L,
-            name = "Remote Source",
-            baseUrl = "https://remote.example.com",
-            sourceType = SourceType.REMOTE_EXTENSION,
-            enabled = true,
-            extensionId = "com.remote.ext",
-            lastHealthCheck = 0L,
-            failureCount = 0,
-        )
-        every { getAvailableSources() } returns flowOf(listOf(remoteSource))
-        val viewModel = createViewModel()
-
-        viewModel.onEvent(ExtensionsScreenEvent.RemoveSource("https://remote.example.com"))
-
-        verify { extensionManager.uninstallExtensionByPkgName("com.remote.ext") }
-        verify { disabledSourcesPref.set(setOf("123")) }
-    }
-
-    @Test
-    fun `RemoveSource event calls removeCustomSource if source is not extension-backed`() = runTest {
-        // REPOSITORY, not HEURISTIC: the heuristic type was retired (`ADR-0015`) and it used to be the
-        // only non-extension type, so this branch had no other way to be reached. REPOSITORY is now
-        // that case -- a source the app serves itself rather than one an extension APK provides.
-        val customSource = UnifiedSource(
-            id = 456L,
-            name = "Custom Source",
-            baseUrl = "https://custom.example.com",
-            sourceType = SourceType.REPOSITORY,
-            enabled = true,
-            extensionId = null,
-            lastHealthCheck = 0L,
-            failureCount = 0,
-        )
-        every { getAvailableSources() } returns flowOf(listOf(customSource))
-        coEvery { removeCustomSource.removeSource("https://custom.example.com") } returns Result.Success(Unit)
-        val viewModel = createViewModel()
-
-        viewModel.onEvent(ExtensionsScreenEvent.RemoveSource("https://custom.example.com"))
-
-        coVerify { removeCustomSource.removeSource("https://custom.example.com") }
     }
 
     @Test
