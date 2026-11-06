@@ -55,7 +55,9 @@ import org.junit.jupiter.api.Test
  * The chapter-open lifecycle seams (openChapter/chapterLoaded/chapterFailed at the three load
  * failure sites) need a real ChapterLoader from init, which a JVM test cannot supply without the
  * Android classpath -- those transitions are covered by the coordinator suite and run on CI.
- * No JDK runs locally; every gate here is CI's.
+ * No JDK runs locally; every gate here is CI's. When a gate here is red, the temporary
+ * diagnose workflow on this branch re-runs the targeted suites and posts the failure
+ * (with its stack trace) as a pull request comment; it is removed before merge.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReaderSessionWiringTest {
