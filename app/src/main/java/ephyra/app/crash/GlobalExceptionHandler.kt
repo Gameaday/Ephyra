@@ -2,6 +2,8 @@ package ephyra.app.crash
 
 import android.content.Context
 import android.content.Intent
+import ephyra.app.startup.StartupGuard
+import ephyra.domain.workflow.StartupStep
 import ephyra.core.common.util.system.logcat
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -40,8 +42,11 @@ class GlobalExceptionHandler private constructor(
         isCrashing = true
 
         logcat(priority = LogPriority.ERROR, throwable = exception)
+        // B5: reads the guard the workflow host completes on the DI_CONTAINER settle. Before the
+        // guard's no-op defect was fixed no production phase was ever registered, so this read was
+        // always incomplete and every crash used the startup-failure fallback activity.
         val isDiReady = try {
-            ephyra.app.startup.StartupGuard.registerPhase("di_container").isComplete
+            StartupGuard.registerPhase(StartupStep.DI_CONTAINER).isComplete
         } catch (e: Exception) {
             false
         }

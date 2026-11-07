@@ -19,8 +19,9 @@ import java.util.concurrent.atomic.AtomicLong
  *
  * - the callbacks remain the effect executor. `App.kt` calls [begin] before the first phase and
  *   [settled] after each phase's existing block; a rethrow path never settles, so the state dies
- *   with the process. Nothing gates on this workflow, and `StartupGuard`/`StartupTracker` keep
- *   their crash-attribution role (dual tracking is disclosed; `OPS-001`/B5 owns unification).
+ *   with the process. Nothing gates on this workflow. B5 made [settled] the single reporting
+ *   seam: an accepted successful settle fans out to `StartupGuard` (crash attribution) and
+ *   `StartupTracker` (the startup timeline), so `App` no longer reports phases itself.
  * - the host owns the state model and rule-8 correlation. Correlation cannot live in the
  *   [EffectLedger] alone: the terminal `ASYNC_INIT` request is non-cancellable and the ledger
  *   removes such ids at track time, so this host keeps its own requested-effect set — a settle
@@ -84,6 +85,13 @@ class StartupWorkflowHost {
         )
         state = transition.state
         transition.effects.forEach(::register)
+        // B5: the single reporting seam. A step completes only on an accepted successful settle — a
+        // refusal (duplicate or unknown) reports nothing new, and a failed settle re-requests the
+        // step instead of completing it.
+        if (ok) {
+            StartupGuard.completePhase(step)
+            StartupTracker.complete(step)
+        }
         return transition.effects
     }
 

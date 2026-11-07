@@ -4,6 +4,7 @@ import android.content.Context
 import ephyra.core.migration.Migration
 import ephyra.core.migration.MigrationStrategy
 import ephyra.core.migration.Migrator
+import ephyra.domain.workflow.StartupStep
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -22,12 +23,14 @@ class AppStartupLifecycleTest {
 
     @BeforeEach
     fun setUp() {
+        StartupGuard.resetForTest()
         StartupTracker.resetForTest()
         Migrator.resetForTest()
     }
 
     @AfterEach
     fun tearDown() {
+        StartupGuard.resetForTest()
         StartupTracker.resetForTest()
         Migrator.resetForTest()
     }
@@ -37,26 +40,26 @@ class AppStartupLifecycleTest {
     @Test
     fun `startup guard phases complete sequentially`() {
         // Register typical startup phases
-        val loggingGuard = StartupGuard.registerPhase("logging")
-        val diGuard = StartupGuard.registerPhase("di_container")
-        val asyncGuard = StartupGuard.registerPhase("async_init")
+        val loggingGuard = StartupGuard.registerPhase(StartupStep.LOGGING)
+        val diGuard = StartupGuard.registerPhase(StartupStep.DI_CONTAINER)
+        val asyncGuard = StartupGuard.registerPhase(StartupStep.ASYNC_INIT)
 
         assertFalse(loggingGuard.isComplete)
         assertFalse(diGuard.isComplete)
         assertFalse(asyncGuard.isComplete)
 
         // Phase 1 completes
-        StartupGuard.completePhase("logging")
+        StartupGuard.completePhase(StartupStep.LOGGING)
         assertTrue(loggingGuard.isComplete)
         assertFalse(diGuard.isComplete)
 
         // Phase 2 completes
-        StartupGuard.completePhase("di_container")
+        StartupGuard.completePhase(StartupStep.DI_CONTAINER)
         assertTrue(diGuard.isComplete)
         assertFalse(asyncGuard.isComplete)
 
         // Phase 3 completes
-        StartupGuard.completePhase("async_init")
+        StartupGuard.completePhase(StartupStep.ASYNC_INIT)
         assertTrue(asyncGuard.isComplete)
 
         // Verify all our registered guards are completed
@@ -67,10 +70,10 @@ class AppStartupLifecycleTest {
 
     @Test
     fun `graceful degradation when non-critical phase times out`() {
-        val nonCriticalGuard = StartupGuard.registerPhase("telemetry")
+        val nonCriticalGuard = StartupGuard.registerPhase(StartupStep.TELEMETRY)
 
         // Wait on the phase with a tiny timeout (5ms) to simulate a timed-out phase
-        val completed = StartupGuard.awaitPhase("telemetry", timeoutMs = 5)
+        val completed = StartupGuard.awaitPhase(StartupStep.TELEMETRY, timeoutMs = 5)
 
         // Verify that it timed out gracefully (returned false) and did not block/crash
         assertFalse(completed, "Non-critical phase should timeout when not completed in time")
@@ -98,7 +101,7 @@ class AppStartupLifecycleTest {
 
     @Test
     fun `early migration failure calls cancelAndRelease to prevent startup deadlocks`() = runTest {
-        assertFalse(StartupTracker.isComplete(StartupTracker.Phase.MIGRATOR_COMPLETE))
+        assertFalse(StartupTracker.isComplete(StartupTracker.Milestone.MIGRATOR_COMPLETE))
 
         // Trigger early initialization failure recovery
         Migrator.cancelAndRelease()

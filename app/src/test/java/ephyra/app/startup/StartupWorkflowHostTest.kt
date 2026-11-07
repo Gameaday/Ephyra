@@ -115,4 +115,39 @@ class StartupWorkflowHostTest {
         assertEquals(host.state, other.state)
         assertFalse(other.state.isComplete)
     }
+
+    // ─ B5: the reporting seam fans out only for accepted successful settles ─
+
+    @Test
+    fun `an accepted successful settle fans out to the guard and the tracker`() {
+        StartupGuard.resetForTest()
+        StartupTracker.resetForTest()
+        val host = StartupWorkflowHost()
+        host.begin()
+        host.settled(StartupStep.LOGGING, ok = true)
+        assertTrue(StartupGuard.registerPhase(StartupStep.LOGGING).isComplete)
+        assertTrue(StartupTracker.isComplete(StartupStep.LOGGING))
+    }
+
+    @Test
+    fun `a refused settle does not fan out`() {
+        StartupGuard.resetForTest()
+        StartupTracker.resetForTest()
+        val host = StartupWorkflowHost()
+        // No begin(): LOGGING was never requested, so the settle is refused and reports nothing.
+        host.settled(StartupStep.LOGGING, ok = true)
+        assertFalse(StartupGuard.registerPhase(StartupStep.LOGGING).isComplete)
+        assertFalse(StartupTracker.isComplete(StartupStep.LOGGING))
+    }
+
+    @Test
+    fun `a failed settle re-requests the step without completing it`() {
+        StartupGuard.resetForTest()
+        StartupTracker.resetForTest()
+        val host = StartupWorkflowHost()
+        host.begin()
+        host.settled(StartupStep.LOGGING, ok = false, reason = "boom")
+        assertFalse(StartupGuard.registerPhase(StartupStep.LOGGING).isComplete)
+        assertFalse(StartupTracker.isComplete(StartupStep.LOGGING))
+    }
 }

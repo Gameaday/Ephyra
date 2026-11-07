@@ -1,60 +1,37 @@
 package ephyra.app
 
-import android.annotation.SuppressLint
 import android.app.Application
-import android.app.PendingIntent
-import android.content.BroadcastReceiver
-import android.content.ComponentCallbacks2
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.graphics.Bitmap
 import android.os.Looper
 import android.webkit.WebView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
-import coil3.disk.DiskCache
-import coil3.gif.GifDecoder
-import coil3.memory.MemoryCache
-import coil3.memoryCacheMaxSizePercentWhileInBackground
-import coil3.network.okhttp.OkHttpNetworkFetcherFactory
-import coil3.request.allowRgb565
-import coil3.request.bitmapConfig
-import coil3.request.crossfade
-import coil3.util.DebugLogger
 import dagger.hilt.android.HiltAndroidApp
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
 import ephyra.app.di.initializeExtensionBridge
+import ephyra.app.image.EphyraImageLoaderFactory
+import ephyra.app.image.ImageCacheMemoryPolicy
+import ephyra.app.startup.IncognitoModeMonitor
 import ephyra.app.startup.SourceReconciler
-import ephyra.app.startup.StartupGuard
+import ephyra.app.startup.StartupTracker
 import ephyra.app.startup.StartupWorkflowHost
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.GLUtil
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.WebViewUtil
-import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.logcat
-import ephyra.core.common.util.system.notify
 import ephyra.core.migration.Migrator
 import ephyra.core.migration.migrations.migrations
 import ephyra.data.cache.CoverCache
-import ephyra.data.coil.BufferedSourceFetcher
-import ephyra.data.coil.HardwareGuardDecoder
-import ephyra.data.coil.JxlCoilBridgeDecoder
-import ephyra.data.coil.MangaCoverFetcher
-import ephyra.data.coil.MangaCoverKeyer
-import ephyra.data.coil.MangaKeyer
 import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.source.diagnostics.SourceResolutionDiagnostics
@@ -65,21 +42,17 @@ import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.domain.workflow.StartupStep
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
-import ephyra.presentation.core.util.system.animatorDurationScale
 import ephyra.presentation.core.util.system.setAppCompatDelegateThemeMode
 import ephyra.presentation.widget.WidgetManager
 import ephyra.telemetry.TelemetryConfig
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import logcat.AndroidLogcatLogger
 import logcat.LogPriority
 import logcat.LogcatLogger
-import okio.Path.Companion.toOkioPath
-import java.io.File
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -141,18 +114,27 @@ class App :
     /** Executes `RECONCILE_SOURCES`; built lazily because only the async init path uses it. */
     private val sourceReconciler by lazy { SourceReconciler(sourceRegistry, sourceManagerProvider) }
 
+    /** B5/`OPS-001`: the Coil image pipeline, split out of this class's `newImageLoader`. */
+    private val imageLoaderFactory by lazy {
+        EphyraImageLoaderFactory(this, networkHelper, coverCache, sourceManagerProvider) { verboseLoggingEnabled }
+    }
+
+    /** B5/`OPS-001`: the image-cache trim/restore policy, split out of the lifecycle callbacks. */
+    private val imageCacheMemoryPolicy = ImageCacheMemoryPolicy()
+
+    /** B5/`OPS-001`: the incognito notification + receiver surface, split out of this class. */
+    private val incognitoModeMonitor by lazy { IncognitoModeMonitor(this, basePreferences) }
+
     @Volatile
     private var verboseLoggingEnabled = false
 
     override val workManagerConfiguration: androidx.work.Configuration
         get() {
-            ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.WORKMANAGER_CONFIGURED)
+            StartupTracker.complete(StartupTracker.Milestone.WORKMANAGER_CONFIGURED)
             return androidx.work.Configuration.Builder()
                 .setWorkerFactory(ephyra.app.data.work.AppWorkerFactory())
                 .build()
         }
-
-    private val disableIncognitoReceiver = DisableIncognitoReceiver()
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
@@ -170,7 +152,6 @@ class App :
             // Last resort — logging is unavailable
             android.util.Log.e("Ephyra", "Failed to initialize logcat", e)
         }
-        StartupGuard.completePhase("logging")
         startupWorkflow.settled(StartupStep.LOGGING, ok = true)
 
         // Phase 2: Global crash handler
@@ -179,21 +160,18 @@ class App :
         } catch (e: Throwable) {
             android.util.Log.e("Ephyra", "Failed to initialize crash handler", e)
         }
-        StartupGuard.completePhase("crash_handler")
         startupWorkflow.settled(StartupStep.CRASH_HANDLER, ok = true)
     }
 
-    @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
         // Phase 3: Extension bridge initialization — must happen BEFORE super.onCreate()
         // so Injekt is primed before Hilt injects members or starts background tasks
         try {
             initializeExtensionBridge(this)
-            StartupGuard.completePhase("di_container")
             // The rethrow path above deliberately never settles: the state dies with the process.
             startupWorkflow.settled(StartupStep.DI_CONTAINER, ok = true)
         } catch (e: Throwable) {
-            ephyra.app.startup.StartupTracker.recordError(ephyra.app.startup.StartupTracker.Phase.APP_CREATED, e)
+            StartupTracker.recordError(StartupStep.APP_CREATED, e)
             logcat(LogPriority.ERROR, e) { "Critical DI container initialization failed" }
             throw e
         }
@@ -208,7 +186,6 @@ class App :
         super<Application>.onCreate()
         ephyra.app.data.work.CoverCacheMaintenanceWorker.setupTask(this)
         ephyra.app.data.work.CoverCacheMaintenanceWorker.enqueueOneTimeAudit(this)
-        ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
         startupWorkflow.settled(StartupStep.APP_CREATED, ok = true)
         // The workflow's enum order is the declared contract: the worker registrations above
         // have already returned, and WorkManager's own configuration settles lazily on first use.
@@ -220,7 +197,6 @@ class App :
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "Telemetry init failed — non-fatal" }
         }
-        StartupGuard.completePhase("telemetry")
         startupWorkflow.settled(StartupStep.TELEMETRY, ok = true)
 
         // Avoid potential crashes from multiple WebView processes
@@ -233,7 +209,6 @@ class App :
 
         // Phase 5: Notification channels (non-critical)
         setupNotificationChannels()
-        StartupGuard.completePhase("notifications")
         startupWorkflow.settled(StartupStep.NOTIFICATIONS, ok = true)
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
@@ -242,43 +217,9 @@ class App :
 
         // Phase 6: Reactive bindings (preference flows)
         try {
-            basePreferences.incognitoMode().changes()
-                .onEach { enabled ->
-                    if (enabled) {
-                        disableIncognitoReceiver.register()
-                        if (ContextCompat.checkSelfPermission(
-                                this@App,
-                                android.Manifest.permission.POST_NOTIFICATIONS,
-                            ) ==
-                            android.content.pm.PackageManager.PERMISSION_GRANTED
-                        ) {
-                            notify(
-                                Notifications.ID_INCOGNITO_MODE,
-                                Notifications.CHANNEL_INCOGNITO_MODE,
-                            ) {
-                                setContentTitle(this@App.getString(ephyra.app.core.common.R.string.pref_incognito_mode))
-                                setContentText(
-                                    this@App.getString(ephyra.app.core.common.R.string.notification_incognito_text),
-                                )
-                                setSmallIcon(R.drawable.ic_glasses_24dp)
-                                setOngoing(true)
-
-                                val pendingIntent = PendingIntent.getBroadcast(
-                                    this@App,
-                                    0,
-                                    Intent(ACTION_DISABLE_INCOGNITO_MODE).setPackage(BuildConfig.APPLICATION_ID),
-                                    PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE,
-                                )
-                                setContentIntent(pendingIntent)
-                            }
-                        }
-                    } else {
-                        disableIncognitoReceiver.unregister()
-                        cancelNotification(Notifications.ID_INCOGNITO_MODE)
-                    }
-                }
-                .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor incognito mode" } }
-                .launchIn(scope)
+            // B5/`OPS-001`: the incognito notification + receiver surface lives in
+            // IncognitoModeMonitor now; the flow's own catch moved with it.
+            incognitoModeMonitor.start(scope)
 
             privacyPreferences.analytics()
                 .changes()
@@ -299,7 +240,6 @@ class App :
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "Startup reactive binding setup failed" }
         }
-        StartupGuard.completePhase("reactive_bindings")
         startupWorkflow.settled(StartupStep.REACTIVE_BINDINGS, ok = true)
 
         // Phase 7: Async initialization (theme, widget, migration)
@@ -358,7 +298,6 @@ class App :
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e) { "Async startup initialization failed" }
             } finally {
-                StartupGuard.completePhase("async_init")
                 startupWorkflow.settled(StartupStep.ASYNC_INIT, ok = true)
             }
         }
@@ -368,7 +307,7 @@ class App :
         try {
             val preference = preferenceStore.getInt(Preference.appStateKey("last_version_code"), 0)
             logcat { "Migration from ${preference.get()} to ${BuildConfig.VERSION_CODE}" }
-            ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.MIGRATOR_STARTED)
+            StartupTracker.complete(StartupTracker.Milestone.MIGRATOR_STARTED)
             Migrator.initialize(
                 context = this,
                 old = preference.get(),
@@ -380,117 +319,25 @@ class App :
             }
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "initializeMigrator failed; canceling and releasing Migrator initGate" }
-            ephyra.app.startup.StartupTracker.recordError(ephyra.app.startup.StartupTracker.Phase.MIGRATOR_COMPLETE, e)
+            StartupTracker.recordError(StartupTracker.Milestone.MIGRATOR_COMPLETE, e)
             Migrator.cancelAndRelease()
             throw e
         }
     }
 
     /**
-     * The loader's configured memory-cache size, captured when the loader is built.
-     *
-     * Trimming used to halve whatever the cache currently held, so each trim halved the previous
-     * trim: a long session that hit memory pressure a few times ratcheted the cache down towards
-     * nothing and never put it back, even after the pressure cleared. Remembering the configured
-     * size makes the trim idempotent and lets [onStart] restore it when the app is foregrounded
-     * again.
+     * B5/`OPS-001`: the builder logic lives in [EphyraImageLoaderFactory]; `App` remains the
+     * [SingletonImageLoader.Factory] because Coil asks it for the application loader. The
+     * baseline capture stays adjacent to the build (in [imageCacheMemoryPolicy]) so a trim can
+     * never compute from a size another trim has already halved.
      */
-    private var imageCacheBaselineMaxSize: Long? = null
+    override fun newImageLoader(context: Context): ImageLoader =
+        imageLoaderFactory.create(context).also { imageCacheMemoryPolicy.captureBaseline(it) }
 
-    override fun newImageLoader(context: Context): ImageLoader {
-        val loader = ImageLoader.Builder(this).apply {
-            val callFactoryLazy = lazy { networkHelper.client }
-            components {
-                // NetworkFetcher.Factory
-                add(OkHttpNetworkFetcherFactory(callFactoryLazy::value))
-                // Decoder.Factory — order matters; Coil tries factories in registration order:
-                // 1. JXL bridge (awxkee jxl-coder 2.2.0 ships Coil 2; bridged into this Coil 3
-                //    pipeline): static JXL, which the platform cannot decode. libjxl applies
-                //    the embedded color profile internally, so the retired custom ICC
-                //    display-profile override is gone by design.
-                // 2. Platform animated drawables (GIF/WebP via coil-gif + ImageDecoderDecoder).
-                // 3. HardwareGuard: wraps BitmapFactoryDecoder and downgrades oversized
-                //    long-strip sources to software decoding instead of failing the
-                //    hardware (AHardwareBuffer) decode at GL_MAX_TEXTURE_SIZE.
-                //    Oversized JXL is guarded inside the bridge (decode-time downgrade)
-                //    because Coil 2/3 decoder types cannot share one guard factory.
-                add(JxlCoilBridgeDecoder.Factory())
-                add(GifDecoder.Factory())
-                add(HardwareGuardDecoder.Factory())
-                // Fetcher.Factory
-                add(BufferedSourceFetcher.Factory())
-                val sourceMgr = sourceManagerProvider.get()
-                add(MangaCoverFetcher.MangaCoverFactory(callFactoryLazy, coverCache, sourceMgr))
-                add(MangaCoverFetcher.MangaFactory(callFactoryLazy, coverCache, sourceMgr))
-                // Keyer
-                add(MangaCoverKeyer(coverCache))
-                add(MangaKeyer(coverCache))
-            }
-
-            memoryCache(
-                MemoryCache.Builder()
-                    // Tiered like the chapter/disk caches: on high-RAM devices (S24 class)
-                    // a larger decoded-bitmap working set means library/updates grids
-                    // recompose from memory instead of re-decoding from disk, which is
-                    // where scroll jitter at 120Hz actually comes from. LOW keeps Coil's
-                    // conservative default so memory pressure decides eviction there.
-                    .maxSizePercent(
-                        context,
-                        when (DeviceUtil.performanceTier(this@App)) {
-                            DeviceUtil.PerformanceTier.LOW -> 0.20
-                            DeviceUtil.PerformanceTier.MEDIUM -> 0.25
-                            DeviceUtil.PerformanceTier.HIGH -> 0.30
-                        },
-                    )
-                    .build(),
-            )
-            // Coil 3 lifecycle-aware background trimming: when the app moves to the
-            // background, the memory cache is evicted down to 10% of its capacity and
-            // grown back on demand once resumed. Dropping the working set this aggressively
-            // yields graphics memory to the rest of the system; the entries that are
-            // discarded are re-decoded cheaply on return, which is the right trade while the
-            // reader is not on screen. This replaces the old manual onTrimMemory
-            // "clear everything on UI hidden" behaviour.
-            memoryCacheMaxSizePercentWhileInBackground(0.1)
-
-            diskCache {
-                DiskCache.Builder()
-                    .directory(File(cacheDir, "image_cache").toOkioPath())
-                    .maxSizeBytes(
-                        when (DeviceUtil.performanceTier(this@App)) {
-                            DeviceUtil.PerformanceTier.LOW -> 50L * 1024 * 1024 // 50 MiB
-                            DeviceUtil.PerformanceTier.MEDIUM -> 150L * 1024 * 1024 // 150 MiB
-                            DeviceUtil.PerformanceTier.HIGH -> 300L * 1024 * 1024 // 300 MiB
-                        },
-                    )
-                    .build()
-            }
-
-            crossfade((300 * this@App.animatorDurationScale).toInt())
-            allowRgb565(false)
-            // GPU-resident hardware bitmaps are the global default. Pages and covers land in
-            // graphics memory (AHardwareBuffer) instead of the native heap, which removes the
-            // CPU to GPU upload on every render frame and keeps large chapters off the Java
-            // heap entirely. HardwareGuardDecoder routes long-strip pages that would exceed
-            // GL_MAX_TEXTURE_SIZE to software decoding, so the texture ceiling is still
-            // respected without a per-device configuration switch.
-            bitmapConfig(Bitmap.Config.HARDWARE)
-            if (verboseLoggingEnabled) logger(DebugLogger())
-
-            // Coil spawns a new thread for every image load by default
-            fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))
-            decoderCoroutineContext(Dispatchers.IO.limitedParallelism(3))
-        }
-            .build()
-        // Captured once, before any trim has had a chance to shrink it, so a trim always computes
-        // from the configured size rather than from the previous trim's result.
-        imageCacheBaselineMaxSize = loader.memoryCache?.maxSize
-        return loader
-    }
 
     override fun onStart(owner: LifecycleOwner) {
         SecureActivityDelegateState.onApplicationStart(securityPreferences)
-        restoreImageCacheSize()
+        imageCacheMemoryPolicy.restore(this)
 
         // Prime the content-source map as soon as the app is foregrounded. `SourceManager` builds
         // its source map asynchronously, and a screen restored after the system killed the process
@@ -504,55 +351,19 @@ class App :
         }
     }
 
-    /**
-     * Restores the memory cache to its configured size after a trim.
-     *
-     * Coming back to the foreground is the point at which the reason for trimming is gone. Without
-     * this the shrink was permanent for the life of the process: the cache stayed at half (or a
-     * quarter, or an eighth) of its configured size, so every cover and page scrolled past after a
-     * memory warning was decoded again instead of being found in memory.
-     */
-    private fun restoreImageCacheSize() {
-        val baseline = imageCacheBaselineMaxSize ?: return
-        val memoryCache = SingletonImageLoader.get(this).memoryCache ?: return
-        if (memoryCache.maxSize < baseline) memoryCache.maxSize = baseline
-    }
-
     override fun onStop(owner: LifecycleOwner) {
         SecureActivityDelegateState.onApplicationStopped(securityPreferences)
     }
 
     /**
-     * Called by the system when it determines that memory is running low.
-     *
-     * Foreground pressure is handled by shrinking Coil's memory cache to half its *configured*
-     * size (Coil 3 [MemoryCache] sizes itself by percent of app memory, so lowering the max evicts
-     * the least-recently-used decoded bitmaps). Computing from the configured size rather than the
-     * current one makes the trim idempotent — halving the current value meant every warning halved
-     * the previous result, and the cache crept towards zero for the rest of the process.
-     * [restoreImageCacheSize] puts it back the next time the app is foregrounded. Background
-     * trimming is handled automatically by the lifecycle-aware
-     * [memoryCacheMaxSizePercentWhileInBackground] policy configured in [newImageLoader].
-     *
-     * Why LOW matters: long webtoon sessions pin chapter bytes + decoded strips in RAM,
-     * and waiting for RUNNING_CRITICAL meant the reader appeared "full" (stalled loads)
-     * until the app was restarted. Trimming early at RUNNING_LOW drops only decoded
-     * bitmaps; chapter bytes stay in Coil disk / chapter disk cache, so back-scroll
-     * re-decodes instead of re-downloading.
+     * Called by the system when it determines that memory is running low. The policy — halve
+     * to the configured size at foreground pressure, clear at critical, restore on the next
+     * foreground — lives in [imageCacheMemoryPolicy] since B5; the rationale moved with it.
      */
     @Suppress("DEPRECATION")
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        val memoryCache = SingletonImageLoader.get(this).memoryCache
-        if (level >= TRIM_MEMORY_RUNNING_LOW && memoryCache != null) {
-            // Half of the *configured* size, so repeated trims land on the same value instead of
-            // compounding; [restoreImageCacheSize] puts it back on the next foreground.
-            val baseline = imageCacheBaselineMaxSize ?: memoryCache.maxSize
-            memoryCache.maxSize = (baseline / 2).coerceAtLeast(16L * 1024 * 1024)
-        }
-        if (level >= TRIM_MEMORY_RUNNING_CRITICAL) {
-            memoryCache?.clear()
-        }
+        imageCacheMemoryPolicy.trim(this, level)
     }
 
     override fun getPackageName(): String {
@@ -579,37 +390,8 @@ class App :
         }
     }
 
-    private inner class DisableIncognitoReceiver : BroadcastReceiver() {
-        private var registered = false
-
-        override fun onReceive(context: Context, intent: Intent) {
-            basePreferences.incognitoMode().set(value = false)
-        }
-
-        fun register() {
-            if (!registered) {
-                ContextCompat.registerReceiver(
-                    this@App,
-                    this,
-                    IntentFilter(ACTION_DISABLE_INCOGNITO_MODE),
-                    ContextCompat.RECEIVER_NOT_EXPORTED,
-                )
-                registered = true
-            }
-        }
-
-        fun unregister() {
-            if (registered) {
-                unregisterReceiver(this)
-                registered = false
-            }
-        }
-    }
-
     companion object {
-        private const val ACTION_DISABLE_INCOGNITO_MODE = "tachi.action.DISABLE_INCOGNITO_MODE"
-
-        /** Bound on waiting for the source map to become ready during startup reconciliation (A3). */
+                /** Bound on waiting for the source map to become ready during startup reconciliation (A3). */
         private const val SOURCE_RECONCILE_TIMEOUT_MS = 15_000L
     }
 }
