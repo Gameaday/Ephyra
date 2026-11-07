@@ -98,7 +98,10 @@ class AppStartupTest {
             "Logging initialization phase should be completed",
             StartupGuard.awaitPhase(StartupStep.LOGGING, timeoutMs = 100),
         )
-        assertTrue("Crash handler phase should be completed", StartupGuard.awaitPhase(StartupStep.CRASH_HANDLER, timeoutMs = 100))
+        assertTrue(
+            "Crash handler phase should be completed",
+            StartupGuard.awaitPhase(StartupStep.CRASH_HANDLER, timeoutMs = 100),
+        )
         assertTrue(
             "DI container registration phase should be completed",
             StartupGuard.awaitPhase(StartupStep.DI_CONTAINER, timeoutMs = 100),

@@ -334,7 +334,6 @@ class App :
     override fun newImageLoader(context: Context): ImageLoader =
         imageLoaderFactory.create(context).also { imageCacheMemoryPolicy.captureBaseline(it) }
 
-
     override fun onStart(owner: LifecycleOwner) {
         SecureActivityDelegateState.onApplicationStart(securityPreferences)
         imageCacheMemoryPolicy.restore(this)
@@ -391,7 +390,7 @@ class App :
     }
 
     companion object {
-                /** Bound on waiting for the source map to become ready during startup reconciliation (A3). */
+        /** Bound on waiting for the source map to become ready during startup reconciliation (A3). */
         private const val SOURCE_RECONCILE_TIMEOUT_MS = 15_000L
     }
 }

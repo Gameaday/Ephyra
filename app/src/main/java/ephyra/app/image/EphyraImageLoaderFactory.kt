@@ -2,6 +2,7 @@ package ephyra.app.image
 
 import android.content.Context
 import android.graphics.Bitmap
+import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.gif.GifDecoder
 import coil3.memory.MemoryCache
@@ -11,7 +12,6 @@ import coil3.request.allowRgb565
 import coil3.request.bitmapConfig
 import coil3.request.crossfade
 import coil3.util.DebugLogger
-import coil3.ImageLoader
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.data.cache.CoverCache
 import ephyra.data.coil.BufferedSourceFetcher

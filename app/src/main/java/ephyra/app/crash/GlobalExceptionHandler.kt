@@ -3,8 +3,8 @@ package ephyra.app.crash
 import android.content.Context
 import android.content.Intent
 import ephyra.app.startup.StartupGuard
-import ephyra.domain.workflow.StartupStep
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.workflow.StartupStep
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
