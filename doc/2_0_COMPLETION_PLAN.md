@@ -60,8 +60,17 @@ marked **[corrected]**.
   `SlicedWebtoonImage` through the new pure `WebtoonSlicePlanner` (see the A1 row in §4).
 - **[executed 2026-11-06 — A2] `ReaderSession` consumed.** `ReaderViewModel` now drives `ReaderSessionCoordinator` at every reader seam (open/loaded/failed, selection + settlement, menu, close), with `ReaderSessionEffectLog` acknowledging effects, and the prev/next window is selected through `ReaderChapterWindowAdapter` and the domain `ReaderChapterWindowPolicy`. See the A2 row in §4.
 - **`IngestEngine` still greenfield** (own file + test only).
-- **Five DI-orphans still unwired:** `TargetSeriesRepository`, `TargetMigrationWriter`,
-  `LegacyRoomMigrationAdapter`, `ReconcileSourceRegistry`, `verifyDownloadArtifact`.
+- **[reconciled 2026-11-08 — D3] The five "DI-orphans" are unwired by decision, not by neglect.**
+  `TargetSeriesRepository`, `TargetMigrationWriter`, `LegacyRoomMigrationAdapter` and
+  `ReconcileSourceRegistry` are the isolated target-data/source-lifecycle path
+  [`TARGET_DATA_CUTOVER.md`](TARGET_DATA_CUTOVER.md) (`DATA-001H`) deliberately keeps out of
+  production until its 14 cutover gates are evidenced (`DATA-001I`): binding them would cross the
+  recorded rollback boundary ("Target writes are not allowed from production UI/background
+  workers"), and deleting them would discard the staged future authority and its rehearsal
+  fixtures. `verifyDownloadArtifact` stays re-scoped to `DATA-001I` blocker 2 (no
+  `DownloadArtifactIndex` implementation exists, so a call site would compute-and-discard).
+  Resting state: `ACCEPTED_DEBT` with the `DATA-001I` gates as the review condition — not the
+  `B-032` orphan class.
 - **[corrected] Sourcing Phase 4's "open decision" is resolved** — `ADR-0017` chose deletion. What
   remains is execution, not a decision.
 - **Improvement session progress:** navigation motion done; Discover Steps 1/2/4 landed; unified
@@ -118,7 +127,7 @@ Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](
 |---|---|---|---|
 | D1 | **Execute `ADR-0017`:** delete `SourceProfile`, `SourceProfileCache`, `SourceProfileStore`, `RoomSourceProfileStore`, the Room entity + migration, `DynamicHttpSource`, `RemoteSource`, `ContentSourceOrchestrator`, `GetAvailableSources`'s profile branch, and `DEF-029`. | Done 2026-11-06: all seven targets deleted with the entity/DAO, the custom-source interactors and their tests; Room v5 (`MIGRATION_4_5`) drops `source_profiles`; `SourceType` and `ContentSourceEngine` survive on named reasons; remote CI is the verification channel (no JDK in the authoring environment) | B2 (identity owner must exist first) |
 | D2 | `CLEAN-001`: delete superseded reader/navigation/media code; retire the unwired `macrobenchmark` module. | Done 2026-11-07: the superseded generations were already deleted at their cutovers — reader (verified by A6's ceiling-0 scan + per-file audit), navigation (the global mutable navigation singletons, deleted at `NAV-001`), media (the tile pipeline, retired by `ADR-0010`) — so the dependency/import scan found nothing left to delete, and the deliverable is the recorded retirement: the `macrobenchmark` module (6 files), its `ephyra.benchmark` convention plugin, the app `benchmark` build type, and the now-unused `benchmark-macro`/`test-uiautomator` catalog entries are gone (module count 29 → 28). Record: `REBUILD_STATUS.md` change log, 2026-11-07. | A6, D1 |
-| D3 | Retire the five DI-orphans: bind + call, or delete. Decide per item; do not leave "tested, unwired". | `LedgerWiringClaimTest` + build | - |
+| D3 | Retire the five DI-orphans: bind + call, or delete. Decide per item; do not leave "tested, unwired". | Done 2026-11-08: decided per item — all five **stay isolated: unwired by decision, neither bound nor deleted**. The governing record is [`TARGET_DATA_CUTOVER.md`](TARGET_DATA_CUTOVER.md): `DATA-001H`'s rollback boundary forbids target writes from production UI/background workers and keeps the target path isolated until the 14 cutover gates are evidenced (`DATA-001I`), so binding `TargetSeriesRepository`/`TargetMigrationWriter`/`LegacyRoomMigrationAdapter`/`ReconcileSourceRegistry` would create the split-brain identity model the decision exists to prevent, and deleting them would discard the staged future authority and its rehearsal fixtures. `verifyDownloadArtifact` stays re-scoped to `DATA-001I` blocker 2 — `DownloadArtifactIndex` has no implementation, so a `Downloader` call site would compute the verification and discard it. The deliverable is the recorded reconciliation (§3 bullet, ROADMAP open queue, `REBUILD_STATUS.md` change log): the five are accepted debt under §2 item 7 with the `DATA-001I` gates as the expiry/review condition. No production code changed, by decision; docs-only change, CI green. | - |
 | D4 | Re-audit the `B-032` contract surface; every remaining unwired contract is either wired or deleted. | wiring audit (read the tree, not a count) | A1, D3 |
 | D5 | Documentation cleanup: archive completed session/audit docs; keep the index current (`DOC-001`). | `doc/README.md` + link check | - |
 
@@ -145,6 +154,11 @@ Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](
   decision, applied uniformly.
 - **`B-043`/`TST-003`** - macrobenchmark was dropped by owner decision; the frame-deadline budget
   has **no automated gate** and is measured by manual `E4-user` capture. The module itself is now retired (`D2`, 2026-11-07).
+- **Target-data cutover (`DATA-001H`/`DATA-001I`)** - deferred by owner decision, not abandoned:
+  the target-data cluster stays isolated until the 14 gates in
+  [`TARGET_DATA_CUTOVER.md`](TARGET_DATA_CUTOVER.md) are evidenced; wiring earlier is forbidden by
+  its rollback boundary. D3 (2026-11-08) records the cluster as accepted debt with those gates as
+  the review condition. A *scheduled* deferral, the same class as `B-017`.
 
 ## 6. Recommended sequencing
 

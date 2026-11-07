@@ -113,11 +113,14 @@ gives the ordered steps to close them.
 - **Execute `ADR-0017`.** The profile path is accepted-for-deletion but still in the tree
   (`SourceProfile`, `SourceProfileCache`, `SourceProfileStore`, `RoomSourceProfileStore`,
   `DynamicHttpSource`, `RemoteSource`, `ContentSourceOrchestrator`). Largest single cleanup item.
-- **Wire or delete the unwired 2.0 contracts.** The media tuple
-  (`PageSource`/`PageMetadata`/`DecodePlan`/`SampleSizePolicy`/`RenderPathPolicy`/`AnimationPolicy`),
-  `ReaderSession`, `IngestEngine`, and the five DI-orphans (`TargetSeriesRepository`,
-  `TargetMigrationWriter`, `LegacyRoomMigrationAdapter`, `ReconcileSourceRegistry`,
-  `verifyDownloadArtifact`). "Verified but unwired" is not an allowed resting state.
+- **[updated 2026-11-08] Wire or delete the unwired 2.0 contracts.** The media tuple and
+  `ReaderSession` are wired (A1/A2); `IngestEngine` remains greenfield. The five former
+  "DI-orphans" (`TargetSeriesRepository`, `TargetMigrationWriter`, `LegacyRoomMigrationAdapter`,
+  `ReconcileSourceRegistry`, `verifyDownloadArtifact`) are reconciled by D3: they are the isolated
+  target-data/source-lifecycle path that [`doc/TARGET_DATA_CUTOVER.md`](doc/TARGET_DATA_CUTOVER.md)
+  (`DATA-001H`) deliberately keeps unwired until its 14 cutover gates are evidenced (`DATA-001I`)
+  — `ACCEPTED_DEBT` with a review condition, not the `B-032` orphan class. "Verified but unwired"
+  without a governing decision is not an allowed resting state.
 - **`SRC-011`/`SRC-012`.** One owner for source existence and identity (`ADR-0012`), and the
   MangaDex-shaped gateway adapter; closes `DEF-029` and the sourcing Phase 1 producer fix.
 - **`DATA-001`.** Clean-slate schema policy; decide the `SChapter.chapter_number: Float` question
@@ -144,7 +147,8 @@ in [`doc/2_0_COMPLETION_PLAN.md`](doc/2_0_COMPLETION_PLAN.md); this is the short
 - **The canvas viewport deletion is done** (`ADR-0010`): `DocumentViewport`, `DocumentTilePartition`,
   `TileScalePolicy`, `WebtoonViewport` no longer exist.
 - **The remaining gap is wiring and cleanup, and it is finite.** A set of tested contracts still has
-  no production consumer (the media tuple, `ReaderSession`, `IngestEngine`, five DI-orphans), and a
+  no production consumer (`IngestEngine` greenfield; the five former DI-orphans are the D3
+  decision-governed target-data cluster), and a
   superseded generation still ships beside its replacement. See the open queue above.
 - **`ADR-0017` is accepted but not executed.** The profile path is still in the tree. That is the
   largest single cleanup item and the claim most likely to mislead a reader.
