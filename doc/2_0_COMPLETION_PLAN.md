@@ -80,6 +80,16 @@ marked **[corrected]**.
   `MainActivity`, plus function references in `ReaderViewModel`), `RendererSelection`'s four-kind
   dispatch is kept by decision under `ADR-0008` (wiring belongs to the four-content-type plan),
   and `IngestEngine` remains the acknowledged greenfield. No production code changed.
+- **[executed 2026-11-08 — B5] `OPS-001` is done: one startup vocabulary and the `Application` split.**
+  `StartupStep` is the one state model: `StartupGuard` and `StartupTracker` are re-keyed on it and
+  `StartupWorkflowHost.settled` is the single reporting seam. The audit found the guard's
+  `completePhase` was a silent no-op (production never registered any phase, so every completion
+  was dropped, the startup tests passed vacuously via `awaitPhase`'s unknown-phase fallback, and
+  the crash handler always saw DI not ready — every crash routed to `StartupFailureActivity`
+  instead of `CrashActivity`); fixed register-if-absent, with the crash-routing change disclosed.
+  `App`'s non-startup responsibilities moved verbatim to `EphyraImageLoaderFactory` (Coil
+  pipeline), `ImageCacheMemoryPolicy` (trim/restore) and `IncognitoModeMonitor` (incognito
+  notification + receiver).
 - **[corrected] Sourcing Phase 4's "open decision" is resolved** — `ADR-0017` chose deletion. What
   remains is execution, not a decision.
 - **Improvement session progress:** navigation motion done; Discover Steps 1/2/4 landed; unified
@@ -113,7 +123,7 @@ is not done until that evidence exists. `E2` = JVM/Robolectric, `E3` = emulator/
 | B2 | `SRC-011` one owner for source existence/identity (`ADR-0012`); close `DEF-029`. | E2 landed 2026-11-06: registry + policies + consumer rewiring + ownership gate; `DEF-029`'s row was then deleted by D1 (2026-11-06) with the profile path, per `ADR-0017` — see the D1 row. | — |
 | B3 | `SRC-012` MangaDex-shaped gateway adapter; fix the producer named by the sourcing Phase 1 repro. | capability + typed-outcome tests; `ImageUrlPolicyResolveTest` | B2 |
 | B4 | `DATA-001` clean-slate schema policy. Decide the `SChapter.chapter_number: Float` question (`DEF-017`): widen to `Double` **or** keep the tolerant `ChapterNumber` policy — with a test either way. | schema tests | — |
-| B5 | `OPS-001` one startup state model; split `Application` responsibilities. | startup tests | A3 |
+| B5 | `OPS-001` one startup state model; split `Application` responsibilities. | Done 2026-11-08: `StartupStep` is the one vocabulary — `StartupGuard`/`StartupTracker` re-keyed on it, `StartupWorkflowHost.settled` the single reporting seam — and the guard's no-op `completePhase` defect is fixed register-if-absent, so crash attribution reflects real progress and post-DI crashes route to `CrashActivity` as designed (behaviour change, disclosed). The split moved verbatim: `EphyraImageLoaderFactory`, `ImageCacheMemoryPolicy`, `IncognitoModeMonitor` leave `App`; startup coordination, the WorkManager configuration, the migrator and the WebView spoofing stay. Startup tests rewritten at `E2` on CI. Record: `REBUILD_STATUS.md` OPS-001 row + change log. | startup tests — rewritten, green on CI | A3 |
 | B6 | Finish `SRC-007`/`SRC-009`/`SRC-010` product wiring (search ViewModel migration, persistence/navigation handlers). | product wiring tests | — |
 
 ### Track C - Product / improvement completion
@@ -175,7 +185,7 @@ Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](
 Immediate (no blockers):   B1, B2, B4, D1, D3, D5, C5, C7
 Reader/media (the core):   A1 -> A2 -> A3 -> A4 -> A6 -> D2
 Product:                   C1 -> C4 -> C2 (after O2) -> C3
-Data/ops:                  B3 (after B2), B5 (after A3), B6
+Data/ops:                  B3 (after B2), B6 (B5 done 2026-11-08)
 Device-bound:              A5, C6, E3
 Freeze:                    D2/D4 complete -> E1 -> E2 -> E3 -> E4
 ```
