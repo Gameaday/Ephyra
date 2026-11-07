@@ -90,6 +90,15 @@ marked **[corrected]**.
   `App`'s non-startup responsibilities moved verbatim to `EphyraImageLoaderFactory` (Coil
   pipeline), `ImageCacheMemoryPolicy` (trim/restore) and `IncognitoModeMonitor` (incognito
   notification + receiver).
+- **[decided 2026-11-08 — B6] The target search cluster is unwired by decision, not by neglect.**
+  `GlobalSearchCoordinator`, `TargetSearchMapper` and `TargetSearchCommand` stay tested-and-unwired
+  behind R-004's own preconditions: the `SourceContentItem`→product mapping is unapproved, R-008
+  (native coverage) is unauthorized, and `DATA-001H` forbids the persist target — so the product search
+  front door keeps its legacy execution path, because wiring the coordinator now would strip every
+  extension source (the native registry refuses legacy gateways by construction) or, in the
+  dual-path variant, duplicate local/OPDS content as a second search architecture. `SeriesPersistence`'s
+  Room/backup half is the isolated target-data cluster whose production cutover is `DATA-001H`-deferred
+  (D3). Review conditions are named per item in the ledger rows.
 - **[corrected] Sourcing Phase 4's "open decision" is resolved** — `ADR-0017` chose deletion. What
   remains is execution, not a decision.
 - **Improvement session progress:** navigation motion done; Discover Steps 1/2/4 landed; unified
@@ -124,7 +133,7 @@ is not done until that evidence exists. `E2` = JVM/Robolectric, `E3` = emulator/
 | B3 | `SRC-012` MangaDex-shaped gateway adapter; fix the producer named by the sourcing Phase 1 repro. | capability + typed-outcome tests; `ImageUrlPolicyResolveTest` | B2 |
 | B4 | `DATA-001` clean-slate schema policy. Decide the `SChapter.chapter_number: Float` question (`DEF-017`): widen to `Double` **or** keep the tolerant `ChapterNumber` policy — with a test either way. | schema tests | — |
 | B5 | `OPS-001` one startup state model; split `Application` responsibilities. | Done 2026-11-08: `StartupStep` is the one vocabulary — `StartupGuard`/`StartupTracker` re-keyed on it, `StartupWorkflowHost.settled` the single reporting seam — and the guard's no-op `completePhase` defect is fixed register-if-absent, so crash attribution reflects real progress and post-DI crashes route to `CrashActivity` as designed (behaviour change, disclosed). The split moved verbatim: `EphyraImageLoaderFactory`, `ImageCacheMemoryPolicy`, `IncognitoModeMonitor` leave `App`; startup coordination, the WorkManager configuration, the migrator and the WebView spoofing stay. Startup tests rewritten at `E2` on CI. Record: `REBUILD_STATUS.md` OPS-001 row + change log. | startup tests — rewritten, green on CI | A3 |
-| B6 | Finish `SRC-007`/`SRC-009`/`SRC-010` product wiring (search ViewModel migration, persistence/navigation handlers). | product wiring tests | — |
+| B6 | Finish `SRC-007`/`SRC-009`/`SRC-010` product wiring (search ViewModel migration, persistence/navigation handlers). | Done 2026-11-08 as a per-item decision, not a wiring — every variant of executing the literal instruction crosses a governing record. SRC-007: `NativeSourceRegistry` refuses legacy gateways by construction (SRC-006), so wiring `GlobalSearchCoordinator` strips every extension source from the single search front door; R-004 pins `GlobalSearchViewModel` to the legacy path until the `SourceContentItem`→product mapping is approved, R-008 is unauthorized, and R-004's rollback boundary forbids legacy paths in new target features (so `SearchSession`+`LegacySourceGateway` is out too). SRC-009: the factory is done and tested; all three handlers land in Room v3 (the unapproved mapping) or in the target store (`DATA-001H` forbids target writes from production UI). SRC-010: "Room/backup implementation remains open" was stale — the isolated cluster exists (DATA-001D/E/G) and its production wiring is D3's decision under the `DATA-001I` gates. Resting state: `ACCEPTED_DEBT` with named review conditions. Record: `REBUILD_STATUS.md` change log + SRC row corrections. | decided per item — wiring deferred by decision | — |
 
 ### Track C - Product / improvement completion
 
@@ -185,7 +194,7 @@ Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](
 Immediate (no blockers):   B1, B2, B4, D1, D3, D5, C5, C7
 Reader/media (the core):   A1 -> A2 -> A3 -> A4 -> A6 -> D2
 Product:                   C1 -> C4 -> C2 (after O2) -> C3
-Data/ops:                  B3 (after B2), B6 (B5 done 2026-11-08)
+Data/ops:                  B3 (after B2), B6 done 2026-11-08 (per-item decision: wiring deferred, see the B6 row)
 Device-bound:              A5, C6, E3
 Freeze:                    D2/D4 complete -> E1 -> E2 -> E3 -> E4
 ```

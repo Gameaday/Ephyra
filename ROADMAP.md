@@ -131,6 +131,14 @@ gives the ordered steps to close them.
   A6's contrary classifications are corrected in the ledger. `RendererSelection`'s four-kind
   dispatch is kept by decision (`ADR-0008`; wiring belongs to the four-content-type plan). What
   remains unwired is decision-governed or acknowledged greenfield (`IngestEngine`).
+
+  **Update 2026-11-08 (B6): the target search cluster joins the decision-governed set.**
+  `GlobalSearchCoordinator`/`TargetSearchMapper`/`TargetSearchCommand` stay tested-and-unwired behind
+  R-004's own preconditions (the `SourceContentItem`→product mapping is unapproved; R-008 native
+  coverage is unauthorized; `DATA-001H` forbids the persist target), and `SRC-010`'s Room/backup half is
+  D3's isolated target-data cluster. Wiring the coordinator now would strip every extension source
+  from the single search front door — the native registry refuses legacy gateways by construction — so
+  the deferral is recorded per item with named review conditions in the ledger.
 - **`SRC-011`/`SRC-012`.** One owner for source existence and identity (`ADR-0012`), and the
   MangaDex-shaped gateway adapter; closes `DEF-029` and the sourcing Phase 1 producer fix.
 - **`DATA-001`.** Clean-slate schema policy; decide the `SChapter.chapter_number: Float` question
