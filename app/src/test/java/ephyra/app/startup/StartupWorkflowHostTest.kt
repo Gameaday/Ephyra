@@ -1,7 +1,7 @@
 package ephyra.app.startup
 
-import ephyra.domain.workflow.StepOutcome
 import ephyra.domain.workflow.StartupStep
+import ephyra.domain.workflow.StepOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -81,7 +81,10 @@ class StartupWorkflowHostTest {
         val terminal = host.settled(StartupStep.RECONCILE_SOURCES, ok = true).single()
         assertEquals(StartupStep.ASYNC_INIT.name, terminal.payload.getValue("step"))
         assertFalse(terminal.cancellable, "the terminal request commits and must not be cancellable")
-        assertTrue(host.settled(StartupStep.ASYNC_INIT, ok = true).isEmpty(), "the terminal settle completes the workflow")
+        assertTrue(
+            host.settled(StartupStep.ASYNC_INIT, ok = true).isEmpty(),
+            "the terminal settle completes the workflow",
+        )
         assertTrue(host.state.isComplete)
         assertNull(host.state.failureReason)
     }
@@ -93,7 +96,10 @@ class StartupWorkflowHostTest {
         while (request.payload.getValue("step") != StartupStep.ASYNC_INIT.name) {
             request = host.settled(StartupStep.valueOf(request.payload.getValue("step")), ok = true).single()
         }
-        assertFalse("startup:ASYNC_INIT" in host.outstandingEffectIds, "the ledger drops non-cancellable ids at track time")
+        assertFalse(
+            "startup:ASYNC_INIT" in host.outstandingEffectIds,
+            "the ledger drops non-cancellable ids at track time",
+        )
         // ...and the settle must still be accepted, which is why the host keeps its own set.
         assertTrue(host.settled(StartupStep.ASYNC_INIT, ok = true).isEmpty())
         assertTrue(host.state.isComplete)

@@ -119,7 +119,10 @@ class StartupStepTest {
             entries.indexOf(StartupStep.RECONCILE_SOURCES),
             "RECONCILE_SOURCES must sit immediately after REACTIVE_BINDINGS",
         )
-        assertFalse(StartupStep.RECONCILE_SOURCES.isCritical, "a reconciliation disagreement is data, not a launch failure")
+        assertFalse(
+            StartupStep.RECONCILE_SOURCES.isCritical,
+            "a reconciliation disagreement is data, not a launch failure",
+        )
         assertFalse(StartupStep.RECONCILE_SOURCES.isTerminal, "adding a step must not move the terminal commitment")
     }
 }
