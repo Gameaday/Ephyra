@@ -186,6 +186,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`UnwiredTargetComponentTest` ran at ceiling 0 to enumerate every unwired 2.0 target type (83), and the reader-area entries were audited per file**: all are live (referenced from Compose-only production files the scan cannot see — `ZoomPolicy`, the `PagerViewport` family, the A1 media tuple and slice pipeline, `WebtoonVisibility`, `WebtoonZoomState`, the gesture-reducer types, `WebtoonZoomGestureHost`), `ADR-0008` contracts awaiting their production call site (`ReaderTapSequencer`, `RendererSelection`), or D3/D4 wire-or-delete decisions (the book-reader/launcher/feature-API cluster). No old-generation reader path ships beside its replacement.
 - **The unwired ceiling is tightened 99 → 83** — the falsification `2_0_CLEANUP_AUDIT.md` CU-2 asked for — and the scan's declared-name blind spot is documented in the test's KDoc so the metric is not over-read as a deadness claim.
 
+### 🧹 Project Surface Shrink (D2: `CLEAN-001` executed — the `macrobenchmark` module is retired)
+
+- **The `macrobenchmark` module is deleted** (6 files) together with its `ephyra.benchmark` convention plugin, the `include(":macrobenchmark")` line, and the now-unused `benchmark-macro`/`test-uiautomator` version-catalog entries — the retirement `B-051` recorded as `CLEAN-001` scope. The module was unwired and unreferenced by any workflow; nothing depended on `:macrobenchmark`, so the project edge count is unchanged while the module count drops 29 → 28.
+- **The app `benchmark` build type is deleted.** Its only consumer was the retired module, so every build configures one fewer app variant; `ApplicationIdConsistencyTest`'s variant inventory is updated to the four variants that remain.
+- **The superseded reader/navigation/media generations are verified gone, not deleted here.** The dependency/import scan (`CLEAN-001`'s evidence gate) found they were already deleted at their cutovers — reader at the A1—A6 cutovers (A6's ceiling-0 inventory + per-file audit), navigation at `NAV-001` (the global mutable navigation singletons) and `ADR-0011`, media at `MED-004`/`ADR-0010`. The ledger passage that said `CLEAN-001` would delete the production Compose readers is corrected in place.
+- **The `E5` evidence level and the current docs now name the real measurement channels** (manual frame capture, scripted `adb shell am start -W`) instead of the retired framework, and `baseline-prof.txt` states that its generator is gone and its rules are maintained by hand until a device harness replaces it.
+
 ### 🗑️ Deleted (D1 executes `ADR-0017` — the profile path is gone)
 
 - **The unreachable custom-source profile path is deleted, not deprecated.** `ADR-0017` recorded

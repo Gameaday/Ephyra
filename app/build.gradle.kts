@@ -115,23 +115,10 @@ android {
 
             buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = false)}\"")
         }
-        create("benchmark") {
-            initWith(release)
-
-            isDebuggable = false
-            isProfileable = true
-            versionNameSuffix = "-benchmark"
-            applicationIdSuffix = ".benchmark"
-
-            signingConfig = debug.signingConfig
-
-            matchingFallbacks.addAll(commonMatchingFallbacks)
-        }
     }
 
     sourceSets {
         getByName("preview").res.directories.add(file("src/debug/res").toString())
-        getByName("benchmark").res.directories.add(file("src/debug/res").toString())
     }
 
     splits {

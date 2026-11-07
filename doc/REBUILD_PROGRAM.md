@@ -31,7 +31,7 @@ No production behavior is exempt from redesign. Existing code may be reused only
 - DataStore owns durable preferences.
 - Coil remains infrastructure, not business state.
 - Material 3 supplies interaction semantics and accessible component behavior.
-- Macrobenchmark, instrumentation, and screenshots verify runtime behavior.
+- Instrumentation and screenshots verify runtime behavior; performance is measured by the manual/scripted channels named in [`PERFORMANCE_BUDGETS.md`](PERFORMANCE_BUDGETS.md) (the `macrobenchmark` module is retired — `B-051`).
 
 ### Maintainability
 

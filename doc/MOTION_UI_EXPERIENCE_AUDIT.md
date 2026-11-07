@@ -382,7 +382,7 @@ recorded as intentionally non-previewable; a structural test covers feature modu
 10. **F4:** delete `m3SharedAxisZ*` if no modal/sheet use claims them, or wire them to the
     one place they belong (modal entry); widen `MotionRoutePair` only when a call site
     names a new pair (the existing rule).
-11. **F10:** add a motion performance budget and capture a macrobenchmark on a real device.
+11. **F10:** add a motion performance budget and capture manual frame-pacing evidence on a real device (the `macrobenchmark` module is retired — `B-051`, D2).
 12. **F9:** unify transient feedback on one channel.
 
 **Exit gate:** no unreferenced motion vocabulary; motion has a measured performance

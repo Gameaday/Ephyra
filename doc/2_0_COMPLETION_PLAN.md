@@ -107,7 +107,7 @@ is not done until that evidence exists. `E2` = JVM/Robolectric, `E3` = emulator/
 | C3 | Jellyfin provider (`JellyfinEngine` + `JellyfinAdapter`), consumption-only v1 (D7). | `ContentConformance` pass + live-server manual | C2, D1 |
 | C4 | Discover Steps 3 (updates chip), 5 (etiquette hardening), 6 (structural tests). | structural tests | C1 |
 | C5 | Cache queue: eager prior-revision cover delete; migration-source-change chapter-cache orphaning. | `E2` + `E3` | - |
-| C6 | Performance device work: regenerate `baseline-prof.txt` on S24; run `ScrollBenchmark`/`StartupBenchmark`; only then tune P99. | `E5` benchmark record | - |
+| C6 | Performance device work: regenerate `baseline-prof.txt` on S24 — by the manual/scripted channels, since the `macrobenchmark` generator is retired (`B-051`, D2); only then tune P99. | `E5` measurement record | - |
 | C7 | Navigation candidates: shared-cover for browse/search-to-details; decide the `motionPlanFor`-null gap. | `MotionConsistencyTest` | - |
 
 ### Track D - Legacy deletion & cleanup (the crispness work)
@@ -117,7 +117,7 @@ Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](
 | ID | Action | Evidence | Depends on |
 |---|---|---|---|
 | D1 | **Execute `ADR-0017`:** delete `SourceProfile`, `SourceProfileCache`, `SourceProfileStore`, `RoomSourceProfileStore`, the Room entity + migration, `DynamicHttpSource`, `RemoteSource`, `ContentSourceOrchestrator`, `GetAvailableSources`'s profile branch, and `DEF-029`. | Done 2026-11-06: all seven targets deleted with the entity/DAO, the custom-source interactors and their tests; Room v5 (`MIGRATION_4_5`) drops `source_profiles`; `SourceType` and `ContentSourceEngine` survive on named reasons; remote CI is the verification channel (no JDK in the authoring environment) | B2 (identity owner must exist first) |
-| D2 | `CLEAN-001`: delete superseded reader/navigation/media code; retire the unwired `macrobenchmark` module. | dependency/import scan; build green | A6, D1 |
+| D2 | `CLEAN-001`: delete superseded reader/navigation/media code; retire the unwired `macrobenchmark` module. | Done 2026-11-07: the superseded generations were already deleted at their cutovers — reader (verified by A6's ceiling-0 scan + per-file audit), navigation (the global mutable navigation singletons, deleted at `NAV-001`), media (the tile pipeline, retired by `ADR-0010`) — so the dependency/import scan found nothing left to delete, and the deliverable is the recorded retirement: the `macrobenchmark` module (6 files), its `ephyra.benchmark` convention plugin, the app `benchmark` build type, and the now-unused `benchmark-macro`/`test-uiautomator` catalog entries are gone (module count 29 → 28). Record: `REBUILD_STATUS.md` change log, 2026-11-07. | A6, D1 |
 | D3 | Retire the five DI-orphans: bind + call, or delete. Decide per item; do not leave "tested, unwired". | `LedgerWiringClaimTest` + build | - |
 | D4 | Re-audit the `B-032` contract surface; every remaining unwired contract is either wired or deleted. | wiring audit (read the tree, not a count) | A1, D3 |
 | D5 | Documentation cleanup: archive completed session/audit docs; keep the index current (`DOC-001`). | `doc/README.md` + link check | - |
@@ -144,7 +144,7 @@ Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](
 - **`DATA-001` type decision** - widen the source model or keep the tolerant policy (B4). One
   decision, applied uniformly.
 - **`B-043`/`TST-003`** - macrobenchmark was dropped by owner decision; the frame-deadline budget
-  has **no automated gate** and is measured by manual `E4-user` capture.
+  has **no automated gate** and is measured by manual `E4-user` capture. The module itself is now retired (`D2`, 2026-11-07).
 
 ## 6. Recommended sequencing
 

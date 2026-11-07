@@ -26,8 +26,8 @@ import org.junit.jupiter.api.parallel.ExecutionMode
  *
  * ### What this test enforces
  * - The base (release) APPLICATION_ID must be exactly `"app.ephyra"` (all lowercase).
- *   The debug / nightly / preview build types append suffixes (`.dev`, `.nightly`, `.debug`,
- *   `.benchmark`) via `applicationIdSuffix`; those are not checked here because
+ *   The debug / nightly / preview build types append suffixes (`.dev`, `.nightly`, `.debug`)
+ *   via `applicationIdSuffix`; those are not checked here because
  *   [BuildConfig.APPLICATION_ID] in a JVM unit test reflects the `debug` variant's value
  *   (`"app.ephyra.dev"`), which also starts with the correct lowercase base.
  * - The ID must start with `"app.ephyra"` — covering both the base release ID and all
@@ -42,12 +42,11 @@ class ApplicationIdConsistencyTest {
      * Verifies that [BuildConfig.APPLICATION_ID] begins with the all-lowercase canonical
      * base `"app.ephyra"`.
      *
-     * All five build variants share this prefix:
+     * All four build variants share this prefix:
      * - `app.ephyra`          (release)
      * - `app.ephyra.dev`      (debug)
      * - `app.ephyra.nightly`  (nightly)
      * - `app.ephyra.debug`    (preview — the signed test build)
-     * - `app.ephyra.benchmark`(benchmark)
      *
      * If this test fails, update `applicationId` in `app/build.gradle.kts` to be
      * all-lowercase and update `APPLICATION_ID` in `core/data/build.gradle.kts` to match.

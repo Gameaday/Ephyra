@@ -128,7 +128,10 @@ gives the ordered steps to close them.
 - **Improvement-session remainder.** Unified search v1 Stages B–E; `RFC-0001` identity (resolve O2
   first); Jellyfin; Discover Steps 3/5/6; cache queue; performance device work.
 - **`REL-001`/`CLEAN-001`.** Release gates and deletion of the superseded reader/navigation/media
-  generation (plus the unwired `macrobenchmark` module).
+generation (plus the unwired `macrobenchmark` module). **Update 2026-11-07 (D2):** `CLEAN-001` is
+executed — the superseded generations were deleted at their cutovers (verified by A6's scan and
+D2's dependency/import audit), and the `macrobenchmark` module is retired with its convention
+plugin and the app `benchmark` build type. `REL-001` remains open.
 
 ## Current truth
 
@@ -154,3 +157,9 @@ in [`doc/2_0_COMPLETION_PLAN.md`](doc/2_0_COMPLETION_PLAN.md); this is the short
 The `RDR-005` replacement (`RDR-004` is done and Phase 7 is `VERIFIED`) and the `CLEAN-001` deletion
 have not begun, so the superseded reader, navigation, and media code all still exist alongside their
 replacements.
+
+**Update 2026-11-07 (A6/D2): this is no longer true.** The `RDR-005` replacement is complete and
+verified (A6: the superseded reader paths are gone, ceiling tightened to the measured 83), and
+`CLEAN-001` is executed (D2: the navigation/media generations were deleted at their cutovers, and
+the unwired `macrobenchmark` module is retired). The remaining open queue is wiring, device
+evidence, and release gates — not deletion.

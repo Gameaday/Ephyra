@@ -37,7 +37,7 @@ Of the ten budgets above, **eight never depended on it** and are unchanged. The 
 | Frame deadline via `macrobenchmark` frame timeline | manual frame capture | **No automated gate.** The budget stays a stated target; nothing measures it on every build. |
 | Startup via `macrobenchmark` startup benchmark | `adb shell am start -W`, scripted | Measurable, and a plain shell command rather than a framework. It is a wall-clock figure, not a frame-timeline one. |
 
-The module itself remains in the build and is **not** wired to anything. Retiring it is legacy deletion, which belongs to `CLEAN-001`, so it is recorded there rather than half-removed here.
+**Retired 2026-11-07 (`D2`/`CLEAN-001`, executing `B-051`):** the `macrobenchmark` module, its `ephyra.benchmark` convention plugin, and the app `benchmark` build type are deleted. The two replacement measurements above are unchanged, and `baseline-prof.txt` regeneration is by hand until a device harness replaces the deleted generator.
 
 ## Required reports
 

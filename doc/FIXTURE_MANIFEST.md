@@ -86,7 +86,7 @@ level the programme has no means to produce.
 - `E3`: instrumentation, screenshot, or pointer-event test on an emulator.
 - `E4-user`: validation on real user devices from a pushed build — the primary device channel.
 - `E4-lab`: in-tree physical/representative device capture — available, optional.
-- `E5`: macrobenchmark / performance measurement.
+- `E5`: performance measurement — manual/scripted capture (`B-051`: the `macrobenchmark` module is retired, D2).
 
 `DEVICE_VERIFIED` requires `E3` plus `E4-user` or `E4-lab`, declared per row. **A missing channel is
 a blocker, never a pass.**
