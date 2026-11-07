@@ -89,7 +89,7 @@ This is the part most often done wrong, so it is stated as a hard rule.
 | Shared element resolves and does not duplicate | **Yes** | Before/after pair |
 | **Pinch zoom is anchored to the fingers** (`DEF-001`, `DEF-002`) | **No** | Recorded gesture, or a pointer-event test |
 | **Slices do not overlap under zoom** (`DEF-003`) | **No** | Video, or a coverage assertion at zoom |
-| **Transition frame pacing** (`DEF-005`) | **No** | Screen recording or macrobenchmark |
+| **Transition frame pacing** (`DEF-005`) | **No** | Screen recording or manual frame capture (`B-051`: the `macrobenchmark` module is retired) |
 
 A still frame cannot demonstrate focal invariance or temporal pacing. Claiming it does is the
 "inspected a screenshot informally" pattern ADR-0006 lists as rejected. When a gesture or timing

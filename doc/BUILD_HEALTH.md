@@ -262,8 +262,8 @@ These exist because measurement showed the cost, not because of convention.
 
 ## Why modules and edges still matter
 
-Each module costs configuration time, KSP/Hilt aggregation, and IDE indexing. 29 modules for a
-project of this size is already high. Adding a module should be the exception, justified by a
+Each module costs configuration time, KSP/Hilt aggregation, and IDE indexing. 28 modules for a
+project of this size is already high (the unwired `macrobenchmark` module is retired by `CLEAN-001`/D2, 2026-11-07). Adding a module should be the exception, justified by a
 distinct build/runtime contract — not a convenient way to avoid a package boundary.
 
 This is a reason to prefer a structural rule over a count, and it is why the module and edge numbers
