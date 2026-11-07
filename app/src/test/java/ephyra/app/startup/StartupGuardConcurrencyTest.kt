@@ -65,8 +65,8 @@ class StartupGuardConcurrencyTest {
         // always saw DI as not ready.
         StartupGuard.completePhase(StartupStep.DI_CONTAINER)
         assertTrue(
-            StartupGuard.registerPhase(StartupStep.DI_CONTAINER).isComplete,
             "completePhase must record the completion register-if-absent",
+            StartupGuard.registerPhase(StartupStep.DI_CONTAINER).isComplete,
         )
     }
 
