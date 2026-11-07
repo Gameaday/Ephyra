@@ -26,6 +26,14 @@ import kotlinx.serialization.Serializable
  * that `DATA-001H` keeps unwired. The historical statements above are retained on purpose: the gap
  * was real, and closing it is the deliberate insert the order contract requires.
  *
+ * **B5, 2026-11-08: the one startup vocabulary.** `StartupGuard` and `StartupTracker` are now
+ * keyed on this enum, which closes the "two mechanisms that share no naming" gap described
+ * above: the workflow host is the single reporting seam (a settle fans out to both), the
+ * guard's no-op `completePhase` defect (production phases were never registered, so every
+ * completion was lost and crash attribution always saw DI as not ready) is fixed, and the
+ * non-workflow timeline markers live in `StartupTracker.Milestone` instead of a parallel enum
+ * whose `APP_CREATED` shadowed the step of that name here.
+ *
  * Order is the contract. Each step assumes every earlier step settled, and the reducer refuses
  * out-of-order settlement, so inserting a step here is a deliberate act rather than an append.
  */

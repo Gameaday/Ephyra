@@ -295,7 +295,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
         super.onCreate(savedInstanceState)
         if (!isLaunch) ready = true
-        StartupTracker.complete(StartupTracker.Phase.ACTIVITY_CREATED)
+        StartupTracker.complete(StartupTracker.Milestone.ACTIVITY_CREATED)
 
         if (!isTaskRoot) {
             splashScreen?.setKeepOnScreenCondition { false }
@@ -307,7 +307,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
             var didMigration by remember { mutableStateOf<Boolean?>(null) }
 
             LaunchedEffect(Unit) {
-                StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
+                StartupTracker.complete(StartupTracker.Milestone.COMPOSE_STARTED)
             }
             val navController = rememberNavController()
 
@@ -333,7 +333,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
             LaunchedEffect(navController, didMigration) {
                 if (didMigration != null) {
                     ready = true
-                    StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
+                    StartupTracker.complete(StartupTracker.Milestone.HOME_SCREEN_LOADED)
                     if (isLaunch) {
                         handleIntentAction(intent, navController)
                     }
@@ -354,12 +354,12 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        StartupTracker.recordError(StartupTracker.Phase.MIGRATOR_COMPLETE, e)
+                        StartupTracker.recordError(StartupTracker.Milestone.MIGRATOR_COMPLETE, e)
                         Migrator.release()
                         false
                     }
                     didMigration = result ?: false
-                    StartupTracker.complete(StartupTracker.Phase.MIGRATOR_COMPLETE)
+                    StartupTracker.complete(StartupTracker.Milestone.MIGRATOR_COMPLETE)
                 }
 
                 val context = LocalContext.current
@@ -648,7 +648,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
     private fun handleIntentAction(intent: Intent, navController: NavHostController): Boolean {
         ready = true
-        StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
+        StartupTracker.complete(StartupTracker.Milestone.HOME_SCREEN_LOADED)
 
         val notificationId = intent.getIntExtra("notificationId", -1)
         if (notificationId > -1) {
@@ -725,7 +725,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
         }
 
         ready = true
-        StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
+        StartupTracker.complete(StartupTracker.Milestone.HOME_SCREEN_LOADED)
         return true
     }
 

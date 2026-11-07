@@ -105,6 +105,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### ⚡ Startup Split (B5: `OPS-001` executes — one startup state model, `Application` split)
+
+- **One startup vocabulary.** `StartupGuard` and `StartupTracker` are re-keyed on `StartupStep`; `StartupWorkflowHost.settled` is the single reporting seam (an accepted successful settle fans out to both), so `App` reports through the workflow alone. The tracker's parallel `Phase` enum — whose `APP_CREATED` shadowed the workflow step of the same name — is replaced by a typed `Milestone` enum for the six non-workflow events, with ascending timeout budgets pinned by test.
+- **Guard no-op defect fixed — behaviour change disclosed.** `completePhase` was `phases[name]?.complete()`: a no-op for a phase nobody registered, and production registered none. Every `App` completion was silently lost, `awaitPhase` passed the startup tests vacuously through its unknown-phase fallback, and the crash handler always read DI as not ready — every crash routed to `StartupFailureActivity` instead of `CrashActivity`. `completePhase` now records register-if-absent, so crash attribution reflects real progress and post-DI crashes route to `CrashActivity`, the designed route.
+- **The split, moved verbatim.** `EphyraImageLoaderFactory` (the Coil image pipeline), `ImageCacheMemoryPolicy` (the image-cache trim/restore policy) and `IncognitoModeMonitor` (the incognito notification + receiver surface) leave `App`, which keeps startup coordination, the WorkManager configuration, the migrator, notification channels and the WebView spoofing.
+- **Wiring honesty.** Startup tests rewritten and green at `E2` on CI (`StartupTrackerTest` (25), `StartupGuardConcurrencyTest` (6) incl. the register-on-complete regression, `AppStartupTest`/`AppStartupLifecycleTest` typed, `StartupWorkflowHostTest` +3 seam tests). No JDK locally; remote CI is the verification channel; `E3`/`E4` startup timing evidence not produced — not claimed.
+
 ### 🖼️ Reader Media Pipeline (A1: the media tuple is wired into the slice renderer)
 
 - **The webtoon slice renderer consumes the media tuple instead of re-deriving its own guard.**

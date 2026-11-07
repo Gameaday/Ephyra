@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ephyra.app.App
 import ephyra.app.ui.main.MainActivity
+import ephyra.domain.workflow.StartupStep
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -95,20 +96,23 @@ class AppStartupTest {
         // Verify sequential progress of crucial startup guard phases
         assertTrue(
             "Logging initialization phase should be completed",
-            StartupGuard.awaitPhase("logging", timeoutMs = 100),
+            StartupGuard.awaitPhase(StartupStep.LOGGING, timeoutMs = 100),
         )
-        assertTrue("Crash handler phase should be completed", StartupGuard.awaitPhase("crash_handler", timeoutMs = 100))
+        assertTrue(
+            "Crash handler phase should be completed",
+            StartupGuard.awaitPhase(StartupStep.CRASH_HANDLER, timeoutMs = 100),
+        )
         assertTrue(
             "DI container registration phase should be completed",
-            StartupGuard.awaitPhase("di_container", timeoutMs = 100),
+            StartupGuard.awaitPhase(StartupStep.DI_CONTAINER, timeoutMs = 100),
         )
         assertTrue(
             "Notifications registration phase should be completed",
-            StartupGuard.awaitPhase("notifications", timeoutMs = 100),
+            StartupGuard.awaitPhase(StartupStep.NOTIFICATIONS, timeoutMs = 100),
         )
         assertTrue(
             "Reactive bindings configuration phase should be completed",
-            StartupGuard.awaitPhase("reactive_bindings", timeoutMs = 100),
+            StartupGuard.awaitPhase(StartupStep.REACTIVE_BINDINGS, timeoutMs = 100),
         )
     }
 

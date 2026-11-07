@@ -135,7 +135,7 @@ gives the ordered steps to close them.
   MangaDex-shaped gateway adapter; closes `DEF-029` and the sourcing Phase 1 producer fix.
 - **`DATA-001`.** Clean-slate schema policy; decide the `SChapter.chapter_number: Float` question
   (`DEF-017`). Not a migration — the live entity is already `Double`.
-- **`OPS-001`.** One startup state model; split `Application` responsibilities.
+- **`OPS-001`.** One startup state model; split `Application` responsibilities. **Update 2026-11-08 (B5): done.** `StartupStep` is the one vocabulary (`StartupGuard`/`StartupTracker` re-keyed on it; `StartupWorkflowHost.settled` is the single reporting seam), the guard's no-op `completePhase` defect is fixed so crash attribution reflects real progress (post-DI crashes route to `CrashActivity` as designed — behaviour change, disclosed), and `App`'s image pipeline, image-cache trim policy and incognito surface moved verbatim to `EphyraImageLoaderFactory`/`ImageCacheMemoryPolicy`/`IncognitoModeMonitor`.
 - **`ARC-002`/`ARC-003`.** Close the remaining dependency-graph rows; migrate a production feature
   onto the effect/state contract.
 - **Improvement-session remainder.** Unified search v1 Stages B–E; `RFC-0001` identity (resolve O2
