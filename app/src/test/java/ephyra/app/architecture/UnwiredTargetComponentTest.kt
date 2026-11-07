@@ -45,8 +45,7 @@ class UnwiredTargetComponentTest {
                 "refers to (ceiling $MAX_UNWIRED). Each is built and tested but not reached by the " +
                 "app, so the programme grows its own backlog while the app is unchanged.\n" +
                 "Wire one and the count drops; add one without a consumer and this fails.\n" +
-                unwired.take(12).joinToString("\n") { "  $it" } +
-                if (unwired.size > 12) "\n  … and ${unwired.size - 12} more" else "",
+                unwired.joinToString("\n") { "  $it" },
         )
     }
 
@@ -55,9 +54,12 @@ class UnwiredTargetComponentTest {
      *
      * Lower it in the same commit that wires or deletes something. A ceiling that only ever rises is
      * a backlog with extra steps.
+     *
+     * **A6 (temporary):** set to 0 for the import/dependency scan, so the failure message carries
+     * the complete unwired list; the deletion commit restores the measured value.
      */
     private companion object {
-        const val MAX_UNWIRED = 99
+        const val MAX_UNWIRED = 0
 
         /** Directories holding 2.0 target components, per `REBUILD_PROGRAM.md` §3. */
         val TARGET_AREAS = listOf(
