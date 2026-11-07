@@ -31,7 +31,9 @@ import dagger.hilt.android.HiltAndroidApp
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
 import ephyra.app.di.initializeExtensionBridge
+import ephyra.app.startup.SourceReconciler
 import ephyra.app.startup.StartupGuard
+import ephyra.app.startup.StartupWorkflowHost
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.preference.Preference
@@ -56,9 +58,11 @@ import ephyra.data.coil.MangaKeyer
 import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.source.diagnostics.SourceResolutionDiagnostics
+import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.updates.interactor.GetUpdates
+import ephyra.domain.workflow.StartupStep
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
 import ephyra.presentation.core.util.system.animatorDurationScale
@@ -123,6 +127,20 @@ class App :
     @Inject
     lateinit var sourceResolutionDiagnostics: SourceResolutionDiagnostics
 
+    /** The one source-existence authority (`SRC-011`/`ADR-0012`); the registry half of `RECONCILE_SOURCES`. */
+    @Inject
+    lateinit var sourceRegistry: SourceRegistry
+
+    /**
+     * A3: the startup workflow state model. The lifecycle callbacks remain the effect executor —
+     * rethrow paths never settle (the state dies with the process) — so this host owns only the
+     * reducer state and rule-8 correlation.
+     */
+    private val startupWorkflow = StartupWorkflowHost()
+
+    /** Executes `RECONCILE_SOURCES`; built lazily because only the async init path uses it. */
+    private val sourceReconciler by lazy { SourceReconciler(sourceRegistry, sourceManagerProvider) }
+
     @Volatile
     private var verboseLoggingEnabled = false
 
@@ -138,6 +156,8 @@ class App :
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
+        // A3: open the startup workflow before the first phase runs.
+        startupWorkflow.begin()
 
         // Phase 1: Logging — must succeed first
         try {
@@ -151,6 +171,7 @@ class App :
             android.util.Log.e("Ephyra", "Failed to initialize logcat", e)
         }
         StartupGuard.completePhase("logging")
+        startupWorkflow.settled(StartupStep.LOGGING, ok = true)
 
         // Phase 2: Global crash handler
         try {
@@ -159,6 +180,7 @@ class App :
             android.util.Log.e("Ephyra", "Failed to initialize crash handler", e)
         }
         StartupGuard.completePhase("crash_handler")
+        startupWorkflow.settled(StartupStep.CRASH_HANDLER, ok = true)
     }
 
     @SuppressLint("LaunchActivityFromNotification")
@@ -168,6 +190,8 @@ class App :
         try {
             initializeExtensionBridge(this)
             StartupGuard.completePhase("di_container")
+            // The rethrow path above deliberately never settles: the state dies with the process.
+            startupWorkflow.settled(StartupStep.DI_CONTAINER, ok = true)
         } catch (e: Throwable) {
             ephyra.app.startup.StartupTracker.recordError(ephyra.app.startup.StartupTracker.Phase.APP_CREATED, e)
             logcat(LogPriority.ERROR, e) { "Critical DI container initialization failed" }
@@ -185,6 +209,10 @@ class App :
         ephyra.app.data.work.CoverCacheMaintenanceWorker.setupTask(this)
         ephyra.app.data.work.CoverCacheMaintenanceWorker.enqueueOneTimeAudit(this)
         ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
+        startupWorkflow.settled(StartupStep.APP_CREATED, ok = true)
+        // The workflow's enum order is the declared contract: the worker registrations above
+        // have already returned, and WorkManager's own configuration settles lazily on first use.
+        startupWorkflow.settled(StartupStep.REGISTER_WORKERS, ok = true)
 
         // Phase 4: Telemetry (non-critical)
         try {
@@ -193,6 +221,7 @@ class App :
             logcat(LogPriority.ERROR, e) { "Telemetry init failed — non-fatal" }
         }
         StartupGuard.completePhase("telemetry")
+        startupWorkflow.settled(StartupStep.TELEMETRY, ok = true)
 
         // Avoid potential crashes from multiple WebView processes
         try {
@@ -205,6 +234,7 @@ class App :
         // Phase 5: Notification channels (non-critical)
         setupNotificationChannels()
         StartupGuard.completePhase("notifications")
+        startupWorkflow.settled(StartupStep.NOTIFICATIONS, ok = true)
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
@@ -270,6 +300,7 @@ class App :
             logcat(LogPriority.ERROR, e) { "Startup reactive binding setup failed" }
         }
         StartupGuard.completePhase("reactive_bindings")
+        startupWorkflow.settled(StartupStep.REACTIVE_BINDINGS, ok = true)
 
         // Phase 7: Async initialization (theme, widget, migration)
         scope.launchIO {
@@ -304,10 +335,31 @@ class App :
                 } catch (e: Exception) {
                     logcat(LogPriority.WARN, e) { "Source registration diagnostic failed" }
                 }
+
+                // RECONCILE_SOURCES — the startup step the B-034 audit found absent (A3). It
+                // executes here, in the async-init scope, because the source map builds
+                // asynchronously. The reconciler never throws (a timeout or a registry failure
+                // is outcome data), so this settles ok = true under the same containment policy
+                // as every other non-critical phase; the disagreement lists are logged for the
+                // audit trail.
+                val reconciliation = sourceReconciler.reconcile(SOURCE_RECONCILE_TIMEOUT_MS)
+                if (reconciliation.error == null) {
+                    logcat {
+                        "Source reconciliation: ready=" + reconciliation.ready +
+                            " registry=" + reconciliation.registryCount +
+                            " loaded=" + reconciliation.mapCount +
+                            " registeredNotLoaded=" + reconciliation.registeredButNotLoaded +
+                            " loadedNotRegistered=" + reconciliation.loadedButNotRegistered
+                    }
+                } else {
+                    logcat(LogPriority.WARN, reconciliation.error) { "Source reconciliation failed" }
+                }
+                startupWorkflow.settled(StartupStep.RECONCILE_SOURCES, ok = true)
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e) { "Async startup initialization failed" }
             } finally {
                 StartupGuard.completePhase("async_init")
+                startupWorkflow.settled(StartupStep.ASYNC_INIT, ok = true)
             }
         }
     }
@@ -556,5 +608,8 @@ class App :
 
     companion object {
         private const val ACTION_DISABLE_INCOGNITO_MODE = "tachi.action.DISABLE_INCOGNITO_MODE"
+
+        /** Bound on waiting for the source map to become ready during startup reconciliation (A3). */
+        private const val SOURCE_RECONCILE_TIMEOUT_MS = 15_000L
     }
 }
