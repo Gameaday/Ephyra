@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
  * Applies [Modifier.testTag] only when [tag] is non-null (keeps call sites clean).
  *
  * Compose [testTag] makes the tag available as a View semantics/content-description
- * that is discoverable by uiautomator-based macrobenchmarks (`By.desc`) and the
+ * that is discoverable by uiautomator-based instrumentation (`By.desc`) and the
  * Compose testing framework (`onNodeWithTag`). No additional semantics flag is needed.
  */
 private fun Modifier.testTagIfNotNull(tag: String?): Modifier =

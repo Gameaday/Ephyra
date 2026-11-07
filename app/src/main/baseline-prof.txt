@@ -1,7 +1,8 @@
 # Ephyra Baseline Profile
 # Enables AOT compilation of the critical startup user path.
-# Re-generate by running the `BaselineProfileGenerator` macrobenchmark on an
-# AOSP emulator with the `benchmark` build variant, then copy the output here.
+# The `BaselineProfileGenerator` macrobenchmark that produced this file was retired
+# with the `macrobenchmark` module (B-051, D2 2026-11-07). The rules are maintained by hand
+# until a device harness replaces the generator - see doc/PERFORMANCE_BUDGETS.md.
 #
 # Critical startup path covered:
 #   app launch -> Home screen (library feed) -> Updates tab -> History tab -> More tab -> Settings

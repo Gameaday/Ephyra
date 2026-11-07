@@ -61,7 +61,7 @@ internal fun LazyLibraryGrid(
     )
 }
 
-/** Stable tag for the primary library grid — used by macrobenchmarks + Compose UI tests. */
+/** Stable tag for the primary library grid — used by Compose UI tests. */
 const val LIBRARY_GRID_TAG = "library_grid"
 
 internal fun LazyGridScope.globalSearchItem(
