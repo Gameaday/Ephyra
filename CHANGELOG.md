@@ -1,4 +1,4 @@
-successfully downloaded text file (SHA: e4473d5c459a50e12f3534e906d84b9d8c4c9380)# Changelog
+# Changelog
 
 All notable changes to Ephyra will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).

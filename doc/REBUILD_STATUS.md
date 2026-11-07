@@ -1,4 +1,4 @@
-successfully downloaded text file (SHA: 7593cef8dc45ef3e36ece6a63a1e5f857deebfdf)﻿# Reconstruction Status Ledger
+﻿# Reconstruction Status Ledger
 
 > Baseline: `4ec5b2c15`
 > Program: [Ephyra Reconstruction Program](../ROADMAP.md)

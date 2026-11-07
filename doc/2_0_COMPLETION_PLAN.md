@@ -1,4 +1,4 @@
-successfully downloaded text file (SHA: f8cb98a3e30d744fe8a6eb58f7dc10ce26a874ba)# Ephyra 2.0 — Completion & Cleanup Plan
+# Ephyra 2.0 — Completion & Cleanup Plan
 
 > **Status:** forward plan (current). Supersedes the "Current truth" narrative and immediate queue
 > in [`../ROADMAP.md`](../ROADMAP.md) where those disagree — this file was validated against the
