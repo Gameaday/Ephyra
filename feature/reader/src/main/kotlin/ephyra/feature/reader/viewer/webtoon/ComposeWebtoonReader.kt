@@ -47,9 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -75,7 +73,6 @@ import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.ImageUtil
-import ephyra.domain.reader.gesture.ReaderGestureEffect
 import ephyra.domain.reader.media.AnimationKind
 import ephyra.domain.reader.media.AnimationPolicy
 import ephyra.domain.reader.media.AnimationVerdict
@@ -183,6 +180,17 @@ fun ComposeWebtoonReader(
         val lazyListState = rememberLazyListState(
             initialFirstVisibleItemIndex = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
         )
+
+        // A4: one gesture host per chapter. It holds the committed transform — the restore point
+        // for an abandoned gesture — so `GestureCancelled` finally restores in production instead
+        // of being the no-op that a hardcoded `committed = null` made it.
+        val zoomHost = remember(zoomState, lazyListState) {
+            WebtoonZoomGestureHost(zoomState) { correction ->
+                if (correction != 0f) {
+                    scope.launch { lazyListState.scrollBy(correction) }
+                }
+            }
+        }
 
         // Direction-aware byte warm-up: LazyColumn only composes the visible window, and
         // loadPage() fires from inside the item — so sections skipped during a fast fling
@@ -366,15 +374,12 @@ fun ComposeWebtoonReader(
             // document units, and `clip` keeps the scaled result inside the viewport.
             LazyColumn(
                 state = lazyListState,
+                // A4: the one container transform now lives in `webtoonDocumentTransform` —
+                // the same code path an E2 pinch injection can drive, rather than a transform
+                // only reachable through this composition.
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer {
-                        scaleX = zoomState.scale
-                        scaleY = zoomState.scale
-                        translationX = zoomState.offsetX
-                        transformOrigin = TransformOrigin(0f, 0f)
-                        clip = true
-                    }
+                    .webtoonDocumentTransform(zoomState)
                     .nestedScroll(webtoonOverscrollConnection),
             ) {
                 itemsIndexed(
@@ -399,13 +404,8 @@ fun ComposeWebtoonReader(
                             WebtoonPageItem(
                                 page = item,
                                 cropBorders = viewer.config.imageCropBorders,
-                                zoomState = zoomState,
+                                zoomHost = zoomHost,
                                 zoomEnabled = zoomEnabled,
-                                onZoomFocal = { correction ->
-                                    if (correction != 0f) {
-                                        scope.launch { lazyListState.scrollBy(correction) }
-                                    }
-                                },
                                 onLongTap = { onPageLongTap(item) },
                                 onSingleTap = { tapOffset, containerSize ->
                                     val normX = if (containerSize.width > 0) tapOffset.x / containerSize.width else 0.5f
@@ -483,14 +483,13 @@ fun ComposeWebtoonReader(
 private fun WebtoonPageItem(
     page: ReaderPage,
     cropBorders: Boolean,
-    zoomState: WebtoonZoomState,
+    zoomHost: WebtoonZoomGestureHost,
     zoomEnabled: Boolean,
     onLongTap: () -> Unit,
     onSingleTap: (Offset, Size) -> Unit,
-    /** Scroll owner for the focal correction; the item cannot reach the list's state itself. */
-    onZoomFocal: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val zoomState = zoomHost.zoomState
     val status by page.statusFlow.collectAsStateWithLifecycle()
     val progress by page.progressFlow.collectAsStateWithLifecycle()
 
@@ -608,21 +607,15 @@ private fun WebtoonPageItem(
                 documentRevision = { page.chapter.chapter.id.toString() },
                 getScale = { zoomState.scale },
                 onEffect = { effect ->
-                    when (val outcome = zoomState.reduceWebtoonEffect(effect, committed = null)) {
-                        is WebtoonGestureOutcome.TransformChanged -> onZoomFocal(outcome.scrollCorrection)
-                        // Delegation is achieved by the adapter *not* consuming, so the LazyColumn
-                        // scrolls on its own. Nothing is applied here, and that is the point: this
-                        // branch is reachable now only because the arbiter runs on this surface.
-                        WebtoonGestureOutcome.DelegatedToParent,
-                        WebtoonGestureOutcome.NoTransformChange,
-                        -> Unit
-                    }
-                    when (effect) {
-                        is ReaderGestureEffect.SingleTap ->
-                            onSingleTap(Offset(effect.x, effect.y), itemSize.toSize())
-                        ReaderGestureEffect.LongPress -> onLongTap()
-                        else -> Unit
-                    }
+                    // A4: the effect handling is the chapter host's, so the committed transform
+                    // is held across items and the same path is drivable from a pinch injection
+                    // without standing up the whole reader composition.
+                    zoomHost.handleEffect(
+                        effect = effect,
+                        itemSize = { itemSize },
+                        onSingleTap = onSingleTap,
+                        onLongTap = onLongTap,
+                    )
                 },
             ),
         contentAlignment = Alignment.Center,
