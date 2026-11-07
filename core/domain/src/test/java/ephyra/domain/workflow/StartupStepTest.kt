@@ -1,6 +1,7 @@
 package ephyra.domain.workflow
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -102,5 +103,23 @@ class StartupStepTest {
             }
         }
         assertTrue(state.isComplete)
+    }
+
+    @Test
+    fun `reconcile sources sits between reactive bindings and the terminal step`() {
+        // A3 inserted this step deliberately (`B-034` found it absent); the position is the contract.
+        val entries = StartupStep.entries
+        assertEquals(
+            entries.indexOf(StartupStep.RECONCILE_SOURCES) + 1,
+            entries.indexOf(StartupStep.ASYNC_INIT),
+            "RECONCILE_SOURCES must sit immediately before the terminal ASYNC_INIT",
+        )
+        assertEquals(
+            entries.indexOf(StartupStep.REACTIVE_BINDINGS) + 1,
+            entries.indexOf(StartupStep.RECONCILE_SOURCES),
+            "RECONCILE_SOURCES must sit immediately after REACTIVE_BINDINGS",
+        )
+        assertFalse(StartupStep.RECONCILE_SOURCES.isCritical, "a reconciliation disagreement is data, not a launch failure")
+        assertFalse(StartupStep.RECONCILE_SOURCES.isTerminal, "adding a step must not move the terminal commitment")
     }
 }

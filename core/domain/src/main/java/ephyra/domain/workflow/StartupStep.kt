@@ -19,6 +19,13 @@ import kotlinx.serialization.Serializable
  * real ones is what makes the gap nameable — `RECONCILE_SOURCES` had no implementation to migrate
  * onto, whereas `TELEMETRY` and `NOTIFICATIONS` are real, ordered, and independently failable.
  *
+ * **A3, 2026-11-06: the model is now the startup state model.** `App.kt` drives it through
+ * `StartupWorkflowHost` (the lifecycle callbacks remain the effect executor), and
+ * `RECONCILE_SOURCES` has an implementation at last — `SourceReconciler`, on the shipping source
+ * authority (`SourceRegistry` and `SourceManager`), not the target-data `ReconcileSourceRegistry`
+ * that `DATA-001H` keeps unwired. The historical statements above are retained on purpose: the gap
+ * was real, and closing it is the deliberate insert the order contract requires.
+ *
  * Order is the contract. Each step assumes every earlier step settled, and the reducer refuses
  * out-of-order settlement, so inserting a step here is a deliberate act rather than an append.
  */
@@ -47,6 +54,12 @@ enum class StartupStep {
 
     /** Preference flows bound. */
     REACTIVE_BINDINGS,
+
+    /**
+     * Reconciles the source registry against the loaded source map (`A3`; the gap the `B-034`
+     * audit found absent). Non-critical: a disagreement is data, not a reason to refuse to launch.
+     */
+    RECONCILE_SOURCES,
 
     /** Theme, widgets and migrations. Terminal, and asynchronous. */
     ASYNC_INIT,
