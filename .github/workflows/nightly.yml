@@ -10,15 +10,27 @@ concurrency:
 
 permissions:
   contents: write
+  checks: read
 
 jobs:
   build:
     name: Build & Publish Nightly
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # REL-001: the nightly publishes an installable APK to a release channel, so it consumes
+      # the gate workflow's verdict for the exact commit being published instead of shipping
+      # whatever was pushed. build.yml is the single authority; this step only reads its result,
+      # waiting for the checks to complete because both workflows start on the same push.
+      - name: Require green checks on the published commit
+        uses: ./.github/actions/require-green-checks
+        with:
+          sha: ${{ github.sha }}
+          required: "Quality Checks,Build & Test App"
 
       - name: Set up JDK
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0

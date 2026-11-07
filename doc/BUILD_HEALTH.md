@@ -40,6 +40,7 @@ dependency edges is therefore redundant.
 | Tab controller lifetime | the tab `NavController` is not created inside the composition navigation disposes | `TabNavControllerLifetimeTest` |
 | Reader preferences are read | a preference offered in a settings screen is consulted in production code | `ReaderPreferenceConsumptionTest` |
 | Ledger wiring claims | a row asserting production wiring names a file that exists | `LedgerWiringClaimTest` |
+| Release-path verdict | a publish (tag or nightly) on a commit the gate workflow has not verified fails before signing or publishing | `require-green-checks` action (`release.yml`, `nightly.yml`), held structurally by `ReleaseGateTest` |
 
 ### The ledger gate, and why it exists
 
