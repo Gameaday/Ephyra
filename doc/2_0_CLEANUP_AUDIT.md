@@ -41,6 +41,8 @@ plus `grep` for consumers in `src/main`). No claim is taken from a PR descriptio
 
 ### CU-2 — `UnwiredTargetComponentTest` ceiling is loose and unfalsified
 
+> **Update 2026-11-07 (A6): resolved — falsified and lowered.** The A6 diagnostic ran the gate at ceiling 0 and watched it fail with the complete 83-type inventory, then restored the measured value: `MAX_UNWIRED` is now 83, so the next unwired type fails the build. The same run recorded the scan's declared-name blind spot (a Compose-only file cannot propagate reachability) in the test's KDoc.
+
 - **Evidence.** `MAX_UNWIRED = 99`, "measured 2026-09-30". No falsification record in the ledger.
   The merge itself added unwired types (CU-1) and still passed.
 - **Impact.** A ceiling with headroom is a metric, not a ratchet: it will not fail when the backlog

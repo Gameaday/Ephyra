@@ -31,6 +31,16 @@ import java.util.regex.Pattern
  * ceiling is self-maintaining in the only direction that matters: wiring something lowers it, and
  * adding an unwired component fails the build. It measures *reachability*, not merit, so raising it
  * is a decision someone has to make out loud rather than an accident.
+ *
+ * **Declared names are the only carriers, a blind spot found by the A6 audit (2026-11-07).**
+ * Reachability propagates through declared type names only, so a production file inside a target
+ * area that declares no types — a Compose file holding only `@Composable` functions — can never
+ * join the wired set, and a chain rooted there reads as unwired while it runs in the app.
+ * `ComposeWebtoonReader` threads the media tuple through `WebtoonSlicePlanner` into
+ * `SlicedWebtoonImage`, and this scan still lists those types (per-file reference audit in the
+ * `REBUILD_STATUS.md` change log, 2026-11-07). The number is therefore a ceiling-conservative
+ * reachability measure, not a deadness claim: a deletion decision needs a per-file reference
+ * audit, and this test must never be the only evidence for one.
  */
 class UnwiredTargetComponentTest {
 
@@ -51,13 +61,17 @@ class UnwiredTargetComponentTest {
     }
 
     /**
-     * The ceiling, measured with this file's own reachability rule on 2026-09-30.
+     * The ceiling, measured with this file's own reachability rule.
+     *
+     * 99 on 2026-09-30; 83 on 2026-11-07, measured by the A6 diagnostic: the gate ran at ceiling 0,
+     * failed with the complete inventory, and was restored at the measured value — the
+     * falsification `2_0_CLEANUP_AUDIT.md` CU-2 asked for.
      *
      * Lower it in the same commit that wires or deletes something. A ceiling that only ever rises is
      * a backlog with extra steps.
      */
     private companion object {
-        const val MAX_UNWIRED = 99
+        const val MAX_UNWIRED = 83
 
         /** Directories holding 2.0 target components, per `REBUILD_PROGRAM.md` §3. */
         val TARGET_AREAS = listOf(
