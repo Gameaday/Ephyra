@@ -52,7 +52,7 @@
 - Move deduplication and ranking into pure domain code.
 - Remove search-time persistence.
 
-`SearchSession`, `NativeSourceRegistry`, `GlobalSearchCoordinator`, and `TargetSearchMapper` are implemented and tested. `GlobalSearchViewModel` remains on the legacy execution path until an explicit `SourceContentItem` to product-library/series presentation mapping is approved. R-008 is not authorized yet.
+`SearchSession`, `NativeSourceRegistry`, `GlobalSearchCoordinator`, and `TargetSearchMapper` are implemented and tested. `GlobalSearchViewModel` remains on the legacy execution path until an explicit `SourceContentItem` to product-library/series presentation mapping is approved. R-008 is not authorized yet. **B6 (2026-11-08) makes this the recorded resting state for the whole cluster**, not a temporary one: the mapping approval, R-008's native-coverage precondition, and — for any persist handler — the `DATA-001H` rollback boundary are the named review conditions before the ViewModel migration or the `TargetSearchCommand` handlers can execute (see the `REBUILD_STATUS.md` B6 change-log row).
 
 ### R-005 — Replace browse and updates surfaces
 

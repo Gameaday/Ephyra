@@ -105,6 +105,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🔎 Source/Search Wiring Decision (B6: SRC-007/SRC-009/SRC-010 product wiring is deferred by decision)
+
+- **Executing the plan's "finish the product wiring" literally would have broken the app's search.**
+  `GlobalSearchCoordinator` runs over `NativeSourceRegistry`, which refuses `LEGACY_COMPATIBILITY`
+  gateways by construction (SRC-006) — and `LegacySourceGateway` is exactly that kind, so no extension
+  source can enter it. Wiring the coordinator wholesale into `GlobalSearchViewModel`/`UnifiedSearchTab`
+  (the app's single search front door) removes every extension source from search; the dual-path
+  variant duplicates local/OPDS content as a second search architecture; and driving the legacy fleet
+  through `SearchSession` via the bridge makes a compatibility adapter a dependency of a new target
+  feature — forbidden by `SOURCE_REMOVAL_PLAN.md` R-004's rollback boundary and R-001's principles.
+  R-004 already pins the answer: the ViewModel stays on the legacy execution path until the
+  `SourceContentItem`→product mapping is approved and R-008 is authorized.
+- **`TargetSearchCommand`'s handlers are gated the same way.** OPEN_DETAILS and ADD_TO_LIBRARY must
+  land the item in Room v3 to navigate or favourite (production navigation and library membership are
+  keyed on legacy numeric source ids), which needs the unapproved mapping; PERSIST to the target
+  `SeriesRepository` would cross the `DATA-001H` rollback boundary ("target writes are not allowed
+  from production UI/background workers"). The validated command factory is unchanged — complete and
+  tested.
+- **`SeriesPersistence`'s "Room/backup implementation remains open" was stale.** The isolated
+  implementation exists and is tested (`TargetSeriesRepository`, `TargetBackupMapper`,
+  `TargetSeriesLinkRepository` — DATA-001D/E/G); its production cutover is D3's `ACCEPTED_DEBT`
+  decision under the `DATA-001I` gates. The SRC-010 row is corrected in place.
+- **Decision honesty.** All three items rest as `ACCEPTED_DEBT` with named review conditions (R-004
+  mapping approval + R-008 native-coverage preconditions; `DATA-001I` cutover gates) — the "future
+  version not yet wired" class, not the `B-032` orphan class. No production code changed, by decision.
+  Docs-only; the audit read every file the rows name before classifying it. No JDK locally — remote CI
+  is the verification channel.
+
 ### ⚡ Startup Split (B5: `OPS-001` executes — one startup state model, `Application` split)
 
 - **One startup vocabulary.** `StartupGuard` and `StartupTracker` are re-keyed on `StartupStep`; `StartupWorkflowHost.settled` is the single reporting seam (an accepted successful settle fans out to both), so `App` reports through the workflow alone. The tracker's parallel `Phase` enum — whose `APP_CREATED` shadowed the workflow step of the same name — is replaced by a typed `Milestone` enum for the six non-workflow events, with ascending timeout budgets pinned by test.
