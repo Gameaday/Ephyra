@@ -193,6 +193,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **The superseded reader/navigation/media generations are verified gone, not deleted here.** The dependency/import scan (`CLEAN-001`'s evidence gate) found they were already deleted at their cutovers — reader at the A1—A6 cutovers (A6's ceiling-0 inventory + per-file audit), navigation at `NAV-001` (the global mutable navigation singletons) and `ADR-0011`, media at `MED-004`/`ADR-0010`. The ledger passage that said `CLEAN-001` would delete the production Compose readers is corrected in place.
 - **The `E5` evidence level and the current docs now name the real measurement channels** (manual frame capture, scripted `adb shell am start -W`) instead of the retired framework, and `baseline-prof.txt` states that its generator is gone and its rules are maintained by hand until a device harness replaces it.
 
+### 🔍 Wiring Audit (D4: the `B-032` surface is closed — misclassifications corrected in place, nothing deleted)
+
+- **`ReaderTapSequencer` and `ReaderGesturePointerAdapter` are production-wired, and never were unwired.**
+  Both readers route taps through `detectReaderGestures`: the paged reader via `pagerGestureStream`
+  (`PagerViewportAdapter` → `ZoomableMangaPage`), the continuous reader via `webtoonGestureStream`
+  (`WebtoonGestureAdapter` → `ComposeWebtoonReader`). The sequencer is the live double-tap deferral
+  and the sole producer of `SingleTap`. A6's ledger row called it "still without a call site" — the
+  declared-name scan's blind spot, contradicted by the ledger's own `RDR-003` row. Deleting it would
+  have broken tap handling in both production readers; it stays, untouched.
+- **The "built-ahead entry cluster" is wired, scan-invisibly.** `ReaderModule` binds the viewer
+  launchers and `ReaderFeatureApi` `@IntoSet`; `MediaViewerRegistry` dispatches by content type and
+  `MangaScreen` calls `mediaViewerRegistry.launch(...)`; `MainActivity` registers every `FeatureApi`
+  route (`Screen.BookReader` → `BookReaderViewModel`); `ReaderViewModel` calls
+  `resolveChapterStartRequest(...)`. Multibindings and function references are invisible to the
+  reachability scan — the same blind spot, second pattern.
+- **`RendererSelection`/`RendererDispatch` stay by decision** (`ADR-0008`'s contract-first exception):
+  the four-content-type plan's dispatch seam, refusal semantics included; its wiring arrives with
+  that plan, not before it.
+- **The `B-032` row's status cell is closed.** (i) executed at the cutovers; (ii) D3 accepted debt;
+  (iii) both migrations landed (A2 `ReaderSession`; A3 `StartupWorkflowHost`); (iv) A1 media tuple;
+  (v) `IngestEngine` greenfield, acknowledged. `READER_GESTURE_CONTRACT.md`'s stale "no production
+  call site" passage is corrected in place. Docs-only; no production code changed.
+
 ### 📌 Decision Record (D3: the five DI-orphans are unwired by decision — nothing bound, nothing deleted)
 
 - **`TargetSeriesRepository`, `TargetMigrationWriter`, `LegacyRoomMigrationAdapter` and `ReconcileSourceRegistry` stay isolated.** [`doc/TARGET_DATA_CUTOVER.md`](doc/TARGET_DATA_CUTOVER.md) (`DATA-001H`) forbids target writes from production UI/background workers and keeps the target path unwired until its 14 cutover gates are evidenced (`DATA-001I`) — binding them would create the split-brain identity model the decision exists to prevent, and deleting them would discard the staged future authority and its rehearsal fixtures (the "future version not yet wired" class that must not be mistaken for dead code).

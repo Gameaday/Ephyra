@@ -121,6 +121,16 @@ gives the ordered steps to close them.
   (`DATA-001H`) deliberately keeps unwired until its 14 cutover gates are evidenced (`DATA-001I`)
   — `ACCEPTED_DEBT` with a review condition, not the `B-032` orphan class. "Verified but unwired"
   without a governing decision is not an allowed resting state.
+
+  **Update 2026-11-08 (D4): the re-audit is done and this queue item is closed.** `ReaderTapSequencer`,
+  the pointer adapter (`detectReaderGestures`), and the "built-ahead entry cluster"
+  (`BookReaderViewModel`, the launchers, `ReaderFeatureApi`, `ReaderModule`, `ChapterStartRequest`)
+  are production-wired through paths the reachability scan cannot see — Hilt `@IntoSet`
+  multibindings (`MediaViewerRegistry` consumed by `MangaScreen`; `MainActivity` registers every
+  `FeatureApi` route) and top-level-function call paths in both readers' gesture streams — and
+  A6's contrary classifications are corrected in the ledger. `RendererSelection`'s four-kind
+  dispatch is kept by decision (`ADR-0008`; wiring belongs to the four-content-type plan). What
+  remains unwired is decision-governed or acknowledged greenfield (`IngestEngine`).
 - **`SRC-011`/`SRC-012`.** One owner for source existence and identity (`ADR-0012`), and the
   MangaDex-shaped gateway adapter; closes `DEF-029` and the sourcing Phase 1 producer fix.
 - **`DATA-001`.** Clean-slate schema policy; decide the `SChapter.chapter_number: Float` question
@@ -167,3 +177,11 @@ verified (A6: the superseded reader paths are gone, ceiling tightened to the mea
 `CLEAN-001` is executed (D2: the navigation/media generations were deleted at their cutovers, and
 the unwired `macrobenchmark` module is retired). The remaining open queue is wiring, device
 evidence, and release gates — not deletion.
+
+**Update 2026-11-08 (D4): the wiring re-audit is done.** What A6 classified as "awaiting a call
+site" or "built-ahead" in the reader area is wired — through multibindings and top-level-function
+paths the reachability scan cannot see; the classifications are corrected in place in the ledger,
+and `READER_GESTURE_CONTRACT.md`'s stale passage is corrected with them. The remaining unwired
+contracts are decision-governed (`RendererSelection` under `ADR-0008`, the five target-data items
+under `DATA-001I`) or acknowledged greenfield (`IngestEngine`). The open queue is device evidence,
+product/data/ops work, and release gates.

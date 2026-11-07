@@ -70,6 +70,8 @@ The current implementation is `ReaderTapSequencer` plus `feature:reader`'s thin 
 
 **It still has no production call site.** `RDR-004` stage 1 made `PagerViewportState` the owner of the paged transform, but the pager's gesture source is still the legacy `detectPagerGestures`; the adapter takes over in stage 2, which is separated because it changes tap-deferral and long-press timing. `RDR-005` is blocked on `B-025`. Per-viewport ownership is tracked under `RDR-003`, `RDR-004`, and `RDR-005`, and device evidence under `B-024`.
 
+> **Correction (2026-11-08, D4): the "no production call site" passage above is history, not current state.** The adapter has production call sites in both viewports: `pagerGestureStream` (`feature/reader/.../pager/PagerViewportAdapter.kt`) drives `ZoomableMangaPage`'s pointer stream, and `webtoonGestureStream` (`WebtoonGestureAdapter.kt`) drives `ComposeWebtoonReader`'s page items whenever `doubleTapZoom` is enabled — both through `detectReaderGestures`, which runs `ReaderTapSequencer` on every tap and is the sole producer of `SingleTap`. The legacy `detectPagerGestures`/`detectWebtoonGestures` were deleted at their cutovers (rule 7), `RDR-004` stage 2 landed, and the `B-025` blocker was superseded by `ADR-0010`. Verified by reading the files rather than the reachability scan, whose declared-name blind spot hides a top-level-function call path — the same lesson the `B-032`/`B-034` rows record.
+
 ## Test matrix
 
 - one pointer crossing slop;
