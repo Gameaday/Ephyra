@@ -135,7 +135,7 @@ class SourceReconcilerTest {
     @Test
     fun `a non-positive timeout is a caller bug`() {
         val reconciler = SourceReconciler(registry, provider)
-        assertThrows(IllegalArgumentException::class.java) {
+        assertThrows<IllegalArgumentException> {
             // require() fires before any suspension, so no test dispatcher is needed here.
             runBlocking { reconciler.reconcile(timeoutMs = 0) }
         }
