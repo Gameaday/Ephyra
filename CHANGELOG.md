@@ -105,6 +105,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🚦 Release Gates (E1: `REL-001` — publish paths consume the gate verdict; release artifacts are verified)
+
+- **A tag can no longer ship an unverified commit.** `release.yml` gains a `gates` job that its `build` job needs, so nothing is signed or published until the gate verdict on the exact tagged SHA is green. The verdict is consumed, not re-computed: `WorkflowRedundancyTest` keeps the test suite in exactly one workflow (`build.yml`) precisely so there is a single authority for whether a change is acceptable, and re-running it on the release path would create a second.
+- **The mechanism is one composite action**, `.github/actions/require-green-checks`: it polls the shipped SHA's check runs and fails unless every one is completed and green and the named core gates (`Quality Checks`, `Build & Test App`) are present. The calling run's own jobs are excluded, or the nightly would wait on itself; a commit that reports no checks at all fails closed after a bounded grace as never-verified.
+- **The nightly is gated identically** (`nightly.yml`): a nightly is an installable publish to a release channel, so an unverified push to `main` no longer ships an APK.
+- **Release artifacts are gated after signing, before any publish exists:** `apksigner verify` on every signed APK, `versionName` matched against the tag (`aapt2 dump badging`), and the R8 mapping required and attached to the release — a minified build without its mapping ships blind.
+- **Deliberately not faked:** connected instrumentation stays `B-050`-blocked (the API 35 emulator does not boot on GitHub runners) and is never wired into publish; benchmark/screenshot channels stay manual per `B-051`/D2. `ReleaseGateTest` (6) holds the structure: non-bypassable, single-implementation, no emulator gate on publish paths, artifact gates present.
+- **Honesty:** no JDK locally; remote CI is the verification channel. The tag-path run executes on the next `v*` tag, which this authoring environment cannot cut — owner-side. The nightly-path gate executes on the merge commit.
+
 ### 🔎 Source/Search Wiring Decision (B6: SRC-007/SRC-009/SRC-010 product wiring is deferred by decision)
 
 - **Executing the plan's "finish the product wiring" literally would have broken the app's search.**
