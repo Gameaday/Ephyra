@@ -10,32 +10,32 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import ephyra.domain.reader.gesture.ReaderGestureEffect
 
-/**
- * The continuous reader's zoom surface, extracted from `ComposeWebtoonReader` (A4, `RDR-005`).
- *
- * Two pieces live here, and both existed inline before: the **one container transform** that
- * implements `DEF-003` (a per-item transform makes a scaled item paint outside its `LazyColumn`
- * slot while the list retains the unscaled layout, so neighbours collide; one transform on the
- * scroll container cannot disagree with layout), and the **chapter-scoped gesture host** that
- * turns arbiter effects into transform changes.
- *
- * Extraction is not cosmetic. `DEF-002` was `CODE_COMPLETE` at `E3` but its zoom path was wired
- * inline inside the reader composition, which the 2026-09-26 Phase-7 entry recorded as "no
- * hostable path for gesture injection" — a defect fix that could not be re-driven without the
- * whole reader standing up. With the pieces here, `WebtoonZoomInjectionTest` drives a real
- * two-pointer pinch through the production `webtoonGestureStream` + host at `E2` (Robolectric
- * pointer injection, per `B-022`), so the wiring is guardable on every CI run rather than only
- * on a device.
- *
- * ## The fix this carries, not just the move
- *
- * The reader used to call `reduceWebtoonEffect(effect, committed = null)` — always `null` — so
- * the reducer's `GestureCancelled` branch (`restoreCommitted`) was a **no-op in production**:
- * an abandoned swipe left the strip wherever the finger last reached, exactly the behaviour
- * `WebtoonGestureAdapter`'s contract says was fixed. The host holds the committed transform, so a
- * cancelled gesture now actually restores it. That is a behaviour change and is disclosed as such
- * in the ledger; it is the behaviour the existing contract already claimed.
- */
+//
+// The continuous reader's zoom surface, extracted from `ComposeWebtoonReader` (A4, `RDR-005`).
+//
+// Two pieces live here, and both existed inline before: the **one container transform** that
+// implements `DEF-003` (a per-item transform makes a scaled item paint outside its `LazyColumn`
+// slot while the list retains the unscaled layout, so neighbours collide; one transform on the
+// scroll container cannot disagree with layout), and the **chapter-scoped gesture host** that
+// turns arbiter effects into transform changes.
+//
+// Extraction is not cosmetic. `DEF-002` was `CODE_COMPLETE` at `E3` but its zoom path was wired
+// inline inside the reader composition, which the 2026-09-26 Phase-7 entry recorded as "no
+// hostable path for gesture injection" — a defect fix that could not be re-driven without the
+// whole reader standing up. With the pieces here, `WebtoonZoomInjectionTest` drives a real
+// two-pointer pinch through the production `webtoonGestureStream` + host at `E2` (Robolectric
+// pointer injection, per `B-022`), so the wiring is guardable on every CI run rather than only
+// on a device.
+//
+// ## The fix this carries, not just the move
+//
+// The reader used to call `reduceWebtoonEffect(effect, committed = null)` — always `null` — so
+// the reducer's `GestureCancelled` branch (`restoreCommitted`) was a **no-op in production**:
+// an abandoned swipe left the strip wherever the finger last reached, exactly the behaviour
+// `WebtoonGestureAdapter`'s contract says was fixed. The host holds the committed transform, so a
+// cancelled gesture now actually restores it. That is a behaviour change and is disclosed as such
+// in the ledger; it is the behaviour the existing contract already claimed.
+//
 
 /**
  * The document transform for the whole chapter, applied once to the scroll container.

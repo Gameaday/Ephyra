@@ -140,22 +140,35 @@ class ReaderGestureOwnershipTest {
      * An inline `when` at the call site is how effects get silently dropped, which is the failure
      * mode `PagerViewportState.reduceEffect` was written to make impossible. Requiring the named
      * reducer keeps the mapping in one testable place.
+     *
+     * **A4 (2026-11-07):** the reduce call moved out of `ComposeWebtoonReader` into
+     * `WebtoonZoomSurface.kt` — the extraction that makes the zoom path hostable for gesture
+     * injection (`RDR-005`). The rule moves with the code: the surface owns the reduce call, and
+     * the reader must route through the host instead of growing its own `when` back.
      */
     @Test
     fun `the continuous reader reduces effects through the shared reducer`() {
-        val webtoon =
-            codeOf("feature/reader/src/main/kotlin/ephyra/feature/reader/viewer/webtoon/ComposeWebtoonReader.kt")
+        val surface =
+            codeOf("feature/reader/src/main/kotlin/ephyra/feature/reader/viewer/webtoon/WebtoonZoomSurface.kt")
 
         assertTrue(
-            webtoon.any { it.contains("reduceWebtoonEffect(") },
-            "the continuous reader must reduce arbiter effects through `reduceWebtoonEffect` so " +
+            surface.any { it.contains("reduceWebtoonEffect(") },
+            "the zoom surface must reduce arbiter effects through `reduceWebtoonEffect` so " +
                 "every effect has a handled branch in one testable place",
         )
         assertTrue(
-            webtoon.any { it.contains("WebtoonGestureOutcome.DelegatedToParent") },
-            "the continuous reader must handle the delegated-to-parent outcome explicitly. That " +
-                "branch is unreachable unless the arbiter runs here, so its absence is the RDR-005 " +
-                "defect in its final form.",
+            surface.any { it.contains("WebtoonGestureOutcome.DelegatedToParent") },
+            "the zoom surface must handle the delegated-to-parent outcome explicitly. That " +
+                "branch is unreachable unless the arbiter runs on this surface, so its absence is " +
+                "the RDR-005 defect in its final form.",
+        )
+
+        val webtoon =
+            codeOf("feature/reader/src/main/kotlin/ephyra/feature/reader/viewer/webtoon/ComposeWebtoonReader.kt")
+        assertTrue(
+            webtoon.any { it.contains("zoomHost.handleEffect(") },
+            "the continuous reader must route arbiter effects through `WebtoonZoomGestureHost` " +
+                "rather than growing an inline `when` back at the call site",
         )
     }
 

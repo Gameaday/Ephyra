@@ -99,13 +99,13 @@ class WebtoonZoomGestureHostTest {
         )
 
         assertTrue(
-            "a transform effect must reach the scroll owner with its correction; got $corrections",
             corrections.isNotEmpty(),
+            "a transform effect must reach the scroll owner with its correction; got $corrections",
         )
         assertTrue(
+            zoomState.scale > 1.01f,
             "a 2x request from fit must actually zoom, otherwise the correction is cosmetic; " +
                 "scale was ${zoomState.scale}",
-            zoomState.scale > 1.01f,
         )
     }
 
