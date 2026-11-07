@@ -22,13 +22,38 @@ jobs:
         id: extract
         run: echo "tag=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
 
+  # REL-001: the release path consumes the gate workflow's verdict instead of re-running it.
+  # build.yml is the single authority for whether a change is acceptable (WorkflowRedundancyTest
+  # keeps the suite in exactly one workflow), so this job reads that authority's verdict for the
+  # exact commit being tagged: every check on the SHA must be completed and green and the named
+  # core gates present. A tag on a red commit — or on a commit no CI has ever built — fails here,
+  # before anything is signed or published.
+  gates:
+    if: github.repository == 'Gameaday/Ephyra'
+    name: Release Gates (REL-001)
+    runs-on: 'ubuntu-24.04'
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      checks: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Require green checks on the tagged commit
+        uses: ./.github/actions/require-green-checks
+        with:
+          sha: ${{ github.sha }}
+          required: "Quality Checks,Build & Test App"
+
   build:
     if: github.repository == 'Gameaday/Ephyra'
     name: Build
     runs-on: 'ubuntu-24.04'
     permissions:
       contents: read
-    needs: get_tag
+    needs: [ get_tag, gates ]
 
     steps:
       - name: Checkout
@@ -57,6 +82,51 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: '36.0.0'
 
+      # REL-001 release-artifact gates. The signing step above can succeed while producing an
+      # artifact that is not verifiable, is not the version the tag claims, or ships without the
+      # mapping that de-obfuscates its crashes — so each is gated here, before the draft release
+      # can exist. The release build is minified (Config.enableCodeShrink defaults to enabled and
+      # this workflow passes no override), so a missing mapping means the gate is shipping blind,
+      # not that R8 was off.
+      - name: Verify release artifacts (signature, version, mapping)
+        run: |
+          set -euo pipefail
+
+          APKSIGNER="$(find "${ANDROID_HOME}/build-tools" -name apksigner -type f 2>/dev/null | sort -V | tail -1)"
+          AAPT2="$(find "${ANDROID_HOME}/build-tools" -name aapt2 -type f 2>/dev/null | sort -V | tail -1)"
+          if [ -z "${APKSIGNER}" ] || [ -z "${AAPT2}" ]; then
+            echo "::error::apksigner/aapt2 not found under ${ANDROID_HOME}/build-tools."
+            exit 1
+          fi
+
+          count=0
+          for apk in app/build/outputs/apk/release/app-*-signed.apk; do
+            [ -f "${apk}" ] || { echo "::error::Expected signed APK missing: ${apk}"; exit 1; }
+            "${APKSIGNER}" verify "${apk}"
+            count=$((count + 1))
+          done
+          echo "Signature verified on ${count} APK(s)."
+
+          UNIVERSAL="$(ls app/build/outputs/apk/release/app-universal-*signed.apk 2>/dev/null | head -1)"
+          [ -n "${UNIVERSAL}" ] || { echo "::error::Universal APK not found."; exit 1; }
+          version_on_apk="$("${AAPT2}" dump badging "${UNIVERSAL}" | head -1 | sed -E "s/.*versionName='([^']+)'.*/\1/")"
+          expected="${{ needs.get_tag.outputs.tag }}"
+          expected="${expected#v}"
+          if [ "${version_on_apk}" != "${expected}" ]; then
+            echo "::error::The APK declares versionName '${version_on_apk}' but the tag says '${expected}'."
+            echo "::error::Move the tag to a commit whose versionName matches, or bump versionName to match the tag."
+            exit 1
+          fi
+          echo "Version gate green: versionName '${version_on_apk}' matches the tag."
+
+          if [ ! -f app/build/outputs/mapping/release/mapping.txt ]; then
+            echo "::error::No R8 mapping at app/build/outputs/mapping/release/mapping.txt."
+            echo "::error::A minified release without its mapping cannot be de-obfuscated; refusing to publish."
+            exit 1
+          fi
+          cp app/build/outputs/mapping/release/mapping.txt "ephyra-${{ needs.get_tag.outputs.tag }}-mapping.txt"
+          echo "R8 mapping present; attached to the release."
+
       - name: Rename APK
         run: |
           set -e
@@ -77,6 +147,7 @@ jobs:
             ephyra-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
             ephyra-x86-${{ needs.get_tag.outputs.tag }}.apk
             ephyra-x86_64-${{ needs.get_tag.outputs.tag }}.apk
+            ephyra-${{ needs.get_tag.outputs.tag }}-mapping.txt
 
   release:
     if: github.repository == 'Gameaday/Ephyra'
@@ -123,6 +194,7 @@ jobs:
             ephyra-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
             ephyra-x86-${{ needs.get_tag.outputs.tag }}.apk
             ephyra-x86_64-${{ needs.get_tag.outputs.tag }}.apk
+            ephyra-${{ needs.get_tag.outputs.tag }}-mapping.txt
           draft: true
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}

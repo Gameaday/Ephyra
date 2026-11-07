@@ -222,6 +222,7 @@ android {
  */
 val repositoryFileGates = listOf(
     rootProject.file(".github/workflows"),
+    rootProject.file(".github/actions"),
 )
 
 tasks.withType<Test>().configureEach {
