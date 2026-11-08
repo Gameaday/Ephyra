@@ -314,7 +314,7 @@ class MotionConsistencyTest {
     @Test
     fun `policy hierarchical durations are the numbers the renderings play`() {
         val policy = codeOf(motionPolicy)
-        val declared = Regex("""HIERARCHICAL_(FORWARD|BACK)_DURATION_MILLIS\s*=\s*(\d+)""")
+        val declared = Regex("""HIERARCHICAL_(FORWARD|BACK)_DURATION_MILLIS\s*:\s*Int\s*=\s*(\d+)""")
             .findAll(policy)
             .associate { it.groupValues[1] to it.groupValues[2].toInt() }
         assertEquals(

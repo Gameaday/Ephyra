@@ -172,7 +172,6 @@ object MotionTokens {
             ContainerMotion.SHARED_AXIS -> m3SharedAxisXPopExit()
         }
 
-
     /**
      * Fallback crossfade used when a declared shared element turns out to be unusable.
      *
