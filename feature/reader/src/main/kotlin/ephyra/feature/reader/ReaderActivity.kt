@@ -6,16 +6,12 @@ import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
-import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import android.view.View.LAYER_TYPE_HARDWARE
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -56,7 +52,6 @@ import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.core.util.system.isNightMode
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.core.util.view.applyHighRefreshRate
@@ -230,10 +225,6 @@ class ReaderActivity : BaseActivity() {
             }
             .launchIn(lifecycleScope)
 
-        readerPreferences.trueColor().changes()
-            .onEach { applyColorLayerPaint() }
-            .launchIn(lifecycleScope)
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             readerPreferences.drawUnderCutout().changes()
                 .onEach { drawUnderCutout ->
@@ -367,7 +358,6 @@ class ReaderActivity : BaseActivity() {
         viewModel.onEvent(ReaderEvent.ViewerLoaded(newViewer))
         viewerType = newType
         updateViewerInset(true, true)
-        applyColorLayerPaint()
     }
 
     private fun createViewer(readingMode: ReadingMode): Viewer {
@@ -401,15 +391,6 @@ class ReaderActivity : BaseActivity() {
                 )
             }
         }
-    }
-
-    /**
-     * Re-applies the colour layer paint on the current viewer.
-     */
-    private fun applyColorLayerPaint() {
-        val viewer = currentViewer ?: return
-        val paint = config?.getCombinedPaint(isNightMode(), readerPreferences.trueColor().getSync())
-        viewer.getView().setLayerType(LAYER_TYPE_HARDWARE, paint)
     }
 
     private fun openMangaScreen() {
@@ -533,25 +514,15 @@ class ReaderActivity : BaseActivity() {
     }
 
     inner class ReaderConfig {
-
-        fun getCombinedPaint(isNightMode: Boolean, trueColor: Boolean): Paint {
-            return Paint().apply {
-                if (isNightMode && !trueColor) {
-                    colorFilter = ColorMatrixColorFilter(
-                        ColorMatrix().apply {
-                            setSaturation(0f)
-                            val matrix = floatArrayOf(
-                                -1f, 0f, 0f, 0f, 255f,
-                                0f, -1f, 0f, 0f, 255f,
-                                0f, 0f, -1f, 0f, 255f,
-                                0f, 0f, 0f, 1f, 0f,
-                            )
-                            postConcat(ColorMatrix(matrix))
-                        },
-                    )
-                }
-            }
-        }
+        // R-B (Stage 1 of the reader modular redesign, 2026-11-08): the night-mode
+        // grayscale+invert ColorMatrix paint is gone. It was applied through
+        // Viewer.getView(), which every viewer returns as an empty View(activity)
+        // fallback because rendering happens in Compose, so it never painted anything
+        // and has been dead since the Compose migration. Pixel-level brightness and
+        // colour effects have exactly one owner now - ReaderScreen's
+        // ReaderContentOverlay, fed reactively from the preferences; ReaderConfig keeps
+        // window-level concerns only (background, insets, keep-screen-on, window
+        // brightness).
 
         val grayBackgroundColor = Color.GRAY
 
@@ -573,10 +544,6 @@ class ReaderActivity : BaseActivity() {
                     window.decorView.setBackgroundColor(color)
                     updateViewer()
                 }
-                .launchIn(lifecycleScope)
-
-            readerPreferences.trueColor().changes()
-                .onEach { applyColorLayerPaint() }
                 .launchIn(lifecycleScope)
 
             readerPreferences.fullscreen().changes()
@@ -601,17 +568,9 @@ class ReaderActivity : BaseActivity() {
                 .onEach { setCustomBrightnessValue(it) }
                 .launchIn(lifecycleScope)
 
-            readerPreferences.colorFilter().changes()
-                .onEach { applyColorLayerPaint() }
-                .launchIn(lifecycleScope)
-
-            readerPreferences.colorFilterValue().changes()
-                .onEach { applyColorLayerPaint() }
-                .launchIn(lifecycleScope)
-
-            readerPreferences.colorFilterMode().changes()
-                .onEach { applyColorLayerPaint() }
-                .launchIn(lifecycleScope)
+            // The colour-filter preferences need no Activity-side collector: the
+            // Compose overlay in ReaderScreen reads them reactively and is the single
+            // pixel owner since R-B (Stage 1).
         }
 
         fun setDisplayProfile(data: String) {
@@ -643,14 +602,18 @@ class ReaderActivity : BaseActivity() {
         fun setCustomBrightnessValue(value: Int) {
             if (readerPreferences.customBrightness().getSync()) {
                 val layoutParams = window.attributes
-                layoutParams.screenBrightness = value / 100f
+                // The slider's documented contract (ColorFilterPage, range -75..100):
+                // positive sets window brightness, 0 returns to system, negative dims
+                // through the Compose scrim while the window sits at its minimum. A
+                // negative float must never reach screenBrightness - values below 0
+                // other than the BRIGHTNESS_OVERRIDE_* sentinels are undefined input.
+                layoutParams.screenBrightness = when {
+                    value > 0 -> value / 100f
+                    value == 0 -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                    else -> 0f
+                }
                 window.attributes = layoutParams
             }
-        }
-
-        fun setLayerPaint(isNightMode: Boolean, trueColor: Boolean) {
-            val viewer = currentViewer ?: return
-            viewer.getView().setLayerType(LAYER_TYPE_HARDWARE, getCombinedPaint(isNightMode, trueColor))
         }
     }
 }

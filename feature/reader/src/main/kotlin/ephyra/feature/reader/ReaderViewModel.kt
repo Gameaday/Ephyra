@@ -2,7 +2,6 @@ package ephyra.feature.reader
 
 import android.app.Application
 import android.net.Uri
-import androidx.annotation.IntRange
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -381,7 +380,6 @@ class ReaderViewModel @Inject constructor(
             is ReaderEvent.OpenSettingsDialog -> openSettingsDialog(0)
             is ReaderEvent.OpenSettingsDialogWithPage -> openSettingsDialog(event.initialPage)
             is ReaderEvent.CloseDialog -> closeDialog()
-            is ReaderEvent.SetBrightnessOverlayValue -> setBrightnessOverlayValue(event.value)
             is ReaderEvent.SaveImage -> saveImage()
             is ReaderEvent.ShareImage -> shareImage(event.copyToClipboard)
             is ReaderEvent.SetAsCover -> setAsCover()
@@ -1341,10 +1339,6 @@ class ReaderViewModel @Inject constructor(
         updateState { it.copy(dialog = null) }
     }
 
-    private fun setBrightnessOverlayValue(value: Int) {
-        updateState { it.copy(brightnessOverlayValue = value) }
-    }
-
     /**
      * Saves the image of the selected page on the pictures directory and notifies the UI of the result.
      * There's also a notification to allow sharing the image somewhere else or deleting it.
@@ -1612,7 +1606,6 @@ class ReaderViewModel @Inject constructor(
         val viewer: Viewer? = null,
         val dialog: Dialog? = null,
         val menuVisible: Boolean = false,
-        @param:IntRange(from = -100, to = 100) val brightnessOverlayValue: Int = 0,
     ) {
         val currentChapter: ReaderChapter?
             get() = viewerChapters?.currChapter

@@ -36,7 +36,6 @@ sealed interface ReaderEvent {
     data object OpenSettingsDialog : ReaderEvent
     data class OpenSettingsDialogWithPage(val initialPage: Int) : ReaderEvent
     data object CloseDialog : ReaderEvent
-    data class SetBrightnessOverlayValue(val value: Int) : ReaderEvent
     data object SaveImage : ReaderEvent
     data class ShareImage(val copyToClipboard: Boolean) : ReaderEvent
     data object SetAsCover : ReaderEvent

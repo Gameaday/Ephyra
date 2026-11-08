@@ -152,7 +152,6 @@ class ReaderViewModelTest {
             assertNull(initial.viewer)
             assertNull(initial.dialog)
             assertFalse(initial.menuVisible)
-            assertEquals(0, initial.brightnessOverlayValue)
         }
     }
 
@@ -201,18 +200,6 @@ class ReaderViewModelTest {
 
             viewModel.onEvent(ReaderEvent.CloseDialog)
             assertNull(awaitItem().dialog)
-        }
-    }
-
-    @Test
-    fun `SetBrightnessOverlayValue updates brightness value in state`() = runTest {
-        val viewModel = createViewModel()
-        viewModel.state.test {
-            awaitItem() // initial
-
-            viewModel.onEvent(ReaderEvent.SetBrightnessOverlayValue(42))
-            val updated = awaitItem()
-            assertEquals(42, updated.brightnessOverlayValue)
         }
     }
 
