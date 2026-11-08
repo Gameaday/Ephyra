@@ -235,10 +235,11 @@ The historical `UI_AUDIT.md` list was re-checked against the tree rather than ca
   banners adapt to every theme instead of ignoring all 17.
 - **Duplicate `WindowSize` helper** (`app/.../designsystem/utils/` vs `presentation-core/.../util/`).
   **Fixed:** the unreferenced app copy is deleted.
-- **Inline tween literals** — the cited `SettingsSearchScreen.kt` sites already use `MotionTokens`;
-  `ReaderScreen.kt:126` uses `MotionTokens.DURATION_MEDIUM_3` with a hardcoded `FastOutSlowInEasing`,
-  and `CalendarHeader.kt` uses a local `MONTH_YEAR_CHANGE_ANIMATION_DURATION = 200` constant. These
-  are minor and changing them alters behaviour, so they are left alone rather than churned.
+- **Inline tween literals** — resolved by Motion v2 (2026-11-08), behaviour-identical:
+  `ReaderScreen.kt` names `MotionTokens.EasingStandard` for the same 350ms fade, and
+  `CalendarHeader.kt`'s local `MONTH_YEAR_CHANGE_ANIMATION_DURATION = 200` is now
+  `MotionTokens.DURATION_SHORT_4` (200ms). The durations and curves are unchanged; only the naming
+  was a leak.
 - **Hardcoded cover placeholder color** — no `Color(0x...)` remains in `MangaCover.kt`; the finding is
   stale.
 
@@ -421,10 +422,10 @@ platform default) rather than the whole system, and record why in the contract.
 | F1 | Back from a non-Library tab exits the app | **Fixed** | `HomeScreen` now walks a `rememberSaveable` tab history; back returns to the previous tab and exits only from a single-entry history. Guard test rewritten behaviourally and a structural assertion forbids the old always-false gate |
 | F2 | No in-app motion escape hatch | **Fixed** | `UiPreferences.reduceMotion()` + `effectiveReducedMotion(system, app)` merged at the root; **Reduce motion** switch added to Appearance; `EffectiveReducedMotionTest` |
 | F3 | Duplicate dead reader transition pref | **Fixed** | `chapterTransitionEnabled()` deleted |
-| F4 | Unused shared-axis-Z tokens | **Fixed** | Deleted (no call sites) with a note on how a modal scale would be re-added |
+| F4 | Unused shared-axis-Z tokens | **Fixed** | Deleted (no call sites) with a note on how a modal scale would be re-added. Motion v2 (2026-11-08) swept the rest of the vocabulary too — springs, tween presets, orphan duration constants, orphan easings and the `MaterialTheme.motion` accessor deleted with no call sites — and the new `MotionVocabularyTest` fails the build if any public `MotionTokens` member loses its last consumer, so the exit condition is a gate, not a snapshot |
 | F5 | Translucent-surface contrast | **Measured — not a defect** | Measured AA-passing ratios; added `BrandedContrastTest`; no alpha change |
 | F6 | Monet scheme could go stale | **Fixed** | `context` added to the `remember` keys |
-| F7 | Token leaks | **Partly fixed** | Banners themed; duplicate `WindowSize` deleted; stale items corrected in this document. The structural gate for raw `tween`/`Color` is **not yet added** |
+| F7 | Token leaks | **Partly fixed** | Banners themed; duplicate `WindowSize` deleted; stale items corrected in this document. Motion v2 (2026-11-08): the last inline curves name tokens (`ReaderScreen.kt`, `CalendarHeader.kt`) and the motion vocabulary is gated by `MotionVocabularyTest`. The broader structural gate for raw `tween`/`Color` outside the tokens is **still not added** |
 | F8 | Non-predictive back surfaces | **Partly addressed** | `PredictiveBackGateTest` now scans every module's `src/main`; the non-previewable surfaces are enumerated in `MOTION_NAVIGATION_CONTRACT.md`. No surface was converted, because none of the remaining ones has a spatial position to preview |
 | F9 | Toast/Snackbar split | **Not done** | Out of the motion/back scope; recorded |
 | F10 | No device motion validation | **Not done** | Needs hardware; recorded |

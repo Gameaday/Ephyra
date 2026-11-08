@@ -126,6 +126,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🎬 Motion v2 (C7: one policy, quick cohesion — the undeclared-route fallback became a policy pair)
+
+- **`MotionRoutePair.HIERARCHICAL` closes the `motionPlanFor`-null gap.** The undeclared-route fallback
+  — previously hardcoded as direct `m3SharedAxisX*` calls inside `MainActivity`'s NavHost slots — is now
+  a declared pair in `MotionPolicy` (300ms forward, 250ms back, shared-axis container), so every
+  transition resolves to a plan and the policy's tests govern the fallback too. Disclosed behaviour
+  deltas: an undeclared push/pop runs 300/250ms instead of the old 450/350/300 legs, and a cover pair
+  with an unreadable id degrades to the policy crossfade (the contract's invalid-element rule) instead
+  of a local slide.
+- **The shared axis is quicker.** Push: a 300ms slide with a 200ms fade that starts immediately (was a
+  450ms slide with a fade delayed 100ms in). Pop enter 250ms, pop exit 200ms. The four
+  `shared_axis_x_*.xml` Activity renderings mirror the Compose legs, and `MotionConsistencyTest` now
+  asserts the XML↔Compose duration parity — the two layers cannot drift again.
+- **The motion vocabulary is pruned and gated.** Deleted with zero call sites: three spring specs,
+  three tween presets, `sharedElementContainerDuration`, `DURATION_SHORT_1`/`LONG_1`/`LONG_3`/
+  `LONG_4`/`EXTRA_LONG_1`–`3`, two standard easings, and the `MaterialTheme.motion` accessor. The
+  alias members stay — they are the live vocabulary of ten consumer files — and the new
+  `MotionVocabularyTest` fails the build if any public `MotionTokens` member loses its last consumer.
+- **Audit F7's last inline curves name tokens** (behaviour-identical): `ReaderScreen.kt` uses
+  `MotionTokens.EasingStandard`, and `CalendarHeader.kt`'s local 200ms constant is
+  `MotionTokens.DURATION_SHORT_4`.
+- **Docs:** `MOTION_NAVIGATION_CONTRACT.md` gains the Motion v2 rules and a repaired, complete Gates
+  list (the old list was truncated mid-sentence); `MOTION_UI_EXPERIENCE_AUDIT.md` F4/F7 are current;
+  `REBUILD_STATUS.md` and `2_0_COMPLETION_PLAN.md` record the landing (C7 done).
+
 ### 📈 Health Re-Measure (E3: the `OPS-002`/`OPS-003` numbers are re-measured at the frozen tree)
 
 - **Repository-shape metrics are current again.** `BUILD_HEALTH.md`'s metrics table was last measured 2026-09-26 and predated D2's `macrobenchmark` retirement. Re-measured at the frozen tree (`de60404`): **module count 28**, **inter-project dependency edges 139** (was 166) — the corrected extractor's semantics replicated over all 30 tracked build scripts, with two exact cross-checks against the gate's own declared-edge sets (12 feature-to-feature, 3 `core:domain`).

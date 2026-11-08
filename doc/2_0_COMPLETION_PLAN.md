@@ -102,7 +102,9 @@ marked **[corrected]**.
   (D3). Review conditions are named per item in the ledger rows.
 - **[corrected] Sourcing Phase 4's "open decision" is resolved** — `ADR-0017` chose deletion. What
   remains is execution, not a decision.
-- **Improvement session progress:** navigation motion done; Discover Steps 1/2/4 landed; unified
+- **Improvement session progress:** navigation motion done — re-cut as Motion v2 under C7
+  (2026-11-08: policy-owned hierarchical fallback, quicker shared axis, gated vocabulary); Discover
+  Steps 1/2/4 landed; unified
   search **Stage A** landed (`df25f94`); cache/cover and performance fixes landed; Jellyfin not
   started.
 - **Phase-gate drift [corrected]:** Phase 12's cell says `SRC-004`/`SRC-005` are open, but the task
@@ -146,7 +148,7 @@ is not done until that evidence exists. `E2` = JVM/Robolectric, `E3` = emulator/
 | C4 | Discover Steps 3 (updates chip), 5 (etiquette hardening), 6 (structural tests). | structural tests | C1 |
 | C5 | Cache queue: eager prior-revision cover delete; migration-source-change chapter-cache orphaning. | `E2` + `E3` | - |
 | C6 | Performance device work: regenerate `baseline-prof.txt` on S24 — by the manual/scripted channels, since the `macrobenchmark` generator is retired (`B-051`, D2); only then tune P99. | `E5` measurement record | - |
-| C7 | Navigation candidates: shared-cover for browse/search-to-details; decide the `motionPlanFor`-null gap. | `MotionConsistencyTest` | - |
+| C7 | Navigation candidates: shared-cover for browse/search-to-details; decide the `motionPlanFor`-null gap. | Done 2026-11-08 as Motion v2: the browse/search-to-details shared-cover candidate was already settled (History/Updates rows key their covers on the id they open — `MotionConsistencyTest`), and the `motionPlanFor`-null gap is closed by declaring `MotionRoutePair.HIERARCHICAL` — every transition resolves to a plan, the NavHost slots carry no local fallback, the shared axis is re-cut (300/200 push, 250/200 pop) with XML↔Compose parity gated, and the vocabulary is pruned and gated by `MotionVocabularyTest`. `E2` on CI (`MotionPolicyTest` +6, `MotionConsistencyTest` +2, `MotionVocabularyTest` new); no JDK locally; no device evidence claimed. | — |
 
 ### Track D - Legacy deletion & cleanup (the crispness work)
 
@@ -194,7 +196,7 @@ The consolidated register with expiry conditions is [`ACCEPTED_DEBT_REGISTER.md`
 ## 6. Recommended sequencing
 
 ```text
-Immediate (no blockers):   B1, B2, B4, D1, D3, D5, C5, C7
+Immediate (no blockers):   B1, B2, B4, D5, C5 (C7 done 2026-11-08; D1/D3 done — rows above)
 Reader/media (the core):   A1 -> A2 -> A3 -> A4 -> A6 -> D2
 Product:                   C1 -> C4 -> C2 (after O2) -> C3
 Data/ops:                  B3 (after B2), B6 done 2026-11-08 (per-item decision: wiring deferred, see the B6 row)
