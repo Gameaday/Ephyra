@@ -184,7 +184,6 @@ fun ReaderScreen(
 
         // 3. Content Overlays (Brightness, Color Filter, E-ink Flash)
         ContentOverlay(
-            state = state,
             readerPreferences = readerPreferences,
             displayRefreshHost = displayRefreshHost,
         )
@@ -335,11 +334,17 @@ private fun ReaderNavigationOverlay(
 
 @Composable
 private fun ContentOverlay(
-    state: ReaderViewModel.State,
     readerPreferences: ReaderPreferences,
     displayRefreshHost: DisplayRefreshHost,
 ) {
     val flashOnPageChange: Boolean by readerPreferences.flashOnPageChange().collectAsState()
+
+    // R-B (Stage 1 of the reader modular redesign, 2026-11-08): brightness is read
+    // reactively here instead of being relayed through ViewModel state. The overlay is
+    // the single pixel owner of the dim scrim (negative slider values) and the colour
+    // filter; the Activity keeps only window-level brightness.
+    val customBrightnessEnabled: Boolean by readerPreferences.customBrightness().collectAsState()
+    val customBrightnessValue: Int by readerPreferences.customBrightnessValue().collectAsState()
 
     val colorOverlayEnabled: Boolean by readerPreferences.colorFilter().collectAsState()
     val colorOverlay: Int by readerPreferences.colorFilterValue().collectAsState()
@@ -356,7 +361,7 @@ private fun ContentOverlay(
     }
 
     ReaderContentOverlay(
-        brightness = state.brightnessOverlayValue,
+        brightness = if (customBrightnessEnabled) customBrightnessValue else 0,
         color = colorOverlay.takeIf { colorOverlayEnabled },
         colorBlendMode = colorOverlayBlendMode,
     )

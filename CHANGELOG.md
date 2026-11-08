@@ -126,6 +126,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🖌️ Reader Render Ownership (R-B: Stage 1 — one overlay owner; the dead View paint path is deleted, not migrated)
+
+- **The Compose `ReaderContentOverlay` is the single pixel owner of colour-filter and brightness
+  effects.** The Stage 1 inventory (E1 at `0b3dd1bf`) proved the View half of the audit's F4 never
+  rendered: every `Viewer.getView()` returns an empty `View(activity)` fallback, so `ReaderActivity`'s
+  night-mode grayscale+invert `ColorMatrix` (`applyColorLayerPaint` -> `setLayerType(LAYER_TYPE_HARDWARE,
+  paint)`) was applied to a view that draws nothing — dead since the Compose migration, with
+  `setLayerPaint` an unused duplicate. Deleted: both paint functions, the six call sites that drove
+  them (the `trueColor` collectors x2, the `colorFilter`/`colorFilterValue`/`colorFilterMode`
+  collectors and the `updateViewer()` tail) and the now-unused imports. The colour filter renders
+  exactly as before; only the dead half is gone.
+- **Brightness reaches the overlay reactively, and the window setter honours the documented
+  contract.** `ReaderScreen`'s overlay reads `customBrightness()`/`customBrightnessValue()` directly;
+  the relayed `State.brightnessOverlayValue` it previously read was fed only by
+  `ReaderEvent.SetBrightnessOverlayValue` — an event nobody emitted, so the dim scrim was dead and the
+  field stayed `0` (B-032-class unwired contract, with a green unit test proving the relay worked in
+  isolation). Event, dispatch, state field and the relay's test are deleted.
+  `setCustomBrightnessValue` maps the slider's documented range (-75..100): positive -> `value/100f`,
+  0 -> `BRIGHTNESS_OVERRIDE_NONE` (system), negative -> `0f` window minimum while the Compose scrim
+  dims — previously negative values were divided straight into `screenBrightness`, an undefined
+  negative float.
+- **Honest consequences, gated:** `trueColor`/`grayscale`/`invertedColors` are now read by nobody —
+  restoring night-mode invert/grayscale as Compose effects is a named owner decision (device-bound,
+  unchanged from the audit); the unreachable `AndroidView` fallback branch stays as an interface
+  safety net (`Viewer.getView()` retirement is Stage 2/4 scope). New `ReaderRenderOwnershipTest` gates
+  four rules: no View-layer paint in reader main sources, the overlay is the sole pixel owner reading
+  preferences reactively, the window-brightness three-way contract, and no unwired brightness relay.
+  CI-verified (no JDK locally); no device evidence claimed — the restored scrim's look on a panel is
+  a device judgement.
+
 ### 📖 Reader Modular Redesign Audit (docs-only: the seams are real and gated; the debt is three owners)
 
 - **Audit + staged redesign decision record** added at

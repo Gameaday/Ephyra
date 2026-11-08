@@ -7,6 +7,9 @@
 > **Evidence:** E1 source inspection. No production code changed. No JDK/Android SDK is available
 > locally, so remote CI is the verification channel for this docs change; **no device evidence is
 > claimed** — every finding cites the file and line it was read from at the recorded commit.
+> **Update 2026-11-08 (later the same day):** Stage 1 (R-B) has landed as PR #332 under the owner's
+> go-ahead - section 3 F4 carries the dated inventory correction, and the Stage 1 entry in section 4
+> records what shipped. Stages 2-4 remain proposals.
 
 This is an audit and a plan, not a record of completed work. Section 2 is what already landed;
 nothing in Section 4 has begun.
@@ -105,6 +108,18 @@ risk, not a defect today. One user setting should have one owner from event to p
 decides the owner and gates the single path. `ReaderActivity` (about 657 lines: viewer creation,
 paint, insets at `:519`, `setKeepScreenOn` at `:625`) is where the View-side halves live.
 
+> **Corrected 2026-11-08 (Stage 1 inventory, E1 at `0b3dd1bf`):** both halves were wrong in
+> opposite directions, so "drift risk between two live paths" overstated the View side and
+> understated the brightness side. The View half was never a live render path: every
+> `Viewer.getView()` returns an empty `View(activity)` fallback ("actual rendering is handled
+> natively in Compose"), so the `ColorMatrix` paint was applied to a view that draws nothing -
+> dead since the Compose migration, not a competing implementation. The brightness Compose half
+> was dead too: `State.brightnessOverlayValue` was fed only by
+> `ReaderEvent.SetBrightnessOverlayValue`, which nobody emitted, so the scrim never drew and the
+> field stayed `0` while negative slider values wrote an undefined negative float into
+> `screenBrightness`. Stage 1 (section 4) deleted the View half and wired the Compose half
+> reactively.
+
 ### F5 — `ReaderPage` is still a mutable resource carrier
 
 `ReaderPage.kt` (119 lines) holds a `stream` lambda (`:11`), `mergedBitmap` (`:27`), mutable
@@ -127,15 +142,22 @@ answer decides whether the View paint path can be retired or must be kept for th
 `state.currentChapter?.pages?.getOrNull(currentPage)?.cachedBytes` (around `:106`) — UI reading a
 page's working bytes rather than a rendered-surface signal. Same root as F5; resolved by Stage 4.
 
-## 4. Staged redesign (decision record; a proposal, not begun work)
+## 4. Staged redesign (decision record; Stage 1 done 2026-11-08; Stages 2-4 proposals)
 
 - **Stage 0 (this change, docs-only):** this audit; `B-009` superseded and `B-010` bounded in the
   ledger; the viewport contract's stale gesture sentence corrected; this document indexed.
-- **Stage 1 (R-B) — one overlay owner.** Decide and implement a single render path for color filter
-  and brightness (the Compose overlay already renders in the Compose viewers); inventory the
-  `AndroidView` fallback viewers first, keep the View paint path only for what the inventory says
-  still needs it, and gate the decision with a structural test asserting the chosen owner is the
-  only path.
+- **Stage 1 (R-B) — one overlay owner. DONE 2026-11-08 (PR #332, E1 + CI):** the inventory found the
+  View paint path was never a live path - every `Viewer.getView()` returns an empty
+  `View(activity)` fallback, so the `ColorMatrix` was applied to a view that draws nothing. It is
+  deleted, not migrated: `applyColorLayerPaint`, `getCombinedPaint`, `setLayerPaint`, their
+  collectors and the `updateViewer()` tail call are gone. The Compose `ReaderContentOverlay` is
+  the single pixel owner - brightness is now read reactively from the preferences (the relayed
+  `State.brightnessOverlayValue` was fed by an event nobody emitted), and `setCustomBrightnessValue`
+  honours the slider's documented contract (negative -> `0f` minimum + scrim, 0 -> system,
+  positive -> `value/100f`). `trueColor`/`grayscale`/`invertedColors` are read by nobody; restoring
+  night-mode invert as a Compose effect remains the owner decision it always was. Gated by
+  `ReaderRenderOwnershipTest`. The `AndroidView` fallback branch stays (interface safety net);
+  `Viewer.getView()` retirement is Stage 2/4 scope.
 - **Stage 2 (R-D) — callbacks replace the cast.** A small viewer-host callback interface;
   `ReaderScreen` takes the interface, `ReaderActivity` implements it. Self-contained, testable by
   contract, no viewer behaviour change.
@@ -162,6 +184,7 @@ retirement of the View fallback (Stage 1 inventory first), and the Stage 3 coord
 - **No device evidence:** E1 source inspection only; line citations reference `10f9bd76` and drift
   with the tree.
 - **No local build:** docs-only change; remote CI is the verification channel for this commit.
-- The staged plan is a **proposal for owner review**. It is sequenced and each stage is
-  independently landable, but nothing in Section 4 has begun, and the stages are reversible
-  individually.
+- The staged plan is a **proposal for owner review**. It is sequenced, each stage is
+  independently landable, and the stages are reversible individually. **Update 2026-11-08:** the
+  owner's go-ahead started execution; Stage 1 (R-B) has landed (PR #332, CI-verified). Stages 2-4
+  remain proposals and nothing in them has begun.
