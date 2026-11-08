@@ -53,23 +53,22 @@ jobs:
             echo "# Diagnose: core:data test results on PR #329"
             echo
             if [ "$DIAGNOSE_REPRODUCED" = "1" ]; then
-              echo "**Verdict: NOT reproduced — a later round of the same module passed on the same commit.** This PR is docs-only and code-identical to the green `de60404` suite run; the failed check was a runner-load flake, not a regression."
+              echo "**Verdict: NOT reproduced — a later round of the same module passed on the same commit.** This PR is docs-only and code-identical to the green \`de60404\` suite run; the failed check was a runner-load flake, not a regression."
             else
               echo "**Verdict: reproduced in every round.** Failure blocks and JUnit XML below."
             fi
             echo
             echo "## Failure blocks from the gradle logs"
             echo
-            echo '```'
+            echo '\`\`\`'
             for f in /tmp/round*.log; do
               echo "--- $f"
               awk '/FAILED|There were failing tests/{p=1} p' "$f" | head -100
             done
-            echo '```'
+            echo '\`\`\`'
             echo
             echo "## JUnit XML failures"
             echo
-            found=0
             find core/data/build/test-results -name 'TEST-*.xml' -print0 2>/dev/null | while IFS= read -r -d '' x; do
               if grep -q '<failure' "$x"; then
                 echo "### $x"
@@ -80,9 +79,13 @@ jobs:
           } > /tmp/body.md
           wc -c /tmp/body.md
 
-      - name: Post results to the PR
+      - name: Write results to the run summary
+        if: always()
+        run: cat /tmp/body.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Best-effort comment on the PR
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api repos/Gameaday/Ephyra/issues/329/comments -F body=@/tmp/body.md
+          gh api repos/Gameaday/Ephyra/issues/329/comments -F body=@/tmp/body.md || echo "comment post skipped (token lacks issues:write; see run summary)"
