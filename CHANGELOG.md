@@ -41,6 +41,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `source-api/src/main`) and `ExtensionLoaderVersionTest` (`SUPPORTED_LIB_VERSIONS = listOf(1.6)`).
 
 ### 🧩 Fixes
+- **The library screen no longer crashes on an unrecognised display mode.** A device report surfaced
+  `kotlin.NoWhenBranchMatchedException` from
+  `ephyra.feature.library.presentation.components.LibraryPagerKt.LibraryPager$lambda$0`
+  (`LibraryPager.kt:82`) - the `when (displayMode)` that picks each library page's renderer. Every
+  value path in the current tree is provably safe: `LibraryDisplayMode` is a sealed interface whose
+  four variants are all matched (and have been in every commit since the pager's creation), its
+  `deserialize` maps unknown strings to `default`, and the DataStore-backed preference seeds unset or
+  corrupt reads with the default too, so no in-source input can miss a branch. The JVM backend
+  nevertheless compiles a sealed `when` without `else` with a defensive fallback throw, and that
+  fallback fired on device - the signature of the pager's compiled arms not recognising an instance
+  of the same-named hierarchy (the binary-skew case the exception exists for; the skew itself is not
+  reproducible from source). The render decision is now total: the `when` names `List` and
+  `CompactGrid`/`CoverOnlyGrid` explicitly, and its final arm is an `else` rendering the comfortable
+  grid - an unrecognised value degrades to a plain but readable library instead of killing the home
+  screen, consistent with the columns gate one branch above, which already treats every non-List
+  mode as a grid (the same preference for an imperfect render over a crash as the sort comparator's
+  `Random` arm in `LibraryViewModel`). The closed set is pinned by the new `LibraryDisplayModeTest`:
+  `values` exposes exactly the four canonical modes (a new variant now fails that test until the
+  pager and this entry are consciously updated), `serialize` round-trips every mode, and
+  `deserialize` maps corrupt strings to the default - never to nothing.
 - **Resuming from another app no longer crashes the reader mid-retry.** The recovery ladder's
   replacement-address fetch — a fresh page list, taken when a page's failure indicted its URL —
   ran unguarded from inside `HttpPageLoader.internalLoadPage`'s `catch` block. Right after the

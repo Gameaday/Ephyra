@@ -109,7 +109,14 @@ fun LibraryPager(
                 )
             }
 
-            LibraryDisplayMode.ComfortableGrid -> {
+            // Any value the arms above do not name - a [LibraryDisplayMode] variant from a build
+            // of the hierarchy newer than this pager's compiled arms - renders as the comfortable
+            // grid instead of throwing [kotlin.NoWhenBranchMatchedException] from the sealed-when
+            // fallback (the reported device crash, LibraryPager.kt:82). A readable library is
+            // strictly better than an unusable one, and the columns gate above already treats
+            // every non-List mode as a grid, so the fallback stays consistent with the column
+            // state it is handed. ComfortableGrid itself lands here too.
+            else -> {
                 LibraryComfortableGrid(
                     items = items,
                     columns = columns,
