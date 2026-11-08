@@ -52,7 +52,7 @@ class MotionConsistencyTest {
         "feature/browse/src/main/kotlin/ephyra/feature/browse/BrowseFeatureApi.kt"
     private val mangaFeatureApi =
         "feature/manga/src/main/kotlin/ephyra/feature/manga/MangaFeatureApi.kt"
-    private val motion = "presentation-core/src/main/java/ephyra/presentation/core/theme/Motion.kt"
+    private val motion = "presentation-core/src/main/java/ephyra/presentation/core/theme/MotionTokens.kt"
     private val motionPolicy =
         "core/domain/src/main/java/ephyra/domain/navigation/motion/MotionPolicy.kt"
     private val historyItem =
@@ -120,7 +120,7 @@ class MotionConsistencyTest {
             ?.groupValues
             ?.get(1)
             ?.toFloat()
-            ?: throw AssertionError("SHARED_AXIS_X_TRAVEL not found in Motion.kt")
+            ?: throw AssertionError("SHARED_AXIS_X_TRAVEL not found in MotionTokens.kt")
 
         val percent = (travel * 100).toInt()
 
@@ -270,7 +270,7 @@ class MotionConsistencyTest {
                     "incoming screen spends the start of its own journey invisible.",
             )
             return names.map { name ->
-                durations[name] ?: throw AssertionError("$name is not a duration constant in Motion.kt")
+                durations[name] ?: throw AssertionError("$name is not a duration constant in MotionTokens.kt")
             }
         }
 
@@ -302,6 +302,51 @@ class MotionConsistencyTest {
                     "transition from the nav push it mirrors.",
             )
         }
+    }
+
+    /**
+     * The policy's HIERARCHICAL durations are the numbers the renderings actually play — the last
+     * edge of the triangle. The legs test above ties the Compose functions to the XML window
+     * animations; this ties both to the policy. Without it, shortening HIERARCHICAL_BACK_DURATION_MILLIS
+     * would leave the pop renderings at 250ms while the plan reported something else, and no gate
+     * would name the difference.
+     */
+    @Test
+    fun `policy hierarchical durations are the numbers the renderings play`() {
+        val policy = codeOf(motionPolicy)
+        val declared = Regex("""HIERARCHICAL_(FORWARD|BACK)_DURATION_MILLIS\s*=\s*(\d+)""")
+            .findAll(policy)
+            .associate { it.groupValues[1] to it.groupValues[2].toInt() }
+        assertEquals(
+            setOf("FORWARD", "BACK"),
+            declared.keys,
+            "MotionPolicy must declare both HIERARCHICAL durations as readable literals.",
+        )
+
+        fun firstLeg(half: String): Int {
+            val xml = sourceFile("$anim/shared_axis_x_$half.xml").readText()
+            return Regex("""android:duration="(\d+)""")
+                .find(xml)
+                ?.groupValues
+                ?.get(1)
+                ?.toInt()
+                ?: throw AssertionError("no timed leg found in shared_axis_x_$half.xml")
+        }
+
+        assertEquals(
+            declared.getValue("FORWARD"),
+            firstLeg("push_enter"),
+            "The push-enter rendering must run the policy's HIERARCHICAL_FORWARD duration. The " +
+                "window animation and the Compose push are renderings of one transition; a number " +
+                "that differs between them is a policy the renderings did not implement.",
+        )
+        assertEquals(
+            declared.getValue("BACK"),
+            firstLeg("pop_enter"),
+            "The pop-enter rendering must run the policy's HIERARCHICAL_BACK duration. The pop " +
+                "legs exist so the return is quicker than the arrival; a rendering that keeps the " +
+                "old number turns that rule into a comment rather than a fact.",
+        )
     }
 
     /**

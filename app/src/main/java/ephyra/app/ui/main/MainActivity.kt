@@ -457,7 +457,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 reducedMotion,
                                                 isPop = true,
                                             )
-                                            MotionTokens.containerEnter(
+                                            // The pop half renders the reversed axis: the parent
+                                            // returns from the left at the policy's back duration.
+                                            // containerEnter here would replay the forward slide
+                                            // — the same picture as pushing a new screen.
+                                            MotionTokens.containerPopEnter(
                                                 plan.effectiveContainerMotion,
                                                 plan.effectiveDurationMillis,
                                             )
@@ -469,7 +473,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 reducedMotion,
                                                 isPop = true,
                                             )
-                                            MotionTokens.containerExit(
+                                            // The popped page leaves to the right, mirroring
+                                            // containerPopEnter — the reverse of the push exit.
+                                            MotionTokens.containerPopExit(
                                                 plan.effectiveContainerMotion,
                                                 plan.effectiveDurationMillis,
                                             )

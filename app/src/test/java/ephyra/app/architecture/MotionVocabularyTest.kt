@@ -11,7 +11,7 @@ import java.io.File
  * specs, three tween presets, a shared-element duration helper, six duration constants, two easings
  * and a `MaterialTheme` accessor. All were deleted rather than kept "in case", because an unused
  * motion primitive is not a future default — it is the wrong duration waiting to be picked by
- * someone who assumes the file is curated.
+ * someone who assumes this file is curated.
  *
  * This test holds that line: every public member of `MotionTokens` must be referenced either by
  * production code in another file, or transitively by a live member of the same file (an alias, or
@@ -49,18 +49,18 @@ class MotionVocabularyTest {
         throw AssertionError("repository root (settings.gradle.kts) not found")
     }
 
-    private val motion = "presentation-core/src/main/java/ephyra/presentation/core/theme/Motion.kt"
+    private val motion = "presentation-core/src/main/java/ephyra/presentation/core/theme/MotionTokens.kt"
 
     /**
-     * Every public member declaration in Motion.kt with the source up to the next declaration as
-     * its body, so a member that references another member (an alias, or a transition naming a
+     * Every public member declaration in MotionTokens.kt with the source up to the next declaration
+     * as its body, so a member that references another member (an alias, or a transition naming a
      * duration) keeps that member alive.
      */
     private fun membersOf(motionCode: String): Map<String, String> {
         val lines = motionCode.lines()
-        val constVal = Regex("""^\\s*const val ([A-Za-z][A-Za-z0-9_]*)\\s*=""")
-        val plainVal = Regex("""^\\s*val ([A-Za-z][A-Za-z0-9_.]*)\\s*[:=]""")
-        val funDecl = Regex("""^\\s*fun (?:<T>\\s*)?([A-Za-z][A-Za-z0-9_]*)\\(""")
+        val constVal = Regex("""^\s*const val ([A-Za-z][A-Za-z0-9_]*)\s*=""")
+        val plainVal = Regex("""^\s*val ([A-Za-z][A-Za-z0-9_.]*)\s*[:=]""")
+        val funDecl = Regex("""^\s*fun (?:<T>\s*)?([A-Za-z][A-Za-z0-9_]*)\(""")
         data class Declaration(val line: Int, val name: String)
 
         val declarations = lines.mapIndexedNotNull { index, line ->
@@ -84,7 +84,7 @@ class MotionVocabularyTest {
     @Test
     fun `every motion token has a consumer or is deleted`() {
         val members = membersOf(codeOf(motion))
-        assertTrue(members.isNotEmpty(), "no members parsed from Motion.kt — the gate is vacuous")
+        assertTrue(members.isNotEmpty(), "no members parsed from MotionTokens.kt — the gate is vacuous")
 
         val root = repoRoot()
         val consumerFiles = root.walkTopDown()
@@ -109,14 +109,19 @@ class MotionVocabularyTest {
             }
         }
 
-        // Transitive liveness: a member kept alive by a live member of the same file — an alias
-        // resolving to a constant, or a container transition naming its shared-axis legs.
+        // Transitive liveness: a member is kept alive when a live member of the same file *uses* it —
+        // an alias resolving to a constant, or a container transition naming its shared-axis legs.
+        // The direction is the point: "built from live parts" would instead keep a dead alias alive
+        // because its body names a live constant. The question is always who is used.
         var changed = true
         while (changed) {
             changed = false
-            for ((name, body) in members) {
+            for (name in members.keys) {
                 if (name in live) continue
-                if (live.any { referencePattern(it).containsMatchIn(body) }) {
+                val usedByLiveMember = members.entries.any { (other, otherBody) ->
+                    other != name && other in live && referencePattern(name).containsMatchIn(otherBody)
+                }
+                if (usedByLiveMember) {
                     live += name
                     changed = true
                 }
@@ -126,7 +131,7 @@ class MotionVocabularyTest {
         val dead = members.keys.filter { it !in live }
         assertTrue(
             dead.isEmpty(),
-            "Motion.kt declares motion vocabulary with no production consumer: " +
+            "MotionTokens.kt declares motion vocabulary with no production consumer: " +
                 "${dead.joinToString(", ")}. Add a consumer or delete it. This gate exists because " +
                 "the members pruned on 2026-11-08 were exactly this: M3 template text that had " +
                 "never been chosen for this app, kept as if it were a decision.",
