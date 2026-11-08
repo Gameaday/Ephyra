@@ -105,6 +105,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 📒 Accepted-Debt Register (E2: every deferral-by-decision is consolidated with its expiry condition — `B-017` first)
+
+- **One register, one authority.** `doc/ACCEPTED_DEBT_REGISTER.md` consolidates everything consciously deferred by decision, with the review or expiry condition each decision named. `REBUILD_STATUS.md` remains the ledger; where register and ledger disagree, the ledger wins and the disagreement is a defect.
+- **`B-017` first** — the tracked nightly keystore: rotation deferred by owner to a post-programme project because it invalidates every existing nightly's update signature; Phase 1 may not record `VERIFIED` until the rotation runs. A scheduled gap, not an oversight.
+- **The decision-governed deferrals follow**: the D3 target-data cluster (14 cutover gates, `DATA-001I`), the B6 search-wiring deferrals (R-004 mapping + R-008 for SRC-007/009; `DATA-001I` for SRC-010), and D1's `OpportunisticMergeManager` residue — the one deferral whose deciding decision is still to be made.
+- **Coverage reductions are recorded with their losses stated**: the frame-deadline budget has no automated gate (`B-043`/`B-051`; manual `E4-user` capture), and `E4-user` evidence is outstanding for every fixed defect row — owner decisions, both.
+- **Not-debt is recorded too, so completeness is not mistaken for debt**: `B-050` (the runner emulator that cannot boot — a standing blocker, deliberately absent from publish paths since E1), ADR-0008's `RendererSelection` seam, `IngestEngine` greenfield, `B-055`'s recorded findings (no review condition, owned by their contracts), and the open decisions (`DATA-001`/B4, O2/`RFC-0001`) — undecided is not accepted.
+- **Maintenance is structural**: entries are append-only; a retirement moves to the retired table with its date and the decision that retired it; a new entry without a named condition is rejected by the register's own rule.
+
 ### 🚦 Release Gates (E1: `REL-001` — publish paths consume the gate verdict; release artifacts are verified)
 
 - **A tag can no longer ship an unverified commit.** `release.yml` gains a `gates` job that its `build` job needs, so nothing is signed or published until the gate verdict on the exact tagged SHA is green. The verdict is consumed, not re-computed: `WorkflowRedundancyTest` keeps the test suite in exactly one workflow (`build.yml`) precisely so there is a single authority for whether a change is acceptable, and re-running it on the release path would create a second.

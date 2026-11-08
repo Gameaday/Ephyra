@@ -27,6 +27,7 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
 | [`REBUILD_PROGRAM.md`](REBUILD_PROGRAM.md) | Phased architecture and delivery rules. | Change only with an ADR. |
 | [`REBUILD_EXECUTION_GUIDE.md`](REBUILD_EXECUTION_GUIDE.md) | Operating procedure for humans and agents. | Update when procedure changes. |
 | [`REBUILD_STATUS.md`](REBUILD_STATUS.md) | Evidence ledger, task state, phase gates. | Append in the same commit as the work. |
+| [`ACCEPTED_DEBT_REGISTER.md`](ACCEPTED_DEBT_REGISTER.md) | Consolidated accepted-debt register with review/expiry conditions. | Update in the same commit as the decision that creates or retires an entry. |
 | [`USER_STORIES.md`](USER_STORIES.md) | Intent register; each story names its test. | Update when a story's evidence changes. |
 | [`adr/`](adr/) | Accepted decisions that must not be silently reversed. | Add a new ADR; never edit history. |
 | [`rfcs/RFC-0001-content-identity-unification.md`](rfcs/RFC-0001-content-identity-unification.md) | Work/Binding identity proposal (Draft). | Promote to an ADR when accepted. |
