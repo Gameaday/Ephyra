@@ -1,3 +1,4 @@
+
 # Build & Repository Health
 
 > **Status:** binding program health contract. Structural gates and domain-purity gates run on every
@@ -138,12 +139,14 @@ rule above.
 
 ## Metrics — recorded, never gating
 
-Measured on a cadence, recorded here, never gating a change. Last measured 2026-09-26.
+Measured on a cadence, recorded here, never gating a change. Last measured 2026-09-26;
+repository-shape metrics re-measured at the frozen tree 2026-11-08 (`E3`) — see the `E3`
+re-measure note below.
 
 | Metric | Value | Expected direction |
 |---|---:|---|
-| Module count | 29 | may rise for a 2.0 quarantine module |
-| Inter-project dependency edges | 166 | falls as `CLEAN-001` removes legacy edges |
+| Module count | 28 | re-measured at the frozen tree (`E3`, 2026-11-08); `macrobenchmark` retired by D2 |
+| Inter-project dependency edges | 139 | re-measured at the frozen tree (`E3`, 2026-11-08); falls as `CLEAN-001` removes legacy edges |
 | Main source files | 1219 | falls as legacy reader and routes are deleted |
 | Test source files | 251 | falls as legacy tests are replaced; not a quality signal |
 | TODO/FIXME markers | 14 | intentional debt belongs in `REBUILD_STATUS.md` |
@@ -167,6 +170,59 @@ rather than remembered.
 checked anything. That is acceptable for a repository-shape gate, whose real risk is noise across
 ~1,200 files, and both CI and developer checkouts necessarily have git. A future gate that becomes
 load-bearing for security should assert the list is non-empty rather than rely on this.
+
+## Re-measure at the frozen tree — `E3`, 2026-11-08
+
+The completion plan's Track E step `E3` re-measures the `OPS-002`/`OPS-003` health numbers at the
+frozen tree: `de60404bbd2f59f5fe773ea9bcd62dd5b524dfe0` (`main`, 2026-11-08; `E2` merged plus the
+post-`E2` library-pager fix), `versionName` 0.21.0 / `versionCode` 21. This note records how each
+re-measured number was taken, and which numbers this channel cannot re-measure — a record may only
+describe a measurement that occurred.
+
+**Re-measured — repository shape (no build required):**
+
+- **Module count 28.** The `include` list of `settings.gradle.kts` at the frozen SHA. The unwired
+  `macrobenchmark` module was retired by `CLEAN-001`/D2 (2026-11-07), so the 29 recorded in the
+  2026-09-26 pass predated that retirement.
+- **Inter-project dependency edges 139** (was 166). The corrected extractor's own semantics — the
+  type-safe accessor form `projects.x.y` → `:x:y`, distinct per declaring module — re-run over all
+  **30** tracked `build.gradle.kts` files (28 modules, the root script, `buildSrc`) fetched at the
+  frozen SHA. Two cross-checks tie the replication to the gate rather than to hope: the
+  feature-to-feature edges it finds are exactly the **12** `B-020` kept as genuinely-used declared
+  debt, and the `core:domain` project edges are exactly the **3** declared
+  (`:core:common`, `:coreMetadata`, `:sourceApi`). The movement is the recorded retirements, not
+  noise: `B-020` deleted 12 unused feature-to-feature edges and 15 unused feature→`core:data`
+  edges, `B-027` narrowed `feature:reader`'s `core:data` edge to `testImplementation`, and
+  `D1`/`D2` removed the profile path and the benchmark module.
+- **`OPS-003` green at the frozen tree.** Every check on `de60404` completed green, and the
+  nightly's `require-green-checks` gate consumed that verdict before publishing
+  `app-*-nightly-de60404.apk` (15:20:20Z). The publish is the stronger evidence: the release-path
+  gate fails closed, so a published nightly is a consumed green verdict on exactly that commit
+  (`REL-001`, E1).
+- **Nightly APK per ABI (publish-channel sizes, informational):** arm64-v8a 94.9 MiB,
+  armeabi-v7a 92.4 MiB, x86 95.9 MiB, x86_64 96.0 MiB, universal 122.8 MiB, read from the
+  `de60404` nightly release assets. These are **not** the "Release APK per ABI" metric: the
+  `nightly` build type is `initWith(release)` with `isMinifyEnabled = false`
+  (`app/build.gradle.kts`), so the artifacts are unminified by design and are not comparable to
+  the minified release figure.
+
+**Not re-measured here — owner-side pending, each named with the procedure it needs.** Their
+2026-09-26 values stand as last-measured and are not overwritten:
+
+- **Clean build (93s) and the warm Tier B timings.** The measurement procedure requires the
+  original host — same machine, warm daemon, median of three, Gradle/JDK/SHA recorded. A
+  CI-observed duration is not comparable and is deliberately not recorded as one.
+- **Main/test source files, TODO/FIXME, `@Deprecated`.** Counted from a `git ls-files` walk over
+  file *contents*; this channel has no clone.
+- **Release APK per ABI.** Needs a local `assembleRelease`, or the next `v*` tag — the
+  `2.0-clean` tag deliberately does not trigger `release.yml`.
+- **Baseline profile regeneration.** The generator retired with D2; the committed rules are
+  hand-maintained, owner-side.
+- **`E4-lab` device availability.** Last verified 2026-09-25; an `adb` re-verification is a
+  workstation probe.
+
+Honesty: no JDK locally; remote CI is the only verification channel. The gate-green statement
+above is the nightly's consumed verdict, not a re-run.
 
 ## `E4-lab` device availability (re-verified 2026-09-25)
 
