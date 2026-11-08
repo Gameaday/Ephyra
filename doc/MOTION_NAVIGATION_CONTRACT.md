@@ -108,11 +108,15 @@ closes all three.
   NavHost slots carry no local fallback, and an undeclared push/pop is the HIERARCHICAL plan (300ms in,
   250ms back, container on the shared axis). A cover pair whose id cannot be read from either entry
   degrades to the policy crossfade — the invalid-element rule above — instead of a local shared-axis
-  slide decided where no test could see it.
+  slide decided where no test could see it. A plan is directional, so its pop half renders the
+  reversed axis: `MotionTokens.containerPopEnter`/`containerPopExit` map the SHARED_AXIS plan onto
+  the pop legs (the crossfade and no-op halves are direction-symmetric). Rendering a pop with the
+  push functions replays the forward slide while the plan quietly reports the back timeline — a
+  regression this change's own CI caught in round 1, and the reason the pop functions exist.
 - **The shared axis is quicker.** Push: a 300ms slide with a 200ms fade that starts with the slide
   (not a 450ms slide with a fade delayed 100ms in — the incoming screen used to spend the first tenth
   of its own journey invisible). Pop enter 250ms, pop exit 200ms — back is shorter than forward
-  because the user already knows where back goes. The durations live in `MotionPolicy` and `Motion.kt`
+  because the user already knows where back goes. The durations live in `MotionPolicy` and `MotionTokens.kt`
   only, and the four `shared_axis_x_*.xml` Activity renderings must run the same numbers as the
   Compose legs: `MotionConsistencyTest` asserts the parity and forbids offsetting the halves against
   each other.
@@ -208,7 +212,9 @@ code does *not* do and no unit test can drive the transition:
   the pair resolve over one predicate.
 - `MotionConsistencyTest` — the reader animates both halves; the Activity animations travel the token
   distance and run the token durations, so the XML rendering of the shared axis cannot drift from the
-  Compose one; every shared-cover host provides an animated-visibility scope; each list that opens a
+  Compose one; the policy's HIERARCHICAL durations are the numbers those renderings play —
+  policy, Compose legs and window animations gated as one loop; every shared-cover host provides
+  an animated-visibility scope; each list that opens a
   series keys its cover on the id it opens; and the undeclared-route fallback is a policy plan, not an
   activity decision — `MainActivity` names no transition token directly and no NavHost slot branches
   on a nullable plan.

@@ -147,6 +147,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Audit F7's last inline curves name tokens** (behaviour-identical): `ReaderScreen.kt` uses
   `MotionTokens.EasingStandard`, and `CalendarHeader.kt`'s local 200ms constant is
   `MotionTokens.DURATION_SHORT_4`.
+- **Direction-aware pop rendering fixes a regression round 1 of this change shipped to CI.** A pop
+  resolved the policy's back plan but was rendered with the push functions — the 300ms forward
+  slide — where pre-v2 undeclared pops ran the reversed 250ms axis. `MotionTokens.containerPopEnter`/
+  `containerPopExit` now render the reversed axis (SHARED_AXIS to the pop legs; the crossfade and
+  no-op halves are direction-symmetric), the NavHost pop slots call them, and a new
+  `MotionConsistencyTest` gate asserts the policy's HIERARCHICAL durations are the numbers the
+  Compose legs and the XML window renderings play.
+- **`Motion.kt` is renamed `MotionTokens.kt`** (ktlint `standard:filename`): the file has held a
+  single top-level declaration since the `MaterialTheme.motion` accessor was deleted. All path
+  references follow; the vocabulary itself is untouched.
+- **Honesty: three authoring defects in this PR were caught by its own CI and fixed before merge.**
+  (1) a missing final newline; (2) the filename rename above; (3) `MotionVocabularyTest`'s
+  member-parsing regexes carried doubled backslashes inside raw strings — a `PatternSyntaxException`
+  before its first assertion — and its transitive-liveness rule was inverted ("built from live
+  parts" instead of "used by a live member"), which would have false-flagged five duration aliases
+  once the crash was fixed. All disclosed and repaired before merge; nothing merged red.
 - **Docs:** `MOTION_NAVIGATION_CONTRACT.md` gains the Motion v2 rules and a repaired, complete Gates
   list (the old list was truncated mid-sentence); `MOTION_UI_EXPERIENCE_AUDIT.md` F4/F7 are current;
   `REBUILD_STATUS.md` and `2_0_COMPLETION_PLAN.md` record the landing (C7 done).
