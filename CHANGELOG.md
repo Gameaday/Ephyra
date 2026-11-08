@@ -126,6 +126,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 📖 Reader Modular Redesign Audit (docs-only: the seams are real and gated; the debt is three owners)
+
+- **Audit + staged redesign decision record** added at
+  [`doc/READER_MODULAR_REDESIGN_AUDIT.md`](doc/READER_MODULAR_REDESIGN_AUDIT.md). E1 source audit at
+  `10f9bd76`, triggered by the owner's "improve the reader and navigation" priority (the navigation half
+  was C7 / Motion v2). Verdict: the reader's seams (session, chapter window, slices, zoom, gestures, byte
+  budget, load recovery) are real, production-wired and gated; the remaining debt is concentrated in
+  `ReaderViewModel` (`B-008` confirmed with measured spans: 1645 lines, 25 constructor dependencies, six
+  responsibilities), `ReaderActivity`/`ReaderScreen` (dual color-filter/brightness render paths; the
+  Activity is inside the rendering path by cast) and `ReaderPage` (mutable resource carrier, blocking the
+  `MED-002` end-state). Staged plan: overlay owner, then callback interface, then per-seam coordinators
+  (`ReaderSessionCoordinator` as the template), then the immutable page model deliberately last - each
+  stage independently landable; a proposal, not begun work.
+- **Ledger corrections, in place:** `B-009` superseded (one container transform; gated by
+  `WebtoonZoomRenderTest`), `B-010` harm-bounded by the preload priority ladder (the fact stands), and
+  `DOCUMENT_VIEWPORT_CONTRACT.md`'s "remaining wiring in `RDR-005`" sentence corrected (the gesture
+  arbiter is production-wired in both viewers). `doc/README.md` gains the new audit's index row and the
+  `MOTION_UI_EXPERIENCE_AUDIT.md` row missing since C7.
+
 ### 🎬 Motion v2 (C7: one policy, quick cohesion — the undeclared-route fallback became a policy pair)
 
 - **`MotionRoutePair.HIERARCHICAL` closes the `motionPlanFor`-null gap.** The undeclared-route fallback

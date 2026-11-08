@@ -77,8 +77,10 @@ Layout code does not scale individual items. The transform is applied once, to t
 At fit, a vertical gesture scrolls the chapter. Zoomed, the same gesture pans within the enlarged
 content. The reader has exactly one pointer path: `ReaderGestureArbiter` arbitrates and emits
 `DelegateSingleScroll` when the viewport declines a gesture, which is how the outer scroll is handed
-the vertical axis at fit scale. The continuous reader's call site is the remaining wiring in
-`RDR-005`.
+the vertical axis at fit scale. The continuous reader's call site ~~is the remaining wiring in `RDR-005`~~ — **corrected
+2026-11-08: wired.** The production `WebtoonGestureAdapter` routes through `ReaderGestureArbiter`, and
+`ReaderGesturePointerAdapter` runs the shared tap path in both viewers (see the D4 change-log row and
+`READER_MODULAR_REDESIGN_AUDIT.md` §2).
 
 ## Animated, unsupported and corrupt content
 
