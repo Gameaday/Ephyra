@@ -157,12 +157,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`Motion.kt` is renamed `MotionTokens.kt`** (ktlint `standard:filename`): the file has held a
   single top-level declaration since the `MaterialTheme.motion` accessor was deleted. All path
   references follow; the vocabulary itself is untouched.
-- **Honesty: three authoring defects in this PR were caught by its own CI and fixed before merge.**
+- **Honesty: five authoring defects in this PR were caught by its own CI across four red rounds, all
+  fixed before merge.**
   (1) a missing final newline; (2) the filename rename above; (3) `MotionVocabularyTest`'s
   member-parsing regexes carried doubled backslashes inside raw strings — a `PatternSyntaxException`
   before its first assertion — and its transitive-liveness rule was inverted ("built from live
   parts" instead of "used by a live member"), which would have false-flagged five duration aliases
-  once the crash was fixed. All disclosed and repaired before merge; nothing merged red.
+  once the crash was fixed; (4) a double blank line the pop-function insertion left behind
+  (Spotless, round 4); (5) the new policy-triangle gate's duration regex required `MILLIS\s*=`
+  while `MotionPolicy` declares its durations as `: Int =` literals, so it asserted against an
+  empty set before its first real check. All disclosed and repaired before merge; nothing merged red.
 - **Docs:** `MOTION_NAVIGATION_CONTRACT.md` gains the Motion v2 rules and a repaired, complete Gates
   list (the old list was truncated mid-sentence); `MOTION_UI_EXPERIENCE_AUDIT.md` F4/F7 are current;
   `REBUILD_STATUS.md` and `2_0_COMPLETION_PLAN.md` record the landing (C7 done).
