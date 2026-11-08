@@ -1,3 +1,4 @@
+
 # Changelog
 
 All notable changes to Ephyra will be documented here.
@@ -124,6 +125,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   naming the claiming origin instead of an unexplained "source not registered"; health failures
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
+
+### 📈 Health Re-Measure (E3: the `OPS-002`/`OPS-003` numbers are re-measured at the frozen tree)
+
+- **Repository-shape metrics are current again.** `BUILD_HEALTH.md`'s metrics table was last measured 2026-09-26 and predated D2's `macrobenchmark` retirement. Re-measured at the frozen tree (`de60404`): **module count 28**, **inter-project dependency edges 139** (was 166) — the corrected extractor's semantics replicated over all 30 tracked build scripts, with two exact cross-checks against the gate's own declared-edge sets (12 feature-to-feature, 3 `core:domain`).
+- **`OPS-003` green at the frozen tree, evidenced by consumption.** The nightly published `app-*-nightly-de60404.apk` only after `require-green-checks` verified every check on that exact commit — the release-path gate fails closed, so the publish is a consumed green verdict (`REL-001` executing as designed).
+- **Nightly per-ABI sizes recorded as publish-channel observations** (arm64-v8a 94.9 MiB … universal 122.8 MiB) — unminified by design (`initWith(release)`, `isMinifyEnabled = false`), explicitly not comparable to the minified release metric.
+- **What cannot be honestly re-measured from this channel is recorded as owner-side pending** with each procedure: clean-build 93s re-run and warm Tier B medians (same-host requirement), `git ls-files`-walk file/TODO/`@Deprecated` counts, release APK per ABI, baseline-profile regen, `E4-lab` availability. Docs-only; no production code changed.
 
 ### 📒 Accepted-Debt Register (E2: every deferral-by-decision is consolidated with its expiry condition — `B-017` first)
 
