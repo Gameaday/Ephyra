@@ -156,6 +156,8 @@ plugin and the app `benchmark` build type. `REL-001` remains open.
 
 **Update 2026-11-08 (E1): `REL-001` is executed.** Publish paths consume the gate workflow's verdict instead of re-running it: `release.yml` gains a `gates` job its `build` job needs, and the nightly gates its publish the same way (a nightly is an installable publish), both through the `require-green-checks` composite action, which polls the shipped SHA's check runs and fails unless they are complete, green, and the named core gates are present. Release artifacts are gated after signing — `apksigner verify` on every APK, `versionName` matched against the tag, the R8 mapping required and attached. Connected instrumentation stays `B-050`-blocked and is deliberately not wired into publish. The tag-path run is owner-side: it executes on the next `v*` tag, which this authoring environment cannot cut.
 
+**Update 2026-11-08 (E2): the accepted-debt register is recorded.** Everything the programme has consciously deferred by decision is now one consolidated list at `doc/ACCEPTED_DEBT_REGISTER.md` — each entry with its review or expiry condition, `B-017` (the keystore rotation Phase 1 is waiting on) first, the D3 target-data cluster and the B6 search-wiring deferrals next, the accepted coverage reductions (frame-budget automation, `E4-user` evidence) stated with their losses, and the not-debt classes (`B-050`, ADR-0008 contracts, `IngestEngine` greenfield, `B-055` findings, open decisions) recorded so completeness is not mistaken for debt. The ledger remains the authority; the register is the view.
+
 ## Current truth
 
 Validated against the tree on 2026-10-05. The detailed state and the ordered completion steps are

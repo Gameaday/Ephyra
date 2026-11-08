@@ -164,11 +164,13 @@ Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](
 | ID | Action | Evidence | Depends on |
 |---|---|---|---|
 | E1 | `REL-001`: enforce lint, instrumentation, release-artifact gates on the release path. | Done 2026-11-08 — publish paths consume the gate verdict instead of re-running it (the suite stays in exactly one workflow, `WorkflowRedundancyTest`'s single-authority rule): `release.yml` gains a `gates` job its `build` job needs, and `nightly.yml` gates its publish identically (a nightly is an installable publish), both through `.github/actions/require-green-checks/action.yml`, which polls the shipped SHA's check runs and fails unless every check is completed and green and the named core gates are present; the calling run's own jobs are excluded so a gate never waits on itself; zero checks fails closed after a bounded grace. Release artifacts are gated after signing: `apksigner verify` on every APK, `versionName` matched against the tag (`aapt2 dump badging`), and the R8 mapping required and attached. Connected instrumentation stays `B-050`-blocked (the runner emulator does not boot) and is deliberately not wired into publish; benchmark/screenshot channels stay manual per `B-051`/D2. Structural evidence: `ReleaseGateTest` (6); `app/build.gradle.kts` declares `.github/actions` as a repository-file gate input. Honesty: no JDK locally; remote CI is the verification channel; the tag-triggered run is owner-side, pending the next `v*` tag. | D2 |
-| E2 | Record the accepted-debt register with expiry conditions (`B-017` first). | ledger row | - |
+| E2 | Record the accepted-debt register with expiry conditions (`B-017` first). | Done 2026-11-08 — the register is recorded at [`ACCEPTED_DEBT_REGISTER.md`](ACCEPTED_DEBT_REGISTER.md): six debt entries (`B-017` first), two coverage reductions, one standing blocker, three not-debt classes recorded so completeness is not mistaken for debt, and two open decisions explicitly excluded. Every entry cites the ledger row or governing record it derives from; the ledger remains the authority. | - |
 | E3 | Re-measure and record health numbers (`OPS-002`, `OPS-003`) at the frozen tree. | `BUILD_HEALTH.md` | D2 |
 | E4 | Cut the `2.0-clean` tag; point `ROADMAP.md`'s baseline line at it. | git tag + roadmap diff | all above |
 
 ## 5. Blockers and decisions that are not more analysis
+
+The consolidated register with expiry conditions is [`ACCEPTED_DEBT_REGISTER.md`](ACCEPTED_DEBT_REGISTER.md) (E2, 2026-11-08). This section stays as the plan-level summary; the register is the durable list.
 
 - **`B-017` keystore rotation** - owner-deferred to a post-programme project (rotation invalidates
   nightly update signatures). Phase 1 cannot read `VERIFIED` until it runs. This is a *scheduled*
@@ -196,7 +198,7 @@ Reader/media (the core):   A1 -> A2 -> A3 -> A4 -> A6 -> D2
 Product:                   C1 -> C4 -> C2 (after O2) -> C3
 Data/ops:                  B3 (after B2), B6 done 2026-11-08 (per-item decision: wiring deferred, see the B6 row)
 Device-bound:              A5, C6, E3
-Freeze:                    D2/D4 complete -> E1 (done 2026-11-08) -> E2 -> E3 -> E4
+Freeze:                    D2/D4 complete -> E1/E2 (done 2026-11-08) -> E3 -> E4
 ```
 
 The critical path to a clean baseline is **D1 (execute ADR-0017) -> A1-A4 -> D2 (delete the
