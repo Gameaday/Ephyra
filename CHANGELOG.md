@@ -126,6 +126,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🔌 Reader Viewer Host (R-D: Stage 2 — callbacks replace the cast in the rendering path)
+- **`ReaderScreen` no longer casts its context to `ReaderActivity`** (audit F6): the cast put the
+  concrete Activity class inside the rendering path, and its silent null was load-bearing - with any
+  context that is not `ReaderActivity`, both Compose readers silently stop rendering and the empty
+  `AndroidView` fallback paints nothing. The screen now takes **`ReaderViewerHost`**, a four-method
+  interface (`onPageSelected`, `onPageLongTap`, `toggleMenu`, `requestPreloadChapter`) covering exactly the set
+  of callbacks the Compose viewer surfaces invoke; `ReaderActivity` implements it by delegating to the
+  same members as before and passes itself at the single production call site. **No viewer behaviour
+  change:** every callback lands exactly where it did; the only path that changes is the one where
+  the cast returned null and the Compose readers silently did not render - a context no production
+  path produces. **Gate:** new `ReaderViewerHostOwnershipTest` (4 rules: no cast to the concrete Activity
+  in reader main sources; the screen takes the contract and routes all four callbacks through it; the
+  activity implements the contract and passes itself; every interface member is consumed by the
+  screen - an unwired contract member fails the build).
+
 ### 🖌️ Reader Render Ownership (R-B: Stage 1 — one overlay owner; the dead View paint path is deleted, not migrated)
 
 - **The Compose `ReaderContentOverlay` is the single pixel owner of colour-filter and brightness
