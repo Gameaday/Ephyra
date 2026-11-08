@@ -226,6 +226,11 @@ class MotionPolicyTest {
         // The predicate MainActivity branches on. If a second pair ever returns true it would start
         // carrying a shared element it has no counterpart for, which degrades to a silent crossfade.
         assertTrue(MotionRoutePair.LIBRARY_SERIES.usesSharedCover())
+        assertFalse(
+            MotionRoutePair.HIERARCHICAL.usesSharedCover(),
+            "HIERARCHICAL is the no-shared-element fallback; if it ever claims a cover the fallback " +
+                "would start expecting an element ordinary destinations do not render.",
+        )
     }
 
     @Test
@@ -275,5 +280,65 @@ class MotionPolicyTest {
         // destination sitting at zero opacity with nothing to bring it in.
         val plan = MotionPolicy.plan(MotionRoutePair.LIBRARY_SERIES, MotionDirection.FORWARD, key, reducedMotion = true)
         assertFalse(plan.usesNoContainerMotion)
+    }
+
+    @Test
+    fun `the hierarchical fallback moves the container on the shared axis`() {
+        // The declared form of what the root NavHost used to hardcode: an ordinary push has no
+        // shared element, so the container carries the transition itself on the horizontal axis.
+        val plan = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.FORWARD)
+        assertEquals(ContainerMotion.SHARED_AXIS, plan.effectiveContainerMotion)
+        assertFalse(plan.usesNoContainerMotion)
+    }
+
+    @Test
+    fun `a hierarchical push uses the forward duration`() {
+        val plan = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.FORWARD)
+        assertEquals(MotionPolicy.HIERARCHICAL_FORWARD_DURATION_MILLIS, plan.durationMillis)
+        assertEquals(MotionPolicy.HIERARCHICAL_FORWARD_DURATION_MILLIS, plan.effectiveDurationMillis)
+    }
+
+    @Test
+    fun `a hierarchical pop is shorter than its push`() {
+        // Same asymmetry as the cover pair: the user already knows where back goes, so the return
+        // must not run the full arrival timeline.
+        val forward = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.FORWARD)
+        val back = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.BACKWARD)
+        assertEquals(MotionPolicy.HIERARCHICAL_BACK_DURATION_MILLIS, back.durationMillis)
+        assertTrue(
+            back.durationMillis < forward.durationMillis,
+            "back=${back.durationMillis} must be shorter than forward=${forward.durationMillis}",
+        )
+    }
+
+    @Test
+    fun `the hierarchical fallback declares no shared element`() {
+        // HIERARCHICAL is not a cover pair. A caller passing a cover key is naming an element this
+        // pair does not own; animating it anyway would be the cross-pair leak the pair enum exists
+        // to stop, so the key is ignored and the container still carries the transition.
+        val plan = MotionPolicy.plan(
+            MotionRoutePair.HIERARCHICAL,
+            MotionDirection.FORWARD,
+            sharedElementKey = "manga_cover_42",
+        )
+        assertFalse(plan.shouldAnimateSharedElement)
+        assertEquals(ContainerMotion.SHARED_AXIS, plan.effectiveContainerMotion)
+    }
+
+    @Test
+    fun `reduced motion collapses the hierarchical fallback to the crossfade`() {
+        // The fallback must honour reduced motion the same way the cover pair does: an instant
+        // change keeps continuity without the movement.
+        val plan = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.FORWARD, reducedMotion = true)
+        assertEquals(ContainerMotion.CROSSFADE, plan.effectiveContainerMotion)
+        assertEquals(0, plan.effectiveDurationMillis)
+    }
+
+    @Test
+    fun `the hierarchical pop is not quicker than the crossfade it can degrade to`() {
+        // A back so short it reads as a cut loses the continuity that tells the user where they
+        // went — the same floor the cover pair's return keeps.
+        val back = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.BACKWARD)
+        assertTrue(back.durationMillis >= MotionPolicy.CROSSFADE_DURATION_MILLIS)
     }
 }

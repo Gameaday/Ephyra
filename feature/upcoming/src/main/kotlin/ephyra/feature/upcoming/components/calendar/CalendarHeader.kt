@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.theme.MotionTokens
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -68,20 +69,18 @@ fun CalenderHeader(
     }
 }
 
-private const val MONTH_YEAR_CHANGE_ANIMATION_DURATION = 200
-
 private fun AnimatedContentTransitionScope<YearMonth>.getAnimation(): ContentTransform {
     val movingForward = targetState > initialState
 
     val enterTransition = slideInVertically(
-        animationSpec = tween(durationMillis = MONTH_YEAR_CHANGE_ANIMATION_DURATION),
+        animationSpec = tween(durationMillis = MotionTokens.DURATION_SHORT_4),
     ) { height -> if (movingForward) height else -height } + fadeIn(
-        animationSpec = tween(durationMillis = MONTH_YEAR_CHANGE_ANIMATION_DURATION),
+        animationSpec = tween(durationMillis = MotionTokens.DURATION_SHORT_4),
     )
     val exitTransition = slideOutVertically(
-        animationSpec = tween(durationMillis = MONTH_YEAR_CHANGE_ANIMATION_DURATION),
+        animationSpec = tween(durationMillis = MotionTokens.DURATION_SHORT_4),
     ) { height -> if (movingForward) -height else height } + fadeOut(
-        animationSpec = tween(durationMillis = MONTH_YEAR_CHANGE_ANIMATION_DURATION),
+        animationSpec = tween(durationMillis = MotionTokens.DURATION_SHORT_4),
     )
     return (enterTransition togetherWith exitTransition)
         .using(SizeTransform(clip = false))

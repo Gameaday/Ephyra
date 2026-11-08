@@ -12,13 +12,21 @@ enum class MotionRoutePair {
     /** Library grid to series detail. Cover is the only shared element. */
     LIBRARY_SERIES,
 
-    // NOTE: this enum deliberately has one entry. It used to declare TAB_PEER, READER_ENTRY,
-    // SHEET_PARENT and UNDECLARED, but no production call site ever named them: tab motion is
-    // owned by HomeScreen's tab NavHost (order-aware slides), reader entry by Activity window
-    // animations, sheets by the predictive-back drag, and undeclared routes by the root
-    // NavHost's shared-axis-X fallback. Declaring pairs no caller can produce is worse than no
-    // declaration: the policy looks like it governs motion it does not, and the tests for those
-    // branches asserted rules nothing executed. A pair is added here when a call site names it.
+    /**
+     * A hierarchical push or pop between destinations that have no more specific rule — the
+     * declared form of what the root NavHost used to hardcode as its shared-axis-X fallback.
+     *
+     * Naming the fallback here moves the last local motion decision out of the activity: a
+     * transition with no special pair is *assigned* the hierarchical plan by the policy rather
+     * than handed a token by the layer that renders it, so its durations and container are
+     * decided with every other rule and unit-tested beside them.
+     *
+     * Tab motion still belongs to HomeScreen's tab NavHost, reader entry to the Activity window
+     * animations, and sheets to the predictive-back drag — those are still not pairs, because
+     * no `plan()` call site can produce them as one. A pair exists here exactly when a caller
+     * names it.
+     */
+    HIERARCHICAL,
 }
 
 /**
@@ -164,6 +172,22 @@ object MotionPolicy {
     const val CROSSFADE_DURATION_MILLIS: Int = 200
 
     /**
+     * Duration of an [MotionRoutePair.HIERARCHICAL] push. The user is arriving somewhere new, so
+     * the incoming page gets the fuller timeline — but 300ms, not the 450 the old hardcoded
+     * fallback ran, which held two full-screen layers animating for close to half a second and
+     * read as weight rather than depth.
+     */
+    const val HIERARCHICAL_FORWARD_DURATION_MILLIS: Int = 300
+
+    /**
+     * Duration of the same transition going back, 50ms under the forward value for the same
+     * reason the shared cover's return is shorter: the user already knows where back goes. Kept
+     * above [CROSSFADE_DURATION_MILLIS] so a fast return is still legible as a movement rather
+     * than a cut.
+     */
+    const val HIERARCHICAL_BACK_DURATION_MILLIS: Int = 250
+
+    /**
      * The key both screens use for one manga's cover, so the library grid cell and the series
      * header agree on which element is shared.
      *
@@ -191,6 +215,10 @@ object MotionPolicy {
      * forward timing for a back navigation, which is precisely the defect this parameter was added
      * to remove — and it would do so invisibly, because the result would still compile and still
      * animate.
+     *
+     * [MotionRoutePair.HIERARCHICAL] is the pair a caller names when no more specific rule applies:
+     * the declared form of the fallback the root NavHost used to hardcode, so the generic
+     * transition's durations and container are decided here with the rest of the rules.
      */
     fun plan(
         pair: MotionRoutePair,
@@ -205,16 +233,21 @@ object MotionPolicy {
 
         val container = when (pair) {
             MotionRoutePair.LIBRARY_SERIES -> ContainerMotion.NONE
+            MotionRoutePair.HIERARCHICAL -> ContainerMotion.SHARED_AXIS
         }
 
-        val duration = if (declaredSharedElement) {
-            if (direction == MotionDirection.BACKWARD) {
+        val duration = when {
+            declaredSharedElement -> if (direction == MotionDirection.BACKWARD) {
                 SHARED_ELEMENT_BACK_DURATION_MILLIS
             } else {
                 SHARED_ELEMENT_DURATION_MILLIS
             }
-        } else {
-            CROSSFADE_DURATION_MILLIS
+            pair == MotionRoutePair.HIERARCHICAL -> if (direction == MotionDirection.BACKWARD) {
+                HIERARCHICAL_BACK_DURATION_MILLIS
+            } else {
+                HIERARCHICAL_FORWARD_DURATION_MILLIS
+            }
+            else -> CROSSFADE_DURATION_MILLIS
         }
 
         return MotionPlan(

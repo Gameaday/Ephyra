@@ -96,6 +96,37 @@ shared cover's return is shorter: the user already knows where back goes. The fa
 composed a scale-up *and* a 10% slide at the same time, which is neither a shared axis nor a slide and
 is the muddle this section exists to remove.
 
+## Motion v2 — one policy, quick cohesion (2026-11-08)
+
+The E3 freeze left three motion debts on the table: the undeclared-route fallback was decided in
+`MainActivity` instead of the policy, the shared axis was slow enough to read as weight rather than
+depth, and the `MotionTokens` vocabulary still carried M3-template members no code called. Motion v2
+closes all three.
+
+- **Every transition resolves to a plan.** `MotionPolicy` declares `MotionRoutePair.HIERARCHICAL` — the
+  declared form of what the root NavHost used to hardcode. `motionPlanFor` no longer returns null; the
+  NavHost slots carry no local fallback, and an undeclared push/pop is the HIERARCHICAL plan (300ms in,
+  250ms back, container on the shared axis). A cover pair whose id cannot be read from either entry
+  degrades to the policy crossfade — the invalid-element rule above — instead of a local shared-axis
+  slide decided where no test could see it. A plan is directional, so its pop half renders the
+  reversed axis: `MotionTokens.containerPopEnter`/`containerPopExit` map the SHARED_AXIS plan onto
+  the pop legs (the crossfade and no-op halves are direction-symmetric). Rendering a pop with the
+  push functions replays the forward slide while the plan quietly reports the back timeline — a
+  regression this change's own CI caught in round 1, and the reason the pop functions exist.
+- **The shared axis is quicker.** Push: a 300ms slide with a 200ms fade that starts with the slide
+  (not a 450ms slide with a fade delayed 100ms in — the incoming screen used to spend the first tenth
+  of its own journey invisible). Pop enter 250ms, pop exit 200ms — back is shorter than forward
+  because the user already knows where back goes. The durations live in `MotionPolicy` and `MotionTokens.kt`
+  only, and the four `shared_axis_x_*.xml` Activity renderings must run the same numbers as the
+  Compose legs: `MotionConsistencyTest` asserts the parity and forbids offsetting the halves against
+  each other.
+- **The vocabulary is pruned and gated.** The springs, tween presets, orphan duration constants and
+  orphan easings are deleted (no call sites anywhere); the alias members stay because they are the
+  live vocabulary of the banner, sheet, preference, search and adaptive-pane surfaces.
+  `MotionVocabularyTest` fails the build if any public member of `MotionTokens` loses its last
+  consumer — audit F4's exit condition, permanent. The last inline curves (`ReaderScreen`,
+  `CalendarHeader`) now name tokens, behaviour-identical.
+
 ## Direction is part of the pair
 
 The return is not the arrival played backwards. Material 3's shared-element spec is deliberately
@@ -173,14 +204,23 @@ Each transition pair records:
 
 ## Gates
 
-Two structural tests read the source for the rules above, because each one is a fact about what the
+Three structural tests read the source for the rules above, because each one is a fact about what the
 code does *not* do and no unit test can drive the transition:
 
 - `LibrarySeriesTransitionTest` — the container is a real no-op, the cover's ratio is resolved before
   it is shared, `MainActivity` consults `MotionPolicy` rather than re-deciding, and both directions of
   the pair resolve over one predicate.
 - `MotionConsistencyTest` — the reader animates both halves; the Activity animations travel the token
-  distance; every shared-cover host provides an animated-visibility scope; and each list that opens a
+  distance and run the token durations, so the XML rendering of the shared axis cannot drift from the
+  Compose one; the policy's HIERARCHICAL durations are the numbers those renderings play —
+  policy, Compose legs and window animations gated as one loop; every shared-cover host provides
+  an animated-visibility scope; each list that opens a
+  series keys its cover on the id it opens; and the undeclared-route fallback is a policy plan, not an
+  activity decision — `MainActivity` names no transition token directly and no NavHost slot branches
+  on a nullable plan.
+- `MotionVocabularyTest` — every public member of `MotionTokens` is referenced by production code or
+  kept alive transitively by a live member of the same file: add a consumer or delete it. The gate is
+  the motion audit F4 exit condition, made permanent.
 
 ## Back surfaces that intercept without previewing the gesture
 
@@ -220,5 +260,3 @@ Reduced motion has two sources, merged rather than one overriding the other:
 `effectiveReducedMotion(system, app)` is the merge and is asserted directly. Under reduced motion the
 navigation transitions collapse to instant, as before; the in-app preference adds no new transition
 behaviour, only a second way to ask for the existing one.
-
-  series keys its cover on the id it opens.

@@ -56,7 +56,7 @@ class LibrarySeriesTransitionTest {
     private val mainActivity = "app/src/main/java/ephyra/app/ui/main/MainActivity.kt"
     private val seriesScreen = "feature/manga/src/main/kotlin/ephyra/feature/manga/MangaScreen.kt"
     private val mangaCover = "presentation-core/src/main/java/ephyra/presentation/core/components/MangaCover.kt"
-    private val motionTokens = "presentation-core/src/main/java/ephyra/presentation/core/theme/Motion.kt"
+    private val motionTokens = "presentation-core/src/main/java/ephyra/presentation/core/theme/MotionTokens.kt"
 
     /**
      * The series page must not draw a second copy of the cover.
