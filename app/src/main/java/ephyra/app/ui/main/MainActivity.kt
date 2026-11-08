@@ -9,8 +9,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
@@ -186,14 +184,16 @@ private fun motionRoutePair(
  * one; only the transition that fired (push vs pop) separates the two. Reading direction from the
  * entry roles was correct only while the pair could not form in the forward direction, which the
  * wider [hostsSharedCover] set changed.
+ *
+ * Non-null on purpose: direction is a property of the transition, not of the pair, so every
+ * transition has one — including the ones no declared pair names. Returning null here is what
+ * forced the NavHost slots to keep a second, local way to decide motion for undeclared routes.
  */
 private fun motionDirectionFor(
     from: NavBackStackEntry,
     to: NavBackStackEntry,
     isPop: Boolean,
-): MotionDirection? = motionRoutePair(from, to, isPop)?.let {
-    if (isPop) MotionDirection.BACKWARD else MotionDirection.FORWARD
-}
+): MotionDirection = if (isPop) MotionDirection.BACKWARD else MotionDirection.FORWARD
 
 /**
  * The manga whose cover is the shared element for this transition, or null when the transition does
@@ -206,29 +206,45 @@ private fun NavBackStackEntry.sharedCoverMangaId(): Long? =
     runCatching { toRoute<Screen.MangaDetails>().mangaId }.getOrNull()
 
 /**
- * The resolved plan for this transition.
+ * The resolved plan for this transition. Every transition resolves to one: the cover pair when it
+ * forms, and the policy's `HIERARCHICAL` pair when it does not — there is no undeclared-route
+ * fallback left in this activity to drift from what `MotionPolicy` has tested.
  *
  * `sharedElementFound` is reported as true whenever the pair is the library-cover pair, because the
  * library cell and the series header both render the cover unconditionally. If the element genuinely
- * fails to resolve, Compose declines to animate it and the container crossfade below is what
- * remains, which is the documented fallback rather than a broken intermediate state.
+ * fails to resolve, Compose declines to animate it and the container crossfade is what remains,
+ * which is the documented fallback rather than a broken intermediate state.
+ *
+ * A cover pair whose id cannot be read from either entry (a malformed route argument) reports no
+ * element and the policy degrades it to its crossfade — the contract's invalid-element rule. The
+ * previous code substituted a local shared-axis slide here, which re-decided the policy in the one
+ * case its tests could not see.
  */
 private fun motionPlanFor(
     from: NavBackStackEntry,
     to: NavBackStackEntry,
     reducedMotion: Boolean,
     isPop: Boolean,
-): MotionPlan? {
-    val pair = motionRoutePair(from, to, isPop) ?: return null
-    val direction = motionDirectionFor(from, to, isPop) ?: return null
-    val mangaId = to.sharedCoverMangaId() ?: from.sharedCoverMangaId() ?: return null
-    return MotionPolicy.plan(
-        pair = pair,
-        direction = direction,
-        sharedElementKey = MotionPolicy.mangaCoverKey(mangaId),
-        sharedElementFound = true,
-        reducedMotion = reducedMotion,
-    )
+): MotionPlan {
+    val direction = motionDirectionFor(from, to, isPop)
+    val pair = motionRoutePair(from, to, isPop) ?: MotionRoutePair.HIERARCHICAL
+    return if (pair == MotionRoutePair.LIBRARY_SERIES) {
+        val mangaId = to.sharedCoverMangaId() ?: from.sharedCoverMangaId()
+        MotionPolicy.plan(
+            pair = pair,
+            direction = direction,
+            sharedElementKey = mangaId?.let { MotionPolicy.mangaCoverKey(it) },
+            sharedElementFound = true,
+            reducedMotion = reducedMotion,
+        )
+    } else {
+        MotionPolicy.plan(
+            pair = pair,
+            direction = direction,
+            sharedElementFound = false,
+            reducedMotion = reducedMotion,
+        )
+    }
 }
 
 @AndroidEntryPoint
@@ -417,22 +433,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 reducedMotion,
                                                 isPop = false,
                                             )
-                                            if (plan != null) {
-                                                MotionTokens.containerEnter(
-                                                    plan.effectiveContainerMotion,
-                                                    plan.effectiveDurationMillis,
-                                                )
-                                            } else {
-                                                // Fallback path (no declared pair, or no cover id).
-                                                // Must honour reduced motion too: the plan path
-                                                // does, so a fallback that animates anyway would
-                                                // make the setting inconsistent per route.
-                                                if (reducedMotion) {
-                                                    EnterTransition.None
-                                                } else {
-                                                    MotionTokens.m3SharedAxisXEnter()
-                                                }
-                                            }
+                                            MotionTokens.containerEnter(
+                                                plan.effectiveContainerMotion,
+                                                plan.effectiveDurationMillis,
+                                            )
                                         },
                                         exitTransition = {
                                             val plan = motionPlanFor(
@@ -441,18 +445,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 reducedMotion,
                                                 isPop = false,
                                             )
-                                            if (plan != null) {
-                                                MotionTokens.containerExit(
-                                                    plan.effectiveContainerMotion,
-                                                    plan.effectiveDurationMillis,
-                                                )
-                                            } else {
-                                                if (reducedMotion) {
-                                                    ExitTransition.None
-                                                } else {
-                                                    MotionTokens.m3SharedAxisXExit()
-                                                }
-                                            }
+                                            MotionTokens.containerExit(
+                                                plan.effectiveContainerMotion,
+                                                plan.effectiveDurationMillis,
+                                            )
                                         },
                                         popEnterTransition = {
                                             val plan = motionPlanFor(
@@ -461,18 +457,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 reducedMotion,
                                                 isPop = true,
                                             )
-                                            if (plan != null) {
-                                                MotionTokens.containerEnter(
-                                                    plan.effectiveContainerMotion,
-                                                    plan.effectiveDurationMillis,
-                                                )
-                                            } else {
-                                                if (reducedMotion) {
-                                                    EnterTransition.None
-                                                } else {
-                                                    MotionTokens.m3SharedAxisXPopEnter()
-                                                }
-                                            }
+                                            MotionTokens.containerEnter(
+                                                plan.effectiveContainerMotion,
+                                                plan.effectiveDurationMillis,
+                                            )
                                         },
                                         popExitTransition = {
                                             val plan = motionPlanFor(
@@ -481,18 +469,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 reducedMotion,
                                                 isPop = true,
                                             )
-                                            if (plan != null) {
-                                                MotionTokens.containerExit(
-                                                    plan.effectiveContainerMotion,
-                                                    plan.effectiveDurationMillis,
-                                                )
-                                            } else {
-                                                if (reducedMotion) {
-                                                    ExitTransition.None
-                                                } else {
-                                                    MotionTokens.m3SharedAxisXPopExit()
-                                                }
-                                            }
+                                            MotionTokens.containerExit(
+                                                plan.effectiveContainerMotion,
+                                                plan.effectiveDurationMillis,
+                                            )
                                         },
                                     ) {
                                         composable(ScreenRoutes.Home.route) {

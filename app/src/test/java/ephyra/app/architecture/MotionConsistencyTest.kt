@@ -1,5 +1,7 @@
 package ephyra.app.architecture
 
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -51,12 +53,34 @@ class MotionConsistencyTest {
     private val mangaFeatureApi =
         "feature/manga/src/main/kotlin/ephyra/feature/manga/MangaFeatureApi.kt"
     private val motion = "presentation-core/src/main/java/ephyra/presentation/core/theme/Motion.kt"
+    private val motionPolicy =
+        "core/domain/src/main/java/ephyra/domain/navigation/motion/MotionPolicy.kt"
     private val historyItem =
         "feature/history/src/main/kotlin/ephyra/feature/history/components/HistoryItem.kt"
     private val updatesUiItem =
         "feature/updates/src/main/kotlin/ephyra/feature/updates/UpdatesUiItem.kt"
 
     private val anim = "presentation-core/src/main/res/anim"
+
+    /** Numeric value of every DURATION_ constant, resolving alias chains to their numbers. */
+    private fun durationConstants(tokenCode: String): Map<String, Int> {
+        val declared = Regex("""const val (DURATION_[A-Z0-9_]+)\s*=\s*([A-Za-z0-9_]+)""")
+            .findAll(tokenCode)
+            .associate { it.groupValues[1] to it.groupValues[2] }
+
+        fun resolve(name: String): Int {
+            var current = name
+            val seen = mutableSetOf<String>()
+            while (true) {
+                val value = declared[current] ?: throw AssertionError("$current is not a duration constant")
+                value.toIntOrNull()?.let { return it }
+                check(current !in seen) { "duration alias cycle at $current" }
+                seen += current
+                current = value
+            }
+        }
+        return declared.keys.associateWith { resolve(it) }
+    }
 
     /**
      * The reader is a separate Activity, so its only available motion is the window animation. It
@@ -217,6 +241,98 @@ class MotionConsistencyTest {
             "UpdatesUiItem must key its cover on `update.mangaId`, the same id UpdatesScreen " +
                 "passes to Screen.MangaDetails. It passed no id at all, so opening a series from " +
                 "Updates could not share the cover.",
+        )
+    }
+
+    /**
+     * The Activity animations are a rendering of the Compose token, so the durations must match the
+     * token legs too — not just the travel, which is all the previous gate asserted. The XML push
+     * ran 450ms while the Compose leg was being re-tuned, and nothing failed; this closes that hole.
+     */
+    @Test
+    fun `activity animation durations match the compose token legs`() {
+        val token = codeOf(motion)
+        val durations = durationConstants(token)
+
+        fun legs(function: String): List<Int> {
+            val body = token.substringAfter("fun $function(").substringBefore("\n    fun ")
+            val names = Regex("""durationMillis\s*=\s*(DURATION_[A-Z0-9_]+)""")
+                .findAll(body)
+                .map { it.groupValues[1] }
+                .toList()
+            assertTrue(
+                names.size == 2,
+                "$function must have exactly two timed legs (slide and fade); found ${names.size}.",
+            )
+            assertTrue(
+                !body.contains("delayMillis"),
+                "$function must not delay its fade: the halves have to settle together, or the " +
+                    "incoming screen spends the start of its own journey invisible.",
+            )
+            return names.map { name ->
+                durations[name] ?: throw AssertionError("$name is not a duration constant in Motion.kt")
+            }
+        }
+
+        listOf(
+            "push_enter" to legs("m3SharedAxisXEnter"),
+            "push_exit" to legs("m3SharedAxisXExit"),
+            "pop_enter" to legs("m3SharedAxisXPopEnter"),
+            "pop_exit" to legs("m3SharedAxisXPopExit"),
+        ).forEach { (half, expected) ->
+            val xml = sourceFile("$anim/shared_axis_x_$half.xml").readText()
+            val actual = Regex("""android:duration="(\d+)""")
+                .findAll(xml)
+                .map { it.groupValues[1].toInt() }
+                .toList()
+            assertTrue(
+                actual.size == 2,
+                "shared_axis_x_$half.xml must have exactly two timed legs; found ${actual.size}.",
+            )
+            assertTrue(
+                !xml.contains("android:startOffset"),
+                "shared_axis_x_$half.xml must not offset one half against the other; the Compose " +
+                    "legs start together and this file is their rendering.",
+            )
+            assertEquals(
+                expected,
+                actual,
+                "shared_axis_x_$half.xml must run the same durations as the Compose token legs " +
+                    "($expected ms), or the reader/WebView window animation is a different " +
+                    "transition from the nav push it mirrors.",
+            )
+        }
+    }
+
+    /**
+     * The undeclared-route fallback is a policy decision, not an activity one. It used to be
+     * hardcoded in the NavHost slots — a null from `motionRoutePair` fell through to direct
+     * `m3SharedAxisX*` calls — which meant the durations and easing of most transitions in the
+     * app were decided outside `MotionPolicy` and invisible to its tests.
+     */
+    @Test
+    fun `the undeclared fallback is a policy plan, not an activity decision`() {
+        val activity = codeOf(mainActivity)
+
+        assertFalse(
+            activity.contains("m3SharedAxisX"),
+            "MainActivity must not name a shared-axis token directly. The fallback for undeclared " +
+                "routes is the policy's HIERARCHICAL pair; naming the transition here re-decides " +
+                "the policy locally, the exact defect the contract forbids.",
+        )
+        assertFalse(
+            activity.contains("if (plan != null)"),
+            "The NavHost transition slots must not branch on a nullable plan: a null branch is " +
+                "where a local fallback hides. motionPlanFor resolves every transition to a plan.",
+        )
+        assertTrue(
+            codeOf(motionPolicy).contains("HIERARCHICAL"),
+            "MotionPolicy must declare the HIERARCHICAL pair — the declared form of the fallback.",
+        )
+        assertTrue(
+            activity.contains("MotionRoutePair.HIERARCHICAL"),
+            "motionPlanFor must default to MotionRoutePair.HIERARCHICAL when no declared pair " +
+                "forms, so the fallback's timings live with the policy's other rules.",
         )
     }
 }

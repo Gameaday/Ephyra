@@ -3,7 +3,6 @@
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -125,7 +124,7 @@ fun ReaderScreen(
         targetValue = sampledEdgeColor ?: MaterialTheme.colorScheme.surface,
         animationSpec = tween(
             durationMillis = MotionTokens.DURATION_MEDIUM_3,
-            easing = FastOutSlowInEasing,
+            easing = MotionTokens.EasingStandard,
         ),
         label = "ReaderBackgroundColor",
     )

@@ -5,16 +5,11 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
 import ephyra.domain.navigation.motion.ContainerMotion
 import ephyra.domain.navigation.motion.MotionPolicy
 
@@ -39,9 +34,6 @@ object MotionTokens {
 
     // --- Durations (Material 3 Expressive Scale) ---
 
-    /** 50ms: Ultra-fast micro-interactions. */
-    const val DURATION_SHORT_1 = 50
-
     /** 100ms: Swift fades and instant feedback. */
     const val DURATION_SHORT_2 = 100
 
@@ -63,25 +55,15 @@ object MotionTokens {
     /** 400ms: Complex component expansions and bottom sheet entries. */
     const val DURATION_MEDIUM_4 = 400
 
-    /** 450ms: Full-screen container transitions (enter). */
-    const val DURATION_LONG_1 = 450
-
     /** 500ms: Large hero animations and shared element transforms. */
     const val DURATION_LONG_2 = 500
 
-    /** 550ms: Multi-element choreographed arrivals. */
-    const val DURATION_LONG_3 = 550
-
-    /** 600ms: Immersive onboarding and celebration sequences. */
-    const val DURATION_LONG_4 = 600
-
-    /** 700ms - 1000ms: Extended expressive sequences. */
-    const val DURATION_EXTRA_LONG_1 = 700
-    const val DURATION_EXTRA_LONG_2 = 800
-    const val DURATION_EXTRA_LONG_3 = 900
+    /** 1000ms: Long-running expressive fades (the reader's in-page transitions). */
     const val DURATION_EXTRA_LONG_4 = 1000
 
-    // Backward-compatible duration aliases
+    // Semantic duration aliases. These are not compat shims: they are the live vocabulary of the
+    // banner, sheet, preference, search and adaptive-pane surfaces, kept as the names those
+    // callers read. MotionVocabularyTest holds the rule for every member: referenced or deleted.
     const val DURATION_SHORT = DURATION_SHORT_3
     const val DURATION_MEDIUM = DURATION_MEDIUM_2
     const val DURATION_LONG = DURATION_LONG_2
@@ -100,55 +82,18 @@ object MotionTokens {
     /** Emphasized accelerate: outgoing elements leaving the screen prominently. */
     val EasingEmphasizedAccelerate = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
 
-    /** Standard decelerate for elements appearing on screen. */
-    val EasingStandardDecelerate = CubicBezierEasing(0.0f, 0.0f, 0.0f, 1.0f)
-
-    /** Standard accelerate for elements leaving the screen. */
-    val EasingStandardAccelerate = CubicBezierEasing(0.3f, 0.0f, 1.0f, 1.0f)
-
-    // Backward-compatible easing aliases
+    // Easing aliases kept for the surfaces that historically used them; same rule as the
+    // duration aliases above.
     val EasingDecelerate = EasingEmphasizedDecelerate
     val EasingAccelerate = EasingEmphasizedAccelerate
 
-    // --- Physics-based Spring Specs ---
-
-    /** Snappy spring: fast, clean feedback without oscillation (buttons, toggles, chips). */
-    fun <T> springSnappy(): FiniteAnimationSpec<T> = spring(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = Spring.StiffnessMedium,
-    )
-
-    /** Expressive spring: smooth, natural movement with gentle settling (cards, dialogs). */
-    fun <T> springExpressive(): FiniteAnimationSpec<T> = spring(
-        dampingRatio = Spring.DampingRatioLowBouncy,
-        stiffness = Spring.StiffnessLow,
-    )
-
-    /** Playful bouncy spring: micro-interactions, badge pops, and icon toggles. */
-    fun <T> springBouncy(): FiniteAnimationSpec<T> = spring(
-        dampingRatio = Spring.DampingRatioMediumBouncy,
-        stiffness = Spring.StiffnessMediumLow,
-    )
-
     // --- Reusable Tween Animation Specs ---
-
-    /** Quick tween for micro-interactions. */
-    fun <T> tweenShort(): FiniteAnimationSpec<T> = tween(
-        durationMillis = DURATION_SHORT_3,
-        easing = EasingStandard,
-    )
-
-    /** Standard tween for component-level transitions. */
-    fun <T> tweenMedium(): FiniteAnimationSpec<T> = tween(
-        durationMillis = DURATION_MEDIUM_2,
-        easing = EasingStandard,
-    )
-
-    /** Emphasized tween for attention-drawing transitions. */
-    fun <T> tweenEmphasized(): FiniteAnimationSpec<T> = tween(
-        durationMillis = DURATION_LONG_2,
-        easing = EasingEmphasized,
-    )
+    //
+    // This section used to also carry spring specs and quick/standard/emphasized tween presets
+    // with no call sites anywhere in production code. They were deleted rather than kept
+    // "in case": an unused motion primitive is not a future default, it is the wrong duration
+    // waiting to be picked by someone who assumes this file is curated. MotionVocabularyTest
+    // now fails the build if a member here loses its last consumer.
 
     /** Enter transition tween for elements appearing on screen. */
     fun <T> tweenEnter(): FiniteAnimationSpec<T> = tween(
@@ -167,16 +112,6 @@ object MotionTokens {
     // Shared-axis-Z (scale) tokens were removed: they had zero call sites, and a full-page scale is
     // the modal/hierarchy cue that `containerEnter(SHARED_AXIS)` deliberately stopped using for
     // ordinary navigation. A scale transition for a modal can be re-added when one exists to use it.
-
-    /**
-     * Duration shared by both halves of a shared-element transition.
-     *
-     * Enter and exit must use one value. The previous pair was 300ms in and 200ms out, so the two
-     * screens crossed opacity at different points and the cover competed with a container that was
-     * still fading, which reads as a stutter rather than one continuous movement.
-     */
-    fun sharedElementContainerDuration(): Int = ephyra.domain.navigation.motion.MotionPolicy
-        .SHARED_ELEMENT_DURATION_MILLIS
 
     /**
      * Container motion for a transition whose [ContainerMotion.NONE] plan is in force.
@@ -311,22 +246,27 @@ object MotionTokens {
      * is for entering or leaving a modal state; using it for ordinary forward navigation made every
      * push feel like the screen was being zoomed at rather than moved to, and made the back the
      * reverse of a zoom instead of a return.
+     *
+     * 300ms slide, 200ms fade that starts with the slide — down from a 450ms slide with a fade that
+     * only began 100ms in. The old timeline held two full-screen layers animating for close to half
+     * a second, which read as weight rather than depth, and its delayed fade meant the incoming
+     * screen was invisible for the first tenth of its own journey. Both halves now settle by the
+     * time the outgoing screen is gone.
      */
     fun m3SharedAxisXEnter(): EnterTransition =
         slideInHorizontally(
             initialOffsetX = { width -> (width * SHARED_AXIS_X_TRAVEL).toInt() },
-            animationSpec = tween(durationMillis = DURATION_LONG_1, easing = EasingEmphasizedDecelerate),
+            animationSpec = tween(durationMillis = DURATION_MEDIUM_2, easing = EasingEmphasizedDecelerate),
         ) + fadeIn(
             animationSpec = tween(
-                durationMillis = DURATION_MEDIUM_2,
-                delayMillis = DURATION_SHORT_2,
+                durationMillis = DURATION_SHORT_4,
                 easing = EasingEmphasizedDecelerate,
             ),
         )
 
     /** Matching outgoing half of [m3SharedAxisXEnter]; the outgoing page leaves to the left. */
     fun m3SharedAxisXExit(): ExitTransition =
-        // 200ms, not the enter leg's 450. The outgoing screen is already understood, so holding
+        // 200ms, not the enter leg's 300. The outgoing screen is already understood, so holding
         // it for the full incoming timeline just delays the transition and leaves two
         // full-screen layers animating together for nearly half a second.
         slideOutHorizontally(
@@ -341,11 +281,13 @@ object MotionTokens {
      *
      * Shorter than the forward leg on purpose. The user already knows where back goes, so a full
      * forward-length reverse reads as sluggish rather than smooth (see the motion contract).
+     * 250ms against the push's 300 — the pair's own asymmetry, kept now that the forward leg is
+     * quick enough that the return must be quicker still to stay legible as a movement, not a cut.
      */
     fun m3SharedAxisXPopEnter(): EnterTransition =
         slideInHorizontally(
             initialOffsetX = { width -> -(width * SHARED_AXIS_X_TRAVEL).toInt() },
-            animationSpec = tween(durationMillis = DURATION_MEDIUM_3, easing = EasingEmphasizedDecelerate),
+            animationSpec = tween(durationMillis = DURATION_MEDIUM_1, easing = EasingEmphasizedDecelerate),
         ) + fadeIn(
             animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedDecelerate),
         )
@@ -354,7 +296,7 @@ object MotionTokens {
     fun m3SharedAxisXPopExit(): ExitTransition =
         slideOutHorizontally(
             targetOffsetX = { width -> (width * SHARED_AXIS_X_TRAVEL).toInt() },
-            animationSpec = tween(durationMillis = DURATION_MEDIUM_2, easing = EasingEmphasizedAccelerate),
+            animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
         ) + fadeOut(
             animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
         )
@@ -388,11 +330,3 @@ object MotionTokens {
             animationSpec = tween(durationMillis = DURATION_SHORT_2, easing = EasingEmphasizedAccelerate),
         )
 }
-
-/**
- * Convenience accessor for motion tokens from [MaterialTheme].
- */
-val MaterialTheme.motion: MotionTokens
-    @Composable
-    @ReadOnlyComposable
-    get() = MotionTokens
