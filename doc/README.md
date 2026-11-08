@@ -33,11 +33,13 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
 | [`rfcs/RFC-0001-content-identity-unification.md`](rfcs/RFC-0001-content-identity-unification.md) | Work/Binding identity proposal (Draft). | Promote to an ADR when accepted. |
 | [`READER_ARCHITECTURE.md`](READER_ARCHITECTURE.md) | Reader session/state/resource contract. | Update with reader architecture changes. |
 | [`READER_GESTURE_CONTRACT.md`](READER_GESTURE_CONTRACT.md) | Pointer state machine and gesture ownership. | Update with gesture changes. |
+| [`READER_MODULAR_REDESIGN_AUDIT.md`](READER_MODULAR_REDESIGN_AUDIT.md) | E1 audit + staged redesign decision record for the reader. | Update on reader architecture changes; superseded per stage. |
 | [`DOCUMENT_VIEWPORT_CONTRACT.md`](DOCUMENT_VIEWPORT_CONTRACT.md) | Document coordinates and zoom ownership. | Zoom-ownership current; tile half superseded by ADR-0010. |
 | [`MEDIA_PIPELINE_CONTRACT.md`](MEDIA_PIPELINE_CONTRACT.md) | Source identity, decode plans, render caches. | Update with media-pipeline changes. |
 | [`DOWNLOAD_ARTIFACT_CONTRACT.md`](DOWNLOAD_ARTIFACT_CONTRACT.md) | Download artifact identity and verification. | Update with download changes. |
 | [`NAVIGATION_CONTRACT.md`](NAVIGATION_CONTRACT.md) | One coordinator, typed routes, back behavior. | Update with navigation changes. |
 | [`MOTION_NAVIGATION_CONTRACT.md`](MOTION_NAVIGATION_CONTRACT.md) | Route-pair motion and predictive back. | Update with motion changes. |
+| [`MOTION_UI_EXPERIENCE_AUDIT.md`](MOTION_UI_EXPERIENCE_AUDIT.md) | Motion UI/back-experience audit that seeded Motion v2 (C7). | Update with motion changes until superseded. |
 | [`CACHE_POLICY.md`](CACHE_POLICY.md) | Cache invariants (supersede via ADR). | Update with cache changes. |
 | [`cache-retention-policy.md`](cache-retention-policy.md) | Cache retention rules. | Update with retention changes. |
 | [`SOURCE_ROADMAP.md`](SOURCE_ROADMAP.md) | **Sourcing authority**: current/compat/planned. | Supersedes sourcing sections of other docs. |
