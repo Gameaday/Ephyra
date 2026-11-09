@@ -30,18 +30,18 @@ jobs:
           OUT="$(./gradlew spotlessCheck --build-cache --parallel --no-daemon 2>&1)"
           RC=$?
           echo "$OUT"
-          echo "$OUT" | awk '/had format violations/ {inv=1} /^FAILURE: Build failed/ {inv=0} inv' | head -120 > /tmp/violations.txt
-          split -l 12 -d /tmp/violations.txt /tmp/chunk_
+          echo "$OUT" | awk '/had format violations/ {inv=1; next} /^FAILURE/ {inv=0} inv && /^ {4}/' | head -96 > /tmp/violations.txt
+          split -l 8 -d /tmp/violations.txt /tmp/chunk_
           i=0
           for chunk in /tmp/chunk_*; do
             i=$((i+1))
             if [ $i -le 9 ]; then
-              MSG="$(head -c 900 "$chunk" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')"
+              MSG="$(head -c 800 "$chunk" | sed -z 's/%/%25/g; s/\n/%0A/g')"
               echo "::error title=spotless violations part $i::$MSG"
             fi
           done
           if [ "$RC" -ne 0 ]; then
-            echo "::error title=spotless verdict::spotlessCheck FAILED (exit $RC) - see the violation hunks in these annotations"
+            echo "::error title=spotless verdict::spotlessCheck FAILED (exit $RC) - violation hunks in these annotations"
           else
             echo "::notice title=spotless verdict::spotlessCheck PASSED on this head"
           fi
