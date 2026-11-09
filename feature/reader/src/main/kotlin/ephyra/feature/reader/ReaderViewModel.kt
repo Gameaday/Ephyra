@@ -1425,9 +1425,9 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    override fun blockedHashes(): Set<String> = downloadPreferences.blockedPageHashes().get()
+    override suspend fun blockedHashes(): Set<String> = downloadPreferences.blockedPageHashes().get()
 
-    override fun addBlockedHash(hex: String) {
+    override suspend fun addBlockedHash(hex: String) {
         val pref = downloadPreferences.blockedPageHashes()
         val current = pref.get().toMutableSet()
         current.add(hex)

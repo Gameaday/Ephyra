@@ -110,12 +110,12 @@ class ReaderImageActionsTest {
             return pageDHashValue
         }
 
-        override fun blockedHashes(): Set<String> {
+        override suspend fun blockedHashes(): Set<String> {
             calls += "blockedHashes"
             return blockedHashesValue
         }
 
-        override fun addBlockedHash(hex: String) {
+        override suspend fun addBlockedHash(hex: String) {
             calls += "addBlockedHash:$hex"
             addBlockedHashError?.let { throw it }
         }

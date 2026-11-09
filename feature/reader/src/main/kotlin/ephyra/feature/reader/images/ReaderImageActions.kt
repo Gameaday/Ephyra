@@ -60,10 +60,10 @@ interface ReaderImageEffectHandler {
     suspend fun pageDHash(page: ReaderPage): Long?
 
     /** The blocked-page dHash hex strings currently configured. */
-    fun blockedHashes(): Set<String>
+    suspend fun blockedHashes(): Set<String>
 
     /** Adds a hex string to the blocked-pages preference set. */
-    fun addBlockedHash(hex: String)
+    suspend fun addBlockedHash(hex: String)
 
     /** Removes a hex string from the set; returns whether it was present. */
     suspend fun removeBlockedHash(hex: String): Boolean
