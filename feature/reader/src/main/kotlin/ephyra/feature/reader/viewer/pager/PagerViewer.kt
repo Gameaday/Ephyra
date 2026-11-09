@@ -7,6 +7,7 @@ import android.view.View
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.download.service.DownloadManager
+import ephyra.domain.reader.pager.SmartMergePolicy
 import ephyra.domain.reader.pager.StepOriginPolicy
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.ui.UiPreferences
@@ -147,6 +148,11 @@ abstract class PagerViewer(
                 pages?.forEach { page ->
                     page.isAbsorbed = false
                     page.clearMergedBitmap()
+                    // 0 is the model's "unknown" state (the `clearLoadedImage` precedent): the
+                    // stale dimensions described a merged bitmap that no longer exists, and a
+                    // left-behind pair made the aspect ratio describe a page that is not there.
+                    page.width = 0
+                    page.height = 0
                 }
                 chapters?.let { rebuildItems(it) }
             }
@@ -466,29 +472,36 @@ abstract class PagerViewer(
                 }
 
                 try {
-                    val currentSource = streamFn().use { Buffer().readFrom(it) }
-                    if (ImageUtil.isAnimatedAndSupported(currentSource)) {
+                    // Animated pages cannot take part in a merge. The check reads only the
+                    // animation prefix of the stream: a page that never merges costs a header
+                    // read, where the old scan buffered both pages of every adjacent pair in
+                    // full before deciding nothing merges.
+                    if (streamFn().use { ImageUtil.isAnimatedAndSupported(it) }) {
                         index++
                         continue
                     }
 
-                    // mangaId is needed by both the top-stub check and the bottom-stub loop
-                    val mangaId = page.chapter.mangaId
-
-                    // 1. Check if the CURRENT page is a top-banner stub of the NEXT page
+                    // 1. Top-stub: the CURRENT page is a short strip above the NEXT page. The
+                    //    merged bitmap lands on the NEXT page, which keeps its own slot.
                     if (page.mergedBitmap == null) {
-                        val nextSourceForRef = nextStreamFn().use { Buffer().readFrom(it) }
-                        if (!ImageUtil.isAnimatedAndSupported(nextSourceForRef)) {
-                            val isTopStub = streamFn().use {
-                                ImageUtil.isSmallPage(
-                                    it,
-                                    nextSourceForRef,
-                                    readerPreferences.smartMergeMinHeightFraction(mangaId),
-                                    readerPreferences.smartMergeMaxHeightFraction(mangaId),
-                                )
-                            }
+                        val nextAnimated = nextStreamFn().use { ImageUtil.isAnimatedAndSupported(it) }
+                        if (!nextAnimated) {
+                            val currentDims = streamFn().use { ImageUtil.getImageDimensions(it) }
+                            val nextDims = nextStreamFn().use { ImageUtil.getImageDimensions(it) }
+                            val isTopStub = currentDims != null && nextDims != null && SmartMergePolicy.isStub(
+                                candidateWidth = currentDims.first,
+                                candidateHeight = currentDims.second,
+                                referenceWidth = nextDims.first,
+                                referenceHeight = nextDims.second,
+                                minHeightFraction = minHeightFraction,
+                                maxHeightFraction = maxHeightFraction,
+                            )
                             if (isTopStub) {
-                                val mergedBitmap = ImageUtil.mergePages(currentSource, nextSourceForRef)
+                                // Buffered here and only here: everything above was a header
+                                // read, so the streams are opened once more for the real merge.
+                                val currentSource = streamFn().use { Buffer().readFrom(it) }
+                                val nextSource = nextStreamFn().use { Buffer().readFrom(it) }
+                                val mergedBitmap = ImageUtil.mergePages(currentSource, nextSource)
                                 page.isAbsorbed = true
                                 nextPage.mergedBitmap = mergedBitmap
                                 nextPage.width = mergedBitmap.width
@@ -502,7 +515,27 @@ abstract class PagerViewer(
                         }
                     }
 
-                    // 2. Check if NEXT page (and subsequent chained pages) are bottom stubs of CURRENT page
+                    // 2. Bottom-stub chain: the pages after [page] absorb into it.
+                    //
+                    // The reference dimensions are captured ONCE, before any merge: the anchor's
+                    // merged bitmap if a previous scan already produced one, else the anchor's
+                    // own header dimensions. Every chained candidate is measured against those
+                    // ORIGINAL dimensions. The old loop compared each candidate against the
+                    // GROWING merged height, so once two strips had merged, a later page under
+                    // 30 % of the merged image — a real page — could still be absorbed. A stub
+                    // is a stub relative to what it was scanned beside, not relative to what the
+                    // merge has so far produced.
+                    val anchorRef = page.mergedBitmap?.let { it.width to it.height }
+                        ?: streamFn().use { ImageUtil.getImageDimensions(it) }
+                    if (anchorRef == null) {
+                        index++
+                        continue
+                    }
+                    val (anchorWidth, anchorHeight) = anchorRef
+
+                    // The anchor's own bytes are buffered lazily, on the first absorption — a
+                    // page with no stub after it never pays for the buffer.
+                    var anchorSource: Buffer? = null
                     var candidateIndex = nextIndex
                     var absorbedAny = false
                     while (candidateIndex < pages.size && isActive) {
@@ -519,26 +552,15 @@ abstract class PagerViewer(
                         }
                         val candidateStreamFn = candidateNext.stream ?: break
 
-                        val isBottomStub = if (page.mergedBitmap != null) {
-                            candidateStreamFn().use {
-                                ImageUtil.isSmallPage(
-                                    it,
-                                    page.mergedBitmap!!.width,
-                                    page.mergedBitmap!!.height,
-                                    readerPreferences.smartMergeMinHeightFraction(mangaId),
-                                    readerPreferences.smartMergeMaxHeightFraction(mangaId),
-                                )
-                            }
-                        } else {
-                            candidateStreamFn().use {
-                                ImageUtil.isSmallPage(
-                                    it,
-                                    currentSource,
-                                    readerPreferences.smartMergeMinHeightFraction(mangaId),
-                                    readerPreferences.smartMergeMaxHeightFraction(mangaId),
-                                )
-                            }
-                        }
+                        val candidateDims = candidateStreamFn().use { ImageUtil.getImageDimensions(it) }
+                        val isBottomStub = candidateDims != null && SmartMergePolicy.isStub(
+                            candidateWidth = candidateDims.first,
+                            candidateHeight = candidateDims.second,
+                            referenceWidth = anchorWidth,
+                            referenceHeight = anchorHeight,
+                            minHeightFraction = minHeightFraction,
+                            maxHeightFraction = maxHeightFraction,
+                        )
 
                         if (!isBottomStub) break
 
@@ -550,7 +572,12 @@ abstract class PagerViewer(
                             // reclaims its pixel buffer, and the pager may still be
                             // rendering it via a live Compose snapshot.
                             ImageUtil.mergePages(previous, candidateSource)
-                        } ?: ImageUtil.mergePages(currentSource, candidateSource)
+                        } ?: run {
+                            if (anchorSource == null) {
+                                anchorSource = streamFn().use { Buffer().readFrom(it) }
+                            }
+                            ImageUtil.mergePages(anchorSource!!, candidateSource)
+                        }
 
                         candidateNext.isAbsorbed = true
                         page.mergedBitmap = mergedBitmap

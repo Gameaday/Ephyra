@@ -4,6 +4,7 @@ import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
+import ephyra.domain.reader.pager.SmartMergePolicy
 
 class ReaderPreferences(
     private val preferenceStore: PreferenceStore,
@@ -78,14 +79,29 @@ class ReaderPreferences(
     fun webtoonDisableZoomOut() = preferenceStore.getBoolean("webtoon_disable_zoom_out", false)
 
     // region Smart Merge (per-series configuration)
+
+    /**
+     * Per-series stub floor for smart merge (inclusive), as a fraction of the reference page's
+     * height. The default is [SmartMergePolicy.DEFAULT_MIN_HEIGHT_FRACTION] — 0 % since the
+     * 2026-11-09 owner directive: even a 1 px filler strip is a stub and must merge. The bounds
+     * live in [SmartMergePolicy] (the one owner; `ImageUtil` and `Downloader` no longer carry
+     * their own copies). No setter exists yet: a settings surface for these per-series keys is
+     * deferred to the user-options refinement workstream.
+     */
     fun smartMergeMinHeightFraction(mangaId: Long? = null): Float {
         val key = mangaId?.let { "smart_merge_min_height_$it" } ?: "smart_merge_min_height_default"
-        return preferenceStore.getFloat(key, 0.02f).getSync()
+        return preferenceStore.getFloat(key, SmartMergePolicy.DEFAULT_MIN_HEIGHT_FRACTION).getSync()
     }
 
+    /**
+     * Per-series stub ceiling for smart merge (exclusive). The default is
+     * [SmartMergePolicy.DEFAULT_MAX_HEIGHT_FRACTION]: a page at or above 30 % of the reference
+     * height is real content and is never absorbed. See [smartMergeMinHeightFraction] for the
+     * single-owner note; no setter exists yet.
+     */
     fun smartMergeMaxHeightFraction(mangaId: Long? = null): Float {
         val key = mangaId?.let { "smart_merge_max_height_$it" } ?: "smart_merge_max_height_default"
-        return preferenceStore.getFloat(key, 0.30f).getSync()
+        return preferenceStore.getFloat(key, SmartMergePolicy.DEFAULT_MAX_HEIGHT_FRACTION).getSync()
     }
     // endregion
 

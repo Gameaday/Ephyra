@@ -32,6 +32,7 @@ import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.getComicInfo
+import ephyra.domain.reader.pager.SmartMergePolicy
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.GetTracks
@@ -462,8 +463,8 @@ class Downloader(
 
             // Unified post-processing: blocklist filtering + stub-page merging in a single
             // ordered pass. Lists files once, applies position-aware credit page detection
-            // with aspect-ratio pre-filter, then merges consecutive stub pages.
-            postProcessPages(tmpDir)
+            // with aspect-ratio pre-filter, then merges stub pages into their neighbours.
+            postProcessPages(tmpDir, download.manga.id)
 
             createComicInfoFile(
                 tmpDir,
@@ -816,13 +817,16 @@ class Downloader(
      *      assumed to be real content and skipped (credit pages often have a
      *      visually different aspect ratio, e.g. a landscape banner in a portrait manga).
      *
-     * 2. **Stub-page merging** — merges narrow watermark strips into the preceding page
-     *    when [ReaderPreferences.smartCombinePaged] is enabled. Uses header-only decoding
-     *    for the stub check, so the non-stub case is inexpensive.
+     * 2. **Stub-page merging** — merges short strips into their neighbours (a leading strip
+     *    into the page below it; a trailing strip into the page above it) when
+     *    [ReaderPreferences.smartCombinePaged] is enabled, using the same
+     *    [SmartMergePolicy] bounds as the reader. Uses header-only decoding for the stub
+     *    check, so the non-stub case is inexpensive.
      *
      * @param tmpDir the temporary chapter directory.
+     * @param mangaId the series the chapter belongs to; selects the per-series smart-merge bounds.
      */
-    private suspend fun postProcessPages(tmpDir: UniFile) {
+    private suspend fun postProcessPages(tmpDir: UniFile, mangaId: Long) {
         // ── Phase 1: Credit-page filtering ──────────────────────────────
         val blockedHexes = downloadPreferences.blockedPageHashes().get()
         if (blockedHexes.isNotEmpty()) {
@@ -836,7 +840,7 @@ class Downloader(
 
         // ── Phase 2: Stub-page merging ──────────────────────────────────
         if (readerPreferences.smartCombinePaged().get()) {
-            mergeStubPagesImpl(tmpDir)
+            mergeStubPagesImpl(tmpDir, mangaId)
         }
     }
 
@@ -922,11 +926,29 @@ class Downloader(
     }
 
     /**
-     * Merges consecutive stub pages (narrow watermark strips) into the preceding page
-     * using the same smart-combine logic as the reader.
+     * Merges stub pages (short strips) into their neighbours using the same smart-combine
+     * policy as the reader: [SmartMergePolicy] bounds, read once per chapter from the
+     * per-series preferences.
+     *
+     * Both merge directions are handled, matching the reader's scan:
+     *  1. **Top-stub** — the current page is a short strip above the next page. The merged
+     *     file takes the NEXT page's name, and the merged page becomes the chain anchor
+     *     measured against the next page's original dimensions. (This pass used to have only
+     *     the bottom-stub case, so a downloaded chapter published a leading 1 px strip as
+     *     its own page — the reader's runtime merge then had to absorb what the download had
+     *     already published, and any other consumer saw the strip as a page.)
+     *  2. **Bottom-stub** — the next page is a short strip below the current page. The merged
+     *     file keeps the CURRENT page's name.
+     *
+     * Chained candidates are measured against the anchor's ORIGINAL dimensions, never against
+     * the growing merged image — the same drift the reader's scan carried, fixed the same way.
+     * All checks are header-only: a pair that does not merge costs dimension reads, not a full
+     * buffer of the current page.
      */
-    private suspend fun mergeStubPagesImpl(tmpDir: UniFile) {
+    private suspend fun mergeStubPagesImpl(tmpDir: UniFile, mangaId: Long) {
         val (encoder, ext) = derivedImageEncoder()
+        val minHeightFraction = readerPreferences.smartMergeMinHeightFraction(mangaId)
+        val maxHeightFraction = readerPreferences.smartMergeMaxHeightFraction(mangaId)
 
         // Build a sorted mutable list of primary page image files, excluding:
         //  • temporary files (.tmp)
@@ -945,65 +967,92 @@ class Downloader(
             ?: return
 
         var i = 0
+        // Reference dimensions of the chain anchor currently at slot i; null when slot i starts
+        // a new chain. A merge keeps slot i as the anchor, so this survives across iterations.
+        var anchorDims: Pair<Int, Int>? = null
         while (i < pageFiles.size - 1) {
             val current = pageFiles[i]
             val next = pageFiles[i + 1]
             try {
-                // Buffer the current page once; isAnimatedAndSupported and isSmallPage both use
-                // peek() internally so the buffer is not consumed by the dimension checks.
-                val currentSource = current.openInputStream().use { Buffer().readFrom(it) }
-
-                // Animated pages cannot be merged
-                if (ImageUtil.isAnimatedAndSupported(currentSource)) {
+                // Animated pages cannot be merged; the check reads only the animation prefix.
+                if (current.openInputStream().use { ImageUtil.isAnimatedAndSupported(it) }) {
                     i++
+                    anchorDims = null
                     continue
                 }
 
-                // Header-only stub check for the next page (cheap: reads only image dimensions)
-                val isStub = next.openInputStream().use { ImageUtil.isSmallPage(it, currentSource, 0.02f, 0.30f) }
-                if (!isStub) {
+                val currentDims = current.openInputStream().use { ImageUtil.getImageDimensions(it) }
+                if (currentDims == null) {
                     i++
+                    anchorDims = null
+                    continue
+                }
+                // A chain anchor keeps its ORIGINAL dimensions for every candidate that
+                // follows; the merged image is taller by construction, so measuring later
+                // candidates against it would absorb real pages.
+                val referenceDims = anchorDims ?: currentDims.also { anchorDims = it }
+
+                val nextDims = next.openInputStream().use { ImageUtil.getImageDimensions(it) }
+                if (nextDims == null) {
+                    i++
+                    anchorDims = null
                     continue
                 }
 
-                // Stub confirmed: open the next page again for full bitmap decode and merge.
-                // currentSource still holds all its data (peek() was used above).
-                val nextSource = next.openInputStream().use { Buffer().readFrom(it) }
-                val mergedBitmap = ImageUtil.mergePages(currentSource, nextSource)
-
-                // Write the merged image to a temp file, swap it in for the current file,
-                // and delete the stub.  Using a temp file prevents data loss if the write fails.
-                val baseName = current.name!!.substringBeforeLast(".")
-                val mergedTmp = tmpDir.createFile("$baseName.$ext.tmp")
-                    ?: throw IOException("Could not create temp file for merged stub page")
-                mergedTmp.openOutputStream().use { encoder(mergedBitmap, it) }
-                // The merged bitmap is never handed to the UI, so it is simply dropped here and
-                // reclaimed by ART. An explicit recycle would be unsafe: the merge result may
-                // already be referenced by a snapshot.
-                current.delete()
-                next.delete()
-                pageFiles.removeAt(i + 1)
-                // Checked, and fatal on failure. Both source files are already deleted at this
-                // point, so a failed rename cannot be recovered from: the only way to publish
-                // honestly is to not publish. The enclosing catch deliberately swallows *merge*
-                // errors so one undecodable page cannot fail a chapter, but that same tolerance
-                // turned this into silent data loss — a chapter that downloads "successfully" with
-                // two pages missing, which the reader then opens as a short chapter with no error
-                // anywhere. `PageLostException` is the distinction between the two cases.
-                if (!mergedTmp.renameTo("$baseName.$ext")) {
-                    throw PageLostException(
-                        "Merged stub page could not be renamed to $baseName.$ext; " +
-                            "${current.name} and ${next.name} were already deleted",
+                // 1. Top-stub: the current page is a strip above the next page.
+                val currentIsTopStub = SmartMergePolicy.isStub(
+                    candidateWidth = currentDims.first,
+                    candidateHeight = currentDims.second,
+                    referenceWidth = nextDims.first,
+                    referenceHeight = nextDims.second,
+                    minHeightFraction = minHeightFraction,
+                    maxHeightFraction = maxHeightFraction,
+                )
+                if (currentIsTopStub && !next.openInputStream().use { ImageUtil.isAnimatedAndSupported(it) }) {
+                    val mergedFile = mergeAdjacentPages(
+                        tmpDir,
+                        topFile = current,
+                        bottomFile = next,
+                        baseName = next.name!!.substringBeforeLast("."),
+                        encoder = encoder,
+                        ext = ext,
                     )
+                    // The merged NEXT page is the new chain anchor; later candidates are
+                    // measured against the NEXT page's original dimensions.
+                    pageFiles[i] = mergedFile
+                    pageFiles.removeAt(i + 1)
+                    anchorDims = nextDims
+                    // Do NOT advance i — the merged page is re-checked as the anchor.
+                    continue
                 }
-                // Update our list to point to the freshly renamed file so the next
-                // iteration can check the merged page against the new next page.
-                val mergedFile = tmpDir.findFile("$baseName.$ext")
-                    ?: throw PageLostException(
-                        "Merged file $baseName.$ext vanished immediately after a successful rename",
-                    )
+
+                // 2. Bottom-stub: the next page is a strip below the current page.
+                val nextIsStub = SmartMergePolicy.isStub(
+                    candidateWidth = nextDims.first,
+                    candidateHeight = nextDims.second,
+                    referenceWidth = referenceDims.first,
+                    referenceHeight = referenceDims.second,
+                    minHeightFraction = minHeightFraction,
+                    maxHeightFraction = maxHeightFraction,
+                )
+                if (!nextIsStub || next.openInputStream().use { ImageUtil.isAnimatedAndSupported(it) }) {
+                    i++
+                    anchorDims = null
+                    continue
+                }
+
+                val mergedFile = mergeAdjacentPages(
+                    tmpDir,
+                    topFile = current,
+                    bottomFile = next,
+                    baseName = current.name!!.substringBeforeLast("."),
+                    encoder = encoder,
+                    ext = ext,
+                )
                 pageFiles[i] = mergedFile
-                // Do NOT increment i — check the merged page against the new next page
+                pageFiles.removeAt(i + 1)
+                // anchorDims keeps the ORIGINAL anchor dimensions (the drift fix), and i does
+                // not advance — the merged page is re-checked against the next candidate.
             } catch (e: PageLostException) {
                 throw e
             } catch (e: Exception) {
@@ -1011,8 +1060,53 @@ class Downloader(
                     "Failed to merge stub page ${next.name} into ${current.name} during download"
                 }
                 i++
+                anchorDims = null
             }
         }
+    }
+
+    /**
+     * Encodes [topFile] above [bottomFile] into "$baseName.$ext" via a temp file, deletes both
+     * source files, and returns the merged file.
+     *
+     * The `PageLostException` flow is deliberately fatal and is not swallowed by the caller's
+     * tolerant catch: both source files are already deleted by the time the rename is checked,
+     * so a failed rename cannot be recovered from — the only way to publish honestly is to not
+     * publish. The caller tolerates *merge* errors so one undecodable page cannot fail a
+     * chapter, but that same tolerance must not turn a lost page into a silently short chapter.
+     */
+    private fun mergeAdjacentPages(
+        tmpDir: UniFile,
+        topFile: UniFile,
+        bottomFile: UniFile,
+        baseName: String,
+        encoder: (android.graphics.Bitmap, java.io.OutputStream) -> Unit,
+        ext: String,
+    ): UniFile {
+        val topSource = topFile.openInputStream().use { Buffer().readFrom(it) }
+        val bottomSource = bottomFile.openInputStream().use { Buffer().readFrom(it) }
+        val mergedBitmap = ImageUtil.mergePages(topSource, bottomSource)
+
+        // Write the merged image to a temp file, swap it in for the source files, and delete
+        // them. The temp file prevents data loss if the write itself fails.
+        val mergedTmp = tmpDir.createFile("$baseName.$ext.tmp")
+            ?: throw IOException("Could not create temp file for merged stub page")
+        mergedTmp.openOutputStream().use { encoder(mergedBitmap, it) }
+        // The merged bitmap is never handed to the UI, so it is simply dropped here and
+        // reclaimed by ART. An explicit recycle would be unsafe: the merge result may
+        // already be referenced by a snapshot.
+        topFile.delete()
+        bottomFile.delete()
+        if (!mergedTmp.renameTo("$baseName.$ext")) {
+            throw PageLostException(
+                "Merged stub page could not be renamed to $baseName.$ext; " +
+                    "${topFile.name} and ${bottomFile.name} were already deleted",
+            )
+        }
+        return tmpDir.findFile("$baseName.$ext")
+            ?: throw PageLostException(
+                "Merged file $baseName.$ext vanished immediately after a successful rename",
+            )
     }
 
     /**
