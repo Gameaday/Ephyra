@@ -27,7 +27,6 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.ChapterUpdate
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
-import ephyra.domain.chapter.service.ChapterNumber
 import ephyra.domain.chapter.service.getChapterSort
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
@@ -66,6 +65,8 @@ import ephyra.feature.reader.model.ReaderChapterWindowAdapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.model.resolveChapterStartRequest
+import ephyra.feature.reader.progress.ReaderProgressEffectHandler
+import ephyra.feature.reader.progress.ReaderProgressRecorder
 import ephyra.feature.reader.session.ReaderErrorCode
 import ephyra.feature.reader.session.ReaderNavigationDirection
 import ephyra.feature.reader.session.ReaderSessionCoordinator
@@ -91,7 +92,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import logcat.LogPriority
 import java.io.InputStream
-import java.time.Instant
 import java.util.Date
 import javax.inject.Inject
 
@@ -127,7 +127,8 @@ class ReaderViewModel @Inject constructor(
 ) : BaseUdfViewModel<ReaderViewModel.State, ReaderEvent, ReaderViewModel.Event>(State()),
     ChapterLoadingEffectHandler,
     ReaderImageEffectHandler,
-    ReaderDownloadEffectHandler {
+    ReaderDownloadEffectHandler,
+    ReaderProgressEffectHandler {
     private companion object {
         /** Current chapter plus two in either direction stays hot. */
         const val WINDOW_SIZE = 5
@@ -247,9 +248,15 @@ class ReaderViewModel @Inject constructor(
     private val downloadPolicy by lazy { ReaderDownloadPolicy(this) }
 
     /**
-     * The time the chapter was started reading
+     * The progress-seam coordinator (R-A, Stage 3 seam 4 of the reader modular redesign,
+     * 2026-11-08): the VM drives it; it owns the read-timer arithmetic, the history write, the
+     * track-chapter-read gates and the completion side of chapter progress that previously
+     * lived inline in restartReadTimer / updateHistory / updateTrackChapterRead /
+     * updateChapterProgressOnComplete - moved, not rethought. The VM implements the effect
+     * handler below; the read-timer state moved with the decisions, so the field that held it
+     * here is gone.
      */
-    private var chapterReadStartTime: Long? = null
+    private val progressRecorder by lazy { ReaderProgressRecorder(this) }
 
     private var chapterToDownload: Download? = null
 
@@ -598,7 +605,9 @@ class ReaderViewModel @Inject constructor(
     }
 
     override fun restartReadTimer() {
-        chapterReadStartTime = Instant.now().toEpochMilli()
+        // R-A, Stage 3 seam 4: the timer state lives in the progress recorder; this stays the
+        // loading seam's effect because the open path decides when a chapter starts.
+        progressRecorder.restartReadTimer()
     }
 
     override fun reportChapterLoadedToSession(chapter: ReaderChapter) {
@@ -1036,27 +1045,9 @@ class ReaderViewModel @Inject constructor(
     }
 
     private suspend fun updateChapterProgressOnComplete(readerChapter: ReaderChapter) {
-        readerChapter.chapter = readerChapter.chapter.copy(read = true)
-        updateTrackChapterRead(readerChapter)
-        downloadPolicy.removeAfterRead(readerChapter)
-
-        val markDuplicateAsRead = libraryPreferences.markDuplicateReadChapterAsRead().get()
-            .contains(LibraryPreferences.MARK_DUPLICATE_CHAPTER_READ_EXISTING)
-        if (!markDuplicateAsRead) return
-
-        val duplicateUnreadChapters = getUnfilteredChapterList()
-            .mapNotNull { chapter ->
-                if (
-                    !chapter.read &&
-                    chapter.isRecognizedNumber &&
-                    ChapterNumber.sameChapterNumber(chapter.chapterNumber, readerChapter.chapter.chapterNumber)
-                ) {
-                    ChapterUpdate(id = chapter.id, read = true)
-                } else {
-                    null
-                }
-            }
-        updateChapter.awaitAll(duplicateUnreadChapters)
+        // R-A, Stage 3 seam 4: the read flag, the tracker gates, the remove-after-read drive and
+        // the mark-duplicates sweep are the progress recorder's; this is the drive.
+        progressRecorder.onChapterCompleted(readerChapter)
     }
 
     /**
@@ -1111,19 +1102,12 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
-     * Saves the chapter last read history if incognito mode isn't on.
+     * Saves the chapter last read history if incognito mode isn't on. R-A, Stage 3 seam 4:
+     * the write's gates, the session-duration arithmetic and the read-timer consume live in
+     * [ReaderProgressRecorder]; this is the drive (activity finish and chapter switch).
      */
     suspend fun updateHistory() {
-        getCurrentChapter()?.let { readerChapter ->
-            if (incognitoMode) return@let
-
-            val chapterId = readerChapter.chapter.id
-            val endTime = Date()
-            val sessionReadDuration = chapterReadStartTime?.let { endTime.time - it } ?: 0
-
-            historyRepository.upsertHistory(HistoryUpdate(chapterId, endTime, sessionReadDuration))
-            chapterReadStartTime = null
-        }
+        progressRecorder.recordHistory()
     }
 
     /**
@@ -1516,18 +1500,51 @@ class ReaderViewModel @Inject constructor(
         class Error(val error: Throwable) : SaveImageResult
     }
 
+    // ── Progress-seam effects (R-A Stage 3 seam 4: the coordinator drives, the VM executes) ──
+
+    override fun nowMillis(): Long = System.currentTimeMillis()
+
+    override fun isIncognito(): Boolean = incognitoMode
+
+    override fun currentChapterId(): Long? = getCurrentChapter()?.chapter?.id
+
+    override suspend fun upsertHistory(chapterId: Long, readAt: Date, sessionReadDuration: Long) {
+        historyRepository.upsertHistory(HistoryUpdate(chapterId, readAt, sessionReadDuration))
+    }
+
+    override fun markChapterRead(readerChapter: ReaderChapter) {
+        readerChapter.chapter = readerChapter.chapter.copy(read = true)
+    }
+
+    override fun currentMangaId(): Long? = manga?.id
+
+    override fun autoUpdateTrackEnabled(): Boolean = trackPreferences.autoUpdateTrack().getSync()
+
     /**
      * Starts the service that updates the last chapter read in sync services. This operation
-     * will run in a background thread and errors are ignored.
+     * will run in a background thread and errors are ignored. Fire-and-forget is the effect's,
+     * not the coordinator's: the completion path must not wait on the trackers, exactly as
+     * the inline code it replaces did not.
      */
-    private fun updateTrackChapterRead(readerChapter: ReaderChapter) {
-        if (incognitoMode) return
-        if (!trackPreferences.autoUpdateTrack().getSync()) return
-
-        val manga = manga ?: return
+    override fun updateTrackChapterRead(mangaId: Long, chapterNumber: Double) {
         viewModelScope.launchNonCancellable {
-            trackChapter.await(manga.id, readerChapter.chapter.chapterNumber)
+            trackChapter.await(mangaId, chapterNumber)
         }
+    }
+
+    /** The remove-after-read decision is the download seam's (Stage 3 seam 3); this is the drive through it. */
+    override suspend fun removeAfterRead(readerChapter: ReaderChapter) {
+        downloadPolicy.removeAfterRead(readerChapter)
+    }
+
+    override suspend fun markDuplicateReadExistingEnabled(): Boolean =
+        libraryPreferences.markDuplicateReadChapterAsRead().get()
+            .contains(LibraryPreferences.MARK_DUPLICATE_CHAPTER_READ_EXISTING)
+
+    override suspend fun unfilteredChapters(): List<Chapter> = getUnfilteredChapterList()
+
+    override suspend fun markChaptersRead(updates: List<ChapterUpdate>) {
+        updateChapter.awaitAll(updates)
     }
 
     /**
