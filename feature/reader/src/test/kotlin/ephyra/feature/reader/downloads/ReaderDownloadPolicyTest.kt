@@ -32,7 +32,7 @@ class ReaderDownloadPolicyTest {
 
     private val calls = mutableListOf<String>()
 
-    private var mangaResult: Manga? = mockk()
+    private var mangaResult: Manga? = mockk(relaxed = true)
 
     private var currentLoadsFromDownload = true
 
@@ -129,7 +129,7 @@ class ReaderDownloadPolicyTest {
     @BeforeEach
     fun reset() {
         calls.clear()
-        mangaResult = mockk()
+        mangaResult = mockk(relaxed = true)
         currentLoadsFromDownload = true
         nextChapterResult = null
         downloadAheadAmount = 2
@@ -206,7 +206,7 @@ class ReaderDownloadPolicyTest {
         assertEquals(listOf("manga"), calls, "no manga means no gate beyond the manga lookup even runs")
 
         calls.clear()
-        mangaResult = mockk()
+        mangaResult = mockk(relaxed = true)
         currentLoadsFromDownload = false
         coordinator.downloadNextChapters()
         assertEquals(listOf("manga", "fromDownload"), calls, "an online chapter never downloads ahead")
