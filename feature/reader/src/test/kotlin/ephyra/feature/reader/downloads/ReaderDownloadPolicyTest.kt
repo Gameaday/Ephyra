@@ -203,7 +203,7 @@ class ReaderDownloadPolicyTest {
     fun `the gates stop the path in the old order`() = runBlocking {
         mangaResult = null
         coordinator.downloadNextChapters()
-        assertEquals(listOf<String>(), calls, "no manga means no gate even runs")
+        assertEquals(listOf("manga"), calls, "no manga means no gate beyond the manga lookup even runs")
 
         calls.clear()
         mangaResult = mockk()
