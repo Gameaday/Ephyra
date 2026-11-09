@@ -51,6 +51,8 @@ import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.TrackChapter
 import ephyra.domain.track.service.TrackPreferences
+import ephyra.feature.reader.downloads.ReaderDownloadEffectHandler
+import ephyra.feature.reader.downloads.ReaderDownloadPolicy
 import ephyra.feature.reader.images.ReaderImageActions
 import ephyra.feature.reader.images.ReaderImageEffectHandler
 import ephyra.feature.reader.loader.ChapterLoader
@@ -124,7 +126,8 @@ class ReaderViewModel @Inject constructor(
     private val chapterCache: ChapterCache,
 ) : BaseUdfViewModel<ReaderViewModel.State, ReaderEvent, ReaderViewModel.Event>(State()),
     ChapterLoadingEffectHandler,
-    ReaderImageEffectHandler {
+    ReaderImageEffectHandler,
+    ReaderDownloadEffectHandler {
     private companion object {
         /** Current chapter plus two in either direction stays hot. */
         const val WINDOW_SIZE = 5
@@ -231,6 +234,19 @@ class ReaderViewModel @Inject constructor(
     private val imageActions by lazy { ReaderImageActions(this) }
 
     /**
+     * The download-seam coordinator (R-A, Stage 3 seam 3 of the reader modular redesign,
+     * 2026-11-08): the VM drives it; it owns the download-ahead and remove-after-read
+     * decisions that previously lived inline in downloadNextChapters / cancelQueuedDownloads /
+     * deleteChapterIfNeeded / enqueueDeleteReadChapters - the trigger threshold, the gate
+     * order, the duplicate collapsing of the download-ahead list, the slot arithmetic and
+     * the read-target check. The VM implements the effect handler below; each override body
+     * is the code that used to run inline, moved, not rethought. The chapter-list dedup in
+     * [getChapterList] is a different decision - which chapters exist to navigate - and
+     * deliberately stays here.
+     */
+    private val downloadPolicy by lazy { ReaderDownloadPolicy(this) }
+
+    /**
      * The time the chapter was started reading
      */
     private var chapterReadStartTime: Long? = null
@@ -296,7 +312,6 @@ class ReaderViewModel @Inject constructor(
     }
 
     private val incognitoMode: Boolean by lazy { getIncognitoState.await(manga?.source) }
-    private suspend fun downloadAheadAmount(): Int = downloadPreferences.autoDownloadWhileReading().get()
 
     init {
         // To save state
@@ -555,7 +570,7 @@ class ReaderViewModel @Inject constructor(
             newChapters.ref()
             it.viewerChapters?.unref()
 
-            chapterToDownload = cancelQueuedDownloads(newChapters.currChapter)
+            chapterToDownload = downloadPolicy.cancelQueuedDownloadOf(newChapters.currChapter)
             it.copy(
                 viewerChapters = newChapters,
                 bookmarked = newChapters.currChapter.chapter.bookmark,
@@ -738,8 +753,7 @@ class ReaderViewModel @Inject constructor(
             loadNewChapter(selectedChapter)
         }
 
-        val inDownloadRange = page.number.toDouble() / pages.size > 0.25
-        if (inDownloadRange) {
+        if (downloadPolicy.isInDownloadAheadRange(page.number, pages.size)) {
             downloadNextChapters()
         }
 
@@ -773,75 +787,71 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Queues the next chapters for download once the reading position is far enough into the
+     * chapter. The download-ahead decisions - which content qualifies, how many chapters, in
+     * what order - are the coordinator's (R-A, Stage 3 seam 3); this is the drive.
+     */
     private fun downloadNextChapters() {
-        val manga = manga ?: return
-
-        // Only download ahead if current + next chapter is already downloaded too to avoid jank
-        if (getCurrentChapter()?.pageLoader !is DownloadPageLoader) return
-        val nextChapter = state.value.viewerChapters?.nextChapter?.chapter ?: return
-
-        viewModelScope.launchIO {
-            val downloadAheadAmount = downloadAheadAmount()
-            if (downloadAheadAmount == 0) return@launchIO
-            // Ensure the DownloadCache has finished reading its on-disk snapshot before
-            // querying it. On the warm path this is a non-suspending check; on a cold
-            // start it waits for the brief disk-cache read to avoid a false negative that
-            // would suppress the download-ahead even though the next chapter is on disk.
-            downloadManager.awaitCacheReady()
-            val isNextChapterDownloaded = downloadManager.isChapterDownloaded(
-                nextChapter.name,
-                nextChapter.scanlator,
-                nextChapter.url,
-                manga.title,
-                manga.source,
-            )
-            if (!isNextChapterDownloaded) return@launchIO
-
-            val chaptersToDownload = getNextChapters.await(manga.id, nextChapter.id).run {
-                if (readerPreferences.skipDupe().get()) {
-                    removeDuplicates(nextChapter)
-                } else {
-                    this
-                }
-            }.take(downloadAheadAmount)
-
-            downloadManager.downloadChapters(
-                manga,
-                chaptersToDownload,
-            )
-        }
+        viewModelScope.launchIO { downloadPolicy.downloadNextChapters() }
     }
 
-    /**
-     * Removes [currentChapter] from download queue
-     * if setting is enabled and [currentChapter] is queued for download
-     */
-    private fun cancelQueuedDownloads(currentChapter: ReaderChapter): Download? {
-        return downloadManager.getQueuedDownloadOrNull(currentChapter.chapter.id)?.also {
-            downloadManager.cancelQueuedDownloads(listOf(it))
-        }
+    // ── Download-seam effects (R-A Stage 3 seam 3: the coordinator drives, the VM executes) ──
+
+    override fun nextChapter(): ReaderChapter? = state.value.viewerChapters?.nextChapter
+
+    override fun currentChapterLoadsFromDownload(): Boolean =
+        getCurrentChapter()?.pageLoader is DownloadPageLoader
+
+    override suspend fun downloadAheadAmount(): Int =
+        downloadPreferences.autoDownloadWhileReading().get()
+
+    override suspend fun awaitDownloadCacheReady() {
+        downloadManager.awaitCacheReady()
     }
 
-    /**
-     * Determines if deleting option is enabled and nth to last chapter actually exists.
-     * If both conditions are satisfied enqueues chapter for delete
-     * @param currentChapter current chapter, which is going to be marked as read.
-     */
-    private suspend fun deleteChapterIfNeeded(currentChapter: ReaderChapter) {
-        val removeAfterReadSlots = downloadPreferences.removeAfterReadSlots().get()
-        if (removeAfterReadSlots == -1) return
+    override fun isChapterDownloaded(manga: Manga, chapter: Chapter): Boolean =
+        downloadManager.isChapterDownloaded(
+            chapter.name,
+            chapter.scanlator,
+            chapter.url,
+            manga.title,
+            manga.source,
+        )
 
-        // Determine which chapter should be deleted and enqueue
-        val chapterList = getChapterList()
-        val currentChapterPosition = chapterList.indexOf(currentChapter)
-        val chapterToDelete = chapterList.getOrNull(currentChapterPosition - removeAfterReadSlots)
+    override suspend fun skipDuplicateChapters(): Boolean = readerPreferences.skipDupe().get()
 
-        // If chapter is completely read, no need to download it
+    override suspend fun chaptersAfter(mangaId: Long, chapterId: Long): List<Chapter> =
+        getNextChapters.await(mangaId, chapterId)
+
+    override fun downloadChapters(manga: Manga, chapters: List<Chapter>) {
+        downloadManager.downloadChapters(manga, chapters)
+    }
+
+    override fun queuedDownloadFor(chapterId: Long): Download? =
+        downloadManager.getQueuedDownloadOrNull(chapterId)
+
+    override fun cancelQueuedDownload(download: Download) {
+        downloadManager.cancelQueuedDownloads(listOf(download))
+    }
+
+    override suspend fun removeAfterReadSlots(): Int =
+        downloadPreferences.removeAfterReadSlots().get()
+
+    override suspend fun chapterList(): List<ReaderChapter> = getChapterList()
+
+    override fun clearRequeueSlot() {
         chapterToDownload = null
+    }
 
-        if (chapterToDelete != null) {
-            enqueueDeleteReadChapters(chapterToDelete)
-        }
+    /**
+     * Schedules [chapter] of [manga] for deletion when [deletePendingChapters] runs; the
+     * download manager persists it across process deaths. The read-target and held-manga
+     * gates moved to the coordinator with the rest of the remove-after-read decisions, and
+     * the callers' non-cancellable scopes replace the launch this used to wrap itself in.
+     */
+    override suspend fun enqueueChapterForDeletion(manga: Manga, chapter: Chapter) {
+        downloadManager.enqueueChaptersToDelete(listOf(chapter), manga)
     }
 
     /**
@@ -1028,7 +1038,7 @@ class ReaderViewModel @Inject constructor(
     private suspend fun updateChapterProgressOnComplete(readerChapter: ReaderChapter) {
         readerChapter.chapter = readerChapter.chapter.copy(read = true)
         updateTrackChapterRead(readerChapter)
-        deleteChapterIfNeeded(readerChapter)
+        downloadPolicy.removeAfterRead(readerChapter)
 
         val markDuplicateAsRead = libraryPreferences.markDuplicateReadChapterAsRead().get()
             .contains(LibraryPreferences.MARK_DUPLICATE_CHAPTER_READ_EXISTING)
@@ -1517,19 +1527,6 @@ class ReaderViewModel @Inject constructor(
         val manga = manga ?: return
         viewModelScope.launchNonCancellable {
             trackChapter.await(manga.id, readerChapter.chapter.chapterNumber)
-        }
-    }
-
-    /**
-     * Enqueues this [chapter] to be deleted when [deletePendingChapters] is called. The download
-     * manager handles persisting it across process deaths.
-     */
-    private fun enqueueDeleteReadChapters(chapter: ReaderChapter) {
-        if (!chapter.chapter.read) return
-        val manga = manga ?: return
-
-        viewModelScope.launchNonCancellable {
-            downloadManager.enqueueChaptersToDelete(listOf(chapter.chapter), manga)
         }
     }
 

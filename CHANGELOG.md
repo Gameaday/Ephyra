@@ -150,6 +150,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   public decisions; the filename and hash-match rules have one home; all 18 effects are
   implemented - the unwired-contract failure mode fails the build).
 
+### 📚 Reader Download Policy (R-A: Stage 3 seam 3 — the download-ahead and remove-after-read decisions leave the view model)
+
+- **`ReaderDownloadPolicy` (new, `feature/reader/.../downloads/`)**: the view model drives it;
+  the coordinator decides. It owns the quarter-chapter download-ahead trigger, the
+  download-ahead gate order (the current chapter loads from the download store, the next
+  chapter is itself already downloaded - with the cache snapshot awaited before that lookup -
+  and the configured amount is nonzero), the duplicate collapsing + amount cap of the
+  download-ahead list, the queue-cancel of chapters opened from the download queue, and the
+  remove-after-read slot arithmetic (the held re-queue download is dropped before the delete
+  decision, exactly where the old code dropped it; the target must exist and be read). Every
+  decision is the code that already ran in the view model's `downloadNextChapters` /
+  `cancelQueuedDownloads` / `deleteChapterIfNeeded` / `enqueueDeleteReadChapters`, moved, not
+  rethought. The navigation-universe dedup in `getChapterList`
+  (`removeDuplicates(selectedChapter)` - which chapters exist to navigate) is a different
+  decision and deliberately stays in the view model.
+- **`ReaderDownloadEffectHandler` (15 effects)**: `ReaderViewModel` implements the contract;
+  the four old private functions became drives (`onPageSelected` triggers, `installViewerChapters`
+  queue-cancels, `updateChapterProgressOnComplete` removes-after-read, each into the coordinator).
+- **One honest scope note:** the old `downloadNextChapters` ran its first three gates on the
+  caller's thread and only the DataStore/manager work inside `launchIO`; the drive now runs
+  the whole decision on IO. No gate order changed.
+- **Gates:** `ReaderDownloadPolicyTest` (trigger boundary, full-path gate order, duplicate
+  collapse, queue-cancel, remove-after-read tables incl. disabled/missing-target/unread/
+  no-manga; `runBlocking`, recording-effects fake) and `ReaderDownloadPolicyOwnershipTest`
+  (the view model drives the coordinator and consumes its four public decisions; the download
+  decision tables have one home; all 15 effects are implemented - the unwired-contract
+  failure mode fails the build).
+
 ### 📚 Chapter Loading Coordinator (R-A: Stage 3 seam 1 — loading and preload leave the view model)
 - **New `ChapterLoadingCoordinator`** (`feature/reader/src/main/kotlin/ephyra/feature/reader/loading/`):
   the view model drives it; it owns the open sequence (session open -> page load -> filter wiring ->
