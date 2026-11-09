@@ -1,11 +1,6 @@
 package ephyra.app.architecture
 
 import ephyra.app.security.TrackedFileNames
-import ephyra.app.ui.home.appendTabHistory
-import ephyra.app.ui.home.dropLastTab
-import ephyra.app.ui.home.previousTabIn
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -91,63 +86,32 @@ class TabNavControllerLifetimeTest {
     }
 
     @Test
-    fun `back inside a tab is intercepted rather than leaving the app`() {
+    fun `back at a tab root exits instead of hopping to the previous tab`() {
         val home = sourceFile("app/src/main/java/ephyra/app/ui/home/HomeScreen.kt")
-        // Comments stripped: the prose above the handler *names* the old gate to explain it, so a
-        // raw readText() would let the description of the defect satisfy (or trip) a rule about it.
+        // Comments stripped: the prose above the tab shell *names* the removed walk to explain
+        // it, so a raw readText() would let the description of the defect trip a rule about it.
         val text = codeOf(home)
 
+        // **This rule is a deliberate reversal of an earlier one, on the owner's defect report
+        // (2026-11-08).** The tab shell used to intercept back and walk a tab-visit history: back
+        // at a main tab after visiting another main tab navigated to that tab - pressed again, it
+        // swapped between the two most recent tabs - instead of leaving, and the gesture replayed
+        // a tab-slide animation the predictive-back hand-off never previews. The earlier rule
+        // asserted the walk existed; it encoded the defect as a contract. Back at a peer
+        // destination now exits to the system, per Android's top-level guidance; each tab's
+        // state survives through the tab strip's popUpTo/saveState/restoreState, not a history.
         assertTrue(
-            text.contains("BackHandler"),
-            "HomeScreen installs no BackHandler, so pressing back inside a non-Library tab pops the " +
-                "app-level stack and leaves the app from a screen the user only navigated within.",
+            !text.contains("BackHandler"),
+            "HomeScreen must not intercept back at the tab shell: the tab-history walk hopped " +
+                "between the two most recent tabs on back (the reported defect), where the system " +
+                "back should exit through the predictive-back hand-off.",
         )
-
-        // The gate must be the tab history, not a route-set predicate over this controller.
-        //
-        // The previous version of this test asserted only that the source *contained* `BackHandler`
-        // and a `popBackStack(` inside it. That passed while the handler was dead code: it was
-        // gated on `currentRoute !in TAB_ROOT_ROUTES`, and this controller only ever holds the tab
-        // roots, so the condition could never be true and back left the app. A structural test that
-        // cannot fail on the defect it guards is worse than none, so the rule is now about the gate
-        // itself.
-        assertTrue(
-            text.contains("previousTabIn(tabHistory)"),
-            "the back handler must be gated on the tab history (`previousTabIn(tabHistory)`), not on " +
-                "a route-set predicate that this controller can never satisfy.",
-        )
-        assertTrue(
-            !text.contains("currentRoute !in TAB_ROOT_ROUTES"),
-            "the always-false `currentRoute !in TAB_ROOT_ROUTES` gate is what made back exit the " +
-                "app; it must not come back.",
-        )
-    }
-
-    @Test
-    fun `tab history records visits and never duplicates the current tab`() {
-        assertEquals("library", appendTabHistory("library", "library"))
-        assertEquals("library,browse", appendTabHistory("library", "browse"))
-
-        // Re-visiting an earlier tab moves it to the end rather than duplicating it, so the
-        // previous tab is where the user actually came from.
-        assertEquals("browse,library", appendTabHistory("library,browse", "library"))
-        assertEquals("history,browse", appendTabHistory("library,history,browse", "browse"))
-    }
-
-    @Test
-    fun `previous tab is the second to last, and back exits when there is none`() {
-        assertNull(previousTabIn("library"))
-        assertEquals("library", previousTabIn("library,browse"))
-        assertEquals("history", previousTabIn("library,history,browse"))
-    }
-
-    @Test
-    fun `dropping the current tab makes the previous tab current`() {
-        // The sequence a back press performs: read the previous tab, drop the current one, navigate.
-        // A single-entry history drops to empty, which disables the handler and lets back exit.
-        assertEquals("library", dropLastTab("library,browse"))
-        assertEquals("", dropLastTab("library"))
-        assertNull(previousTabIn(dropLastTab("library")))
+        for (token in listOf("tabHistory", "appendTabHistory", "previousTabIn", "dropLastTab")) {
+            assertTrue(
+                !text.contains(token),
+                "the $token machinery of the removed back walk must not come back with it",
+            )
+        }
     }
 
     @Test
@@ -155,13 +119,15 @@ class TabNavControllerLifetimeTest {
         val home = sourceFile("app/src/main/java/ephyra/app/ui/home/HomeScreen.kt")
         val text = home.readText()
 
-        // Two independent copies of the root list could disagree, and the failure would be silent:
-        // back would stop working at a root, or would keep intercepting when already at one.
+        // Two independent copies of the root list could disagree, and the failure would be
+        // silent: the slide direction would stop matching the order of the buttons the user
+        // taps. The list serves the tab index (and through it the slide axis); a second copy
+        // would let the strip and the motion disagree.
         val declaration = text.indexOf("private val TAB_ROOT_ROUTES")
         assertTrue(declaration >= 0, "TAB_ROOT_ROUTES is not declared")
         assertTrue(
             Regex("\\bTAB_ROOT_ROUTES\\b").findAll(text).count() >= 2,
-            "TAB_ROOT_ROUTES is declared but never used; the back handler must compare against it",
+            "TAB_ROOT_ROUTES is declared but never used; the tab index must read it",
         )
     }
 
