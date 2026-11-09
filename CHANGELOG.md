@@ -150,6 +150,56 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   public decisions; the filename and hash-match rules have one home; all 18 effects are
   implemented - the unwired-contract failure mode fails the build).
 
+### 🧭 Navigation Back Fix (owner-reported defect 2026-11-08: back at a main tab now exits instead of hopping)
+
+- **The defect (owner report):** at a main-navigation tab after visiting another main tab, pressing
+  back instantly swapped between those two tabs instead of leaving the app, and the back motion
+  returning from pages to a main tab looked inconsistent. Root cause: `HomeScreen`'s tab shell
+  walked a self-managed tab-visit history (`BackHandler` + `tabHistory`) — back at a peer
+  destination navigated to the previously visited tab, replaying a tab-slide the predictive-back
+  hand-off never previews, which contradicts Android's top-level guidance that back at a peer
+  destination leaves to the system.
+- **The fix:** the walk is deleted, not reworked — `BackHandler` and the whole `tabHistory`
+  machinery (`appendTabHistory`, `previousTabIn`, `dropLastTab`) are gone from `HomeScreen`. Back
+  at a tab root now exits through the predictive-back hand-off (the manifest already opted in with
+  `enableOnBackInvokedCallback`); each tab's state survives through the tab strip's own
+  `popUpTo`/`saveState`/`restoreState`, which is the same mechanism that already preserved state
+  on tab taps.
+- **Honest scope:** this fixes the tab-shell half of the owner's motion report. The page-to-tab pop
+  transitions (the declared motion pairs) are unchanged and were never implicated by the walk; the
+  device half of motion verification (`A5`) remains the owner's call.
+- **Gates:** `TabNavControllerLifetimeTest`'s back rule is deliberately reversed — it now fails the
+  build if the tab shell ever intercepts back again (the `BackHandler`/`tabHistory` machinery must
+  stay absent from `HomeScreen`).
+
+### 📚 Reader Viewer Mode Resolver (R-A: Stage 3 seam 5 — the reading-mode, orientation, crop-borders and pager-type decisions leave the view model)
+
+- **`ViewerModeResolver` (new, `feature/reader/.../viewermode/`)**: the view model drives it; the
+  coordinator decides. It owns the reading-mode resolution precedence (stored flag, else the user
+  default, else long-strip inference from content type and genres via
+  `DefaultReadingModeResolver` — a null content type short-circuits to the default), the
+  set-mode and set-orientation sequences (manga-id gate, flag write, requested-page save, chapter
+  reload, viewer-chapters re-emit; orientation additionally emits the resolved orientation
+  between the install and the re-emit), and the crop-borders split (pager vs webtoon preference
+  pair, selected once by pager type, inverted, stored, new value returned). Every decision is the
+  code that already ran in the view model's `getMangaReadingMode` / `setMangaReadingMode` /
+  `getMangaOrientation` / `setMangaOrientationType` / `toggleCropBorders`, moved, not rethought.
+- **`ViewerModeEffectHandler` (17 effects)**: `ReaderViewModel` implements the contract; the five
+  old functions became drives (the setters launch into the coordinator on IO). The inline
+  `DefaultReadingModeResolver` precedence, the `fromPreference` fallback and the crop-borders
+  preference reads are deleted from the view model — one home now.
+- **Two honest scope notes:** the set-paths' manga-null gate moved from the caller thread to IO
+  (the old setters checked `manga` on the caller thread, then launched; the coordinator gates on
+  the id effect), and the pager-type question is now asked once by the resolver (new public
+  `isPagerType()`, including from `sessionViewportMode`) where the old view model re-derived it
+  per call site — behavior-identical rewiring, disclosed rather than smuggled.
+- **Gates:** `ViewerModeResolverTest` (resolution precedence tables, set-sequence effect order,
+  requested-page save, orientation emit, crop-borders pair and inversion; `runBlocking`,
+  recording-effects fake with real values — no mockk) and `ViewerModeResolverOwnershipTest` (the
+  view model drives the coordinator and consumes its five public decisions; the viewer-mode
+  decision tables have one home; all 17 effects are implemented — the unwired-contract failure
+  mode fails the build).
+
 ### 📚 Reader Progress Recorder (R-A: Stage 3 seam 4 — the read-timer, history, tracking and completion-duplicate decisions leave the view model)
 
 - **`ReaderProgressRecorder` (new, `feature/reader/.../progress/`)**: the view model drives it; the

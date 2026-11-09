@@ -1,6 +1,5 @@
 package ephyra.app.ui.home
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -26,12 +25,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -127,48 +123,6 @@ internal fun tabSlideForward(fromRoute: String?, toRoute: String?): Boolean? {
     return to > from
 }
 
-/**
- * Separator for the serialized tab-visit history.
- *
- * Tab routes are simple identifiers with no comma, so a joined string is a safe, `Bundle`-friendly
- * saveable. A list would need a custom `Saver` and buys nothing here.
- */
-private const val TAB_HISTORY_SEPARATOR = ","
-
-/**
- * Records [route] as the most recent tab in [history].
- *
- * The current tab is always the last element. Re-visiting a tab that already appears moves it to
- * the end rather than duplicating it, so a user who bounces Library → Browse → Library then presses
- * back returns to Browse (where they came from) rather than to a stale duplicate.
- */
-internal fun appendTabHistory(history: String, route: String): String {
-    val parts = history.split(TAB_HISTORY_SEPARATOR).filter { it.isNotEmpty() }
-    if (parts.lastOrNull() == route) {
-        // Re-visiting the current tab: drop the oldest entry to maintain a max history of 2.
-        return if (parts.size > 2) parts.drop(1).joinToString(TAB_HISTORY_SEPARATOR) else history
-    }
-    return (parts.filterNot { it == route } + route).joinToString(TAB_HISTORY_SEPARATOR)
-}
-
-/**
- * The tab a back press should return to, or null when there is none and back should exit the app.
- *
- * The second-to-last entry, because the last is the tab currently showing. Reading the *last* entry
- * here would make back a no-op, which is the failure mode this replaced.
- */
-internal fun previousTabIn(history: String): String? {
-    val parts = history.split(TAB_HISTORY_SEPARATOR).filter { it.isNotEmpty() }
-    return parts.getOrNull(parts.size - 2)
-}
-
-/** Removes the current tab from [history] after a back press has consumed it. */
-internal fun dropLastTab(history: String): String =
-    history.split(TAB_HISTORY_SEPARATOR)
-        .filter { it.isNotEmpty() }
-        .dropLast(1)
-        .joinToString(TAB_HISTORY_SEPARATOR)
-
 @Composable
 fun HomeScreen(
     externalNavController: NavHostController = LocalNavController.current,
@@ -197,37 +151,20 @@ fun HomeScreen(
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // Back inside the tab shell walks the tab visit history, and only falls through to the
-    // system (exiting the app) once there is no earlier tab to return to.
+    // Back at a tab root exits the app, handing the gesture to the system's predictive back,
+    // which is what Android's top-level guidance prescribes for peer destinations. The tab
+    // strip's own taps already preserve each tab's state (`popUpTo` + `saveState` +
+    // `restoreState` below), so exiting from a tab costs nothing a walk could have saved.
     //
-    // **The previous implementation could never fire, and the bug was invisible in review.** It
-    // was gated on `currentRoute !in TAB_ROOT_ROUTES`, but this controller only ever holds the five
-    // tab roots (see `TAB_ROOT_ROUTES` and the `NavHost` below): nested destinations live on the
-    // *root* controller. The condition was therefore always false, so back from
-    // Updates/History/Browse/More popped the root stack and left the app — the exact "back does
-    // something arbitrary" the handler was written to prevent.
-    //
-    // The gate is now the history itself. The history is a `rememberSaveable` string so it survives
-    // a visit to a series detail (which disposes this composition), and its three transitions are
-    // pure functions so they can be asserted directly rather than through a gesture.
-    val backStackEntry by bottomNavController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
-    var tabHistory by rememberSaveable { mutableStateOf(TAB_ROOT_ROUTES.first()) }
-    LaunchedEffect(currentRoute) {
-        if (currentRoute != null && currentRoute in TAB_ROOT_ROUTES) {
-            tabHistory = appendTabHistory(tabHistory, currentRoute)
-        }
-    }
-    val previousTab = previousTabIn(tabHistory)
-    BackHandler(enabled = previousTab != null) {
-        val target = previousTab ?: return@BackHandler
-        tabHistory = dropLastTab(tabHistory)
-        bottomNavController.navigate(target) {
-            popUpTo(bottomNavController.graph.findStartDestination().id) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
-    }
+    // **This is a deliberate reversal of the tab-history back walk, on the owner's defect
+    // report (2026-11-08).** The walk intercepted back and navigated to the previously visited
+    // tab, so back at a main tab hopped to that tab instead of leaving — pressed again, it
+    // swapped between the two most recent tabs, a motion that read as a glitch rather than
+    // navigation. The motion was the visible half of the same defect: a back gesture replayed
+    // a tab-slide animation, which the predictive-back hand-off never previews, so the return
+    // path looked inconsistent with every other back in the app. No history is kept and no
+    // `BackHandler` is installed; the structural test pins both absences so the walk does not
+    // quietly return.
 
     LaunchedEffect(Unit) {
         HomeScreen.openTabEvent.collect { tab ->

@@ -28,6 +28,7 @@ import ephyra.domain.chapter.model.ChapterUpdate
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.domain.chapter.service.getChapterSort
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadPreferences
@@ -43,7 +44,6 @@ import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.policy.ChapterCompletionPolicy
-import ephyra.domain.reader.policy.DefaultReadingModeResolver
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.diagnostics.SourceResolutionDiagnostics
 import ephyra.domain.source.interactor.GetIncognitoState
@@ -76,6 +76,8 @@ import ephyra.feature.reader.session.ReaderSessionId
 import ephyra.feature.reader.session.ReaderSessionState
 import ephyra.feature.reader.session.ReaderViewportMode
 import ephyra.feature.reader.viewer.Viewer
+import ephyra.feature.reader.viewermode.ViewerModeEffectHandler
+import ephyra.feature.reader.viewermode.ViewerModeResolver
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.manga.editCover
 import ephyra.source.local.image.LocalCoverManager
@@ -128,7 +130,8 @@ class ReaderViewModel @Inject constructor(
     ChapterLoadingEffectHandler,
     ReaderImageEffectHandler,
     ReaderDownloadEffectHandler,
-    ReaderProgressEffectHandler {
+    ReaderProgressEffectHandler,
+    ViewerModeEffectHandler {
     private companion object {
         /** Current chapter plus two in either direction stays hot. */
         const val WINDOW_SIZE = 5
@@ -257,6 +260,15 @@ class ReaderViewModel @Inject constructor(
      * here is gone.
      */
     private val progressRecorder by lazy { ReaderProgressRecorder(this) }
+
+    /**
+     * R-A Stage 3 seam 5: the viewer-mode decisions - the reading-mode and orientation
+     * resolution, the set path that persists a flag and rebuilds the chapter window, the
+     * crop-borders split and the pager-type derivation the session record consumes - moved
+     * to ViewerModeResolver. The VM implements ViewerModeEffectHandler below; this drives the
+     * coordinator, the decisions left.
+     */
+    private val viewerModeResolver by lazy { ViewerModeResolver(this) }
 
     private var chapterToDownload: Download? = null
 
@@ -951,7 +963,7 @@ class ReaderViewModel @Inject constructor(
      * this step: the session viewport mode is not yet consumed by render decisions.
      */
     private fun sessionViewportMode(): ReaderViewportMode =
-        if (ReadingMode.isPagerType(getMangaReadingMode())) {
+        if (viewerModeResolver.isPagerType()) {
             ReaderViewportMode.PAGED
         } else {
             ReaderViewportMode.CONTINUOUS
@@ -1186,101 +1198,44 @@ class ReaderViewModel @Inject constructor(
     /**
      * Returns the viewer position used by this manga or the default one.
      *
-     * Precedence and long-strip inference are owned by [DefaultReadingModeResolver];
-     * this only adapts reader state to that policy and back to the stored flag value.
+     * R-A Stage 3 seam 5: the precedence and long-strip inference decisions moved to
+     * [ViewerModeResolver]; this forwards, and the flag and preference translations are the
+     * effect overrides below.
      */
-    fun getMangaReadingMode(resolveDefault: Boolean = true): Int {
-        val default = defaultReadingMode.value
-        val readingMode = ReadingMode.fromPreference(manga?.readingMode?.toInt())
-        return when {
-            resolveDefault && readingMode == ReadingMode.DEFAULT -> {
-                val currentManga = manga
-                if (currentManga == null) {
-                    default
-                } else {
-                    DefaultReadingModeResolver.resolve(
-                        explicitMode = readingMode,
-                        userDefaultMode = ReadingMode.fromPreference(default),
-                        contentType = currentManga.contentType,
-                        genres = currentManga.genre,
-                    ).flagValue
-                }
-            }
-
-            else -> manga?.readingMode?.toInt() ?: default
-        }
-    }
+    fun getMangaReadingMode(resolveDefault: Boolean = true): Int =
+        viewerModeResolver.getMangaReadingMode(resolveDefault)
 
     /**
      * Updates the viewer position for the open manga.
+     *
+     * R-A Stage 3 seam 5: the decision path moved to [ViewerModeResolver]; this launches it in
+     * IO. The manga-null gate moved with the path - the inline code checked it before
+     * launching - so a missing manga now stops the path on the coroutine, before any effect.
      */
     private fun setMangaReadingMode(readingMode: ReadingMode) {
-        val manga = manga ?: return
-        viewModelScope.launchIO {
-            setMangaViewerFlags.awaitSetReadingMode(manga.id, readingMode.flagValue.toLong())
-            val currChapters = state.value.viewerChapters
-            if (currChapters != null) {
-                // Save current page
-                val currChapter = currChapters.currChapter
-                currChapter.requestedPage = currChapter.chapter.lastPageRead.toInt()
-
-                val newManga = getManga.await(manga.id)
-                updateState {
-                    it.copy(
-                        manga = newManga,
-                        viewerChapters = currChapters,
-                    )
-                }
-                emitEffect(Event.ReloadViewerChapters)
-            }
-        }
+        viewModelScope.launchIO { viewerModeResolver.setMangaReadingMode(readingMode) }
     }
 
     /**
      * Returns the orientation type used by this manga or the default one.
+     *
+     * R-A Stage 3 seam 5: the precedence decision moved to [ViewerModeResolver]; this
+     * forwards.
      */
-    fun getMangaOrientation(resolveDefault: Boolean = true): Int {
-        val default = defaultOrientation.value
-        val orientation = ReaderOrientation.fromPreference(manga?.readerOrientation?.toInt())
-        return when {
-            resolveDefault && orientation == ReaderOrientation.DEFAULT -> default
-            else -> manga?.readerOrientation?.toInt() ?: default
-        }
-    }
+    fun getMangaOrientation(resolveDefault: Boolean = true): Int =
+        viewerModeResolver.getMangaOrientation(resolveDefault)
 
     /**
      * Updates the orientation type for the open manga.
+     *
+     * R-A Stage 3 seam 5: the decision path moved to [ViewerModeResolver]; this launches it
+     * in IO, with the manga-null gate moved onto the path exactly as the reading-mode setter.
      */
     private fun setMangaOrientationType(orientation: ReaderOrientation) {
-        val manga = manga ?: return
-        viewModelScope.launchIO {
-            setMangaViewerFlags.awaitSetOrientation(manga.id, orientation.flagValue.toLong())
-            val currChapters = state.value.viewerChapters
-            if (currChapters != null) {
-                // Save current page
-                val currChapter = currChapters.currChapter
-                currChapter.requestedPage = currChapter.chapter.lastPageRead.toInt()
-
-                val newManga = getManga.await(manga.id)
-                updateState {
-                    it.copy(
-                        manga = newManga,
-                        viewerChapters = currChapters,
-                    )
-                }
-                emitEffect(Event.SetOrientation(getMangaOrientation()))
-                emitEffect(Event.ReloadViewerChapters)
-            }
-        }
+        viewModelScope.launchIO { viewerModeResolver.setMangaOrientationType(orientation) }
     }
 
-    private fun toggleCropBorders(): Boolean {
-        val isPagerType = ReadingMode.isPagerType(getMangaReadingMode())
-        val pref = if (isPagerType) readerPreferences.cropBorders() else readerPreferences.cropBordersWebtoon()
-        val newValue = !pref.getSync()
-        pref.set(newValue)
-        return newValue
-    }
+    private fun toggleCropBorders(): Boolean = viewerModeResolver.toggleCropBorders()
 
     private fun showMenus(visible: Boolean) {
         // RDR-001: menu visibility is session state. The compose snapshot below stays the
@@ -1545,6 +1500,68 @@ class ReaderViewModel @Inject constructor(
 
     override suspend fun markChaptersRead(updates: List<ChapterUpdate>) {
         updateChapter.awaitAll(updates)
+    }
+
+    // ── Viewer-mode-seam effects (R-A Stage 3 seam 5: the coordinator decides, the VM executes) ──
+
+    // currentMangaId() is implemented once, in the progress-seam section above; the single
+    // override satisfies both effect contracts because the signatures are identical.
+
+    override fun defaultReadingModeValue(): Int = defaultReadingMode.value
+
+    override fun defaultOrientationValue(): Int = defaultOrientation.value
+
+    override fun mangaReadingModeFlag(): Long? = manga?.readingMode
+
+    override fun mangaReaderOrientationFlag(): Long? = manga?.readerOrientation
+
+    override fun mangaContentType(): ContentType? = manga?.contentType
+
+    override fun mangaGenres(): List<String>? = manga?.genre
+
+    override suspend fun awaitSetReadingMode(mangaId: Long, flag: Long) {
+        setMangaViewerFlags.awaitSetReadingMode(mangaId, flag)
+    }
+
+    override suspend fun awaitSetOrientation(mangaId: Long, flag: Long) {
+        setMangaViewerFlags.awaitSetOrientation(mangaId, flag)
+    }
+
+    override fun viewerChaptersSnapshot(): ViewerChapters? = state.value.viewerChapters
+
+    override fun saveRequestedPage(viewerChapters: ViewerChapters) {
+        val currChapter = viewerChapters.currChapter
+        currChapter.requestedPage = currChapter.chapter.lastPageRead.toInt()
+    }
+
+    override suspend fun reloadManga(mangaId: Long): Manga? = getManga.await(mangaId)
+
+    override fun installReloadedManga(manga: Manga?, viewerChapters: ViewerChapters) {
+        updateState {
+            it.copy(
+                manga = manga,
+                viewerChapters = viewerChapters,
+            )
+        }
+    }
+
+    override fun emitReloadViewerChapters() {
+        emitEffect(Event.ReloadViewerChapters)
+    }
+
+    override fun emitOrientationSet(orientation: Int) {
+        emitEffect(Event.SetOrientation(orientation))
+    }
+
+    override fun cropBordersEnabled(isPagerType: Boolean): Boolean =
+        if (isPagerType) readerPreferences.cropBorders().getSync() else readerPreferences.cropBordersWebtoon().getSync()
+
+    override fun storeCropBorders(isPagerType: Boolean, value: Boolean) {
+        if (isPagerType) {
+            readerPreferences.cropBorders().set(value)
+        } else {
+            readerPreferences.cropBordersWebtoon().set(value)
+        }
     }
 
     /**

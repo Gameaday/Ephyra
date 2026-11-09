@@ -15,8 +15,8 @@
 > 4 record what shipped. Seam 2 (`ReaderImageActions`) landed the same way as PR #335 - the
 > Stage 3 entry in section 4 records what shipped. Seam 3 (`ReaderDownloadPolicy`) landed the same way as PR #336 - the
 > Stage 3 entry in section 4 records what shipped. Seam 4 (`ReaderProgressRecorder`) landed the same way as PR #337 - the
-> Stage 3 entry in section 4 records what shipped. The rest of Stage 3 (seam 5) and Stage 4 remain
-> proposals.
+> Stage 3 entry in section 4 records what shipped. Seam 5 (`ViewerModeResolver`) landed the same way as PR #338 - the
+> Stage 3 entry in section 4 records what shipped. Stage 4 remains a proposal.
 
 This is an audit and a plan, not a record of completed work. Section 2 is what already landed;
 nothing in Section 4 has begun.
@@ -161,7 +161,7 @@ answer decides whether the View paint path can be retired or must be kept for th
 `state.currentChapter?.pages?.getOrNull(currentPage)?.cachedBytes` (around `:106`) — UI reading a
 page's working bytes rather than a rendered-surface signal. Same root as F5; resolved by Stage 4.
 
-## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stage 3 seams 1-4 done 2026-11-08; the rest proposals)
+## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stage 3 seams 1-5 done 2026-11-08; the rest proposals)
 
 - **Stage 0 (this change, docs-only):** this audit; `B-009` superseded and `B-010` bounded in the
   ledger; the viewport contract's stale gesture sentence corrected; this document indexed.
@@ -247,6 +247,23 @@ page's working bytes rather than a rendered-surface signal. Same root as F5; res
     `ReaderProgressRecorderTest` (timer tables, gate orders, completion ordering, duplicate
     sweep) and `ReaderProgressRecorderOwnershipTest` (drives; one-home decision tables; all 12
     effects implemented).
+  - **Seam 5 done 2026-11-08 (PR #338, E1 + CI): `ViewerModeResolver` (reading mode, orientation,
+    crop borders, pager type).** The view model drives it; the coordinator owns the reading-mode
+    resolution precedence (stored flag, else the user default, else long-strip inference from
+    content type and genres via `DefaultReadingModeResolver`, a null content type short-circuits
+    to the default), the set-mode and set-orientation sequences (manga-id gate, flag write,
+    requested-page save, chapter reload, viewer-chapters re-emit; orientation additionally emits
+    the resolved orientation between the install and the re-emit), and the crop-borders split
+    (pager vs webtoon preference pair, selected once by pager type, inverted, stored, new value
+    returned). No behaviour change: every rule is the code that already ran, moved not rethought;
+    two honest scope notes - the set-paths' manga-null gate moved from the caller thread to IO,
+    and the pager-type question is now asked once by the resolver (new public `isPagerType()`,
+    including from `sessionViewportMode`) where the old view model re-derived it per call site -
+    behavior-identical rewiring. Gated by `ViewerModeResolverTest` (resolution tables, set-sequence
+    orders, crop-borders pair) and `ViewerModeResolverOwnershipTest` (drives; one-home decision
+    tables; all 17 effects implemented). PR #338 also carries the main-navigation back fix (owner
+    defect report 2026-11-08: back at a main tab now exits instead of hopping to the previously
+    visited tab) - outside this audit's reader scope, recorded in the ledger.
 - **Stage 4 (R-C) — `ReaderPage` becomes immutable metadata + a `PageResource` handle.** Bytes and
   merged bitmaps move behind the chapter loader/resource owner; completes `MED-002` and resolves
   F5/F7. Deliberately last: it touches the loaders, smart-merge, the pre-processor and both viewers,
@@ -267,6 +284,6 @@ retirement of the View fallback (Stage 1 inventory first), and the Stage 3 coord
   independently landable, and the stages are reversible individually. **Update 2026-11-08:** the
   owner's go-ahead started execution; Stage 1 (R-B) and Stage 2 (R-D) have landed (PR #332,
   PR #333, CI-verified), and Stage 3 has begun - seams 1 (`ChapterLoadingCoordinator`), 2
-  (`ReaderImageActions`), 3 (`ReaderDownloadPolicy`) and 4 (`ReaderProgressRecorder`) landed as
-  PR #334, PR #335, PR #336 and PR #337, CI-verified. The remaining Stage 3 seam and Stage 4
-  remain proposals and nothing in them has begun.
+  (`ReaderImageActions`), 3 (`ReaderDownloadPolicy`), 4 (`ReaderProgressRecorder`) and 5
+  (`ViewerModeResolver`) landed as PR #334, PR #335, PR #336, PR #337 and PR #338, CI-verified.
+  Stage 4 remains a proposal and nothing in it has begun.
