@@ -20,8 +20,6 @@ import androidx.core.graphics.red
 import androidx.core.graphics.scale
 import com.hippo.unifile.UniFile
 import ephyra.core.common.util.system.GLUtil
-import ephyra.core.common.util.system.ImageUtil.STUB_MAX_HEIGHT_FRACTION
-import ephyra.core.common.util.system.ImageUtil.STUB_MIN_HEIGHT_FRACTION
 import logcat.LogPriority
 import okio.Buffer
 import okio.BufferedSource
@@ -29,7 +27,6 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.util.Locale
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -75,6 +72,15 @@ object ImageUtil {
             false
         }
     }
+
+    /**
+     * Prefix-only animated check for callers holding a raw [InputStream] — the reader's smart-merge
+     * scan and the downloader's stub pass. Reads [ANIMATION_PREFIX_BYTES] and leaves the rest of
+     * the stream unread, so a page that is *not* merged costs a header read instead of the full
+     * buffer the old scan paid for every adjacent pair it inspected.
+     */
+    fun isAnimatedAndSupported(imageStream: InputStream): Boolean =
+        isAnimatedAndSupported(Buffer().readFrom(imageStream, ANIMATION_PREFIX_BYTES))
 
     /**
      * Read up to 32 bytes from [stream] for magic-byte detection.
@@ -380,125 +386,6 @@ object ImageUtil {
     }
 
     /**
-     * Check whether the image is a small "stub" relative to a reference image.
-     * A stub has approximately the same width as the reference and a height that is
-     * at least [STUB_MIN_HEIGHT_FRACTION] but strictly less than [STUB_MAX_HEIGHT_FRACTION]
-     * of the reference height.
-     *
-     * The lower bound filters out near-empty or 1-pixel filler images that should never
-     * trigger a merge; the upper bound (exclusive) rejects pages that are too large to be
-     * a watermark strip.
-     */
-    fun isSmallPage(imageSource: BufferedSource, referenceSource: BufferedSource): Boolean {
-        val options = extractImageOptions(imageSource)
-        val refOptions = extractImageOptions(referenceSource)
-        if (options.outWidth <= 0 || options.outHeight <= 0 || refOptions.outWidth <= 0 || refOptions.outHeight <= 0) {
-            return false
-        }
-        val widthSimilar = abs(options.outWidth - refOptions.outWidth) <= refOptions.outWidth * 0.05f
-        if (!widthSimilar) return false
-        val heightFraction = options.outHeight.toFloat() / refOptions.outHeight.toFloat()
-        return heightFraction in STUB_MIN_HEIGHT_FRACTION..<STUB_MAX_HEIGHT_FRACTION
-    }
-
-    /**
-     * Lightweight overload that accepts a raw [InputStream] for the candidate stub so that
-     * callers can check dimensions without having to buffer the entire image in memory first.
-     * Only the image headers are read from [imageStream].
-     */
-    fun isSmallPage(imageStream: InputStream, referenceSource: BufferedSource): Boolean {
-        val options = BitmapFactory.Options().apply {
-            inJustDecodeBounds = true
-            BitmapFactory.decodeStream(imageStream, null, this)
-        }
-        val refOptions = extractImageOptions(referenceSource)
-        if (options.outWidth <= 0 || options.outHeight <= 0 || refOptions.outWidth <= 0 || refOptions.outHeight <= 0) {
-            return false
-        }
-        val widthSimilar = abs(options.outWidth - refOptions.outWidth) <= refOptions.outWidth * 0.05f
-        if (!widthSimilar) return false
-        val heightFraction = options.outHeight.toFloat() / refOptions.outHeight.toFloat()
-        return heightFraction in STUB_MIN_HEIGHT_FRACTION..<STUB_MAX_HEIGHT_FRACTION
-    }
-
-    /**
-     * Lightweight overload that accepts a raw [InputStream] for the candidate stub so that
-     * callers can check dimensions without having to buffer the entire image in memory first.
-     * Only the image headers are read from [imageStream].
-     * @param minHeightFraction minimum height fraction to consider as a stub (inclusive)
-     * @param maxHeightFraction maximum height fraction to consider as a stub (exclusive)
-     */
-    fun isSmallPage(
-        imageStream: InputStream,
-        referenceSource: BufferedSource,
-        minHeightFraction: Float,
-        maxHeightFraction: Float,
-    ): Boolean {
-        val options = BitmapFactory.Options().apply {
-            inJustDecodeBounds = true
-            BitmapFactory.decodeStream(imageStream, null, this)
-        }
-        val refOptions = extractImageOptions(referenceSource)
-        if (options.outWidth <= 0 || options.outHeight <= 0 || refOptions.outWidth <= 0 || refOptions.outHeight <= 0) {
-            return false
-        }
-        val widthSimilar = abs(options.outWidth - refOptions.outWidth) <= refOptions.outWidth * 0.05f
-        if (!widthSimilar) return false
-        val heightFraction = options.outHeight.toFloat() / refOptions.outHeight.toFloat()
-        return heightFraction in minHeightFraction..<maxHeightFraction
-    }
-
-    /**
-     * Lightweight overload for callers that have already decoded the reference image and
-     * cached its dimensions. Only the image headers are read from [imageStream]; no stream
-     * is opened for the reference.
-     */
-    fun isSmallPage(imageStream: InputStream, refWidth: Int, refHeight: Int): Boolean {
-        if (refWidth <= 0 || refHeight <= 0) return false
-        val options = BitmapFactory.Options().apply {
-            inJustDecodeBounds = true
-            BitmapFactory.decodeStream(imageStream, null, this)
-        }
-        if (options.outWidth <= 0 || options.outHeight <= 0) return false
-        val widthSimilar = abs(options.outWidth - refWidth) <= refWidth * 0.05f
-        if (!widthSimilar) return false
-        val heightFraction = options.outHeight.toFloat() / refHeight.toFloat()
-        return heightFraction in STUB_MIN_HEIGHT_FRACTION..<STUB_MAX_HEIGHT_FRACTION
-    }
-
-    /**
-     * Lightweight overload for callers that have already decoded the reference image and
-     * cached its dimensions, and that supply the stub bounds per series. Only the image
-     * headers are read from [imageStream]; no stream is opened for the reference.
-     *
-     * **Why this is a sibling and not a local function.** It was declared *inside* the
-     * three-argument overload above, so it was invisible as `ImageUtil.isSmallPage(...)` and the
-     * reader's smart-merge call site could not resolve it. `PagerViewer` is the only caller and it
-     * passes five arguments; a nested declaration compiles but is not reachable from there.
-     *
-     * @param minHeightFraction minimum height fraction to consider as a stub (inclusive)
-     * @param maxHeightFraction maximum height fraction to consider as a stub (exclusive)
-     */
-    fun isSmallPage(
-        imageStream: InputStream,
-        refWidth: Int,
-        refHeight: Int,
-        minHeightFraction: Float,
-        maxHeightFraction: Float,
-    ): Boolean {
-        if (refWidth <= 0 || refHeight <= 0) return false
-        val options = BitmapFactory.Options().apply {
-            inJustDecodeBounds = true
-            BitmapFactory.decodeStream(imageStream, null, this)
-        }
-        if (options.outWidth <= 0 || options.outHeight <= 0) return false
-        val widthSimilar = abs(options.outWidth - refWidth) <= refWidth * 0.05f
-        if (!widthSimilar) return false
-        val heightFraction = options.outHeight.toFloat() / refHeight.toFloat()
-        return heightFraction in minHeightFraction..<maxHeightFraction
-    }
-
-    /**
      * Combine two images vertically, placing the second image below the first.
      * Proportionally scales images to match [targetWidth] if their widths slightly differ,
      * preventing transparent gutters.
@@ -561,12 +448,6 @@ object ImageUtil {
         RIGHT,
         LEFT,
     }
-
-    /** Minimum height fraction for a page to be considered a watermark stub (2 % of reference). */
-    private const val STUB_MIN_HEIGHT_FRACTION = 0.02f
-
-    /** Maximum height fraction (exclusive) for a page to be considered a watermark stub (< 30 % of reference). */
-    private const val STUB_MAX_HEIGHT_FRACTION = 0.3f
 
     /**
      * Check whether the image is considered a tall image.
@@ -831,6 +712,13 @@ object ImageUtil {
      * For images smaller than ~288×256, BitmapFactory silently caps the subsample.
      */
     private const val DHASH_SAMPLE_SIZE = 32
+
+    /**
+     * Bytes buffered for the [InputStream] animated check — the 32 the magic probe reads, plus
+     * slack so the probe never races the buffer's end. Reading a bounded prefix is what keeps the
+     * smart-merge scans header-only in the non-merge case.
+     */
+    private const val ANIMATION_PREFIX_BYTES = 64L
 }
 
 val getDisplayMaxHeightInPx: Int
