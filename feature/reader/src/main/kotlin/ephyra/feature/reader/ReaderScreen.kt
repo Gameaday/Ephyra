@@ -89,6 +89,7 @@ fun ReaderScreen(
     onPreviousChapter: () -> Unit,
     onPageIndexChange: (Int) -> Unit,
     showToast: (Int) -> Unit,
+    viewerHost: ReaderViewerHost,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -135,28 +136,33 @@ fun ReaderScreen(
             .then(if (automaticBackground) Modifier.background(canvasColor) else Modifier),
     ) {
         // 1. Viewer Surface
+        //
+        // R-D (Stage 2 of the reader modular redesign, 2026-11-08): the viewer surfaces route
+        // their host callbacks through the injected ReaderViewerHost instead of a
+        // `context as? ReaderActivity` cast - the rendering path no longer knows the concrete
+        // host class, and it can no longer silently not render because a cast returned null (no
+        // production context produced one: the screen is composed only by ReaderActivity, which
+        // implements the contract).
         key(currentViewer) {
-            val context = LocalContext.current
-            val activity = context as? ReaderActivity
-            if (currentViewer is PagerViewer && activity != null) {
+            if (currentViewer is PagerViewer) {
                 ComposePagerReader(
                     viewer = currentViewer,
-                    onPageSelected = activity::onPageSelected,
-                    onPageLongTap = activity::onPageLongTap,
-                    onToggleMenu = activity::toggleMenu,
-                    onRequestPreload = activity::requestPreloadChapter,
+                    onPageSelected = viewerHost::onPageSelected,
+                    onPageLongTap = viewerHost::onPageLongTap,
+                    onToggleMenu = viewerHost::toggleMenu,
+                    onRequestPreload = viewerHost::requestPreloadChapter,
                     onNextChapter = onNextChapter,
                     onPreviousChapter = onPreviousChapter,
                     onReturnToSeries = onNavigateUp,
                     modifier = Modifier.fillMaxSize(),
                 )
-            } else if (currentViewer is WebtoonViewer && activity != null) {
+            } else if (currentViewer is WebtoonViewer) {
                 ComposeWebtoonReader(
                     viewer = currentViewer,
-                    onPageSelected = activity::onPageSelected,
-                    onPageLongTap = activity::onPageLongTap,
-                    onToggleMenu = activity::toggleMenu,
-                    onRequestPreload = activity::requestPreloadChapter,
+                    onPageSelected = viewerHost::onPageSelected,
+                    onPageLongTap = viewerHost::onPageLongTap,
+                    onToggleMenu = viewerHost::toggleMenu,
+                    onRequestPreload = viewerHost::requestPreloadChapter,
                     onNextChapter = onNextChapter,
                     onPreviousChapter = onPreviousChapter,
                     onReturnToSeries = onNavigateUp,

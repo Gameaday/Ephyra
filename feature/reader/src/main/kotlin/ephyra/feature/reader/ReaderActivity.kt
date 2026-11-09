@@ -75,7 +75,7 @@ import ephyra.presentation.core.R as CoreR
 
 @AndroidEntryPoint
 @OptIn(FlowPreview::class)
-class ReaderActivity : BaseActivity() {
+class ReaderActivity : BaseActivity(), ReaderViewerHost {
 
     companion object {
         fun newIntent(context: Context, mangaId: Long?, chapterId: Long?): Intent {
@@ -173,6 +173,7 @@ class ReaderActivity : BaseActivity() {
                     onPreviousChapter = { lifecycleScope.launch { viewModel.loadPreviousChapter() } },
                     onPageIndexChange = ::moveToPageIndex,
                     showToast = ::showToast,
+                    viewerHost = this,
                 )
             }
         }
@@ -436,19 +437,23 @@ class ReaderActivity : BaseActivity() {
         viewer.moveToPage(page)
     }
 
-    fun onPageSelected(page: ReaderPage) {
+    // R-D (Stage 2 of the reader modular redesign, 2026-11-08): these four members implement
+    // ReaderViewerHost - the callback contract ReaderScreen takes instead of casting its context
+    // to this class. The bodies are unchanged: the screen's viewer callbacks land exactly where
+    // they did before the cast was removed.
+    override fun onPageSelected(page: ReaderPage) {
         viewModel.onEvent(ReaderEvent.PageSelected(page))
     }
 
-    fun onPageLongTap(page: ReaderPage) {
+    override fun onPageLongTap(page: ReaderPage) {
         viewModel.onEvent(ReaderEvent.OpenPageDialog(page))
     }
 
-    fun requestPreloadChapter(chapter: ReaderChapter) {
+    override fun requestPreloadChapter(chapter: ReaderChapter) {
         lifecycleScope.launchNonCancellable { viewModel.preload(chapter) }
     }
 
-    fun toggleMenu() {
+    override fun toggleMenu() {
         setMenuVisibility(!viewModel.state.value.menuVisible)
     }
 

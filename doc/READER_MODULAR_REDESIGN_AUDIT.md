@@ -9,7 +9,8 @@
 > claimed** — every finding cites the file and line it was read from at the recorded commit.
 > **Update 2026-11-08 (later the same day):** Stage 1 (R-B) has landed as PR #332 under the owner's
 > go-ahead - section 3 F4 carries the dated inventory correction, and the Stage 1 entry in section 4
-> records what shipped. Stages 2-4 remain proposals.
+> records what shipped. Stage 2 (R-D) landed the same way as PR #333 - section 3 F6 and the Stage 2
+> entry in section 4 record what shipped. Stages 3-4 remain proposals.
 
 This is an audit and a plan, not a record of completed work. Section 2 is what already landed;
 nothing in Section 4 has begun.
@@ -136,13 +137,19 @@ viewer behaviour (Stage 2). The same file hosts an `AndroidView` fallback for no
 which `Viewer` implementations still need the View path is the Stage 1 inventory question, and its
 answer decides whether the View paint path can be retired or must be kept for the fallback alone.
 
+> **Update 2026-11-08 (Stage 2 landed, PR #333):** the cast is gone. `ReaderScreen` takes
+> `ReaderViewerHost`, a four-method callback interface, and `ReaderActivity` implements it by
+> delegating to the same members - every callback lands where it did. The fallback question this
+> section asked was answered by Stage 1's inventory (no `Viewer` implementation needs the View
+> path; the branch stays as an interface safety net).
+
 ### F7 — UI reads page payload bytes directly
 
 `ReaderScreen`'s automatic-background decision reads
 `state.currentChapter?.pages?.getOrNull(currentPage)?.cachedBytes` (around `:106`) — UI reading a
 page's working bytes rather than a rendered-surface signal. Same root as F5; resolved by Stage 4.
 
-## 4. Staged redesign (decision record; Stage 1 done 2026-11-08; Stages 2-4 proposals)
+## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stages 3-4 proposals)
 
 - **Stage 0 (this change, docs-only):** this audit; `B-009` superseded and `B-010` bounded in the
   ledger; the viewport contract's stale gesture sentence corrected; this document indexed.
@@ -158,9 +165,15 @@ page's working bytes rather than a rendered-surface signal. Same root as F5; res
   night-mode invert as a Compose effect remains the owner decision it always was. Gated by
   `ReaderRenderOwnershipTest`. The `AndroidView` fallback branch stays (interface safety net);
   `Viewer.getView()` retirement is Stage 2/4 scope.
-- **Stage 2 (R-D) — callbacks replace the cast.** A small viewer-host callback interface;
-  `ReaderScreen` takes the interface, `ReaderActivity` implements it. Self-contained, testable by
-  contract, no viewer behaviour change.
+- **Stage 2 (R-D) - callbacks replace the cast. DONE 2026-11-08 (PR #333, E1 + CI):** the interface
+  is `ReaderViewerHost` - four methods (`onPageSelected`, `onPageLongTap`, `toggleMenu`,
+  `requestPreloadChapter`), exactly the set the Compose viewer surfaces invoke. `ReaderScreen` takes
+  the interface and routes all four callbacks through it; the `context as? ReaderActivity` cast is
+  deleted, so the rendering path no longer knows the concrete host class and can no longer silently
+  not render because a cast returned null - no production context produced one (the screen is
+  composed only by `ReaderActivity`, which implements the contract by delegating to the same
+  members). No viewer behaviour change. Gated by `ReaderViewerHostOwnershipTest`, including the
+  unwired-contract rule: an interface member the screen does not route fails the build.
 - **Stage 3 (R-A) — split `ReaderViewModel` per seam.** Coordinators land one seam at a time, each
   with its own tests; `ReaderSessionCoordinator` (A2) is the template — a coordinator the VM drives,
   with an effect log as the seam. Proposed order: `ChapterLoadingCoordinator` (loading, preload,
@@ -186,5 +199,5 @@ retirement of the View fallback (Stage 1 inventory first), and the Stage 3 coord
 - **No local build:** docs-only change; remote CI is the verification channel for this commit.
 - The staged plan is a **proposal for owner review**. It is sequenced, each stage is
   independently landable, and the stages are reversible individually. **Update 2026-11-08:** the
-  owner's go-ahead started execution; Stage 1 (R-B) has landed (PR #332, CI-verified). Stages 2-4
-  remain proposals and nothing in them has begun.
+  owner's go-ahead started execution; Stage 1 (R-B) and Stage 2 (R-D) have landed (PR #332,
+  PR #333, CI-verified). Stages 3-4 remain proposals and nothing in them has begun.
