@@ -54,7 +54,7 @@ fail the Phase-1 acceptance gates. See §5–§6.
 | Shared-cover flight (library/history/updates/source/search → series) | `MainActivity.hostsSharedCover`, `MangaCover` | Wired; Coil crossfade off for shared element |
 | Predictive back | manifest opt-in; `presentation-core/.../ui/navigation/PredictiveBack.kt` | Wired for **sheets** and the **series page** only |
 | Reduced motion | `presentation-core/.../ui/navigation/LocalMotionPreference.kt` | **OS animator scale only** |
-| Reader motion (separate Activity) | `ReaderActivity` window anims + `ViewerConfig` | Wired; own toggles |
+| Reader motion (separate Activity) | `ReaderActivity` window anims + `ViewerConfig` | Wired; own toggles. **Superseded 2026-11-09:** the window anims are deleted — the platform owns the Activity boundary now (owner-reported defect 2); the in-page `ViewerConfig` motion is unchanged |
 | Themes | `presentation-core/.../theme/EphyraTheme.kt` — 17 `AppTheme`s, 3 branded configs | Wired |
 | Structural gates | `MotionConsistencyTest`, `LibrarySeriesTransitionTest`, `PredictiveBackGateTest`, `TabNavControllerLifetimeTest` | Present (see F1, F8 for gaps) |
 
@@ -437,7 +437,7 @@ platform default) rather than the whole system, and record why in the contract.
 | F5 | Translucent-surface contrast | **Measured — not a defect** | Measured AA-passing ratios; added `BrandedContrastTest`; no alpha change |
 | F6 | Monet scheme could go stale | **Fixed** | `context` added to the `remember` keys |
 | F7 | Token leaks | **Partly fixed** | Banners themed; duplicate `WindowSize` deleted; stale items corrected in this document. Motion v2 (2026-11-08): the last inline curves name tokens (`ReaderScreen.kt`, `CalendarHeader.kt`) and the motion vocabulary is gated by `MotionVocabularyTest` (now in `MotionTokens.kt`, renamed from `Motion.kt` by the ktlint filename rule). The broader structural gate for raw `tween`/`Color` outside the tokens is **still not added** |
-| F8 | Non-predictive back surfaces | **Partly addressed** | `PredictiveBackGateTest` now scans every module's `src/main`; the non-previewable surfaces are enumerated in `MOTION_NAVIGATION_CONTRACT.md`. No surface was converted, because none of the remaining ones has a spatial position to preview |
+| F8 | Non-predictive back surfaces | **Partly addressed** | `PredictiveBackGateTest` now scans every module's `src/main`; the non-previewable surfaces are enumerated in `MOTION_NAVIGATION_CONTRACT.md`. No surface was converted, because none of the remaining ones has a spatial position to preview. **2026-11-09:** the reader/WebView window transitions — the one "platform-animated" surface that was not — are deleted, so that category is literally true now: the Activity boundary motion is the system's own (see `MOTION_NAVIGATION_CONTRACT.md`) |
 | F9 | Toast/Snackbar split | **Not done** | Out of the motion/back scope; recorded |
 | F10 | No device motion validation | **Not done** | Needs hardware; recorded |
 
