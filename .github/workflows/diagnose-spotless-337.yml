@@ -1,0 +1,48 @@
+name: Diagnose spotless 337
+on:
+  workflow_dispatch:
+  push:
+    branches: [program/33-r-a-reader-progress-recorder]
+concurrency:
+  group: diagnose-spotless-337
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  spotless-violations:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up JDK
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          java-version: 21
+          distribution: temurin
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-read-only: true
+          gradle-home-cache-cleanup: true
+      - name: Run spotlessCheck and re-emit violations as annotations
+        run: |
+          set +e
+          OUT="$(./gradlew spotlessCheck --build-cache --parallel --no-daemon 2>&1)"
+          RC=$?
+          echo "$OUT"
+          echo "$OUT" | awk '/had format violations/ {inv=1} /^FAILURE: Build failed/ {inv=0} inv' | head -120 > /tmp/violations.txt
+          split -l 12 -d /tmp/violations.txt /tmp/chunk_
+          i=0
+          for chunk in /tmp/chunk_*; do
+            i=$((i+1))
+            if [ $i -le 9 ]; then
+              MSG="$(head -c 900 "$chunk" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')"
+              echo "::error title=spotless violations part $i::$MSG"
+            fi
+          done
+          if [ "$RC" -ne 0 ]; then
+            echo "::error title=spotless verdict::spotlessCheck FAILED (exit $RC) - see the violation hunks in these annotations"
+          else
+            echo "::notice title=spotless verdict::spotlessCheck PASSED on this head"
+          fi
+          exit 0
