@@ -13,6 +13,7 @@
 > entry in section 4 record what shipped. Stage 3 has begun as proposed - its first coordinator
 > (`ChapterLoadingCoordinator`) landed as PR #334; section 3 F3 and the Stage 3 entry in section
 > 4 record what shipped. Seam 2 (`ReaderImageActions`) landed the same way as PR #335 - the
+> Stage 3 entry in section 4 records what shipped. Seam 3 (`ReaderDownloadPolicy`) landed the same way as PR #336 - the
 > Stage 3 entry in section 4 records what shipped. The rest of Stage 3 and Stage 4 remain
 > proposals.
 
@@ -159,7 +160,7 @@ answer decides whether the View paint path can be retired or must be kept for th
 `state.currentChapter?.pages?.getOrNull(currentPage)?.cachedBytes` (around `:106`) — UI reading a
 page's working bytes rather than a rendered-surface signal. Same root as F5; resolved by Stage 4.
 
-## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stage 3 seams 1-2 done 2026-11-08; the rest proposals)
+## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stage 3 seams 1-3 done 2026-11-08; the rest proposals)
 
 - **Stage 0 (this change, docs-only):** this audit; `B-009` superseded and `B-010` bounded in the
   ledger; the viewport contract's stale gesture sentence corrected; this document indexed.
@@ -217,6 +218,22 @@ page's working bytes rather than a rendered-surface signal. Same root as F5; res
     share-failure propagation) and `ReaderImageActionsOwnershipTest` (the view model drives
     the coordinator; the filename and hash-match rules have one home; all 18 effects are
     implemented).
+  - **Seam 3 done 2026-11-08 (PR #336, E1 + CI): `ReaderDownloadPolicy` (download-ahead,
+    remove-after-read, queue-cancel).** The view model drives it; the coordinator owns the
+    quarter-chapter download-ahead trigger, the gate order (downloaded-loader gate,
+    already-downloaded-next gate with the cache snapshot awaited first, nonzero amount), the
+    duplicate collapsing + amount cap of the download-ahead list, the queue-cancel of chapters
+    opened from the download queue, and the remove-after-read slot arithmetic (requeue-slot
+    drop before the delete decision, read-target gate). The navigation-universe dedup in
+    `getChapterList` (`removeDuplicates(selectedChapter)`) is a different decision - which
+    chapters exist to navigate - and deliberately stays in the view model. No behaviour
+    change: every rule is the code that already ran, moved not rethought; one honest scope
+    note - the old `downloadNextChapters` ran its first three gates on the caller's thread and
+    the drive now runs the whole decision on IO, gate order unchanged. Gated by
+    `ReaderDownloadPolicyTest` (trigger boundary, gate order, duplicate collapse, queue-cancel,
+    remove-after-read tables) and `ReaderDownloadPolicyOwnershipTest` (the view model drives
+    the coordinator; the download decision tables have one home; all 15 effects are
+    implemented).
 - **Stage 4 (R-C) — `ReaderPage` becomes immutable metadata + a `PageResource` handle.** Bytes and
   merged bitmaps move behind the chapter loader/resource owner; completes `MED-002` and resolves
   F5/F7. Deliberately last: it touches the loaders, smart-merge, the pre-processor and both viewers,
@@ -236,6 +253,6 @@ retirement of the View fallback (Stage 1 inventory first), and the Stage 3 coord
 - The staged plan is a **proposal for owner review**. It is sequenced, each stage is
   independently landable, and the stages are reversible individually. **Update 2026-11-08:** the
   owner's go-ahead started execution; Stage 1 (R-B) and Stage 2 (R-D) have landed (PR #332,
-  PR #333, CI-verified), and Stage 3 has begun - seams 1 (`ChapterLoadingCoordinator`) and 2
-  (`ReaderImageActions`) landed as PR #334 and PR #335, CI-verified. The remaining Stage 3
-  seams and Stage 4 remain proposals and nothing in them has begun.
+  PR #333, CI-verified), and Stage 3 has begun - seams 1 (`ChapterLoadingCoordinator`), 2 (`ReaderImageActions`) and 3
+  (`ReaderDownloadPolicy`) landed as PR #334, PR #335 and PR #336, CI-verified. The remaining
+  Stage 3 seams and Stage 4 remain proposals and nothing in them has begun.
