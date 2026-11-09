@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The activity boundary's close animation: a pure crossfade, nothing moves.
+
+    This is the animation that plays when ActivityBoundaryCrossfadeHost commits the predictive
+    back gesture through finish() — the whole reason the host exists, because the system's own
+    cross-activity finish bypasses theme animations entirely. Alpha only, duration and
+    interpolator matching MotionPolicy's crossfade token; see activity_boundary_fade_in.xml.
+-->
+<alpha
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="200"
+    android:fromAlpha="1.0"
+    android:interpolator="@android:interpolator/fast_out_slow_in"
+    android:toAlpha="0.0" />

@@ -16,6 +16,8 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -49,6 +51,10 @@ import ephyra.feature.reader.viewer.pager.R2LPagerViewer
 import ephyra.feature.reader.viewer.pager.VerticalPagerViewer
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.presentation.core.ui.activity.BaseActivity
+import ephyra.presentation.core.ui.navigation.ActivityBoundaryCrossfadeHost
+import ephyra.presentation.core.ui.navigation.LocalMotionPreference
+import ephyra.presentation.core.ui.navigation.effectiveReducedMotion
+import ephyra.presentation.core.ui.navigation.rememberSystemReducedMotion
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toShareIntent
@@ -127,16 +133,17 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
     internal var isScrollingThroughPages = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // No window transition is registered, on purpose. This activity once mirrored the Compose
-        // shared axis in its window (the push pair on open, the pop pair in [finish]), but on
-        // Android 14+ the predictive back gesture runs the system's cross-activity animation and
-        // bypasses a custom close transition — so leaving the reader moved one way by gesture,
-        // another way by the toolbar's up arrow, and the entry slide paired with an exit that was
-        // not its reverse. No app window animation can join the gesture (a window cannot reveal
-        // the activity underneath itself), so the platform owns this boundary: entry and the
-        // non-gesture exits use the theme's standard activity animations, the gesture uses the
-        // system's predictive reveal, and every exit path moves the same way. Reduced motion needs
-        // no branch here: the platform honours the animator scale setting on its own.
+        // This activity owns its boundary motion as one minimal crossfade with no movement,
+        // on purpose (owner directive 2026-11-09). PR #339 left this boundary to the platform,
+        // but the system's predictive cross-activity animation is a scale reveal that reads
+        // as elements flying and zooming into the background — the exact complaint in the
+        // motion audit — and the open path had no preview at all. The theme
+        // (Theme.Tachiyomi.ActivityBoundary) renders every open and non-gesture close as a
+        // pure-alpha crossfade; ActivityBoundaryCrossfadeHost routes a committed predictive
+        // back gesture through finish() so the same close crossfade plays instead of the
+        // system reveal, with a drag-proportional dim as the live gesture preview. Reduced
+        // motion is honoured by the OS animator scale on the window fades, and the host skips
+        // the dim under the reduce-motion preference.
         // `MotionConsistencyTest` gates this — see `MOTION_NAVIGATION_CONTRACT.md`.
 
         window.applyHighRefreshRate()
@@ -149,24 +156,32 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
 
         setComposeContent {
             EphyraTheme {
-                ReaderScreen(
-                    viewModel = viewModel,
-                    currentViewer = currentViewer,
-                    navigationOverlay = navigationOverlayState,
-                    onDismissNavigationOverlay = { navigationOverlayState = null },
-                    readerPreferences = readerPreferences,
-                    displayRefreshHost = displayRefreshHost,
-                    onNavigateUp = onBackPressedDispatcher::onBackPressed,
-                    onClickTopAppBar = ::openMangaScreen,
-                    onOpenInWebView = ::openChapterInWebView.takeIf { viewModel.getSource() is HttpSource },
-                    onOpenInBrowser = ::openChapterInBrowser.takeIf { viewModel.getSource() is HttpSource },
-                    onShare = ::shareChapter.takeIf { viewModel.getSource() is HttpSource },
-                    onNextChapter = { lifecycleScope.launch { viewModel.loadNextChapter() } },
-                    onPreviousChapter = { lifecycleScope.launch { viewModel.loadPreviousChapter() } },
-                    onPageIndexChange = ::moveToPageIndex,
-                    showToast = ::showToast,
-                    viewerHost = this,
-                )
+                val systemReducedMotion = rememberSystemReducedMotion()
+                val appReduceMotion by uiPreferences.reduceMotion().collectAsState()
+                CompositionLocalProvider(
+                    LocalMotionPreference provides effectiveReducedMotion(systemReducedMotion, appReduceMotion),
+                ) {
+                    ActivityBoundaryCrossfadeHost(onExit = ::finish) {
+                        ReaderScreen(
+                            viewModel = viewModel,
+                            currentViewer = currentViewer,
+                            navigationOverlay = navigationOverlayState,
+                            onDismissNavigationOverlay = { navigationOverlayState = null },
+                            readerPreferences = readerPreferences,
+                            displayRefreshHost = displayRefreshHost,
+                            onNavigateUp = onBackPressedDispatcher::onBackPressed,
+                            onClickTopAppBar = ::openMangaScreen,
+                            onOpenInWebView = ::openChapterInWebView.takeIf { viewModel.getSource() is HttpSource },
+                            onOpenInBrowser = ::openChapterInBrowser.takeIf { viewModel.getSource() is HttpSource },
+                            onShare = ::shareChapter.takeIf { viewModel.getSource() is HttpSource },
+                            onNextChapter = { lifecycleScope.launch { viewModel.loadNextChapter() } },
+                            onPreviousChapter = { lifecycleScope.launch { viewModel.loadPreviousChapter() } },
+                            onPageIndexChange = ::moveToPageIndex,
+                            showToast = ::showToast,
+                            viewerHost = this,
+                        )
+                    }
+                }
             }
         }
 
@@ -290,7 +305,8 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
 
     override fun finish() {
         // Still overridden for the reader-lifecycle event only: no close transition is registered
-        // here — the platform owns the window's motion (see onCreate).
+        // here — the theme's boundary crossfade owns the window's close motion, and the predictive
+        // back gesture commits through this finish() so the same crossfade plays (see onCreate).
         sendActivityFinish()
         super.finish()
     }
@@ -611,3 +627,4 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
         }
     }
 }
+

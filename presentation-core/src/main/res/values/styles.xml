@@ -55,4 +55,25 @@
         <item name="elevationOverlayEnabled">@bool/elevationOverlayEnabled</item>
     </style>
 
+
+    <!--================-->
+    <!--Activity boundary-->
+    <!--================-->
+    <!--
+        The window animations for Theme.Tachiyomi.ActivityBoundary (reader, WebView): a minimal
+        crossfade with no movement on open and close (owner directive 2026-11-09). Alpha only —
+        no translate, scale, or rotate — so the boundary cannot introduce movement. All four
+        activity transitions point at the same fade pair, which is what makes every path
+        (intent, deep link, gesture commit through finish()) render identically.
+        Duration and interpolator match MotionPolicy's crossfade token; MotionConsistencyTest
+        asserts both.
+    -->
+    <style name="ActivityBoundaryWindowAnimations" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/activity_boundary_fade_in</item>
+        <item name="android:activityOpenExitAnimation">@anim/activity_boundary_fade_out</item>
+        <item name="android:activityCloseEnterAnimation">@anim/activity_boundary_fade_in</item>
+        <item name="android:activityCloseExitAnimation">@anim/activity_boundary_fade_out</item>
+    </style>
+
 </resources>
+

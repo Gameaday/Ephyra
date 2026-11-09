@@ -145,10 +145,18 @@
                 android:resource="@xml/searchable" />
         </activity>
 
+        <!--
+            The reader and the WebView own their window motion: a minimal crossfade with no
+            movement on open and close (owner directive 2026-11-09). The boundary theme supplies
+            the window animations; ActivityBoundaryCrossfadeHost makes the predictive back
+            gesture commit through the same close crossfade instead of the system's reveal.
+            MotionConsistencyTest gates this — see doc/MOTION_NAVIGATION_CONTRACT.md.
+        -->
         <activity
             android:name="ephyra.feature.reader.ReaderActivity"
             android:exported="false"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.Tachiyomi.ActivityBoundary">
             <intent-filter>
                 <action android:name="com.samsung.android.support.REMOTE_ACTION" />
             </intent-filter>
@@ -166,7 +174,8 @@
         <activity
             android:name="ephyra.feature.webview.WebViewActivity"
             android:configChanges="uiMode|orientation|screenSize"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.Tachiyomi.ActivityBoundary" />
 
 
         <activity

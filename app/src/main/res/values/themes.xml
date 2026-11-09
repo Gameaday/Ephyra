@@ -95,6 +95,18 @@
         <item name="preferenceTheme">@style/PreferenceThemeOverlay.Tachiyomi</item>
     </style>
 
+    <!--
+        The activity boundary theme (reader, WebView): a minimal crossfade with no movement on
+        open and close (owner directive 2026-11-09). The window animations are the pure-alpha
+        activity_boundary_fade_in/out pair; ActivityBoundaryCrossfadeHost routes the predictive
+        back gesture's commit through finish() so the close crossfade plays here too, instead of
+        the system's scale reveal. MotionConsistencyTest gates this — see
+        doc/MOTION_NAVIGATION_CONTRACT.md.
+    -->
+    <style name="Theme.Tachiyomi.ActivityBoundary">
+        <item name="android:windowAnimationStyle">@style/ActivityBoundaryWindowAnimations</item>
+    </style>
+
     <!-- From ThemeOverlay.Material3.DynamicColors.Light -->
     <style name="Theme.Tachiyomi.Monet">
         <!-- Color palettes -->
@@ -714,3 +726,4 @@
     </style>
 
 </resources>
+
