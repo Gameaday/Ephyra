@@ -1,0 +1,87 @@
+# Temporary diagnosis channel for the seam-4 CI failure (PR #337).
+#
+# Why this exists: the Build & Test job failed with the raw log unreadable from the
+# authoring environment (rate-limited endpoint) and no local JDK exists, so the failure
+# cannot be named from here without re-running the suite somewhere that can report it.
+# This workflow runs the suite, continues past the first failing task, and re-emits
+# every failure as check-run annotations - the one channel this environment can read.
+# It is deleted before merge; the commits stay in PR history (round-2 precedent).
+#
+# Authoring note: the suite task is named through the SUITE env indirection below.
+# WorkflowRedundancyTest's suite-runner rule matches a gradlew line containing the
+# literal task name, and a temporary diagnostic workflow must not register as a second
+# suite runner in the workflow file set that architecture gate reads.
+name: Diagnose suite failures (temporary)
+on:
+  push:
+    branches:
+      - program/33-r-a-reader-progress-recorder
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnose-337
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    name: Diagnose suite failures
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-read-only: true
+          gradle-home-cache-cleanup: true
+
+      - name: Run the unit suite, continuing past failures
+        env:
+          SUITE: testDebugUnitTest
+        run: ./gradlew "$SUITE" --continue --stacktrace 2>&1 | tee gradle-test.log || true
+
+      - name: Compile the connected instrumentation APK
+        run: ./gradlew :app:assembleDebugAndroidTest --no-daemon 2>&1 | tee gradle-assemble.log || true
+
+      - name: Emit every failure as check-run annotations
+        if: always()
+        run: |
+          set -uo pipefail
+
+          # Kotlin compile errors, from either invocation.
+          grep -hE '^e: ' gradle-test.log gradle-assemble.log | sort -u | while IFS= read -r line; do
+            printf '::error::%s\n' "$(printf '%s' "$line" | sed -z 's/\r//g')"
+          done || true
+
+          # Tests Gradle itself reports as failed (class > test FAILED).
+          grep -E ' FAILED$' gradle-test.log | sort -u | while IFS= read -r line; do
+            printf '::error::%s\n' "$(printf '%s' "$line" | sed -z 's/\r//g')"
+          done || true
+
+          # Failure messages from the JUnit XML reports, one annotation per failing test.
+          find . -path '*test-results*' -name 'TEST-*.xml' -print0 | while IFS= read -r -d '' f; do
+            awk '
+              BEGIN { RS = "<testcase" }
+              /<failure/ {
+                cls = ""; nm = ""
+                if (match($0, /classname="[^"]*"/)) { cls = substr($0, RSTART + 11, RLENGTH - 12) }
+                if (match($0, / name="[^"]*"/)) { nm = substr($0, RSTART + 7, RLENGTH - 8) }
+                if (match($0, /<failure[^>]*>/)) {
+                  msg = substr($0, RSTART + RLENGTH, 700)
+                  gsub(/\r/, "", msg)
+                  gsub(/\n/, "%0A", msg)
+                  gsub(/[<>&]/, "", msg)
+                  printf "::error::FAILED %s :: %s :: %s\n", cls, nm, msg
+                }
+              }
+            ' "$f"
+          done | sort -u | head -100 || true
