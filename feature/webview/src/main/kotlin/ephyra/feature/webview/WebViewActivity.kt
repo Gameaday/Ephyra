@@ -1,6 +1,5 @@
 package ephyra.feature.webview
 
-import android.app.Activity
 import android.app.assist.AssistContent
 import android.content.Context
 import android.content.Intent
@@ -12,11 +11,9 @@ import ephyra.core.common.util.system.WebViewUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.source.service.SourceManager
-import ephyra.presentation.core.R
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
-import ephyra.presentation.core.util.view.overrideTransitionCompat
 import ephyra.presentation.core.util.view.setComposeContent
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -34,11 +31,10 @@ class WebViewActivity : BaseActivity() {
     private var assistUrl: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        overrideTransitionCompat(
-            OVERRIDE_TRANSITION_OPEN,
-            R.anim.shared_axis_x_push_enter,
-            R.anim.shared_axis_x_push_exit,
-        )
+        // No window transition is registered, on purpose: the platform owns this Activity
+        // boundary, so entry, the toolbar exit and the Android 14+ predictive back gesture all
+        // move the same way (`ReaderActivity` documents the full rationale, and
+        // `MotionConsistencyTest` gates it).
         super.onCreate(savedInstanceState)
 
         if (!WebViewUtil.supportsWebView(this)) {
@@ -76,15 +72,6 @@ class WebViewActivity : BaseActivity() {
     override fun onProvideAssistContent(outContent: AssistContent) {
         super.onProvideAssistContent(outContent)
         assistUrl?.let { outContent.webUri = it.toUri() }
-    }
-
-    override fun finish() {
-        super.finish()
-        overrideTransitionCompat(
-            OVERRIDE_TRANSITION_CLOSE,
-            R.anim.shared_axis_x_pop_enter,
-            R.anim.shared_axis_x_pop_exit,
-        )
     }
 
     private fun shareWebpage(url: String) {
