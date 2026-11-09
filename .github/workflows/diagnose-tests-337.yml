@@ -1,0 +1,88 @@
+# Temporary diagnosis workflow for PR #337 (Build & Test App "Run unit tests" red).
+# The unit-test failure summaries exist only inside authenticated job logs and
+# artifact downloads that also require authentication, so the actionable evidence
+# (failing testcase ids + messages, or Kotlin compile errors) is re-emitted here
+# as check-run annotations, which are readable unauthenticated. Deleted once the
+# branch is green; the commits remain in PR history as the record of how the
+# failure was diagnosed.
+name: Diagnose unit tests (PR 337)
+
+on:
+  push:
+    branches:
+      - program/33-r-a-reader-progress-recorder
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnose-337
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    name: Diagnose unit test failures
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-read-only: true
+          gradle-home-cache-cleanup: true
+
+      # Same task, same graph as the Build & Test gate, so what is diagnosed here
+      # is exactly what failed there. --continue so every failing test is recorded
+      # instead of the first one stopping the run.
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --continue --build-cache --parallel --no-daemon 2>&1 | tee gradle-out.txt
+
+      # Re-emit every recorded <failure> from the JUnit XML as a check-run
+      # annotation. Annotations are capped by GitHub at 10 per step; the awk
+      # pass therefore prints at most 10 and names the count in the last one so
+      # truncation is visible rather than silent.
+      - name: Emit test failures as annotations
+        if: always()
+        run: |
+          set -uo pipefail
+          n=0
+          for f in $(find . -path '*/build/test-results/testDebugUnitTest/TEST-*.xml' 2>/dev/null); do
+            grep -q '<failure' "$f" || continue
+            awk -v F="$(echo "$f" | sed 's#^\./##' | sed 's#^#/#')" '
+              /<testcase / {
+                name=$0; sub(/.* name="/,"",name); sub(/".*/,"",name)
+                cls=$0; sub(/.*classname="/,"",cls); sub(/".*/,"",cls)
+                cur=cls "." name
+              }
+              /<failure/ {
+                msg=$0; sub(/.*message="/,"",msg); sub(/".*/,"",msg)
+                gsub(/::/,";",msg)
+                printf "::error file=%s::%s | %s\n", F, cur, substr(msg,1,240)
+                c++
+                if (c>=10) exit
+              }
+            ' "$f"
+            n=$((n+1))
+          done
+          echo "files-with-failures=$n"
+
+      # If the red gate was a compile error, no XML exists and the failure lives
+      # in gradle-out.txt as "e: file:line:col message" lines. Surface those too.
+      - name: Emit compile errors as annotations
+        if: always()
+        run: |
+          set -uo pipefail
+          grep -E '^e: ' gradle-out.txt | head -10 | while IFS= read -r line; do
+            f=$(echo "$line" | sed -E 's/^e: file:\/\/\/([^:]+):.*/\1/')
+            rest=$(echo "$line" | sed -E 's/^e: file:\/\/\/[^:]+:[0-9]+:[0-9]+ //' | cut -c1-240)
+            echo "::error file=${f}::${rest}"
+          done
+          echo "compile-error-lines=$(grep -cE '^e: ' gradle-out.txt || true)"
