@@ -350,7 +350,12 @@ class ReaderProgressRecorderTest {
 
         coordinator.onChapterCompleted(ReaderChapter(chapter(1L, 12.3)))
 
-        assertEquals("markReadList:2, 4", calls.last(), "unread twins only: the read twin, the distinct number and the unrecognized placeholder are skipped")
+        assertEquals(
+            "markReadList:2, 4",
+            calls.last(),
+            "unread twins only: the read twin, the distinct number and the unrecognized placeholder are skipped",
+        )
         Unit
     }
 }
+
