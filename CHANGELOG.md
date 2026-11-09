@@ -126,6 +126,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🧭 Smart Merge Tiny-Stub Absorption (owner directive 2026-11-09: "improve the page smart merge capability, extend range to smaller stubs so that even a 1px tall stub is merged in, instead of being treated as its own page. audit the entire process and improve based on findings or rewrite")
+
+- **The defect:** the smart-combine floor excluded the smallest stubs. Both the reader's combine
+  pre-scan and the downloader's post-process merge classified a strip as a merge candidate only
+  above 2% of the reference page's height, so a 1px-tall strip (a scan artifact at a chapter seam,
+  a divider bar, a lettered tag) was published as its own page — the exact case the owner named.
+  The bounds also drifted across three homes: `ReaderPreferences` defaulted `0.02f`/`0.30f`,
+  `ImageUtil` carried private `STUB_*` copies of the same numbers, and
+  `Downloader.mergeStubPagesImpl` hardcoded the literals again — three places to disagree, and no
+  single definition of "stub".
+- **One owner for the classification:** new pure `SmartMergePolicy` (`core:domain`,
+  `ephyra.domain.reader.pager`) holds the constants and the fail-closed semantics: width must
+  match within an inclusive 5% tolerance; the height fraction qualifies in `[min, max)` — the
+  minimum defaults to `0f` (the 1px fix: a positive floor can never admit a zero-fraction strip)
+  and the maximum stays `0.30f`, exclusive; zero/negative dimensions and inverted knobs
+  (`min >= max`) fail closed (never classified as a stub). `ReaderPreferences` defaults now read
+  the policy constants, and the per-series override keys keep working against the new floor.
+  `ImageUtil`'s five `isSmallPage` overloads and `STUB_*` constants are deleted with their last
+  callers. No setters exist yet — the per-series knobs have no settings surface (deferred).
+- **Disclosed behavior change — anchor-relative measurement:** the old chained-merge loop
+  compared each next candidate against the *growing merged height*, so a long enough chain could
+  eventually absorb a real page once the merged stack outgrew the ceiling (drift). Both scanners
+  now capture the anchor's original dimensions once, before any merge, and measure every chained
+  candidate against those original dimensions.
+- **The downloader gains the top-stub case:** a leading strip above the first real page now
+  merges into the page below (`mergePages(top = strip, bottom = next)`; the merged file takes the
+  next page's base name; both originals are deleted). Previously only bottom stubs merged, so a
+  leading 1px strip was published as page one. The `PageLostException` recovery flow is preserved
+  verbatim in a `mergeAdjacentPages` helper.
+- **Scans are header-only now:** a new prefix-only `isAnimatedAndSupported(InputStream)` overload
+  (64 bytes) and `getImageDimensions`' non-consuming peek let both scanners classify from
+  headers — the old downloader buffered the current page fully on every iteration, and the old
+  reader buffered both pages of every adjacent pair.
+- **Toggle-off residue fixed:** turning smart combine off mid-session left previously-absorbed
+  pages with stale dimensions; `handleImagePropertyChanged` now resets `width`/`height` to `0`
+  (unknown) alongside `clearLoadedImage()`, the `clearLoadedImage` precedent.
+- **Gates and honesty:** `SmartMergePolicyTest` (9 tests) pins the 1px strip, the sub-floor strip
+  the old minimum excluded, the exclusive ceiling, the inclusive width tolerance, per-series
+  bounds, both fail-closed families, and the defaults. The feature stays behind
+  `pref_smart_combine_paged` (default off — the change is opt-in). No JDK locally; remote CI is
+  the verification channel, and every red round is disclosed in the PR and the ledger.
+
 ### 🧭 Activity Boundary Motion (owner-reported defect 2026-11-08: "back motion return from pages to main tab is not consistent and looks bad. this includes many of the transitions forward and back")
 
 - **The defect (the page-to-tab half of the owner's motion report):** the back motion returning from
