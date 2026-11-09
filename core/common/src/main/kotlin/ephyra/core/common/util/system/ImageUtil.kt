@@ -718,7 +718,7 @@ object ImageUtil {
      * slack so the probe never races the buffer's end. Reading a bounded prefix is what keeps the
      * smart-merge scans header-only in the non-merge case.
      */
-    private const val ANIMATION_PREFIX_BYTES = 64
+    private const val ANIMATION_PREFIX_BYTES = 64L
 }
 
 val getDisplayMaxHeightInPx: Int
