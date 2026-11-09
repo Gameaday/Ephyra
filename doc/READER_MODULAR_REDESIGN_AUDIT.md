@@ -10,7 +10,9 @@
 > **Update 2026-11-08 (later the same day):** Stage 1 (R-B) has landed as PR #332 under the owner's
 > go-ahead - section 3 F4 carries the dated inventory correction, and the Stage 1 entry in section 4
 > records what shipped. Stage 2 (R-D) landed the same way as PR #333 - section 3 F6 and the Stage 2
-> entry in section 4 record what shipped. Stages 3-4 remain proposals.
+> entry in section 4 record what shipped. Stage 3 has begun as proposed - its first coordinator
+> (`ChapterLoadingCoordinator`) landed as PR #334; section 3 F3 and the Stage 3 entry in section
+> 4 record what shipped. The rest of Stage 3 and Stage 4 remain proposals.
 
 This is an audit and a plan, not a record of completed work. Section 2 is what already landed;
 nothing in Section 4 has begun.
@@ -96,6 +98,12 @@ reading needs the worker. The call site (`ReaderViewModel`'s chapter-load path) 
 comment. A dated note is added to the row rather than deleting it: the row is the record of why the
 call site exists, and Stage 3's loading coordinator re-owns it.
 
+> **Update 2026-11-08 (Stage 3 seam 1 landed, PR #334):** the call site is re-owned.
+> `ChapterLoadingCoordinator` decides the open/preload sequence and owns the buffer-health rule
+> (previously counted twice - in `preload()` and `tryPreloadNextChapterImages()`); the view model
+> drives it through `ChapterLoadingEffectHandler` and no longer inlines the count (gated by
+> `ChapterLoadingOwnershipTest`).
+
 ### F4 — color filter and brightness each render through two paths
 
 - Color filter: `ReaderScreen`'s `ContentOverlay` (Compose, `BlendMode`) and
@@ -149,7 +157,7 @@ answer decides whether the View paint path can be retired or must be kept for th
 `state.currentChapter?.pages?.getOrNull(currentPage)?.cachedBytes` (around `:106`) — UI reading a
 page's working bytes rather than a rendered-surface signal. Same root as F5; resolved by Stage 4.
 
-## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stages 3-4 proposals)
+## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stage 3 seam 1 done 2026-11-08; the rest proposals)
 
 - **Stage 0 (this change, docs-only):** this audit; `B-009` superseded and `B-010` bounded in the
   ledger; the viewport contract's stale gesture sentence corrected; this document indexed.
@@ -181,6 +189,17 @@ page's working bytes rather than a rendered-surface signal. Same root as F5; res
   (download-next, remove-after-read), `ReaderProgressRecorder` (history, tracking, read timer),
   `ViewerModeResolver` (`:1195-1300`). Menu/dialog state stays in the VM — it is genuinely view
   state. Names are proposals.
+  - **Seam 1 done 2026-11-08 (PR #334, E1 + CI): `ChapterLoadingCoordinator` (loading, preload,
+    recovery - the F3 call site).** The view model drives it; the coordinator owns the open
+    ordering (session open -> page load -> filter wiring -> background queue -> window install
+    -> history -> read timer -> session report), the preload eligibility ladder, the
+    downloaded-chapter promotion, the buffer-health gate and the adjacent-start plan. The
+    forward-buffer count previously existed twice (`preload()` and
+    `tryPreloadNextChapterImages()`); it now has one home (`pendingAheadOf`). No behaviour
+    change: every rule is the code that already ran, moved not rethought. Gated by
+    `ChapterLoadingCoordinatorTest` (ordering, eligibility, buffer-health, adjacent-start
+    tables) and `ChapterLoadingOwnershipTest` (the view model drives the coordinator; the
+    count has one home; every driven effect is implemented).
 - **Stage 4 (R-C) — `ReaderPage` becomes immutable metadata + a `PageResource` handle.** Bytes and
   merged bitmaps move behind the chapter loader/resource owner; completes `MED-002` and resolves
   F5/F7. Deliberately last: it touches the loaders, smart-merge, the pre-processor and both viewers,
@@ -200,4 +219,6 @@ retirement of the View fallback (Stage 1 inventory first), and the Stage 3 coord
 - The staged plan is a **proposal for owner review**. It is sequenced, each stage is
   independently landable, and the stages are reversible individually. **Update 2026-11-08:** the
   owner's go-ahead started execution; Stage 1 (R-B) and Stage 2 (R-D) have landed (PR #332,
-  PR #333, CI-verified). Stages 3-4 remain proposals and nothing in them has begun.
+  PR #333, CI-verified), and Stage 3 has begun - its first coordinator (`ChapterLoadingCoordinator`)
+  landed as PR #334, CI-verified. The rest of Stage 3 and Stage 4 remain proposals and nothing
+  in them has begun.

@@ -126,6 +126,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 📚 Chapter Loading Coordinator (R-A: Stage 3 seam 1 — loading and preload leave the view model)
+- **New `ChapterLoadingCoordinator`** (`feature/reader/src/main/kotlin/ephyra/feature/reader/loading/`):
+  the view model drives it; it owns the open sequence (session open -> page load -> filter wiring ->
+  background queue -> window install -> history -> read timer -> session report — the exact order
+  `loadChapter` already ran), the preload eligibility ladder (Loaded/Loading never preload; online
+  preload candidates are promoted to `Wait` when their download exists; only Wait/Error attempt),
+  the opportunistic next-chapter image prefetch (only while fewer than `preloadAheadPages` pages
+  remain pending ahead of the reading position) and the direction-aware adjacent start (next
+  begins, previous ends, with the clamp-me fallback index when pages are not yet known).
+- **`ReaderViewModel` implements `ChapterLoadingEffectHandler`** (11 members): every override body is
+  the code that used to live inline in `loadChapter`/`preload`, moved, not rethought. **No behaviour
+  change.** The forward-buffer count previously existed twice — in `preload()` and
+  `tryPreloadNextChapterImages()` — and that duplication is the drift risk the reader redesign
+  audit's F1/F3 recorded; it now has one home (`pendingAheadOf`). `B-010`'s background-queue call
+  site is re-owned by the coordinator (audit F3's named follow-up).
+- **Gates:** new `ChapterLoadingCoordinatorTest` (open ordering, no-loader stop, preload
+  eligibility, buffer-health deferral, cancellation propagation vs. swallow, and decision tables
+  for `shouldPreloadNextChapterImages`/`pendingAheadOf`/`adjacentStartPlan`) and new
+  `ChapterLoadingOwnershipTest` (the view model drives the coordinator and consumes its four
+  public decisions; the buffer count has one home — no `Page.State.Queue` in the view model;
+  every effect the coordinator drives is implemented). Remaining Stage 3 seams
+  (`ReaderImageActions`, `ReaderDownloadPolicy`, `ReaderProgressRecorder`, `ViewerModeResolver`)
+  stay proposed.
+
 ### 🔌 Reader Viewer Host (R-D: Stage 2 — callbacks replace the cast in the rendering path)
 - **`ReaderScreen` no longer casts its context to `ReaderActivity`** (audit F6): the cast put the
   concrete Activity class inside the rendering path, and its silent null was load-bearing - with any
