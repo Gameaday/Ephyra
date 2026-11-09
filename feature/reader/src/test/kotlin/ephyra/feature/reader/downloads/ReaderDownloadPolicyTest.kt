@@ -201,15 +201,18 @@ class ReaderDownloadPolicyTest {
 
     @Test
     fun `the gates stop the path in the old order`() = runBlocking {
+        mangaResult = null
         coordinator.downloadNextChapters()
         assertEquals(listOf<String>(), calls, "no manga means no gate even runs")
 
+        calls.clear()
         mangaResult = mockk()
         currentLoadsFromDownload = false
         coordinator.downloadNextChapters()
         assertEquals(listOf("manga", "fromDownload"), calls, "an online chapter never downloads ahead")
 
         calls.clear()
+        currentLoadsFromDownload = true
         nextChapterResult = null
         coordinator.downloadNextChapters()
         assertEquals(listOf("manga", "fromDownload", "nextChapter"), calls)
@@ -328,7 +331,11 @@ class ReaderDownloadPolicyTest {
 
         coordinator.removeAfterRead(second)
 
-        assertEquals(listOf("slots", "chapterList", "clearRequeue"), calls)
+        assertEquals(
+            listOf("slots", "chapterList", "clearRequeue", "manga"),
+            calls,
+            "the read gate opens first; the manga gate runs after the requeue drop and stops the scheduling",
+        )
         Unit
     }
 }
