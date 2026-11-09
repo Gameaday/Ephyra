@@ -55,6 +55,8 @@ import ephyra.domain.track.interactor.TrackChapter
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.feature.reader.loader.ChapterLoader
 import ephyra.feature.reader.loader.DownloadPageLoader
+import ephyra.feature.reader.loading.ChapterLoadingCoordinator
+import ephyra.feature.reader.loading.ChapterLoadingEffectHandler
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.NavigationVector
 import ephyra.feature.reader.model.ReaderChapter
@@ -121,10 +123,9 @@ class ReaderViewModel @Inject constructor(
     private val localCoverManager: LocalCoverManager,
     private val updateManga: UpdateManga,
     private val chapterCache: ChapterCache,
-) : BaseUdfViewModel<ReaderViewModel.State, ReaderEvent, ReaderViewModel.Event>(State()) {
+) : BaseUdfViewModel<ReaderViewModel.State, ReaderEvent, ReaderViewModel.Event>(State()),
+    ChapterLoadingEffectHandler {
     private companion object {
-        const val FALLBACK_LAST_PAGE_INDEX = Int.MAX_VALUE
-
         /** Current chapter plus two in either direction stays hot. */
         const val WINDOW_SIZE = 5
     }
@@ -214,6 +215,18 @@ class ReaderViewModel @Inject constructor(
      * The chapter loader for the loaded manga. It'll be null until [manga] is set.
      */
     private var loader: ChapterLoader? = null
+
+    /**
+     * The chapter-loading coordinator (R-A, Stage 3 seam 1 of the reader modular redesign,
+     * 2026-11-08): the VM drives it; it owns the open/preload ordering and the buffer-health
+     * decisions that were previously inlined here (and, for the buffer count, duplicated
+     * between preload() and tryPreloadNextChapterImages). The VM implements the effect
+     * handler - the override bodies below are the code that used to live in
+     * loadChapter/preload, moved, not rethought.
+     */
+    private val chapterLoading by lazy {
+        ChapterLoadingCoordinator(preloadAheadPages = preloadChapterAheadPages, effects = this)
+    }
 
     /**
      * The time the chapter was started reading
@@ -445,7 +458,7 @@ class ReaderViewModel @Inject constructor(
                         chapterCache,
                     )
 
-                    loadChapter(loader!!, getChapterList().first { chapterId == it.chapter.id })
+                    loadChapter(getChapterList().first { chapterId == it.chapter.id })
                     Result.success(true)
                 } else {
                     // Unlikely but okay
@@ -465,13 +478,21 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
-     * Loads the given [chapter] with this [loader] and updates the currently active chapters.
-     * Callers must handle errors.
+     * Loads the given [chapter] and updates the currently active chapters. Callers must handle
+     * errors.
+     *
+     * R-A (Stage 3 seam 1 of the reader modular redesign, 2026-11-08): the ordering of the open
+     * path lives in [chapterLoading] - the coordinator drives, and this class is the effect
+     * handler (see the overrides below). What changed is where the sequence is decided; every
+     * step still lands exactly where it did.
      */
-    private suspend fun loadChapter(
-        loader: ChapterLoader,
-        chapter: ReaderChapter,
-    ): ViewerChapters {
+    private suspend fun loadChapter(chapter: ReaderChapter) {
+        chapterLoading.openChapter(chapter)
+    }
+
+    // ── Chapter-loading effects (R-A Stage 3 seam 1: the coordinator drives, the VM executes) ──
+
+    override suspend fun openSessionForChapter(chapter: ReaderChapter) {
         // RDR-001: the session owns the chapter-open transition (persist the prior chapter
         // progress, release its working resources, then LoadingChapter). The effects it emits
         // are acknowledged by [sessionEffects], not re-issued -- the load below is the work.
@@ -481,21 +502,34 @@ class ReaderViewModel @Inject constructor(
             initialPageIndex = chapter.requestedPage ?: 0,
             viewportMode = sessionViewportMode(),
         )
-        loader.loadChapter(chapter)
+    }
 
+    override suspend fun loadChapterPages(chapter: ReaderChapter, isPreloadOnly: Boolean): Boolean {
+        val loader = loader ?: return false
+        loader.loadChapter(chapter, isPreloadOnly = isPreloadOnly)
+        return true
+    }
+
+    override fun wireFilteredPageReload(chapter: ReaderChapter) {
         // When the pre-processor blocks a page during online loading (after the image
         // arrives), the adapter must rebuild its item list to exclude the newly hidden
         // page. Wire up the callback so the viewer refreshes automatically.
         chapter.pageLoader?.onPageFiltered = {
             emitEffect(Event.ReloadViewerChapters)
         }
+    }
 
+    override fun queueBackgroundChapterPreload(chapter: ReaderChapter) {
         // Queue every page at the lowest background priority so the smart-combine pre-scan
         // can process the entire chapter without waiting for the user to scroll to each page.
         // Priority is kept below the nearby-page preload (0) and current-page load (1) so
         // this never competes for bandwidth with what the user is actively reading.
+        // (B-010 / audit F3: this call site's policy; the decision to call it is the
+        // coordinator's - see ChapterLoadingCoordinator.openChapter.)
         chapter.pageLoader?.preloadAllPages()
+    }
 
+    override suspend fun installViewerChapters(chapter: ReaderChapter) {
         val chapterList = getChapterList()
         // RDR-002: the prev/next window is selected through the domain ReaderChapterWindowPolicy
         // (via the adapter), replacing the feature-local sibling helpers. The pinned contracts
@@ -525,14 +559,16 @@ class ReaderViewModel @Inject constructor(
                 bookmarked = newChapters.currChapter.chapter.bookmark,
             )
         }
+    }
 
-        // Record the newly current chapter in reading history. This lives here (the one
-        // path shared by initial open, viewer page transitions, and toolbar prev/next
-        // navigation) rather than only in loadNewChapter, so every chapter the user
-        // actually opens is written to history. Previously the initial chapter and
-        // adjacent-chapter navigation bypassed updateHistory(), leaving the History tab
-        // empty for single-chapter sessions. The row is updated (upsert by chapter id)
-        // with the real read duration when the chapter is closed out by updateHistory().
+    override suspend fun recordOpenedChapterHistory(chapter: ReaderChapter) {
+        // Record the newly current chapter in reading history. This lives on the open path (the
+        // one path shared by initial open, viewer page transitions, and toolbar prev/next
+        // navigation) rather than only in loadNewChapter, so every chapter the user actually
+        // opens is written to history. Previously the initial chapter and adjacent-chapter
+        // navigation bypassed updateHistory(), leaving the History tab empty for
+        // single-chapter sessions. The row is updated (upsert by chapter id) with the real read
+        // duration when the chapter is closed out by updateHistory().
         if (!incognitoMode) {
             historyRepository.upsertHistory(
                 HistoryUpdate(
@@ -542,8 +578,13 @@ class ReaderViewModel @Inject constructor(
                 ),
             )
         }
-        restartReadTimer()
+    }
 
+    override fun restartReadTimer() {
+        chapterReadStartTime = Instant.now().toEpochMilli()
+    }
+
+    override fun reportChapterLoadedToSession(chapter: ReaderChapter) {
         // RDR-001: report the loaded pages to the session. A chapter with no pages is rejected
         // by the machine (its own contract) -- the rejection is acknowledged in [sessionEffects].
         readerSession.chapterLoaded(
@@ -552,8 +593,34 @@ class ReaderViewModel @Inject constructor(
             pages = chapter.pages ?: emptyList(),
             initialPageIndex = 0,
         )
+    }
 
-        return newChapters
+    override suspend fun promoteDownloadedPreload(chapter: ReaderChapter): Boolean {
+        val manga = manga ?: return false
+        val dbChapter = chapter.chapter
+        // Ensure the DownloadCache is ready before querying: on the fast path (deferred
+        // already complete) this is a single non-suspending check; on a cold start it waits
+        // for the disk-cache read so we don't incorrectly skip the reload.
+        downloadManager.awaitCacheReady()
+        val isDownloaded = downloadManager.isChapterDownloaded(
+            dbChapter.name,
+            dbChapter.scanlator,
+            dbChapter.url,
+            manga.title,
+            manga.source,
+        )
+        if (isDownloaded) {
+            chapter.state = ReaderChapter.State.Wait
+        }
+        return true
+    }
+
+    override fun startAdjacentImagePreload(chapter: ReaderChapter, pages: Int) {
+        chapter.pageLoader?.preloadFirstPages(pages)
+    }
+
+    override fun requestViewerReload() {
+        emitEffect(Event.ReloadViewerChapters)
     }
 
     /**
@@ -561,7 +628,7 @@ class ReaderViewModel @Inject constructor(
      * It's used only to set this chapter as active.
      */
     private fun loadNewChapter(chapter: ReaderChapter) {
-        val loader = loader ?: return
+        if (loader == null) return
 
         viewModelScope.launchIO {
             logcat { "Loading ${chapter.chapter.url}" }
@@ -570,7 +637,7 @@ class ReaderViewModel @Inject constructor(
             restartReadTimer()
 
             try {
-                loadChapter(loader, chapter)
+                loadChapter(chapter)
             } catch (e: Throwable) {
                 if (e is CancellationException) {
                     throw e
@@ -588,28 +655,23 @@ class ReaderViewModel @Inject constructor(
         chapter: ReaderChapter,
         startFromEnd: Boolean,
     ) {
-        val loader = loader ?: return
+        if (loader == null) return
 
         logcat { "Loading adjacent ${chapter.chapter.url}" }
 
-        // Direction-aware start for toolbar transitions:
-        // - Next chapter should start at the beginning.
-        // - Previous chapter should start at the end so readers can quickly refresh context.
-        // The activity then snaps to the first/last visible page, excluding hidden pages.
-        chapter.startingAtBeginning = !startFromEnd
-        chapter.startFromEnd = startFromEnd
-        chapter.requestedPage = if (startFromEnd) {
-            // Best effort explicit end target when pages are already known (e.g., preloaded).
-            // Otherwise use a large index which is clamped to lastIndex by the viewers.
-            chapter.pages?.lastIndex ?: FALLBACK_LAST_PAGE_INDEX
-        } else {
-            0
-        }
+        // Direction-aware start for toolbar transitions: the plan (which end to start at,
+        // and the explicit end target when pages are already known vs. the clamp-me
+        // fallback) is owned by the coordinator; the activity then snaps to the first/last
+        // visible page, excluding hidden pages.
+        val start = chapterLoading.adjacentStartPlan(startFromEnd, chapter.pages?.lastIndex)
+        chapter.startingAtBeginning = start.startingAtBeginning
+        chapter.startFromEnd = start.startFromEnd
+        chapter.requestedPage = start.requestedPage
 
         updateState { it.copy(isLoadingAdjacentChapter = true) }
         try {
             withIOContext {
-                loadChapter(loader, chapter)
+                loadChapter(chapter)
             }
         } catch (e: Throwable) {
             if (e is CancellationException) {
@@ -625,76 +687,16 @@ class ReaderViewModel @Inject constructor(
     /**
      * Called when the viewers decide it's a good time to preload a [chapter] and improve the UX so
      * that the user doesn't have to wait too long to continue reading.
+     *
+     * R-A (Stage 3 seam 1): the eligibility ladder, the buffer-health gate and the
+     * whole-chapter image prefetch are decided in [chapterLoading]; this is the drive call.
      */
     suspend fun preload(chapter: ReaderChapter) {
-        if (chapter.state is ReaderChapter.State.Loaded || chapter.state == ReaderChapter.State.Loading) {
-            return
-        }
-
-        if (chapter.pageLoader?.isLocal == false) {
-            val manga = manga ?: return
-            val dbChapter = chapter.chapter
-            // Ensure the DownloadCache is ready before querying: on the fast path (deferred
-            // already complete) this is a single non-suspending check; on a cold start it
-            // waits for the disk-cache read so we don't incorrectly skip the reload.
-            downloadManager.awaitCacheReady()
-            val isDownloaded = downloadManager.isChapterDownloaded(
-                dbChapter.name,
-                dbChapter.scanlator,
-                dbChapter.url,
-                manga.title,
-                manga.source,
-            )
-            if (isDownloaded) {
-                chapter.state = ReaderChapter.State.Wait
-            }
-        }
-
-        if (chapter.state != ReaderChapter.State.Wait && chapter.state !is ReaderChapter.State.Error) {
-            return
-        }
-
-        val loader = loader ?: return
-        try {
-            logcat { "Preloading ${chapter.chapter.url}" }
-            // Load with isPreloadOnly=true so the underlying HttpPageLoader spawns only a single
-            // background worker. This prevents the speculative preload from competing with the
-            // active chapter's downloads for network bandwidth.
-            loader.loadChapter(chapter, isPreloadOnly = true)
-
-            // Only proactively start downloading the first few images of the preloaded chapter
-            // if the current chapter's buffer is healthy. If the user is outpacing the current
-            // buffer (i.e. there are still many unloaded pages ahead of the reading position),
-            // skip image preloading so all available bandwidth stays with the active chapter.
-            // This makes cross-chapter image prefetch purely opportunistic.
-            val currentPages = getCurrentChapter()?.pages
-            val pendingAhead = if (currentPages != null) {
-                currentPages
-                    .asSequence()
-                    .drop(chapterPageIndex + 1)
-                    .take(preloadChapterAheadPages)
-                    .count {
-                        it.status == Page.State.Queue || it.status == Page.State.LoadPage ||
-                            it.status == Page.State.DownloadImage
-                    }
-            } else {
-                0
-            }
-            if (pendingAhead < preloadChapterAheadPages) {
-                logcat { "Current buffer healthy ($pendingAhead pending ahead); starting next-chapter image preload" }
-                chapter.pageLoader?.preloadFirstPages(preloadChapterAheadPages)
-            } else {
-                logcat {
-                    "Buffer thin ($pendingAhead pending ahead >= $preloadChapterAheadPages threshold); deferring next-chapter image preload"
-                }
-            }
-        } catch (e: Throwable) {
-            if (e is CancellationException) {
-                throw e
-            }
-            return
-        }
-        emitEffect(Event.ReloadViewerChapters)
+        chapterLoading.preloadChapter(
+            chapter = chapter,
+            currentPages = getCurrentChapter()?.pages,
+            currentPageIndex = chapterPageIndex,
+        )
     }
 
     private fun onViewerLoaded(viewer: Viewer?) {
@@ -759,17 +761,13 @@ class ReaderViewModel @Inject constructor(
      */
     private fun tryPreloadNextChapterImages(currentPageIndex: Int, currentPages: List<ReaderPage>) {
         val nextChapter = state.value.viewerChapters?.nextChapter ?: return
-        if (nextChapter.state !is ReaderChapter.State.Loaded) return
-        val pendingAhead = currentPages
-            .asSequence()
-            .drop(currentPageIndex + 1)
-            .take(preloadChapterAheadPages)
-            .count {
-                it.status == Page.State.Queue || it.status == Page.State.LoadPage ||
-                    it.status == Page.State.DownloadImage
-            }
-        if (pendingAhead < preloadChapterAheadPages) {
-            nextChapter.pageLoader?.preloadFirstPages(preloadChapterAheadPages)
+        val shouldPreload = chapterLoading.shouldPreloadNextChapterImages(
+            nextChapter,
+            currentPages.map { it.status },
+            currentPageIndex,
+        )
+        if (shouldPreload) {
+            nextChapter.pageLoader?.preloadFirstPages(chapterLoading.preloadAheadPages)
         }
     }
 
@@ -1098,10 +1096,6 @@ class ReaderViewModel @Inject constructor(
             }
         }
         return null
-    }
-
-    private fun restartReadTimer() {
-        chapterReadStartTime = Instant.now().toEpochMilli()
     }
 
     /**
