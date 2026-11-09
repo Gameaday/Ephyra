@@ -428,6 +428,13 @@ abstract class PagerViewer(
         preScanJob?.cancel()
         if (!config.smartCombine || pages == null) return
         preScanJob = scope.launch(Dispatchers.IO) {
+            // The per-series bounds are read once per scan, on the scan's dispatcher — the
+            // whole pass shares one decision surface, exactly like the downloader's stub
+            // pass. The chapter id comes from the first page: every page in one scan
+            // belongs to the same chapter, so the first probe answers for all of them.
+            val mangaId = pages.firstOrNull()?.chapter?.mangaId
+            val minHeightFraction = readerPreferences.smartMergeMinHeightFraction(mangaId)
+            val maxHeightFraction = readerPreferences.smartMergeMaxHeightFraction(mangaId)
             var index = 0
             while (index < pages.size && isActive) {
                 val page = pages[index]
