@@ -150,6 +150,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   public decisions; the filename and hash-match rules have one home; all 18 effects are
   implemented - the unwired-contract failure mode fails the build).
 
+### 📚 Reader Progress Recorder (R-A: Stage 3 seam 4 — the read-timer, history, tracking and completion-duplicate decisions leave the view model)
+
+- **`ReaderProgressRecorder` (new, `feature/reader/.../progress/`)**: the view model drives it; the
+  coordinator decides. It owns the read-timer arithmetic (started when a chapter opens, consumed
+  only by a successful history write — a failed write keeps the session's duration), the
+  history-write gates (current chapter, then incognito mode, in the old order), the
+  track-chapter-read gates (incognito mode, auto-update preference, resolved manga —
+  fire-and-forget preserved: the completion path never waited on the trackers and still does
+  not), and the completion ordering (read flag, tracker update, remove-after-read drive,
+  mark-duplicates sweep of unread recognized twins via `ChapterNumber.sameChapterNumber`). Every
+  decision is the code that already ran in the view model's `restartReadTimer` / `updateHistory` /
+  `updateTrackChapterRead` / `updateChapterProgressOnComplete`, moved, not rethought. The
+  opened-chapter history write stays a loading-seam effect — it is the open path's own write, not
+  the session close-out write.
+- **`ReaderProgressEffectHandler` (12 effects)**: `ReaderViewModel` implements the contract; the
+  old read-timer field is deleted — the timer state moved with the decisions that read it.
+  `restartReadTimer` stays the loading seam's effect (the open path decides when a chapter
+  starts) and forwards to the recorder; `nowMillis` is the one wall-clock effect the old
+  `Instant.now()`/`Date()` pair collapsed into.
+- **Gates:** `ReaderProgressRecorderTest` (timer start/consume/survive tables, history gate
+  order, failed-write timer retention, completion ordering, tracker gate order, duplicate-sweep
+  twin table; `runBlocking`, recording-effects fake with real values — no mockk) and
+  `ReaderProgressRecorderOwnershipTest` (the view model drives the coordinator and consumes its
+  three public decisions; the progress decision tables have one home; all 12 effects are
+  implemented — the unwired-contract failure mode fails the build).
+
 ### 📚 Reader Download Policy (R-A: Stage 3 seam 3 — the download-ahead and remove-after-read decisions leave the view model)
 
 - **`ReaderDownloadPolicy` (new, `feature/reader/.../downloads/`)**: the view model drives it;
