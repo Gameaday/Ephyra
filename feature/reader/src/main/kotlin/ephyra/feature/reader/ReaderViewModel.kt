@@ -11,11 +11,9 @@ import ephyra.core.common.preference.toggle
 import ephyra.core.common.saver.Image
 import ephyra.core.common.saver.ImageSaver
 import ephyra.core.common.saver.Location
-import ephyra.core.common.util.lang.byteSize
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.storage.DiskUtil
 import ephyra.core.common.util.storage.cacheImageDir
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.ImageUtil
@@ -53,6 +51,8 @@ import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.TrackChapter
 import ephyra.domain.track.service.TrackPreferences
+import ephyra.feature.reader.images.ReaderImageActions
+import ephyra.feature.reader.images.ReaderImageEffectHandler
 import ephyra.feature.reader.loader.ChapterLoader
 import ephyra.feature.reader.loader.DownloadPageLoader
 import ephyra.feature.reader.loading.ChapterLoadingCoordinator
@@ -76,7 +76,6 @@ import ephyra.feature.reader.viewer.Viewer
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.manga.editCover
 import ephyra.source.local.image.LocalCoverManager
-import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
@@ -124,7 +123,8 @@ class ReaderViewModel @Inject constructor(
     private val updateManga: UpdateManga,
     private val chapterCache: ChapterCache,
 ) : BaseUdfViewModel<ReaderViewModel.State, ReaderEvent, ReaderViewModel.Event>(State()),
-    ChapterLoadingEffectHandler {
+    ChapterLoadingEffectHandler,
+    ReaderImageEffectHandler {
     private companion object {
         /** Current chapter plus two in either direction stays hot. */
         const val WINDOW_SIZE = 5
@@ -227,6 +227,8 @@ class ReaderViewModel @Inject constructor(
     private val chapterLoading by lazy {
         ChapterLoadingCoordinator(preloadAheadPages = preloadChapterAheadPages, effects = this)
     }
+
+    private val imageActions by lazy { ReaderImageActions(this) }
 
     /**
      * The time the chapter was started reading
@@ -1286,21 +1288,6 @@ class ReaderViewModel @Inject constructor(
         return newValue
     }
 
-    /**
-     * Generate a filename for the given [manga] and [page]
-     */
-    private fun generateFilename(
-        manga: Manga,
-        page: ReaderPage,
-    ): String {
-        val chapter = page.chapter.chapter
-        val filenameSuffix = " - ${page.number}"
-        return DiskUtil.buildValidFilename(
-            "${manga.title} - ${chapter.name}",
-            DiskUtil.MAX_FILE_NAME_BYTES - filenameSuffix.byteSize(),
-        ) + filenameSuffix
-    }
-
     private fun showMenus(visible: Boolean) {
         // RDR-001: menu visibility is session state. The compose snapshot below stays the
         // render source of truth; the session records the same fact for the wired slice, and
@@ -1334,172 +1321,165 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
-     * Saves the image of the selected page on the pictures directory and notifies the UI of the result.
-     * There's also a notification to allow sharing the image somewhere else or deleting it.
+     * Saves the image of the selected page on the pictures directory and notifies the UI of
+     * the result. There's also a notification to allow sharing the image somewhere else or
+     * deleting it. The coordinator owns the flow, the guards, the filename and the relative
+     * path; this is the drive.
      */
     private fun saveImage() {
-        val page = (state.value.dialog as? Dialog.PageActions)?.page
-        if (page?.status != Page.State.Ready) return
-        val manga = manga ?: return
+        viewModelScope.launchNonCancellable { imageActions.saveImage() }
+    }
 
-        val context = app
-        val notifier = SaveImageNotifier(context)
-        notifier.onClear()
+    override fun selectedPage(): ReaderPage? =
+        (state.value.dialog as? Dialog.PageActions)?.page
 
-        val filename = generateFilename(manga, page)
+    override fun currentManga(): Manga? = manga
 
-        // Pictures directory.
-        val relativePath = if (readerPreferences.folderPerManga().getSync()) {
-            DiskUtil.buildValidFilename(
-                manga.title,
-            )
-        } else {
-            ""
-        }
+    override fun folderPerManga(): Boolean = readerPreferences.folderPerManga().getSync()
 
-        // Copy file in background.
-        viewModelScope.launchNonCancellable {
-            try {
-                // If the page was smart-combined with a stub, save the merged image so the saved
-                // file reflects exactly what the reader showed rather than just the first page.
-                // The bitmap is encoded to PNG on-the-fly — this is a rare, user-triggered
-                // action so the one-time encode cost is negligible.
-                val inputStream: () -> InputStream = page.mergedBitmap?.let { bitmap ->
-                    {
-                        val buffer = okio.Buffer()
-                        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, buffer.outputStream())
-                        buffer.inputStream()
-                    }
-                } ?: page.stream!!
-                val uri = imageSaver.save(
-                    image = Image.Page(
-                        inputStream = inputStream,
-                        name = filename,
-                        location = Location.Pictures.create(relativePath),
-                    ),
-                )
-                // Emit the saved URI so the Activity can show the notification and toast
-                // from its own Context — keeping the ViewModel free of UI concerns.
-                emitEffect(Event.SavedImage(SaveImageResult.Success(uri)))
-            } catch (e: Throwable) {
-                notifier.onError(e.message)
-                emitEffect(Event.SavedImage(SaveImageResult.Error(e)))
-            }
-        }
+    override fun resetSaveNotification() {
+        SaveImageNotifier(app).onClear()
+    }
+
+    override fun showSaveNotificationError(message: String?) {
+        SaveImageNotifier(app).onError(message)
+    }
+
+    override fun saveToPictures(page: ReaderPage, name: String, relativePath: String): Uri {
+        val inputStream: () -> InputStream = resolveImageStream(page)
+        return imageSaver.save(
+            image = Image.Page(
+                inputStream = inputStream,
+                name = name,
+                location = Location.Pictures.create(relativePath),
+            ),
+        )
+    }
+
+    override fun saveToCache(page: ReaderPage, name: String): Uri {
+        val inputStream: () -> InputStream = resolveImageStream(page)
+        return imageSaver.save(
+            image = Image.Page(
+                inputStream = inputStream,
+                name = name,
+                location = Location.Cache,
+            ),
+        )
     }
 
     /**
-     * Shares the image of the selected page and notifies the UI with the path of the file to share.
-     * The image must be first copied to the internal partition because there are many possible
-     * formats it can come from, like a zipped chapter, in which case it's not possible to directly
-     * get a path to the file and it has to be decompressed somewhere first. Only the last shared
-     * image will be kept so it won't be taking lots of internal disk space.
+     * If the page was smart-combined with a stub, use the merged image so the exported file
+     * reflects exactly what the reader showed rather than just the first page. The bitmap is
+     * encoded to PNG on-the-fly - this is a rare, user-triggered action so the one-time
+     * encode cost is negligible.
+     */
+    private fun resolveImageStream(page: ReaderPage): () -> InputStream =
+        page.mergedBitmap?.let { bitmap ->
+            {
+                val buffer = okio.Buffer()
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, buffer.outputStream())
+                buffer.inputStream()
+            }
+        } ?: page.stream!!
+
+    /**
+     * Shares the image of the selected page and notifies the UI with the path of the file to
+     * share. The image must be first copied to the internal partition because there are many
+     * possible formats it can come from, like a zipped chapter. Only the last shared image
+     * will be kept. The coordinator owns the flow - including the deliberate propagation of
+     * cache failures, where the old outer try/catch was dead code.
      */
     private fun shareImage(copyToClipboard: Boolean) {
-        val page = (state.value.dialog as? Dialog.PageActions)?.page
-        if (page?.status != Page.State.Ready) return
-        val manga = manga ?: return
+        viewModelScope.launchNonCancellable { imageActions.shareImage(copyToClipboard) }
+    }
 
-        val destDir = app.cacheImageDir
+    override fun clearShareCache() {
+        app.cacheImageDir.deleteRecursively()
+    }
 
-        val filename = generateFilename(manga, page)
+    override fun reportSavedImage(result: SaveImageResult) {
+        emitEffect(Event.SavedImage(result))
+    }
 
-        try {
-            viewModelScope.launchNonCancellable {
-                destDir.deleteRecursively()
-                // If the page was smart-combined with a stub, share the merged image so the
-                // recipient sees the same combined view that the reader displayed.
-                val inputStream: () -> InputStream = page.mergedBitmap?.let { bitmap ->
-                    {
-                        val buffer = okio.Buffer()
-                        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, buffer.outputStream())
-                        buffer.inputStream()
-                    }
-                } ?: page.stream!!
-                val uri = imageSaver.save(
-                    image = Image.Page(
-                        inputStream = inputStream,
-                        name = filename,
-                        location = Location.Cache,
-                    ),
-                )
-                emitEffect(if (copyToClipboard) Event.CopyImage(uri) else Event.ShareImage(uri, page))
+    override fun reportImageExported(uri: Uri, page: ReaderPage, copyToClipboard: Boolean) {
+        emitEffect(if (copyToClipboard) Event.CopyImage(uri) else Event.ShareImage(uri, page))
+    }
+
+    override suspend fun applyCover(manga: Manga, stream: () -> InputStream) {
+        manga.editCover(localCoverManager, stream(), updateManga, coverCache)
+    }
+
+    override fun reportSetCoverResult(result: SetAsCoverResult) {
+        emitEffect(Event.SetCoverResult(result))
+    }
+
+    override suspend fun pageDHash(page: ReaderPage): Long? {
+        val stream = page.stream ?: return null
+        return try {
+            withIOContext { stream().use { ImageUtil.computeDHash(it) } }
+        } catch (e: Exception) {
+            logcat(LogPriority.DEBUG, e) {
+                "Failed to check blocked-page hash for current page; treating as unblocked"
             }
-        } catch (e: Throwable) {
-            logcat(LogPriority.ERROR, e)
+            null
         }
     }
 
+    override suspend fun blockedHashes(): Set<String> = downloadPreferences.blockedPageHashes().get()
+
+    override suspend fun addBlockedHash(hex: String) {
+        val pref = downloadPreferences.blockedPageHashes()
+        val current = pref.get().toMutableSet()
+        current.add(hex)
+        pref.set(current)
+        logcat(LogPriority.INFO) { "Blocked page dHash=$hex" }
+    }
+
+    override suspend fun removeBlockedHash(hex: String): Boolean =
+        withIOContext {
+            val pref = downloadPreferences.blockedPageHashes()
+            val current = pref.get().toMutableSet()
+            if (current.remove(hex)) {
+                pref.set(current)
+                logcat(LogPriority.INFO) { "Unblocked page dHash=$hex" }
+                true
+            } else {
+                false
+            }
+        }
+
     /**
-     * Sets the image of the selected page as cover and notifies the UI of the result.
+     * Sets the image of the selected page as cover and notifies the UI of the result. The
+     * coordinator owns the flow, the guards and the result mapping; this is the drive.
      */
     private fun setAsCover() {
-        val page = (state.value.dialog as? Dialog.PageActions)?.page
-        if (page?.status != Page.State.Ready) return
-        val manga = manga ?: return
-        val stream = page.stream ?: return
-
-        viewModelScope.launchNonCancellable {
-            val result = try {
-                manga.editCover(localCoverManager, stream(), updateManga, coverCache)
-                if (manga.isLocal() || manga.favorite) {
-                    SetAsCoverResult.Success
-                } else {
-                    SetAsCoverResult.AddToLibraryFirst
-                }
-            } catch (e: Exception) {
-                SetAsCoverResult.Error
-            }
-            emitEffect(Event.SetCoverResult(result))
-        }
+        viewModelScope.launchNonCancellable { imageActions.setAsCover() }
     }
 
     /**
-     * Computes the perceptual hash (dHash) of the selected page and adds it to the
-     * blocked-pages preference set.  Future downloads will silently skip any page
-     * whose dHash is within the configured Hamming distance threshold.
-     *
-     * The result includes the hex hash so the caller can offer an "Undo" action.
+     * Blocks the selected page by its perceptual hash; future downloads silently skip any
+     * page whose dHash is within the configured Hamming distance threshold. The result
+     * includes the hex so the caller can offer an "Undo" action. The coordinator owns the
+     * flow and the error mapping.
      */
     private fun blockPage() {
-        val page = (state.value.dialog as? Dialog.PageActions)?.page
-        if (page?.status != Page.State.Ready) return
+        viewModelScope.launchNonCancellable { imageActions.blockPage() }
+    }
 
-        viewModelScope.launchNonCancellable {
-            val result = try {
-                val stream = page.stream ?: error("No page stream")
-                val hash = withIOContext { stream().use { ImageUtil.computeDHash(it) } }
-                    ?: error("Could not compute dHash")
-                val hex = ImageUtil.dHashToHex(hash)
-                val pref = downloadPreferences.blockedPageHashes()
-                val current = pref.get().toMutableSet()
-                current.add(hex)
-                pref.set(current)
-                logcat(LogPriority.INFO) { "Blocked page dHash=$hex" }
-                BlockPageResult.Success(hex)
-            } catch (e: Exception) {
-                logcat(LogPriority.ERROR, e) { "Failed to block page" }
-                BlockPageResult.Error
-            }
-            emitEffect(Event.BlockPageResult(result))
-        }
+    override fun reportBlockResult(result: BlockPageResult) {
+        emitEffect(Event.BlockPageResult(result))
+    }
+
+    override fun logError(message: String, error: Throwable) {
+        logcat(LogPriority.ERROR, error) { message }
     }
 
     /**
-     * Removes a specific dHash hex string from the blocked-pages preference set.
-     * Used to undo an accidental block or to selectively unblock a page.
+     * Unblocks a page by removing its dHash hex string from the blocked-pages set. The
+     * coordinator delegates the removal; this is the drive.
      */
     private fun unblockPage(hex: String) {
-        viewModelScope.launchNonCancellable {
-            withIOContext {
-                val pref = downloadPreferences.blockedPageHashes()
-                val current = pref.get().toMutableSet()
-                if (current.remove(hex)) {
-                    pref.set(current)
-                    logcat(LogPriority.INFO) { "Unblocked page dHash=$hex" }
-                }
-            }
-        }
+        viewModelScope.launchNonCancellable { imageActions.unblockPage(hex) }
     }
 
     /**
@@ -1508,30 +1488,7 @@ class ReaderViewModel @Inject constructor(
      *
      * @return The matching hex hash if blocked, or `null` if not blocked / not computable.
      */
-    suspend fun findMatchingBlockedHash(): String? {
-        val page = (state.value.dialog as? Dialog.PageActions)?.page
-        if (page?.status != Page.State.Ready) return null
-
-        return try {
-            val stream = page.stream ?: return null
-            val hash = withIOContext { stream().use { ImageUtil.computeDHash(it) } } ?: return null
-            val threshold = DownloadPreferences.BLOCKED_PAGE_DHASH_THRESHOLD
-            downloadPreferences.blockedPageHashes().get().firstOrNull { hexStr ->
-                try {
-                    val blocked = ImageUtil.hexToDHash(hexStr)
-                    ImageUtil.dHashDistance(hash, blocked) <= threshold
-                } catch (e: Exception) {
-                    logcat(LogPriority.DEBUG, e) {
-                        "Skipping malformed blocked-page hash entry during check: '$hexStr'"
-                    }
-                    false
-                }
-            }
-        } catch (e: Exception) {
-            logcat(LogPriority.DEBUG, e) { "Failed to check blocked-page hash for current page; treating as unblocked" }
-            null
-        }
-    }
+    suspend fun findMatchingBlockedHash(): String? = imageActions.findMatchingBlockedHash()
 
     enum class SetAsCoverResult {
         Success,

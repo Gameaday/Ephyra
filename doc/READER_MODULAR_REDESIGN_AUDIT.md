@@ -12,7 +12,9 @@
 > records what shipped. Stage 2 (R-D) landed the same way as PR #333 - section 3 F6 and the Stage 2
 > entry in section 4 record what shipped. Stage 3 has begun as proposed - its first coordinator
 > (`ChapterLoadingCoordinator`) landed as PR #334; section 3 F3 and the Stage 3 entry in section
-> 4 record what shipped. The rest of Stage 3 and Stage 4 remain proposals.
+> 4 record what shipped. Seam 2 (`ReaderImageActions`) landed the same way as PR #335 - the
+> Stage 3 entry in section 4 records what shipped. The rest of Stage 3 and Stage 4 remain
+> proposals.
 
 This is an audit and a plan, not a record of completed work. Section 2 is what already landed;
 nothing in Section 4 has begun.
@@ -157,7 +159,7 @@ answer decides whether the View paint path can be retired or must be kept for th
 `state.currentChapter?.pages?.getOrNull(currentPage)?.cachedBytes` (around `:106`) — UI reading a
 page's working bytes rather than a rendered-surface signal. Same root as F5; resolved by Stage 4.
 
-## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stage 3 seam 1 done 2026-11-08; the rest proposals)
+## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stage 3 seams 1-2 done 2026-11-08; the rest proposals)
 
 - **Stage 0 (this change, docs-only):** this audit; `B-009` superseded and `B-010` bounded in the
   ledger; the viewport contract's stale gesture sentence corrected; this document indexed.
@@ -200,6 +202,21 @@ page's working bytes rather than a rendered-surface signal. Same root as F5; res
     `ChapterLoadingCoordinatorTest` (ordering, eligibility, buffer-health, adjacent-start
     tables) and `ChapterLoadingOwnershipTest` (the view model drives the coordinator; the
     count has one home; every driven effect is implemented).
+  - **Seam 2 done 2026-11-08 (PR #335, E1 + CI): `ReaderImageActions` (save / share / set-cover /
+    block / unblock / hash-match).** The view model drives it; the coordinator owns the
+    ready-page guard from the page-actions dialog (save/share/set-cover also require an open
+    manga; block and hash-match deliberately do not - the exact old guards), the filename rule
+    and the per-manga relative path (one home; the view model had them beside two call sites),
+    the cover-result mapping (local or favorite -> Success, else AddToLibraryFirst) and the
+    blocked-hash matching table (Hamming-distance threshold, malformed entries skipped with a
+    debug log). One honest change: the old shareImage's outer try/catch wrapped the launch,
+    not the coroutine body - dead code that looked like error handling - so a share-cache
+    failure now visibly propagates instead of vanishing, pinned by the test. No other
+    behaviour change: every decision is the code that already ran, moved not rethought.
+    Gated by `ReaderImageActionsTest` (guards, effect order, filename/path/cover/hash tables,
+    share-failure propagation) and `ReaderImageActionsOwnershipTest` (the view model drives
+    the coordinator; the filename and hash-match rules have one home; all 18 effects are
+    implemented).
 - **Stage 4 (R-C) — `ReaderPage` becomes immutable metadata + a `PageResource` handle.** Bytes and
   merged bitmaps move behind the chapter loader/resource owner; completes `MED-002` and resolves
   F5/F7. Deliberately last: it touches the loaders, smart-merge, the pre-processor and both viewers,
@@ -219,6 +236,6 @@ retirement of the View fallback (Stage 1 inventory first), and the Stage 3 coord
 - The staged plan is a **proposal for owner review**. It is sequenced, each stage is
   independently landable, and the stages are reversible individually. **Update 2026-11-08:** the
   owner's go-ahead started execution; Stage 1 (R-B) and Stage 2 (R-D) have landed (PR #332,
-  PR #333, CI-verified), and Stage 3 has begun - its first coordinator (`ChapterLoadingCoordinator`)
-  landed as PR #334, CI-verified. The rest of Stage 3 and Stage 4 remain proposals and nothing
-  in them has begun.
+  PR #333, CI-verified), and Stage 3 has begun - seams 1 (`ChapterLoadingCoordinator`) and 2
+  (`ReaderImageActions`) landed as PR #334 and PR #335, CI-verified. The remaining Stage 3
+  seams and Stage 4 remain proposals and nothing in them has begun.

@@ -113,9 +113,10 @@ class ChapterLoadingOwnershipTest {
             codeOf("feature/reader/src/main/kotlin/ephyra/feature/reader/loading/ChapterLoadingCoordinator.kt")
 
         assertTrue(
-            vm.contains("ChapterLoadingEffectHandler {"),
-            "ReaderViewModel must declare the effect contract; a coordinator that drives " +
-                "nothing implementable is a dead seam",
+            Regex("ChapterLoadingEffectHandler\\s*[,{}]").containsMatchIn(vm),
+            "ReaderViewModel must declare the effect contract as a supertype, sole or later " +
+                "entry in the declaration list; a coordinator that drives nothing implementable is " +
+                "a dead seam",
         )
         for (member in listOf(
             "openSessionForChapter",

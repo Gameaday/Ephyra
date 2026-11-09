@@ -126,6 +126,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 📚 Reader Image Actions (R-A: Stage 3 seam 2 — the save/share/set-cover/block/hash-match decisions leave the view model)
+
+- **`ReaderImageActions` (new, `feature/reader/.../images/`)**: the view model drives it; the
+  coordinator decides. It owns the ready-page guard from the page-actions dialog (save, share
+  and set-cover additionally require an open manga; block and hash-match deliberately do not -
+  exactly the guards the old inline code ran), the filename rule (title - chapter - number
+  within the byte budget), the per-manga relative path, the cover-result mapping (local or
+  favorite -> `Success`, else `AddToLibraryFirst`) and the blocked-hash matching table
+  (Hamming-distance threshold, malformed entries skipped with a debug log). Every decision is
+  the code that already ran in the view model's six private image functions, moved, not
+  rethought.
+- **`ReaderImageEffectHandler` (18 effects)**: `ReaderViewModel` implements the contract; the six
+  old private functions became drives (`launchNonCancellable` into the coordinator). The
+  filename builder and the inline relative-path computation are deleted from the view model -
+  one home now.
+- **One honest change:** the old `shareImage` wrapped its launch in a try/catch that could
+  never catch the coroutine's own failure - dead code that looked like error handling. A
+  share-cache failure now visibly propagates, as it always effectively did.
+- **Gates:** `ReaderImageActionsTest` (guard set, effect order, filename and path rules, cover
+  mapping, hash-match table, share-failure propagation; `runBlocking` like the seam-1 test) and
+  `ReaderImageActionsOwnershipTest` (the view model drives the coordinator and consumes its six
+  public decisions; the filename and hash-match rules have one home; all 18 effects are
+  implemented - the unwired-contract failure mode fails the build).
+
 ### 📚 Chapter Loading Coordinator (R-A: Stage 3 seam 1 — loading and preload leave the view model)
 - **New `ChapterLoadingCoordinator`** (`feature/reader/src/main/kotlin/ephyra/feature/reader/loading/`):
   the view model drives it; it owns the open sequence (session open -> page load -> filter wiring ->

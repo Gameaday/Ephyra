@@ -728,7 +728,12 @@ object ImageUtil {
         return BitmapRegionDecoder.newInstance(imageStream)
     }
 
-    private val optimalImageHeight = getDisplayMaxHeightInPx * 2
+    // Lazy: this was the only eager android-framework touch in the object, and it exists
+    // solely for tall-image splitting. Eager class-init made every ImageUtil member -
+    // including the pure dHash family - untestable in a JVM unit test
+    // (ExceptionInInitializerError: Resources.getSystem() is not mocked there), so it is
+    // computed at first use instead. No device behaviour change.
+    private val optimalImageHeight: Int by lazy { getDisplayMaxHeightInPx * 2 }
 
     val HARDWARE_BITMAP_UNSUPPORTED = false
 
