@@ -16,7 +16,10 @@ import java.util.Date
  * modular redesign, 2026-11-08).
  *
  * The handler records call names, so the bodies under test are which effects run, in what
- * order, under which inputs - the view model's implementations are the moved production code
+ * order, under which inputs; one member also mirrors its real side-effect - markChapterRead
+ * replaces the chapter reference with a read = true copy, exactly as the view model's
+ * override does, so the completion test can assert the coordinator routes the same instance
+ * through it. The view model's implementations are the moved production code
  * and are exercised by the app suite; what must not drift is the read-timer arithmetic (the
  * timer survives a skipped or failed write and is consumed only by a successful one), the
  * history-write gate order, the track-chapter-read gate order, and the completion path's
@@ -71,6 +74,10 @@ class ReaderProgressRecorderTest {
 
         override fun markChapterRead(readerChapter: ReaderChapter) {
             calls += "markRead:" + readerChapter.chapter.id
+            // The real effect replaces the chapter reference with a read = true copy (the view
+            // model's override); the fake mirrors that contract so the read-flag test asserts
+            // the coordinator routes this very instance through the effect.
+            readerChapter.chapter = readerChapter.chapter.copy(read = true)
         }
 
         override fun currentMangaId(): Long? {
