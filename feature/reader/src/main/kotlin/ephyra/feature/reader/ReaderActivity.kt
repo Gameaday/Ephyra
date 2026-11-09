@@ -17,7 +17,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -56,6 +55,7 @@ import ephyra.presentation.core.ui.navigation.LocalMotionPreference
 import ephyra.presentation.core.ui.navigation.effectiveReducedMotion
 import ephyra.presentation.core.ui.navigation.rememberSystemReducedMotion
 import ephyra.presentation.core.util.AppNavigator
+import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast

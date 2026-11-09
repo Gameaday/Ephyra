@@ -6,7 +6,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.net.toUri
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,6 +19,7 @@ import ephyra.presentation.core.ui.navigation.ActivityBoundaryCrossfadeHost
 import ephyra.presentation.core.ui.navigation.LocalMotionPreference
 import ephyra.presentation.core.ui.navigation.effectiveReducedMotion
 import ephyra.presentation.core.ui.navigation.rememberSystemReducedMotion
+import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.core.util.view.setComposeContent
