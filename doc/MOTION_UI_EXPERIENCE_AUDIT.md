@@ -478,3 +478,51 @@ Note on process: ktlint could only be run because a JDK was fetched into the san
 own `spotlessKotlinCheck` was the rule set being approximated, and the approximation is exact in
 version and configuration.
 
+
+
+## 10. Sweep: the activity boundary, re-owned (owner directive 2026-11-09)
+
+Follow-up to the bug-wave review of 2026-11-09: item 2 ("back motion return from pages to main tab")
+was *consistent* after PR #339 — every exit path moved the same way — but still "not desirable or
+elegant." The full sweep of the boundary confirms why, and the owner's directive locked the answer:
+**a minimal crossfade with no movement at the reader/WebView boundary, owned by the app on every
+path.**
+
+**What the sweep found.**
+
+- PR #339's "leave it to the platform" made the Android 14+ predictive cross-activity reveal the
+  boundary's de-facto motion. The reveal scales and slides the window — in the owner's words, the
+  "elements flying up and down and fading and zooming into the background" the aesthetic audit was
+  written against. Consistency was achieved by adopting the exact motion the audit rejected.
+- The open path (entry into the reader/WebView) played no gesture preview at all — the system only
+  previews *out* — so the boundary's two halves were not even the same motion pair.
+- An in-window animation cannot honestly preview the receiving tab, because the receiving screen is
+  not on screen: the system's "peek" is a mockup. A crossfade claims nothing, which is why it is
+  the right vocabulary here — a book page turning, not a camera move.
+
+**What landed.**
+
+- `Theme.Tachiyomi.ActivityBoundary` (manifest: reader + WebView) → `ActivityBoundaryWindowAnimations`
+  → pure-alpha `activity_boundary_fade_in/out`, 200ms (`MotionPolicy.CROSSFADE_DURATION_MILLIS`),
+  fast-out-slow-in (the easing `MotionTokens` crossfades use), all four activity transition slots.
+- `ActivityBoundaryCrossfadeHost` in presentation-core: `PredictiveBackProgress` previews a
+  drag-proportional dim (max 0.25), commits through `finish()` so the theme's close crossfade plays
+  instead of the system reveal, restores the dim on cancellation, and skips the dim under reduced
+  motion (OS scale is already honoured by the window fades themselves).
+- Both activities provide `LocalMotionPreference` (merging OS scale + in-app preference, mirroring
+  MainActivity) so the host's reduce-motion branch works.
+- `MotionConsistencyTest` gates: host + local provided in both activities, no overrides, no
+  shared-axis window resources, boundary theme declared exactly twice in the manifest, fades are
+  pure alpha at the policy duration/easing with all four slots wired.
+
+**Disclosed trade-offs.**
+
+- The system's predictive cross-activity reveal no longer plays at this boundary; the drag dim
+  replaces it. A window cannot reveal the activity beneath anyway, so the reveal was showing a
+  mockup; the dim shows the truth (you are leaving).
+- The reader→manga open path (`openMangaScreen`, into MainActivity's nav graph) is *not* part of
+  this boundary — it still uses MainActivity's motion. Candidate follow-up; owner's call.
+
+**Kept, unchanged (audit-only):** the tab slide (m3TabSlide), hierarchical shared-axis X,
+fade-through, sheets, and the component-level slides (ReaderAppBars, CalendarHeader,
+TrackerSearch) — component motion, not boundary motion; each is documented in the contract.
