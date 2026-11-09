@@ -126,6 +126,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🧭 Activity Boundary Motion (owner-reported defect 2026-11-08: "back motion return from pages to main tab is not consistent and looks bad. this includes many of the transitions forward and back")
+
+- **The defect (the page-to-tab half of the owner's motion report):** the back motion returning from
+  pages to the main tab was inconsistent, and the report explicitly covers the transitions forward
+  and back. Root cause at the Activity boundary: `ReaderActivity` and `WebViewActivity` registered
+  app-owned window transitions (the shared-axis push on open, the pop on close) — but on Android 14+
+  the predictive back gesture runs the system's cross-activity animation and bypasses a custom close
+  transition, so the same exit moved three different ways: the gesture scaled with the system's
+  reveal, the toolbar's up arrow played the shared-axis pop slide, and the entry had slid in
+  shared-axis style against a gesture exit that never matched it. No app window animation can join
+  the gesture — a window cannot reveal the activity underneath itself — so the app-owned halves could
+  never be consistent across paths; only the platform's own motion can.
+- **The fix:** the custom window transitions are deleted from both activities — the platform owns the
+  boundary. Entry and every non-gesture exit use the theme's standard activity animations (the
+  Material3 theme declares no `windowAnimationStyle`, so the platform defaults are in force), and the
+  Android 14+ back gesture uses the system's predictive cross-activity reveal, which previews the tab
+  underneath. Every exit path from a given surface now moves the same way. The four
+  `shared_axis_x_*.xml` window renderings are deleted with their last consumers; `MotionTokens`'
+  Compose legs (the NavHost renderings) are untouched, and the stale parity sentence in
+  `containerPopEnter`'s KDoc is corrected.
+- **The one deliberate override that survives:** `SecureActivityDelegate`'s zero-animation override
+  for the unlock screen is a privacy decision (the lock screen neither slides nor previews), not a
+  motion-language one — it stays, and the gate names it as the only legitimate use.
+- **Honest scope:** this reversal means the reader/WebView boundary no longer speaks the app's
+  shared-axis language — the platform's activity animation replaces it, and on a device with
+  predictive back unavailable (or below Android 14) the platform's default close replaces the app's
+  pop slide. That is the deliberate trade: an app motion that cannot join the gesture produced the
+  owner-reported inconsistency, and the modern-Android answer for activity boundaries is to let the
+  system animate. The Motion v2 parity loop (policy ↔ Compose legs ↔ window renderings) loses its
+  third leg; the gate is re-scoped to the remaining two and the reversal is recorded in the contract,
+  not smuggled. Device verification (`A5`) remains the owner's call; no device evidence is claimed.
+- **Gates:** `MotionConsistencyTest`'s reader rule is inverted — it now fails the build if the reader
+  or the WebView registers any window transition override or names a shared-axis window resource (the
+  exact machinery that produced the inconsistency), fails if the four XML renderings come back
+  without consumers, and names `SecureActivityDelegate`'s unlock override as the one remaining
+  deliberate use. The policy-triangle gate is re-scoped to the renderings that remain:
+  `HIERARCHICAL_FORWARD`/`BACK` must be the numbers the Compose legs play.
+
 ### 📚 Reader Image Actions (R-A: Stage 3 seam 2 — the save/share/set-cover/block/hash-match decisions leave the view model)
 
 - **`ReaderImageActions` (new, `feature/reader/.../images/`)**: the view model drives it; the

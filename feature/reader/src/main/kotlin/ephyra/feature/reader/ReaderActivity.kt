@@ -1,6 +1,5 @@
 package ephyra.feature.reader
 
-import android.app.Activity
 import android.app.assist.AssistContent
 import android.content.ComponentCallbacks2
 import android.content.Context
@@ -55,7 +54,6 @@ import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.core.util.view.applyHighRefreshRate
-import ephyra.presentation.core.util.view.overrideTransitionCompat
 import ephyra.presentation.core.util.view.setComposeContent
 import ephyra.presentation.reader.DisplayRefreshHost
 import ephyra.presentation.theme.EphyraTheme
@@ -71,7 +69,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import javax.inject.Inject
-import ephyra.presentation.core.R as CoreR
 
 @AndroidEntryPoint
 @OptIn(FlowPreview::class)
@@ -130,22 +127,17 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
     internal var isScrollingThroughPages = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // The reader is a separate Activity, so it cannot use the Compose shared-axis X transition
-        // the rest of the app navigates with — the window animation is the only motion available.
-        // Only the *close* half was set (in [finish]), which left the entry as a hard cut: pushing
-        // from a series page into a chapter swapped the whole screen instantly, while coming back
-        // slid. Setting the open half from the same animation resources makes the pair read as one
-        // movement in both directions.
-        //
-        // Set before `super.onCreate` because the transition must be registered before the window
-        // is added; `WebViewActivity` does the same for the same reason. Reduced motion needs no
-        // branch here: the platform honours the animator scale setting and collapses these to an
-        // instant change on its own.
-        overrideTransitionCompat(
-            Activity.OVERRIDE_TRANSITION_OPEN,
-            CoreR.anim.shared_axis_x_push_enter,
-            CoreR.anim.shared_axis_x_push_exit,
-        )
+        // No window transition is registered, on purpose. This activity once mirrored the Compose
+        // shared axis in its window (the push pair on open, the pop pair in [finish]), but on
+        // Android 14+ the predictive back gesture runs the system's cross-activity animation and
+        // bypasses a custom close transition — so leaving the reader moved one way by gesture,
+        // another way by the toolbar's up arrow, and the entry slide paired with an exit that was
+        // not its reverse. No app window animation can join the gesture (a window cannot reveal
+        // the activity underneath itself), so the platform owns this boundary: entry and the
+        // non-gesture exits use the theme's standard activity animations, the gesture uses the
+        // system's predictive reveal, and every exit path moves the same way. Reduced motion needs
+        // no branch here: the platform honours the animator scale setting on its own.
+        // `MotionConsistencyTest` gates this — see `MOTION_NAVIGATION_CONTRACT.md`.
 
         window.applyHighRefreshRate()
 
@@ -297,13 +289,10 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
     }
 
     override fun finish() {
+        // Still overridden for the reader-lifecycle event only: no close transition is registered
+        // here — the platform owns the window's motion (see onCreate).
         sendActivityFinish()
         super.finish()
-        overrideTransitionCompat(
-            Activity.OVERRIDE_TRANSITION_CLOSE,
-            CoreR.anim.shared_axis_x_pop_enter,
-            CoreR.anim.shared_axis_x_pop_exit,
-        )
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

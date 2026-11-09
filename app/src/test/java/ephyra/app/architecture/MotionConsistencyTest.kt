@@ -23,6 +23,20 @@ import java.io.File
  *    the cover carries the transition. A screen that renders the cover but provides no
  *    animated-visibility scope cannot match, so the promise left the transition with nothing to
  *    animate at all.
+ * 4. **One boundary, three motions.** The window renderings that fixed (1) and (2) could not join
+ *    the predictive back gesture: on Android 14+ the gesture runs the system's cross-activity
+ *    animation and bypasses a custom close transition, so leaving the reader moved one way by
+ *    gesture, another way by the toolbar's up arrow — and the entry slide paired with an exit that
+ *    was not its reverse. That is the owner-reported inconsistency at this boundary (2026-11-08),
+ *    and no app window animation can fix it by participating, because a window cannot reveal the
+ *    activity underneath itself.
+ *
+ * **The reversal, recorded.** Defects (1) and (2) were originally gated by requiring the window
+ * pair; defect (4) is why those gates are now inverted. The Activity boundary is the platform's:
+ * the reader and the WebView register no window transition, the deleted `shared_axis_x_*.xml`
+ * renderings stay deleted, and the one deliberate remaining override — the unlock screen's
+ * zero-animation open, a privacy decision — is named so a sweep cannot delete it as "the last
+ * override" by mistake.
  *
  * These read the source, following the pattern established by `LibrarySeriesTransitionTest`: a
  * behavioural test would have to drive a transition nobody can drive in a unit test.
@@ -39,6 +53,16 @@ class MotionConsistencyTest {
         throw AssertionError("$relativePath not found")
     }
 
+    /** Whether a tracked-path file exists anywhere above this test's working directory. */
+    private fun exists(relativePath: String): Boolean {
+        var dir: File? = File(".").absoluteFile
+        while (dir != null) {
+            if (File(dir, relativePath).exists()) return true
+            dir = dir.parentFile
+        }
+        return false
+    }
+
     /** Source with prose removed, so a comment describing a mechanism cannot satisfy a rule. */
     private fun codeOf(relativePath: String): String = sourceFile(relativePath)
         .readText()
@@ -47,6 +71,10 @@ class MotionConsistencyTest {
 
     private val readerActivity =
         "feature/reader/src/main/kotlin/ephyra/feature/reader/ReaderActivity.kt"
+    private val webViewActivity =
+        "feature/webview/src/main/kotlin/ephyra/feature/webview/WebViewActivity.kt"
+    private val secureActivityDelegate =
+        "app/src/main/java/ephyra/app/ui/base/delegate/SecureActivityDelegate.kt"
     private val mainActivity = "app/src/main/java/ephyra/app/ui/main/MainActivity.kt"
     private val browseFeatureApi =
         "feature/browse/src/main/kotlin/ephyra/feature/browse/BrowseFeatureApi.kt"
@@ -83,56 +111,56 @@ class MotionConsistencyTest {
     }
 
     /**
-     * The reader is a separate Activity, so its only available motion is the window animation. It
-     * must set both halves: the open half was missing, which made entering a chapter a cut.
+     * The reader and the WebView are separate Activities, and their boundary motion is the
+     * platform's. A registered window transition only plays on the paths that do not go through
+     * the predictive back gesture — on Android 14+ the gesture runs the system's cross-activity
+     * animation and bypasses a custom close transition — so an override splits one boundary into
+     * motions that differ by how the user leaves. That is the owner-reported inconsistency
+     * (2026-11-08) this rule prevents from returning.
      */
     @Test
-    fun `the reader animates both entering and leaving`() {
-        val code = codeOf(readerActivity)
+    fun `the activity boundary motion belongs to the platform`() {
+        listOf(
+            "ReaderActivity" to readerActivity,
+            "WebViewActivity" to webViewActivity,
+        ).forEach { (name, path) ->
+            val code = codeOf(path)
+            assertFalse(
+                code.contains("OVERRIDE_TRANSITION"),
+                "$name must not override its window transitions. On Android 14+ the predictive " +
+                    "back gesture runs the system's cross-activity animation and bypasses a custom " +
+                    "close transition, so an override gives one boundary motions that differ by how " +
+                    "the user leaves — the exact inconsistency the owner reported at this boundary.",
+            )
+            assertFalse(
+                code.contains("shared_axis_x_"),
+                "$name must not name a shared-axis window resource; the boundary motion is the " +
+                    "platform's, per the rule above.",
+            )
+        }
 
         assertTrue(
-            code.contains("OVERRIDE_TRANSITION_OPEN"),
-            "ReaderActivity must override the OPEN transition. Without it the reader appears " +
-                "instantly while returning from it slides, so the pair reads as broken in one " +
-                "direction. It is a separate Activity, so the Compose shared-axis token cannot " +
-                "apply and the window animation is the only motion available.",
-        )
-        assertTrue(
-            code.contains("shared_axis_x_push_enter"),
-            "The reader's entry must use the shared-axis push animation, the same semantic as the " +
-                "Compose transition used to reach every other destination.",
-        )
-        assertTrue(
-            code.contains("OVERRIDE_TRANSITION_CLOSE"),
-            "ReaderActivity must keep overriding the CLOSE transition; the pop half of the pair.",
+            codeOf(secureActivityDelegate).contains("overrideTransitionCompat"),
+            "SecureActivityDelegate keeps the one deliberate override: the unlock screen opens " +
+                "with no animation at all, a privacy decision rather than a motion-language one, " +
+                "and this rule names it so a future sweep cannot delete it as 'the last override' " +
+                "by mistake.",
         )
     }
 
     /**
-     * The Activity animations and the Compose token are two renderings of one transition, so they
-     * must agree on how far the page travels.
+     * The four `shared_axis_x_*.xml` window renderings were deleted with the activity overrides.
+     * An orphan rendering is a second definition of the shared axis with no consumer and no gate
+     * over it — the exact drift this class exists to prevent — so they must not come back.
      */
     @Test
-    fun `activity animations travel as far as the compose token`() {
-        val token = codeOf(motion)
-        val travel = Regex("""SHARED_AXIS_X_TRAVEL\s*=\s*([0-9.]+)f""")
-            .find(token)
-            ?.groupValues
-            ?.get(1)
-            ?.toFloat()
-            ?: throw AssertionError("SHARED_AXIS_X_TRAVEL not found in MotionTokens.kt")
-
-        val percent = (travel * 100).toInt()
-
+    fun `the shared-axis window renderings stay deleted`() {
         listOf("push_enter", "push_exit", "pop_enter", "pop_exit").forEach { half ->
-            val xml = sourceFile("$anim/shared_axis_x_$half.xml").readText()
-            assertTrue(
-                xml.contains("$percent%p"),
-                "shared_axis_x_$half.xml must travel $percent% of the viewport to match " +
-                    "SHARED_AXIS_X_TRAVEL ($travel). These files moved 5% while the Compose token " +
-                    "moved 30%, so pushing into the reader or a WebView was a visibly smaller " +
-                    "gesture than pushing into a nav destination — the same transition at two " +
-                    "distances.",
+            assertFalse(
+                exists("$anim/shared_axis_x_$half.xml"),
+                "shared_axis_x_$half.xml must not come back: its consumers are gone, and an " +
+                    "orphan window rendering is a second definition of the shared axis with no " +
+                    "gate over it.",
             )
         }
     }
@@ -245,71 +273,11 @@ class MotionConsistencyTest {
     }
 
     /**
-     * The Activity animations are a rendering of the Compose token, so the durations must match the
-     * token legs too — not just the travel, which is all the previous gate asserted. The XML push
-     * ran 450ms while the Compose leg was being re-tuned, and nothing failed; this closes that hole.
-     */
-    @Test
-    fun `activity animation durations match the compose token legs`() {
-        val token = codeOf(motion)
-        val durations = durationConstants(token)
-
-        fun legs(function: String): List<Int> {
-            val body = token.substringAfter("fun $function(").substringBefore("\n    fun ")
-            val names = Regex("""durationMillis\s*=\s*(DURATION_[A-Z0-9_]+)""")
-                .findAll(body)
-                .map { it.groupValues[1] }
-                .toList()
-            assertTrue(
-                names.size == 2,
-                "$function must have exactly two timed legs (slide and fade); found ${names.size}.",
-            )
-            assertTrue(
-                !body.contains("delayMillis"),
-                "$function must not delay its fade: the halves have to settle together, or the " +
-                    "incoming screen spends the start of its own journey invisible.",
-            )
-            return names.map { name ->
-                durations[name] ?: throw AssertionError("$name is not a duration constant in MotionTokens.kt")
-            }
-        }
-
-        listOf(
-            "push_enter" to legs("m3SharedAxisXEnter"),
-            "push_exit" to legs("m3SharedAxisXExit"),
-            "pop_enter" to legs("m3SharedAxisXPopEnter"),
-            "pop_exit" to legs("m3SharedAxisXPopExit"),
-        ).forEach { (half, expected) ->
-            val xml = sourceFile("$anim/shared_axis_x_$half.xml").readText()
-            val actual = Regex("""android:duration="(\d+)""")
-                .findAll(xml)
-                .map { it.groupValues[1].toInt() }
-                .toList()
-            assertTrue(
-                actual.size == 2,
-                "shared_axis_x_$half.xml must have exactly two timed legs; found ${actual.size}.",
-            )
-            assertTrue(
-                !xml.contains("android:startOffset"),
-                "shared_axis_x_$half.xml must not offset one half against the other; the Compose " +
-                    "legs start together and this file is their rendering.",
-            )
-            assertEquals(
-                expected,
-                actual,
-                "shared_axis_x_$half.xml must run the same durations as the Compose token legs " +
-                    "($expected ms), or the reader/WebView window animation is a different " +
-                    "transition from the nav push it mirrors.",
-            )
-        }
-    }
-
-    /**
-     * The policy's HIERARCHICAL durations are the numbers the renderings actually play — the last
-     * edge of the triangle. The legs test above ties the Compose functions to the XML window
-     * animations; this ties both to the policy. Without it, shortening HIERARCHICAL_BACK_DURATION_MILLIS
-     * would leave the pop renderings at 250ms while the plan reported something else, and no gate
-     * would name the difference.
+     * The policy's HIERARCHICAL durations are the numbers the renderings actually play. The window
+     * renderings were deleted with the activity overrides (the boundary is the platform's), so the
+     * Compose legs are the one rendering left and this ties the policy to them. Without it,
+     * shortening HIERARCHICAL_BACK_DURATION_MILLIS would leave the pop rendering at 250ms while
+     * the plan reported something else, and no gate would name the difference.
      */
     @Test
     fun `policy hierarchical durations are the numbers the renderings play`() {
@@ -323,26 +291,29 @@ class MotionConsistencyTest {
             "MotionPolicy must declare both HIERARCHICAL durations as readable literals.",
         )
 
-        fun firstLeg(half: String): Int {
-            val xml = sourceFile("$anim/shared_axis_x_$half.xml").readText()
-            return Regex("""android:duration="(\d+)""")
-                .find(xml)
+        val token = codeOf(motion)
+
+        fun firstLegMillis(function: String): Int {
+            val body = token.substringAfter("fun $function(").substringBefore("\n    fun ")
+            val name = Regex("""durationMillis\s*=\s*(DURATION_[A-Z0-9_]+)""")
+                .find(body)
                 ?.groupValues
                 ?.get(1)
-                ?.toInt()
-                ?: throw AssertionError("no timed leg found in shared_axis_x_$half.xml")
+                ?: throw AssertionError("no timed leg found in $function")
+            return durationConstants(token)[name]
+                ?: throw AssertionError("$name is not a duration constant in MotionTokens.kt")
         }
 
         assertEquals(
             declared.getValue("FORWARD"),
-            firstLeg("push_enter"),
-            "The push-enter rendering must run the policy's HIERARCHICAL_FORWARD duration. The " +
-                "window animation and the Compose push are renderings of one transition; a number " +
-                "that differs between them is a policy the renderings did not implement.",
+            firstLegMillis("m3SharedAxisXEnter"),
+            "The push rendering must run the policy's HIERARCHICAL_FORWARD duration. The Compose " +
+                "legs are the one rendering left of this transition; a number that differs " +
+                "between the policy and its rendering is a policy the rendering did not implement.",
         )
         assertEquals(
             declared.getValue("BACK"),
-            firstLeg("pop_enter"),
+            firstLegMillis("m3SharedAxisXPopEnter"),
             "The pop-enter rendering must run the policy's HIERARCHICAL_BACK duration. The pop " +
                 "legs exist so the return is quicker than the arrival; a rendering that keeps the " +
                 "old number turns that rule into a comment rather than a fact.",

@@ -154,8 +154,11 @@ object MotionTokens {
      *
      * The crossfade and no-op halves are direction-symmetric, so only the shared axis reverses.
      * The pop legs are leg-fixed on purpose: they are the rendering of the policy's
-     * HIERARCHICAL_BACK_DURATION_MILLIS, and MotionConsistencyTest asserts this function, the
-     * XML window renderings and the policy constant all carry the same numbers.
+     * HIERARCHICAL_BACK_DURATION_MILLIS, and MotionConsistencyTest asserts this function's legs
+     * and the policy constant carry the same numbers. (This sentence used to also name the four
+     * `shared_axis_x_*.xml` window renderings; they are deleted — the Activity boundary is the
+     * platform's now, see `MOTION_NAVIGATION_CONTRACT.md` — and the gate asserts the remaining
+     * policy-to-Compose-leg edge.)
      */
     fun containerPopEnter(motion: ContainerMotion, durationMillis: Int): EnterTransition =
         when (motion) {
