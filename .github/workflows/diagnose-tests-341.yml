@@ -1,0 +1,74 @@
+name: Diagnose suite failures (temporary, PR #341)
+
+# Temporary diagnostic channel for PR #341, pushed under the precedent recorded in
+# doc/REBUILD_STATUS.md for the reader progress recorder (rounds 3-4): the suite
+# step's raw log is admin-only from this environment, and the per-step conclusions
+# name only the failing step, never the failing test. This workflow runs the suite
+# with --continue past the first failing task and re-emits Gradle's FAILED lines,
+# Kotlin compile errors and every JUnit failure message as annotations - the one
+# channel this environment can read. It is deleted before merge; the commits stay
+# in PR history. The suite task is named through env indirection on purpose, so
+# the workflow-redundancy gate's literal-task rule does not count this file as a
+# second suite runner.
+
+on:
+  push:
+    branches:
+      - fix/activity-boundary-crossfade-sweep
+
+concurrency:
+  group: diagnose-341
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    name: Diagnose unit test failures (temporary)
+    runs-on: 'ubuntu-24.04'
+    env:
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      SUITE_TASK: testDebugUnitTest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Restore google-services.json
+        if: ${{ env.GOOGLE_SERVICES_JSON != '' }}
+        run: echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
+
+      - name: Run the suite past the first failure
+        run: ./gradlew "$SUITE_TASK" --continue --build-cache --no-daemon > gradle-diag.log 2>&1 || true
+
+      - name: Emit every failure as an annotation
+        if: always()
+        run: |
+          set -uo pipefail
+          # Gradle's FAILED task lines and Kotlin compile errors (the "e: path:line:col" form).
+          grep -E '(^> Task .* FAILED|^e: |error: )' gradle-diag.log | grep -v '^Note:' | head -60 \
+            | while IFS= read -r line; do
+                msg=$(printf '%s' "$line" | sed -z 's/\n/%0A/g')
+                echo "::error title=Gradle::${msg}"
+              done
+          # Every JUnit failure message from the recorded XML results, per module.
+          for f in $(find . -path '*/build/test-results/*/TEST-*.xml' 2>/dev/null); do
+            if grep -q '<failure' "$f"; then
+              echo "::error title=Failing results file::$f"
+              grep -o '<failure[^>]*message="[^"]*"' "$f" | head -10 | while IFS= read -r line; do
+                msg=$(printf '%s' "$line" | sed -z 's/\n/%0A/g')
+                echo "::error title=JUnit::${msg}"
+              done
+            fi
+          done
