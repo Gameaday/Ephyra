@@ -3,8 +3,8 @@
     The activity boundary's open animation: a pure crossfade, nothing moves.
 
     Part of Theme.Tachiyomi.ActivityBoundary (owner directive 2026-11-09: the reader and WebView
-    boundaries get a minimal crossfade instead of the system's scale reveal, which read as
-    elements flying and zooming). Alpha only — no translate, scale, or rotate — so the boundary
+    boundaries get a minimal crossfade instead of the system's zooming reveal, which read as
+    elements flying around). Alpha only — no transform properties at all — so the boundary
     cannot introduce movement. Duration and interpolator match MotionPolicy's crossfade token
     (CROSSFADE_DURATION_MILLIS = 200, fast-out-slow-in); MotionConsistencyTest asserts both.
 -->
