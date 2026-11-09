@@ -86,7 +86,10 @@ class ReaderDownloadPolicyOwnershipTest {
      * view model's queue calls. A copy is how two gates that once agreed drift apart. The
      * coordinator owns them; the view model must not re-derive them. (The preference reads
      * and manager calls stay in the view model's effect implementations - those are the
-     * translations this seam separates from the decisions.)
+     * translations this seam separates from the decisions. The navigation-universe dedup
+     * in getChapterList - removeDuplicates(selectedChapter), which chapters exist to
+     * navigate - is a different decision and deliberately stays in the view model; this
+     * rule pins the download-ahead collapsing, not that one.)
      */
     @Test
     fun `the download decision tables have one home`() {
@@ -95,7 +98,7 @@ class ReaderDownloadPolicyOwnershipTest {
             codeOf("feature/reader/src/main/kotlin/ephyra/feature/reader/downloads/ReaderDownloadPolicy.kt")
 
         assertTrue(
-            vm.none { it.contains("removeDuplicates") },
+            vm.none { it.contains("removeDuplicates(nextChapter)") },
             "the skip-duplicate shaping of the download-ahead list belongs to " +
                 "ReaderDownloadPolicy; a copy in the view model is the inline decision this " +
                 "seam exists to remove",
