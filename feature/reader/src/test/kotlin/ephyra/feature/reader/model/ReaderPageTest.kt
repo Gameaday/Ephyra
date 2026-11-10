@@ -1,5 +1,6 @@
 package ephyra.feature.reader.model
 
+import ephyra.domain.chapter.model.Chapter
 import eu.kanade.tachiyomi.source.model.Page
 import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -56,7 +57,12 @@ class ReaderPageTest {
 
     @Test
     fun `insert page shares the parent handle and reports ready`() {
-        val parent = ReaderPage(5, url = "https://example.test/p5")
+        val parent = ReaderPage(5, url = "https://example.test/p5").apply {
+            // InsertPage records the parent's chapter at construction (unchanged from the
+            // pre-handle code), so the parent must be attached to one first — as it always
+            // is in production, where the pager splices inserts into a loaded chapter.
+            chapter = ReaderChapter(Chapter.create().copy(id = 5L, mangaId = 1L, name = "Ch 5"))
+        }
         parent.resource.cachedBytes = byteArrayOf(4, 5)
 
         val insert = InsertPage(parent)

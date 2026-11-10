@@ -31,8 +31,8 @@ jobs:
           cache-read-only: true
           gradle-home-cache-cleanup: true
 
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest --continue > /tmp/test.log 2>&1 || true
+      - name: Run reader unit tests
+        run: ./gradlew :feature:reader:testDebugUnitTest --tests '*ReaderViewModelTest' --tests '*ReaderPageTest' --continue > /tmp/test.log 2>&1 || true
 
       - name: Extract failures and post to PR
         env:
@@ -45,12 +45,12 @@ jobs:
             find . -path '*/build/test-results/testDebugUnitTest/TEST-*.xml' 2>/dev/null | while read -r f; do
               if grep -q '<failure' "$f"; then
                 echo "=== $f"
-                grep -o 'testcase name="[^"]*" classname="[^"]*"' "$f" | head -30 || true
-                grep -o '<failure[^>]*message="[^"]*"' "$f" | head -10 || true
+                grep -o 'testcase name="[^"]*"' "$f" | head -30 || true
+                awk '/<failure/{p=1} p{print} /<\/failure>/{p=0}' "$f" | head -90 || true
               fi
             done
-            echo "--- first FAILED/FAILURE lines from gradle log ---"
-            grep -nE 'FAILED$|FAILURE: ' /tmp/test.log | head -40 || true
+            echo "--- FAILED lines from gradle log ---"
+            grep -nE 'FAILED$' /tmp/test.log | head -20 || true
             echo "$FENCE"
           } > /tmp/excerpt.txt
           gh pr comment 343 --body-file /tmp/excerpt.txt --repo Gameaday/Ephyra
