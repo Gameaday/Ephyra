@@ -7,8 +7,6 @@ import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -70,16 +68,14 @@ fun CalenderHeader(
 }
 
 private fun AnimatedContentTransitionScope<YearMonth>.getAnimation(): ContentTransform {
-    val movingForward = targetState > initialState
-
-    val enterTransition = slideInVertically(
-        animationSpec = tween(durationMillis = MotionTokens.DURATION_SHORT_4),
-    ) { height -> if (movingForward) height else -height } + fadeIn(
+    // The month title crossfades rather than rolling vertically: a full-height slide for a
+    // one-line title is the "element flying up and down" the owner's motion audit (2026-11-09)
+    // rejected — movement that reads as loading rather than as a change of month. SizeTransform
+    // stays because the title's width still changes between months.
+    val enterTransition = fadeIn(
         animationSpec = tween(durationMillis = MotionTokens.DURATION_SHORT_4),
     )
-    val exitTransition = slideOutVertically(
-        animationSpec = tween(durationMillis = MotionTokens.DURATION_SHORT_4),
-    ) { height -> if (movingForward) -height else height } + fadeOut(
+    val exitTransition = fadeOut(
         animationSpec = tween(durationMillis = MotionTokens.DURATION_SHORT_4),
     )
     return (enterTransition togetherWith exitTransition)

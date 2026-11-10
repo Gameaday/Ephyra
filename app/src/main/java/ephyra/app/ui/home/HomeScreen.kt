@@ -4,11 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -102,25 +102,24 @@ private val TAB_ROOT_ROUTES = listOf(
 /**
  * Index of a tab route in [TAB_ROOT_ROUTES], or -1 when the route is not a tab root.
  *
- * The index is the tab's position in the bottom bar, which is also its position on the horizontal
- * axis the tabs slide along. Deriving the slide direction from this one ordered list means the
- * visual direction can never disagree with the order of the buttons the user is tapping.
+ * The index is the tab's position in the bottom bar. Deriving tab membership from this one
+ * ordered list means the transition decision can never disagree with the order of the buttons
+ * the user is tapping.
  */
 internal fun tabIndexOf(route: String?): Int = TAB_ROOT_ROUTES.indexOf(route)
 
 /**
- * Whether a transition between two routes should slide forward (leftward, toward higher tab
- * indices), backward, or not slide at all.
+ * Whether a transition runs between two tab roots — two peers on the tab axis.
  *
- * Returns null when either end is not a tab root, which means the pair is not two peers on the tab
- * axis and the caller should fall back to the fade-through. Returning a tri-state instead of a
- * boolean keeps "this is not a tab pair" from being silently folded into "backward".
+ * The owner's motion audit (2026-11-09) removed the tab slide: a horizontal move reads as
+ * elements flying, the motion the audit rejected. Peer-ness still decides between the two
+ * no-movement transitions that remain — peers crossfade, a nested screen reached inside a tab
+ * is not a peer and keeps the fade-through — so the question stays a test, not a comment.
  */
-internal fun tabSlideForward(fromRoute: String?, toRoute: String?): Boolean? {
+internal fun isTabPeerTransition(fromRoute: String?, toRoute: String?): Boolean {
     val from = tabIndexOf(fromRoute)
     val to = tabIndexOf(toRoute)
-    if (from == -1 || to == -1) return null
-    return to > from
+    return from != -1 && to != -1
 }
 
 @Composable
@@ -216,10 +215,14 @@ fun HomeScreen(
                         .collectAsStateWithLifecycle()
                     AnimatedVisibility(
                         visible = bottomNavVisible,
-                        enter = expandVertically(
+                        // The bar fades rather than growing or shrinking in place: a bar that
+                        // expands and collapses is exactly the "element flying up and down" the
+                        // owner's motion audit rejected, and it resizes the content beneath it
+                        // while it moves. A fade changes no geometry.
+                        enter = fadeIn(
                             animationSpec = MotionTokens.tweenEnter(),
                         ),
-                        exit = shrinkVertically(
+                        exit = fadeOut(
                             animationSpec = MotionTokens.tweenExit(),
                         ),
                     ) {
@@ -244,48 +247,57 @@ fun HomeScreen(
                     .padding(contentPadding)
                     .consumeWindowInsets(contentPadding),
             ) {
-                // The five tabs are ordered peers, so a tab change slides horizontally by tab order
-                // instead of fading. A fade makes each tab read as a separate, discrete screen; a
-                // slide keeps the bar and the content on one surface, and makes going back to an
-                // earlier tab the same movement reversed rather than a second unrelated dissolve.
-                //
-                // Direction comes from the tab index, so the incoming page always enters from the
-                // side the tapped button sits on. Non-tab destinations (a nested screen reached
-                // inside a tab) keep the fade-through, since they are not peers on this axis.
+                // The five tabs are ordered peers, but a tab change crossfades rather than slides:
+                // the owner's motion audit (2026-11-09) rejected the horizontal slide as elements
+                // flying, the motion that made the app feel slower than it loads. Non-tab
+                // destinations (a nested screen reached inside a tab) keep the fade-through,
+                // since they are not peers on the tab axis.
                 val reducedMotion = LocalMotionPreference.current
                 NavHost(
                     navController = bottomNavController,
                     startDestination = ScreenRoutes.Library.route,
                     enterTransition = {
-                        val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
+                        val tabPair = isTabPeerTransition(
+                            initialState.destination.route,
+                            targetState.destination.route,
+                        )
                         when {
                             reducedMotion -> EnterTransition.None
-                            forward == null -> MotionTokens.m3FadeThroughEnter()
-                            else -> MotionTokens.m3TabSlideEnter(forward)
+                            tabPair -> MotionTokens.m3CrossfadeEnter()
+                            else -> MotionTokens.m3FadeThroughEnter()
                         }
                     },
                     exitTransition = {
-                        val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
+                        val tabPair = isTabPeerTransition(
+                            initialState.destination.route,
+                            targetState.destination.route,
+                        )
                         when {
                             reducedMotion -> ExitTransition.None
-                            forward == null -> MotionTokens.m3FadeThroughExit()
-                            else -> MotionTokens.m3TabSlideExit(forward)
+                            tabPair -> MotionTokens.m3CrossfadeExit()
+                            else -> MotionTokens.m3FadeThroughExit()
                         }
                     },
                     popEnterTransition = {
-                        val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
+                        val tabPair = isTabPeerTransition(
+                            initialState.destination.route,
+                            targetState.destination.route,
+                        )
                         when {
                             reducedMotion -> EnterTransition.None
-                            forward == null -> MotionTokens.m3FadeThroughEnter()
-                            else -> MotionTokens.m3TabSlideEnter(forward)
+                            tabPair -> MotionTokens.m3CrossfadeEnter()
+                            else -> MotionTokens.m3FadeThroughEnter()
                         }
                     },
                     popExitTransition = {
-                        val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
+                        val tabPair = isTabPeerTransition(
+                            initialState.destination.route,
+                            targetState.destination.route,
+                        )
                         when {
                             reducedMotion -> ExitTransition.None
-                            forward == null -> MotionTokens.m3FadeThroughExit()
-                            else -> MotionTokens.m3TabSlideExit(forward)
+                            tabPair -> MotionTokens.m3CrossfadeExit()
+                            else -> MotionTokens.m3FadeThroughExit()
                         }
                     },
                     modifier = Modifier,

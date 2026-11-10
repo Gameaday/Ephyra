@@ -457,11 +457,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 reducedMotion,
                                                 isPop = true,
                                             )
-                                            // The pop half renders the reversed axis: the parent
-                                            // returns from the left at the policy's back duration.
-                                            // containerEnter here would replay the forward slide
-                                            // — the same picture as pushing a new screen.
-                                            MotionTokens.containerPopEnter(
+                                            // The pop half renders the same crossfade the push
+                                            // half renders: with movement gone from the policy
+                                            // there is no axis to reverse, so the enter rendering
+                                            // is also the pop rendering.
+                                            MotionTokens.containerEnter(
                                                 plan.effectiveContainerMotion,
                                                 plan.effectiveDurationMillis,
                                             )
@@ -473,9 +473,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 reducedMotion,
                                                 isPop = true,
                                             )
-                                            // The popped page leaves to the right, mirroring
-                                            // containerPopEnter — the reverse of the push exit.
-                                            MotionTokens.containerPopExit(
+                                            // The popped page crossfades out — the same fade
+                                            // the push renders, without a direction to honour.
+                                            MotionTokens.containerExit(
                                                 plan.effectiveContainerMotion,
                                                 plan.effectiveDurationMillis,
                                             )

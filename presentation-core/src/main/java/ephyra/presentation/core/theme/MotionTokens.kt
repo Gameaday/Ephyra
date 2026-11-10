@@ -8,8 +8,6 @@ import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import ephyra.domain.navigation.motion.ContainerMotion
 import ephyra.domain.navigation.motion.MotionPolicy
 
@@ -42,9 +40,6 @@ object MotionTokens {
 
     /** 200ms: Element exits and fast container collapses. */
     const val DURATION_SHORT_4 = 200
-
-    /** 250ms: Simple element entries and tooltips. */
-    const val DURATION_MEDIUM_1 = 250
 
     /** 300ms: Standard component transitions, tab switches, and dialogs. */
     const val DURATION_MEDIUM_2 = 300
@@ -129,11 +124,6 @@ object MotionTokens {
         when (motion) {
             ContainerMotion.NONE -> EnterTransition.None
             ContainerMotion.CROSSFADE -> m3CrossfadeEnter(durationMillis)
-            // X, not Z. Shared axis Z is a scale (zoom) transition, which M3 reserves for
-            // entering/leaving a modal state; using it for ordinary hierarchical navigation
-            // made every push feel like the screen was being zoomed at. The hierarchical
-            // axis is horizontal.
-            ContainerMotion.SHARED_AXIS -> m3SharedAxisXEnter()
         }
 
     /** Matching outgoing container motion for [containerEnter]. */
@@ -141,46 +131,15 @@ object MotionTokens {
         when (motion) {
             ContainerMotion.NONE -> ExitTransition.None
             ContainerMotion.CROSSFADE -> m3CrossfadeExit(durationMillis)
-            ContainerMotion.SHARED_AXIS -> m3SharedAxisXExit()
         }
 
     /**
-     * Pop-enter rendering: the parent screen returning, the reverse of [containerEnter]'s axis.
+     * The policy crossfade: the rendering of the HIERARCHICAL plan (since the owner's motion
+     * audit of 2026-11-09 removed the shared-axis slide from ordinary navigation) and the
+     * fallback when a declared shared element turns out to be unusable.
      *
-     * A pop resolves a plan the policy has already shortened to its back duration, and this is
-     * the half that honours the direction. Rendering it with [containerEnter] would replay the
-     * forward slide — the same picture as pushing a new screen — while the plan quietly reported
-     * the back timeline: a policy number that nothing renders.
-     *
-     * The crossfade and no-op halves are direction-symmetric, so only the shared axis reverses.
-     * The pop legs are leg-fixed on purpose: they are the rendering of the policy's
-     * HIERARCHICAL_BACK_DURATION_MILLIS, and MotionConsistencyTest asserts this function's legs
-     * and the policy constant carry the same numbers. (This sentence used to also name the four
-     * `shared_axis_x_*.xml` window renderings; they are deleted — the Activity boundary is the
-     * platform's now, see `MOTION_NAVIGATION_CONTRACT.md` — and the gate asserts the remaining
-     * policy-to-Compose-leg edge.)
-     */
-    fun containerPopEnter(motion: ContainerMotion, durationMillis: Int): EnterTransition =
-        when (motion) {
-            ContainerMotion.NONE -> EnterTransition.None
-            ContainerMotion.CROSSFADE -> m3CrossfadeEnter(durationMillis)
-            ContainerMotion.SHARED_AXIS -> m3SharedAxisXPopEnter()
-        }
-
-    /** Pop-exit rendering, the reverse of [containerExit]: the popped page leaves to the right. */
-    fun containerPopExit(motion: ContainerMotion, durationMillis: Int): ExitTransition =
-        when (motion) {
-            ContainerMotion.NONE -> ExitTransition.None
-            ContainerMotion.CROSSFADE -> m3CrossfadeExit(durationMillis)
-            ContainerMotion.SHARED_AXIS -> m3SharedAxisXPopExit()
-        }
-
-    /**
-     * Fallback crossfade used when a declared shared element turns out to be unusable.
-     *
-     * Slower than the previous 200ms on purpose. It is the *only* motion left when the cover cannot
-     * be matched, so it has to carry the whole transition on its own; a quick dissolve reads as a
-     * glitch between two unrelated screens rather than a deliberate change of place.
+     * Pure alpha at the policy's crossfade duration: the minimal, no-movement change that keeps
+     * the transition legible as a deliberate change of place rather than a glitch.
      */
     fun m3CrossfadeEnter(durationMillis: Int = CROSSFADE_DURATION_MILLIS): EnterTransition =
         if (durationMillis <= 0) {
@@ -206,131 +165,6 @@ object MotionTokens {
                 ),
             )
         }
-
-    /**
-     * Material 3 shared-axis X enter transition for peer tab navigation.
-     *
-     * The five bottom-nav destinations are ordered peers, so a tab change is a horizontal move
-     * between adjacent pages rather than an unrelated destination swap. Sliding in from the side
-     * that matches the tab order makes the tab bar and the content read as one surface, and makes
-     * returning to a previous tab a deliberate reverse move instead of a second fade.
-     *
-     * [forward] is true when the target tab sits to the right of the origin tab (higher index), so
-     * the incoming page arrives from the right edge; false reverses it.
-     *
-     * Enter and exit share one duration and complementary easing so the two pages travel together
-     * and settle at the same instant — the failure mode of the old fade-through was that the two
-     * halves resolved at different points and read as discrete rather than cohesive.
-     */
-    fun m3TabSlideEnter(forward: Boolean): EnterTransition =
-        slideInHorizontally(
-            // 30% travel, not the full viewport. A full-width peer slide is the M2 carousel
-            // anti-pattern: both screens are fully swapped at the midpoint, doubling overdraw
-            // for the whole gesture, and the incoming page arrives from off-screen (a hierarchy
-            // cue) rather than from beside its peer. M3 peer motion is a short axis move + fade.
-            initialOffsetX = { width -> (width * TAB_AXIS_X_TRAVEL).toInt() * (if (forward) 1 else -1) },
-            animationSpec = tween(
-                durationMillis = DURATION_MEDIUM_2,
-                easing = EasingEmphasizedDecelerate,
-            ),
-        ) + fadeIn(
-            animationSpec = tween(
-                durationMillis = DURATION_SHORT_4,
-                easing = EasingEmphasizedDecelerate,
-            ),
-        )
-
-    /** Matching outgoing half of [m3TabSlideEnter]; travels the opposite way across the viewport. */
-    fun m3TabSlideExit(forward: Boolean): ExitTransition =
-        slideOutHorizontally(
-            targetOffsetX = { width -> (width * TAB_AXIS_X_TRAVEL).toInt() * (if (forward) -1 else 1) },
-            animationSpec = tween(
-                durationMillis = DURATION_MEDIUM_2,
-                easing = EasingEmphasizedAccelerate,
-            ),
-        ) + fadeOut(
-            animationSpec = tween(
-                durationMillis = DURATION_SHORT_4,
-                easing = EasingEmphasizedAccelerate,
-            ),
-        )
-
-    // --- Hierarchical (shared axis X) ---
-
-    /**
-     * How far a hierarchical page travels, as a fraction of the viewport.
-     *
-     * A third of the width reads as a deliberate move between two places while keeping both screens
-     * legible throughout the transition. The previous 10% slide under a scale-up read as neither a
-     * slide nor a shared axis — the page barely moved while also changing size, which is the muddle
-     * the hierarchical pair is meant to avoid.
-     */
-    private const val SHARED_AXIS_X_TRAVEL = 0.30f
-
-    /** Peer-axis travel for tab switches; same 30% language as the hierarchical axis. */
-    private const val TAB_AXIS_X_TRAVEL = 0.30f
-
-    /**
-     * Shared axis X enter: a hierarchical destination arriving from the right.
-     *
-     * Hierarchy in Material 3 runs on the **horizontal** axis, not on scale. Scale (shared axis Z)
-     * is for entering or leaving a modal state; using it for ordinary forward navigation made every
-     * push feel like the screen was being zoomed at rather than moved to, and made the back the
-     * reverse of a zoom instead of a return.
-     *
-     * 300ms slide, 200ms fade that starts with the slide — down from a 450ms slide with a fade that
-     * only began 100ms in. The old timeline held two full-screen layers animating for close to half
-     * a second, which read as weight rather than depth, and its delayed fade meant the incoming
-     * screen was invisible for the first tenth of its own journey. Both halves now settle by the
-     * time the outgoing screen is gone.
-     */
-    fun m3SharedAxisXEnter(): EnterTransition =
-        slideInHorizontally(
-            initialOffsetX = { width -> (width * SHARED_AXIS_X_TRAVEL).toInt() },
-            animationSpec = tween(durationMillis = DURATION_MEDIUM_2, easing = EasingEmphasizedDecelerate),
-        ) + fadeIn(
-            animationSpec = tween(
-                durationMillis = DURATION_SHORT_4,
-                easing = EasingEmphasizedDecelerate,
-            ),
-        )
-
-    /** Matching outgoing half of [m3SharedAxisXEnter]; the outgoing page leaves to the left. */
-    fun m3SharedAxisXExit(): ExitTransition =
-        // 200ms, not the enter leg's 300. The outgoing screen is already understood, so holding
-        // it for the full incoming timeline just delays the transition and leaves two
-        // full-screen layers animating together for nearly half a second.
-        slideOutHorizontally(
-            targetOffsetX = { width -> -(width * SHARED_AXIS_X_TRAVEL).toInt() },
-            animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
-        ) + fadeOut(
-            animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
-        )
-
-    /**
-     * Shared axis X pop enter: the parent screen returning from the left.
-     *
-     * Shorter than the forward leg on purpose. The user already knows where back goes, so a full
-     * forward-length reverse reads as sluggish rather than smooth (see the motion contract).
-     * 250ms against the push's 300 — the pair's own asymmetry, kept now that the forward leg is
-     * quick enough that the return must be quicker still to stay legible as a movement, not a cut.
-     */
-    fun m3SharedAxisXPopEnter(): EnterTransition =
-        slideInHorizontally(
-            initialOffsetX = { width -> -(width * SHARED_AXIS_X_TRAVEL).toInt() },
-            animationSpec = tween(durationMillis = DURATION_MEDIUM_1, easing = EasingEmphasizedDecelerate),
-        ) + fadeIn(
-            animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedDecelerate),
-        )
-
-    /** Matching outgoing half of [m3SharedAxisXPopEnter]; the popped page leaves to the right. */
-    fun m3SharedAxisXPopExit(): ExitTransition =
-        slideOutHorizontally(
-            targetOffsetX = { width -> (width * SHARED_AXIS_X_TRAVEL).toInt() },
-            animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
-        ) + fadeOut(
-            animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
-        )
 
     /**
      * Material 3 Fade Through enter transition for peer navigation (e.g. bottom nav tabs).

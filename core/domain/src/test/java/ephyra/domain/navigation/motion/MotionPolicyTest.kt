@@ -283,32 +283,30 @@ class MotionPolicyTest {
     }
 
     @Test
-    fun `the hierarchical fallback moves the container on the shared axis`() {
-        // The declared form of what the root NavHost used to hardcode: an ordinary push has no
-        // shared element, so the container carries the transition itself on the horizontal axis.
+    fun `the hierarchical fallback crossfades rather than moving`() {
+        // The declared form of what the root NavHost used to hardcode, after the owner's motion
+        // audit removed the slide: an ordinary push has no shared element and no movement, so the
+        // container crossfades — the same minimal change the Activity boundary renders.
         val plan = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.FORWARD)
-        assertEquals(ContainerMotion.SHARED_AXIS, plan.effectiveContainerMotion)
+        assertEquals(ContainerMotion.CROSSFADE, plan.effectiveContainerMotion)
         assertFalse(plan.usesNoContainerMotion)
     }
 
     @Test
-    fun `a hierarchical push uses the forward duration`() {
+    fun `a hierarchical push uses the policy crossfade duration`() {
         val plan = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.FORWARD)
-        assertEquals(MotionPolicy.HIERARCHICAL_FORWARD_DURATION_MILLIS, plan.durationMillis)
-        assertEquals(MotionPolicy.HIERARCHICAL_FORWARD_DURATION_MILLIS, plan.effectiveDurationMillis)
+        assertEquals(MotionPolicy.CROSSFADE_DURATION_MILLIS, plan.durationMillis)
+        assertEquals(MotionPolicy.CROSSFADE_DURATION_MILLIS, plan.effectiveDurationMillis)
     }
 
     @Test
-    fun `a hierarchical pop is shorter than its push`() {
-        // Same asymmetry as the cover pair: the user already knows where back goes, so the return
-        // must not run the full arrival timeline.
+    fun `a hierarchical pop runs the same crossfade as its push`() {
+        // The asymmetry existed because movement takes time to read as a return. A crossfade has
+        // no direction to honour, so both legs are the policy's one crossfade duration.
         val forward = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.FORWARD)
         val back = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.BACKWARD)
-        assertEquals(MotionPolicy.HIERARCHICAL_BACK_DURATION_MILLIS, back.durationMillis)
-        assertTrue(
-            back.durationMillis < forward.durationMillis,
-            "back=${back.durationMillis} must be shorter than forward=${forward.durationMillis}",
-        )
+        assertEquals(forward.durationMillis, back.durationMillis)
+        assertEquals(MotionPolicy.CROSSFADE_DURATION_MILLIS, back.durationMillis)
     }
 
     @Test
@@ -322,7 +320,7 @@ class MotionPolicyTest {
             sharedElementKey = "manga_cover_42",
         )
         assertFalse(plan.shouldAnimateSharedElement)
-        assertEquals(ContainerMotion.SHARED_AXIS, plan.effectiveContainerMotion)
+        assertEquals(ContainerMotion.CROSSFADE, plan.effectiveContainerMotion)
     }
 
     @Test
@@ -335,10 +333,10 @@ class MotionPolicyTest {
     }
 
     @Test
-    fun `the hierarchical pop is not quicker than the crossfade it can degrade to`() {
-        // A back so short it reads as a cut loses the continuity that tells the user where they
-        // went — the same floor the cover pair's return keeps.
+    fun `the hierarchical pop is the crossfade it can degrade to`() {
+        // With movement gone there is nothing to shorten: the pop runs the policy's crossfade
+        // duration exactly — the same floor the cover pair's return keeps.
         val back = MotionPolicy.plan(MotionRoutePair.HIERARCHICAL, MotionDirection.BACKWARD)
-        assertTrue(back.durationMillis >= MotionPolicy.CROSSFADE_DURATION_MILLIS)
+        assertEquals(MotionPolicy.CROSSFADE_DURATION_MILLIS, back.durationMillis)
     }
 }

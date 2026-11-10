@@ -21,6 +21,11 @@ enum class MotionRoutePair {
      * than handed a token by the layer that renders it, so its durations and container are
      * decided with every other rule and unit-tested beside them.
      *
+     * The owner's motion audit (2026-11-09) removed the shared axis itself: a cross-screen slide
+     * reads as elements flying, the motion the audit rejected. This pair's plan is therefore the
+     * policy crossfade, in both directions — the same minimal, no-movement change the Activity
+     * boundary renders.
+     *
      * Tab motion still belongs to HomeScreen's tab NavHost, reader entry to the Activity window
      * animations, and sheets to the predictive-back drag — those are still not pairs, because
      * no `plan()` call site can produce them as one. A pair exists here exactly when a caller
@@ -69,8 +74,6 @@ enum class ContainerMotion {
     /** Opacity change only. The contract's default for non-shared content. */
     CROSSFADE,
 
-    /** Opacity plus a positional shift, for genuinely hierarchical pairs. */
-    SHARED_AXIS,
 }
 
 /**
@@ -172,22 +175,6 @@ object MotionPolicy {
     const val CROSSFADE_DURATION_MILLIS: Int = 200
 
     /**
-     * Duration of an [MotionRoutePair.HIERARCHICAL] push. The user is arriving somewhere new, so
-     * the incoming page gets the fuller timeline — but 300ms, not the 450 the old hardcoded
-     * fallback ran, which held two full-screen layers animating for close to half a second and
-     * read as weight rather than depth.
-     */
-    const val HIERARCHICAL_FORWARD_DURATION_MILLIS: Int = 300
-
-    /**
-     * Duration of the same transition going back, 50ms under the forward value for the same
-     * reason the shared cover's return is shorter: the user already knows where back goes. Kept
-     * above [CROSSFADE_DURATION_MILLIS] so a fast return is still legible as a movement rather
-     * than a cut.
-     */
-    const val HIERARCHICAL_BACK_DURATION_MILLIS: Int = 250
-
-    /**
      * The key both screens use for one manga's cover, so the library grid cell and the series
      * header agree on which element is shared.
      *
@@ -233,7 +220,7 @@ object MotionPolicy {
 
         val container = when (pair) {
             MotionRoutePair.LIBRARY_SERIES -> ContainerMotion.NONE
-            MotionRoutePair.HIERARCHICAL -> ContainerMotion.SHARED_AXIS
+            MotionRoutePair.HIERARCHICAL -> ContainerMotion.CROSSFADE
         }
 
         val duration = when {
@@ -242,11 +229,8 @@ object MotionPolicy {
             } else {
                 SHARED_ELEMENT_DURATION_MILLIS
             }
-            pair == MotionRoutePair.HIERARCHICAL -> if (direction == MotionDirection.BACKWARD) {
-                HIERARCHICAL_BACK_DURATION_MILLIS
-            } else {
-                HIERARCHICAL_FORWARD_DURATION_MILLIS
-            }
+            // The hierarchical fallback crossfades in both directions: movement was the only
+            // reason its timeline was ever asymmetric, and the audit removed the movement.
             else -> CROSSFADE_DURATION_MILLIS
         }
 
