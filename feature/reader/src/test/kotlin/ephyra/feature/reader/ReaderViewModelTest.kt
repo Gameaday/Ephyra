@@ -107,6 +107,15 @@ class ReaderViewModelTest {
             coEvery { get() } returns emptySet()
         }
         every { libraryPreferences.markDuplicateReadChapterAsRead() } returns markDuplicatePref
+
+        // The page-progress path reads this on every selection. A bare relaxed mock cannot
+        // answer a generic `get(): T` with a real Boolean (it hands back an Object that the
+        // erased cast at the call site rejects with ClassCastException), so it is stubbed
+        // explicitly — same reason the prefs above are.
+        val smartCombinePagedPref: Preference<Boolean> = mockk(relaxed = true) {
+            coEvery { get() } returns false
+        }
+        every { readerPreferences.smartCombinePaged() } returns smartCombinePagedPref
     }
 
     @AfterEach
