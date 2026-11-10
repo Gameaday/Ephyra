@@ -1,0 +1,49 @@
+name: Diagnose spotless 343
+on:
+  push:
+    branches:
+      - fix/reader-page-immutable-resource
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  diagnose:
+    name: spotlessApply diff
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-read-only: true
+          gradle-home-cache-cleanup: true
+
+      - name: Run spotlessApply
+        run: ./gradlew spotlessApply --build-cache --parallel --no-daemon
+
+      - name: Post canonical diff to PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FENCE='```'
+          DIFF=$(git diff)
+          if [ -z "$DIFF" ]; then
+            DIFF='(no diff - spotlessCheck failure is not a format violation)'
+          fi
+          {
+            echo 'spotlessApply canonical diff for this head (auto-posted):'
+            echo "$FENCE"'diff'
+            echo "$DIFF"
+            echo "$FENCE"
+          } > /tmp/comment.md
+          gh pr comment 343 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.md
