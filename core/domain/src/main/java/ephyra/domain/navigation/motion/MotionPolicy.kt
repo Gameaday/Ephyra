@@ -73,7 +73,6 @@ enum class ContainerMotion {
 
     /** Opacity change only. The contract's default for non-shared content. */
     CROSSFADE,
-
 }
 
 /**
