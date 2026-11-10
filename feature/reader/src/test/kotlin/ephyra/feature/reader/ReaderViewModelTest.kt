@@ -311,14 +311,25 @@ class ReaderViewModelTest {
         val page1 = ReaderPage(1, "http://p/1").apply { this.chapter = readerChapter }
         readerChapter.state = ReaderChapter.State.Loaded(listOf(page0, page1))
 
-        viewModel.onEvent(ReaderEvent.PageSelected(page1))
+        // The progress write runs inside launchNonCancellable — launch(Dispatchers.IO) — so it
+        // lands on a real IO thread, not the test scheduler. Reading state.value immediately
+        // after onEvent raced that thread: four consecutive green branch rounds, then red on
+        // main's post-merge push run against a byte-identical tree (push runners execute
+        // assembleRelease immediately before the suite; PR runners skip it, and the extra
+        // load flips the scheduling). Awaiting the emission instead of sampling the value
+        // makes the assertion deterministic under any thread scheduling.
+        viewModel.state.test {
+            awaitItem() // initial State()
 
-        val state = viewModel.state.value
-        // R-C (Stage 4, audit F7): the display index counts visible pages (page 1 → position 2),
-        // while the recorded identity is the page object itself. The automatic background reads
-        // the recorded page's rendered surface, so it can never sample the wrong page by
-        // re-deriving one from the display number.
-        assertEquals(2, state.currentPage)
-        assertEquals(page1, state.currentReaderPage)
+            viewModel.onEvent(ReaderEvent.PageSelected(page1))
+
+            val updated = awaitItem()
+            // R-C (Stage 4, audit F7): the display index counts visible pages (page 1 → position 2),
+            // while the recorded identity is the page object itself. The automatic background reads
+            // the recorded page's rendered surface, so it can never sample the wrong page by
+            // re-deriving one from the display number.
+            assertEquals(2, updated.currentPage)
+            assertEquals(page1, updated.currentReaderPage)
+        }
     }
 }
