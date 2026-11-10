@@ -126,6 +126,45 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🧭 Component Motion Crossfade Sweep (owner follow-up 2026-11-09: bug-wave item 7 — PR #341's kept-surfaces residue still read as elements flying, fading and zooming into the background, which made the app feel slower rather than faster; directive locked: minimal crossfade, no movement at all)
+
+- **The defect:** PR #341 re-owned the Activity boundary and deliberately kept the component-scale
+  motion — the tab slide, the hierarchical shared-axis X, the adaptive pane slide, the calendar
+  header's vertical roll, the bottom bar's grow/shrink. Each was defensible in isolation;
+  together they were five moving surfaces between the user and a chapter, the exact aesthetic the
+  audit rejected, one layer below the boundary.
+- **What landed:** every component-scale movement is now a minimal crossfade. Tab peers
+  (`HomeScreen`) crossfade between the five roots; peer-ness is a unit-tested boolean
+  (`isTabPeerTransition`, new `TabPeerTransitionTest`; `TabSlideDirectionTest` is deleted with the
+  slide it pinned). The hierarchical fallback crossfades in both directions: `ContainerMotion`
+  loses `SHARED_AXIS`, both `HIERARCHICAL_*_DURATION_MILLIS` constants go (movement was the only
+  reason the fallback's timeline was ever asymmetric), and `MotionTokens` loses all four
+  `m3SharedAxisX*` renderings, both `m3TabSlide*`, `containerPopEnter`/`containerPopExit` and both
+  back-gesture travel fractions. The adaptive detail pane (`ListDetailPaneScaffold`) crossfades in
+  both directions; the back gesture previews a drag-proportional dim (`PANE_BACK_GESTURE_FADE`,
+  alpha-only `graphicsLayer`) — with the travel gone, a moving preview would promise a transition
+  the commit no longer performs. The calendar header fades between months instead of rolling
+  (`CalendarHeader`, `movingForward` deleted). The bottom bar fades in/out instead of
+  growing/shrinking; `MainActivity`'s pop slots use `containerEnter`/`containerExit`.
+- **The gate:** `MotionConsistencyTest` defect 6 — `the hierarchical fallback is the policy
+  crossfade and has no slide rendering` fails the build if a slide or shared-axis rendering, a
+  `HIERARCHICAL_*` duration constant or a deleted travel fraction returns; the durations-parity
+  rule is deleted with the durations it pinned.
+- **Disclosed:** the pane's gesture preview changes from a partial travel to a drag-proportional
+  dim — the dim hands over to the committed crossfade in one frame. Kept deliberately (the owner's
+  call, recorded in the contract): the Library↔Series cover pair, the sheets' predictive-back drag,
+  the fade-through for a nested screen reached inside a tab, and interaction-feedback show/hide.
+  Reduced motion still collapses all of these to instant state changes.
+- **Honesty:** no JDK locally; remote CI is the verification channel. Round 1 was red at
+  `spotlessCheck` — a blank line left before the `ContainerMotion` enum's closing brace
+  (`SHARED_AXIS`-removal residue) that the check-run annotations do not name; triaged with a
+  throwaway diagnose workflow that runs `spotlessApply` and posts the canonical diff to the PR
+  (that workflow's own first run had a bash quoting bug — backticks inside double quotes are live
+  command substitution — disclosed and fixed before re-run; the workflow was deleted before
+  merge). Fixed in one line (`3230c454`); all four checks green on the fix head. Every red round
+  is disclosed with a PR comment and a ledger row amendment; no red round is ever merged. No
+  device evidence claimed — the crossfade feel is the owner's A5 call.
+
 ### 🧭 Activity Boundary Crossfade (owner follow-up 2026-11-09: bug-wave item 2 is "consistent now but still not desirable or elegant" — the platform's answer was the motion the audit rejected; directive: a minimal crossfade with no movement, app-owned on every path)
 
 - **The defect:** PR #339 fixed the one-boundary-three-motions inconsistency by leaving the

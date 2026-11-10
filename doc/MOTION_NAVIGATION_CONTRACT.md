@@ -8,31 +8,31 @@
 |---|---|---|---|
 | Library ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
 | Any cover list ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
-| Tab peer | None | Directional horizontal slide | Tab history model, same slide reversed |
-| Hierarchical destination | Optional shared element | Shared axis X | Reverse shared axis X |
+| Tab peer | None | Crossfade | Back at a tab root exits to the system predictive back (no tab walk) |
+| Hierarchical destination | Optional shared element | Policy crossfade (200ms), both directions | Same crossfade — no asymmetry without movement |
 | Activity destination (reader, WebView) | None | Pure-alpha window crossfade (theme fades, 200ms) | Same crossfade; gesture commits through finish() with a drag dim |
-| Compact pane → expanded pane | Optional item identity | Directional pane | Directional reverse |
+| Compact pane → expanded pane | Optional item identity | Crossfade, both directions | Back gesture previews a drag dim, then commits to the same crossfade |
 | Sheet/dialog → parent | None | Component motion | Parent state |
 
-## Tab peers slide along the bar, they do not fade
+## Tab peers crossfade; the slide is a recorded reversal
 
-The five bottom-nav destinations are ordered, not merely adjacent, so a tab change is a move along
-one axis rather than a swap of unrelated screens. A fade-through is the right answer for peers with
-no order; here it made each tab read as a discrete screen that happened to replace the previous one,
-and made going back a second dissolve instead of a reversal.
+**Slide era (2026-11-08 → 2026-11-09).** The five bottom-nav destinations were treated as ordered
+peers on one axis, so a tab change was a directional horizontal slide: direction came from each
+tab's index in the bar, the incoming page entered from the side of the tapped button, and back to an
+earlier tab was the same movement reversed. It was argued for in good faith — a fade made each tab
+read as a discrete screen — but it read as elements flying along the bar, and the owner's motion
+audit (2026-11-09) rejected movement at this scale outright. Tab roots are destinations of equal
+rank; a slide implies an ordering the bar never promised.
 
-The direction is derived from each tab's index in the bar, so the incoming page always enters from
-the side the tapped button sits on and returning to an earlier tab is the same movement played the
-other way. Enter and exit share one duration with complementary easing, so the two pages travel
-together and settle at the same instant — two halves resolving at different points is what reads as
-discrete rather than cohesive.
-
-A destination that is not a tab root (a nested screen reached inside a tab) keeps the fade-through:
-it has no position on the tab axis, and sliding it would imply an ordering that does not exist. The
-direction helper is therefore tri-state — forward, backward, or *not a tab pair* — so "not a tab
-pair" can never be silently folded into "backward".
-
-Under reduced motion the slide collapses to an instant state change, like every other transition.
+**Current rule.** A tab change is one crossfade between the five roots (`MotionTokens` crossfade
+tokens at the policy's duration). Peer-ness still decides *which* no-movement transition runs: two
+tab roots crossfade, while a nested screen reached inside a tab keeps the fade-through — it is not
+a peer of anything on the bar. The decision is a boolean (`isTabPeerTransition`), unit-tested in
+`TabPeerTransitionTest`: a wrong decision still animates, it just dissolves the wrong way, which is
+the class of defect that survives review. Back at a tab root hands the gesture to the system's
+predictive back and exits — the tab-history walk was removed by the owner's 2026-11-08 defect
+report, and no `BackHandler` is installed. Under reduced motion the crossfade collapses to an
+instant state change, like every other transition.
 
 ## A series is reachable from every list that shows its cover
 
@@ -122,16 +122,49 @@ For Series ↔ Library:
 - the back transition is **shorter** than the forward one, per the M3 shared-element spec;
 - invalid shared-element bounds fall back to a clean crossfade.
 
-## Hierarchy runs on the horizontal axis
+## The hierarchical fallback is the policy crossfade; the shared axis is a recorded reversal
 
-A hierarchical destination slides on the **X** axis, not on scale. Scale (shared axis Z) is the
-transition for entering or leaving a modal state; using it for ordinary forward navigation made a
-push read as the screen being zoomed at rather than moved to, and made back the reverse of a zoom.
+**Shared-axis era (2026-11-08 → 2026-11-09).** A hierarchical push or pop first moved on the **X**
+axis — declared as `MotionRoutePair.HIERARCHICAL` in Motion v2 and rendered by `MotionTokens`'
+shared-axis-X functions, with an asymmetric back leg (300ms in, 250ms back) and pop-specific
+renderings. The asymmetry was Material-3-correct for a *move*. The owner's motion audit (2026-11-09)
+removed the move, and with it everything the asymmetry existed to serve: a crossfade claims nothing
+about where the user is going, which is the honest vocabulary for a fallback pair that has no
+specific rule of its own.
 
-The forward leg travels a third of the viewport and the back leg is shorter, for the same reason the
-shared cover's return is shorter: the user already knows where back goes. The fallback previously
-composed a scale-up *and* a 10% slide at the same time, which is neither a shared axis nor a slide and
-is the muddle this section exists to remove.
+**Current rule.** An undeclared push or pop resolves to the HIERARCHICAL plan, which is the policy
+crossfade in both directions (`CROSSFADE_DURATION_MILLIS`, 200ms). `ContainerMotion`'s only members
+are `NONE` and `CROSSFADE`; the shared-axis renderings, their pop variants and the
+`HIERARCHICAL_*_DURATION_MILLIS` constants are deleted, and `MotionConsistencyTest` fails the build
+if any of them come back. Reduced motion still collapses the plan to an instant state change.
+
+## Component-level motion is crossfade-only (2026-11-09 sweep)
+
+The audit rejected movement at component scale too, so the surfaces kept by the boundary sweep were
+re-swept (PR #342):
+
+- **Tab strip** — the tab slide is a recorded reversal (above); peers crossfade.
+- **Bottom bar** — `AnimatedVisibility` grew/shrank vertically with `expandVertically`/
+  `shrinkVertically`; it now fades in/out at the same tokens. A bar that changes its own size
+  advertises a relayout the content did not ask for.
+- **Calendar header** — the month title rolled vertically between months; it now fades. A calendar
+  is not a carousel.
+- **Adaptive pane** — the detail pane slid a quarter of its width in and out; it now crossfades in
+  both directions, and the back gesture previews a drag-proportional dim (`PANE_BACK_GESTURE_FADE`,
+  alpha-only `graphicsLayer`) — the same gesture-coupled opacity the Activity boundary uses,
+  because with the travel gone a moving preview would promise a transition the commit no longer
+  performs. Disclosed trade: the dim hands over to the committed crossfade in one frame.
+- **Hierarchical fallback** — the shared axis is a recorded reversal (above).
+
+**Kept deliberately (the owner's call, not oversights):** the Library↔Series cover pair (a shared
+element with a counterpart, not a container effect), the sheets' predictive-back drag (the gesture
+itself, not a choreographed entrance), the fade-through for a nested screen reached inside a tab,
+and interaction-feedback show/hide (banners, snackbars, reader app bars) — state announcements, not
+navigation.
+
+`MotionConsistencyTest` holds the sweep structurally: `the hierarchical fallback is the policy
+crossfade and has no slide rendering` fails the build if a slide rendering, a shared-axis token or a
+`HIERARCHICAL_*_DURATION_MILLIS` constant returns.
 
 ## Motion v2 — one policy, quick cohesion (2026-11-08)
 
@@ -165,6 +198,11 @@ closes all three.
   `MotionVocabularyTest` fails the build if any public member of `MotionTokens` loses its last
   consumer — audit F4's exit condition, permanent. The last inline curves (`ReaderScreen`,
   `CalendarHeader`) now name tokens, behaviour-identical.
+
+> **Superseded 2026-11-09 (component motion sweep, PR #342).** The shared axis, its 300ms/250ms
+> asymmetric durations and the pop renderings are deleted: the owner's audit removed the movement,
+> so the HIERARCHICAL plan is the policy crossfade in both directions. The pop-function story above
+> is preserved as the record of why they existed; they are gone with the axis.
 
 ## Direction is part of the pair
 
@@ -255,8 +293,9 @@ code does *not* do and no unit test can drive the transition:
   on exactly those two activities, the fade renderings are pure alpha at the policy's crossfade
   duration and easing with all four transition slots wired, the deleted `shared_axis_x_*.xml`
   renderings stay deleted, and the unlock screen's zero-animation override is named as the one
-  deliberate remaining use; the policy's HIERARCHICAL durations are the numbers
-  the Compose legs play — policy and its rendering gated as one loop; every shared-cover host provides
+  deliberate remaining use; the hierarchical fallback is the policy crossfade and has no slide rendering — no slide or
+  shared-axis token and no `HIERARCHICAL_*_DURATION_MILLIS` constant may return, and the
+  durations-parity rule went with the durations it pinned; every shared-cover host provides
   an animated-visibility scope; each list that opens a
   series keys its cover on the id it opens; and the undeclared-route fallback is a policy plan, not an
   activity decision — `MainActivity` names no transition token directly and no NavHost slot branches

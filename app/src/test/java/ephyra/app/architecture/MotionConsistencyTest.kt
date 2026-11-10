@@ -35,6 +35,12 @@ import java.io.File
  *    which reads as elements flying and zooming into the background, and the open path played no
  *    preview at all. The owner's motion audit rejected it (2026-11-09), and the directive locked
  *    the replacement: one minimal crossfade, no movement, owned by the app on every path.
+ * 6. **Component motion still moved.** The boundary was one crossfade, but in-app navigation
+ *    still slid: tab peers travelled horizontally, hierarchical pushes ran the shared axis X,
+ *    the adaptive pane slid a quarter of the viewport, the calendar title rolled the full screen
+ *    height, and the bottom bar grew and shrank in place. The owner's audit rejected movement
+ *    everywhere it reads as elements flying (2026-11-09); this sweep replaces each with the
+ *    policy crossfade or a drag-coupled dim.
  *
  * **The reversals, recorded.** Defects (1) and (2) were originally gated by requiring the window
  * pair; defect (4) inverted those gates and made the boundary the platform's; defect (5) is why
@@ -97,26 +103,6 @@ class MotionConsistencyTest {
         "feature/updates/src/main/kotlin/ephyra/feature/updates/UpdatesUiItem.kt"
 
     private val anim = "presentation-core/src/main/res/anim"
-
-    /** Numeric value of every DURATION_ constant, resolving alias chains to their numbers. */
-    private fun durationConstants(tokenCode: String): Map<String, Int> {
-        val declared = Regex("""const val (DURATION_[A-Z0-9_]+)\s*=\s*([A-Za-z0-9_]+)""")
-            .findAll(tokenCode)
-            .associate { it.groupValues[1] to it.groupValues[2] }
-
-        fun resolve(name: String): Int {
-            var current = name
-            val seen = mutableSetOf<String>()
-            while (true) {
-                val value = declared[current] ?: throw AssertionError("$current is not a duration constant")
-                value.toIntOrNull()?.let { return it }
-                check(current !in seen) { "duration alias cycle at $current" }
-                seen += current
-                current = value
-            }
-        }
-        return declared.keys.associateWith { resolve(it) }
-    }
 
     /**
      * The reader and the WebView are separate Activities, and their boundary motion is one
@@ -417,50 +403,42 @@ class MotionConsistencyTest {
     }
 
     /**
-     * The policy's HIERARCHICAL durations are the numbers the renderings actually play. The window
-     * renderings were deleted with the activity overrides (the boundary is the platform's), so the
-     * Compose legs are the one rendering left and this ties the policy to them. Without it,
-     * shortening HIERARCHICAL_BACK_DURATION_MILLIS would leave the pop rendering at 250ms while
-     * the plan reported something else, and no gate would name the difference.
+     * The HIERARCHICAL pair is the policy crossfade, and no slide rendering of it exists to
+     * drift. The owner's motion audit (2026-11-09) removed the shared axis from ordinary
+     * navigation — a cross-screen slide reads as elements flying — so the fallback's rendering is
+     * the crossfade the boundary already plays, and any slide token that returns is a second
+     * definition of a transition the policy no longer assigns.
      */
     @Test
-    fun `policy hierarchical durations are the numbers the renderings play`() {
+    fun `the hierarchical fallback is the policy crossfade and has no slide rendering`() {
         val policy = codeOf(motionPolicy)
-        val declared = Regex("""HIERARCHICAL_(FORWARD|BACK)_DURATION_MILLIS\s*:\s*Int\s*=\s*(\d+)""")
-            .findAll(policy)
-            .associate { it.groupValues[1] to it.groupValues[2].toInt() }
-        assertEquals(
-            setOf("FORWARD", "BACK"),
-            declared.keys,
-            "MotionPolicy must declare both HIERARCHICAL durations as readable literals.",
+        assertTrue(
+            Regex("""HIERARCHICAL_(FORWARD|BACK)_DURATION_MILLIS""").findAll(policy).none(),
+            "MotionPolicy must not declare HIERARCHICAL_*_DURATION_MILLIS: the pair is the policy " +
+                "crossfade now, and a private duration is a second timeline that no rendering plays.",
+        )
+        assertTrue(
+            policy.contains("MotionRoutePair.HIERARCHICAL -> ContainerMotion.CROSSFADE"),
+            "The HIERARCHICAL plan must assign the crossfade: a container that moves " +
+                "reintroduces the flying screens the owner's motion audit rejected.",
         )
 
         val token = codeOf(motion)
-
-        fun firstLegMillis(function: String): Int {
-            val body = token.substringAfter("fun $function(").substringBefore("\n    fun ")
-            val name = Regex("""durationMillis\s*=\s*(DURATION_[A-Z0-9_]+)""")
-                .find(body)
-                ?.groupValues
-                ?.get(1)
-                ?: throw AssertionError("no timed leg found in $function")
-            return durationConstants(token)[name]
-                ?: throw AssertionError("$name is not a duration constant in MotionTokens.kt")
-        }
-
-        assertEquals(
-            declared.getValue("FORWARD"),
-            firstLegMillis("m3SharedAxisXEnter"),
-            "The push rendering must run the policy's HIERARCHICAL_FORWARD duration. The Compose " +
-                "legs are the one rendering left of this transition; a number that differs " +
-                "between the policy and its rendering is a policy the rendering did not implement.",
+        assertFalse(
+            token.contains("m3SharedAxisX"),
+            "MotionTokens must not define a shared-axis X rendering: its consumer (the " +
+                "HIERARCHICAL plan) renders the crossfade, and an orphan slide function is the " +
+                "wrong transition waiting to be picked.",
         )
-        assertEquals(
-            declared.getValue("BACK"),
-            firstLegMillis("m3SharedAxisXPopEnter"),
-            "The pop-enter rendering must run the policy's HIERARCHICAL_BACK duration. The pop " +
-                "legs exist so the return is quicker than the arrival; a rendering that keeps the " +
-                "old number turns that rule into a comment rather than a fact.",
+        assertFalse(
+            token.contains("m3TabSlide"),
+            "MotionTokens must not define a tab-slide rendering: tab peers crossfade, and an " +
+                "orphan slide function is the wrong transition waiting to be picked.",
+        )
+        assertFalse(
+            token.contains("slideInHorizontally"),
+            "MotionTokens must not import a slide primitive: every token it renders is pure " +
+                "alpha or a no-op.",
         )
     }
 

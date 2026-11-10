@@ -4,8 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -34,20 +32,13 @@ import ephyra.presentation.core.util.isExpandedWidthWindow
 import ephyra.presentation.core.util.isTabletUi
 
 /**
- * How far across its own width the detail pane travels at the end of a back gesture.
+ * How much the pane dims during the back gesture.
  *
- * A quarter of the width, matching the `initialOffsetX` / `targetOffsetX` of the `AnimatedContent`
- * transition this gesture previews. The gesture must end where the committed animation begins, or
- * the pane visibly jumps at the moment the finger lifts -- which reads as the gesture being
- * rejected even though it was accepted.
- */
-private const val PANE_BACK_GESTURE_TRAVEL_FRACTION = 0.25f
-
-/**
- * How much the pane fades during the gesture.
- *
- * A fifth rather than a full crossfade: the destination pane is visible behind, and fading the
- * outgoing pane all the way to zero would flash the background where the shared cover should be.
+ * Gesture-coupled opacity, the same preview the activity boundary host uses: with the committed
+ * pane change now a crossfade, the gesture can no longer preview a travel it does not perform, so
+ * it previews "you are leaving" instead. A fifth rather than the boundary's deeper dim because
+ * the pane is the whole surface here — a deeper dim would read as the pane already leaving
+ * before the finger lifts.
  */
 private const val PANE_BACK_GESTURE_FADE = 0.2f
 
@@ -108,8 +99,8 @@ fun rememberListDetailPaneScaffoldNavigator(
  *
  * Implements Google's Modern Android Development adaptive layout patterns:
  * - Dual-pane layout on expanded/tablet/foldable viewports (width > 840dp or isTabletUi).
- * - Single-pane layout on compact/medium viewports with animated slide/fade transitions
- *   and predictive-back-compatible BackHandler.
+ * - Single-pane layout on compact/medium viewports with a crossfade transition and a
+ *   predictive-back dim preview.
  * - Supports custom pane proportioning, vertical divider, and role navigation.
  */
 @Composable
@@ -174,84 +165,56 @@ fun ListDetailPaneScaffold(
             }
         }
     } else {
-        // Single-pane compact layout. The back gesture drives the *same* slide the tap-driven
-        // `AnimatedContent` below uses, rather than a separate animation, so a pane dismissed by
-        // swipe and one dismissed by tap are visually the same transition.
+        // Single-pane compact layout. The committed pane change is one crossfade, and the back
+        // gesture previews it with a drag-proportional dim — the same gesture-coupled opacity the
+        // activity boundary host uses, for the same reason: the owner's motion audit (2026-11-09)
+        // removed pane movement, so the gesture previews "you are leaving" rather than a travel
+        // it can no longer honestly show.
         //
         // `PredictiveBackProgress` is used rather than `BackHandler` precisely because this surface
-        // has a directional animation to preview. With a bare `BackHandler` the user swipes, sees
-        // nothing move, and then the pane disappears — which is worse than having no gesture at
-        // all, because it advertises interactivity the surface does not have.
+        // has a live preview to show. With a bare `BackHandler` the user swipes, sees nothing
+        // change, and then the pane disappears — which is worse than having no gesture at all,
+        // because it advertises interactivity the surface does not have.
         var backProgress by remember { mutableFloatStateOf(0f) }
         PredictiveBackProgress(
             enabled = navigator.currentRole != ListDetailPaneRole.List,
-            // The outgoing pane slides towards the start edge as the gesture advances.
+            // The pane dims with the finger as the gesture advances.
             onProgress = { progress -> backProgress = progress },
             onCommit = {
+                // The dim hands over to the committed crossfade: the outgoing pane fades out from
+                // full alpha, so the dim is cleared here rather than lingering over the pane that
+                // replaces it.
                 backProgress = 0f
                 navigator.navigateBack()
             },
             // Cancelled: the pane was never committed, so it is still there. Clearing progress
-            // lets the existing `AnimatedContent` snap back on its own; a separate reverse
-            // animation here would fight that one.
+            // restores the dim to zero in the same frame the gesture gave up in.
             onCancelled = { backProgress = 0f },
         )
 
         Box(
             modifier = modifier
                 .fillMaxSize()
-                // While a back gesture is in flight the pane tracks the finger. A `graphicsLayer`
-                // is render-only, so it cannot disturb the layout or the `AnimatedContent` state
-                // machine underneath -- important because that machine already owns the committed
-                // transition, and a second layout-affecting animation of the same movement is the
-                // two-owners-one-axis problem again. `1 - progress` because the gesture travels
-                // inward from the edge while the pane travels outward.
+                // While a back gesture is in flight the pane dims with the finger. A
+                // `graphicsLayer` is render-only, so it cannot disturb the layout or the
+                // `AnimatedContent` state machine underneath — important because that machine
+                // owns the committed transition, and a second layout-affecting animation would be
+                // the two-owners-one-axis problem again.
                 .graphicsLayer {
-                    val travel = (size.width * PANE_BACK_GESTURE_TRAVEL_FRACTION * (1f - backProgress))
-                    translationX = -travel
                     alpha = 1f - (backProgress * PANE_BACK_GESTURE_FADE)
                 },
         ) {
             AnimatedContent(
                 targetState = navigator.currentRole,
                 transitionSpec = {
-                    if (targetState.ordinal > initialState.ordinal) {
-                        (
-                            slideInHorizontally(
-                                animationSpec = tween(
-                                    durationMillis = MotionTokens.DURATION_MEDIUM,
-                                    easing = MotionTokens.EasingDecelerate,
-                                ),
-                                initialOffsetX = { fullWidth -> fullWidth / 4 },
-                            ) + fadeIn(animationSpec = tween(MotionTokens.DURATION_MEDIUM))
-                            ).togetherWith(
-                            slideOutHorizontally(
-                                animationSpec = tween(
-                                    durationMillis = MotionTokens.DURATION_SHORT,
-                                    easing = MotionTokens.EasingAccelerate,
-                                ),
-                                targetOffsetX = { fullWidth -> -fullWidth / 4 },
-                            ) + fadeOut(animationSpec = tween(MotionTokens.DURATION_SHORT)),
-                        )
-                    } else {
-                        (
-                            slideInHorizontally(
-                                animationSpec = tween(
-                                    durationMillis = MotionTokens.DURATION_MEDIUM,
-                                    easing = MotionTokens.EasingDecelerate,
-                                ),
-                                initialOffsetX = { fullWidth -> -fullWidth / 4 },
-                            ) + fadeIn(animationSpec = tween(MotionTokens.DURATION_MEDIUM))
-                            ).togetherWith(
-                            slideOutHorizontally(
-                                animationSpec = tween(
-                                    durationMillis = MotionTokens.DURATION_SHORT,
-                                    easing = MotionTokens.EasingAccelerate,
-                                ),
-                                targetOffsetX = { fullWidth -> fullWidth / 4 },
-                            ) + fadeOut(animationSpec = tween(MotionTokens.DURATION_SHORT)),
-                        )
-                    }
+                    // One crossfade, both directions: the pane slide was removed by the owner's
+                    // motion audit (2026-11-09), so opening and dismissing a pane are the same
+                    // minimal change rather than two travels.
+                    (
+                        fadeIn(animationSpec = tween(MotionTokens.DURATION_MEDIUM))
+                        ).togetherWith(
+                        fadeOut(animationSpec = tween(MotionTokens.DURATION_SHORT)),
+                    )
                 },
                 label = "ListDetailPaneTransition",
             ) { role ->
