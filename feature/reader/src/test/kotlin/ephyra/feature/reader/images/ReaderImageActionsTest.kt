@@ -168,7 +168,7 @@ class ReaderImageActionsTest {
     ): ReaderPage =
         ReaderPage(0, "/a.jpg").apply {
             this.status = status
-            this.stream = stream
+            this.resource.stream = stream
             this.chapter = ReaderChapter(Chapter.create().copy(name = "C"))
         }
 

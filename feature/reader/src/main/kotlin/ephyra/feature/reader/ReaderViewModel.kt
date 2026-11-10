@@ -698,7 +698,6 @@ class ReaderViewModel @Inject constructor(
      * Called when the user is going to load the prev/next chapter through the toolbar buttons.
      */
     private suspend fun loadAdjacent(
-
         chapter: ReaderChapter,
         startFromEnd: Boolean,
     ) {
@@ -1398,7 +1397,6 @@ class ReaderViewModel @Inject constructor(
         pref.set(current)
         logcat(LogPriority.INFO) { "Blocked page dHash=$hex" }
     }
-
 
     override suspend fun removeBlockedHash(hex: String): Boolean =
         withIOContext {
