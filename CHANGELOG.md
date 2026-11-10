@@ -126,6 +126,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🧪 Page-Selection Test Race (owner follow-up 2026-11-10: post-merge main push flake — PR #344)
+
+- **The defect:** PR #343's suite passed all four checks twice on the branch, then main's post-merge push run went red at its Run unit tests step — `compare 57a25a2c...03f0ca5b` reports zero changed files, so the merge tree is byte-identical to the head that passed: a flake, not a merge defect. The racing assertion was `ReaderViewModelTest`'s "page selection records the rendered page identity in state": it read `state.value` immediately after `onEvent(PageSelected)`, while the write it awaited runs in `launchNonCancellable` = `launch(Dispatchers.IO)`. PR runners skip the Build-app step; push runners run `assembleRelease` immediately before the suite, and the extra load flips the race. The nightly workflow correctly refused at its Require-green-checks gate — no artifact was published from a red commit (disclosed on #343: issuecomment-6758335642; root cause and fix: this PR).
+- **What landed:** the test awaits the emission (Turbine `awaitItem`) instead of racing the write — deterministic; no production change (`MutableStateFlow.update` is thread-safe, the write itself was correct).
+- **The evidence:** a throwaway `diagnose-unit.yml` reproduced the push-like configuration (assembleRelease before the suite) and ran the full unit suite three times: all three runs failed at exactly one testcase — WorkflowRedundancyTest, red only because the throwaway workflow itself was a second suite-invoking workflow (self-inflicted, disclosed) — and the rewritten test passed 3/3. Evidence posted to the PR (issuecomment-6758794012); the workflow was deleted before the gate round, so WorkflowRedundancyTest is green again.
+- **Honesty:** no JDK locally; remote CI is the verification channel. Round 1 on the fix branch (7e125294) was red at Build & Test App — the self-inflicted WorkflowRedundancyTest failure just described, disclosed with the diagnose evidence (issuecomment-6758804943); the gate round on the workflow-deletion head (154779c8) was green on all four checks. No red round is merged; every red round is disclosed on the PR and amended into the ledger. No device evidence claimed.
+
 ### 📚 Reader Page Payload Handle (R-C: Stage 4 — `ReaderPage` becomes immutable metadata plus a `PageResource` handle; completes `MED-002`, resolves audit F5/F7 — PR #343)
 
 - **The debt (audit F5/F7):** `ReaderPage` was both navigation metadata and a mutable resource
