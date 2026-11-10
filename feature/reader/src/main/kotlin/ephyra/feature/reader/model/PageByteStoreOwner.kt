@@ -11,11 +11,11 @@ import java.util.concurrent.ConcurrentHashMap
  * Owns the reader's encoded page bytes, bounded by [PageByteBudget].
  *
  * **Why this exists rather than a bare [BoundedPageByteStore].** The store bounds its own entries,
- * but the reader also holds the same array on [ReaderPage.cachedBytes]. A store that evicts an
- * entry while that second reference is live bounds the store and not the heap — the bytes stay
- * reachable and the budget describes a cache rather than the process. This class closes the loop:
- * the store's eviction callback clears the page's own reference, so the two can never disagree
- * about who is holding the bytes.
+ * but the reader also holds the same array on the page's payload handle
+ * ([ReaderPage.resource].cachedBytes). A store that evicts an entry while that second reference is
+ * live bounds the store and not the heap — the bytes stay reachable and the budget describes a cache
+ * rather than the process. This class closes the loop: the store's eviction callback clears the
+ * handle's reference, so the two can never disagree about who is holding the bytes.
  *
  * **Why a chapter-scoped owner.** One store per chapter, discarded with the chapter, so there is no
  * cross-chapter retention and no way for a stale chapter's bytes to survive into the next one.
@@ -64,7 +64,7 @@ class PageByteStoreOwner(
     private fun onEvict(id: PageSourceId) {
         // Clearing the page's field is the whole point: without it the store's accounting and the
         // page's own reference describe two different sets of live bytes.
-        byId.remove(id)?.cachedBytes = null
+        byId.remove(id)?.resource?.cachedBytes = null
     }
 
     private fun idFor(page: ReaderPage): PageSourceId = PageSourceId(
@@ -94,11 +94,11 @@ class PageByteStoreOwner(
             // exist. The two maps exist to let the store be found, so they must describe the store.
             byId[id] = page
             indexToId[page.index] = id
-            page.cachedBytes = bytes
+            page.resource.cachedBytes = bytes
         } else {
             byId.remove(id)
             indexToId.remove(page.index, id)
-            page.cachedBytes = null
+            page.resource.cachedBytes = null
         }
         return bytes
     }
@@ -117,7 +117,7 @@ class PageByteStoreOwner(
     /** Bytes held for [page], without affecting eviction order. */
     @Synchronized
     fun peek(page: ReaderPage): ByteArray? {
-        val bytes = page.cachedBytes ?: return null
+        val bytes = page.resource.cachedBytes ?: return null
         return if (store.contains(idFor(page))) bytes else null
     }
 

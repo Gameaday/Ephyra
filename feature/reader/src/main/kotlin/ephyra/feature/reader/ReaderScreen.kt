@@ -102,20 +102,26 @@ fun ReaderScreen(
     val readerTheme: Int by readerPreferences.readerTheme().collectAsState()
     val automaticBackground = readerTheme == ReaderPreferences.THEME_AUTOMATIC
 
+    // R-C (Stage 4, audit F7): the automatic background samples the *rendered* page — the page
+    // the reader actually selected. The old read indexed `pages[getOrNull(state.currentPage)]`,
+    // but `currentPage` is a display position (it counts only visible pages) that the pager
+    // reports as "position of the page being shown + 1" during settlement, so with nothing
+    // hidden it resolved to the *next* page's bytes: the tint tracked the upcoming page instead
+    // of the one on screen. The view model now records the selected page itself in
+    // `state.currentReaderPage`; reading its resource here cannot drift from what the user
+    // sees, and no display-to-raw index arithmetic exists in the UI layer at all.
+    //
     // Falls back to null (and therefore to the themed surface colour) whenever the page has
     // not been decoded into memory yet, so the canvas never flashes an arbitrary tint.
-    val currentPageBytes = state.currentChapter
-        ?.pages
-        ?.getOrNull(state.currentPage)
-        ?.cachedBytes
+    val renderedSurfaceBytes = state.currentReaderPage?.resource?.renderedSurfaceBytes
 
     val sampledEdgeColor by produceState<Color?>(
         initialValue = null,
         automaticBackground,
-        currentPageBytes,
+        renderedSurfaceBytes,
     ) {
-        value = if (automaticBackground && currentPageBytes != null) {
-            extractEdgeColor(currentPageBytes)?.let { Color(it) }
+        value = if (automaticBackground && renderedSurfaceBytes != null) {
+            extractEdgeColor(renderedSurfaceBytes)?.let { Color(it) }
         } else {
             null
         }

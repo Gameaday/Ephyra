@@ -147,12 +147,12 @@ abstract class PagerViewer(
                 preScanJob?.cancel()
                 pages?.forEach { page ->
                     page.isAbsorbed = false
-                    page.clearMergedBitmap()
+                    page.resource.clearMergedBitmap()
                     // 0 is the model's "unknown" state (the `clearLoadedImage` precedent): the
                     // stale dimensions described a merged bitmap that no longer exists, and a
                     // left-behind pair made the aspect ratio describe a page that is not there.
-                    page.width = 0
-                    page.height = 0
+                    page.resource.width = 0
+                    page.resource.height = 0
                 }
                 chapters?.let { rebuildItems(it) }
             }
@@ -394,9 +394,9 @@ abstract class PagerViewer(
     }
 
     fun onPageAbsorb(parentPage: ReaderPage, absorbedPage: ReaderPage) {
-        parentPage.mergedBitmap?.let { bmp ->
-            parentPage.width = bmp.width
-            parentPage.height = bmp.height
+        parentPage.resource.mergedBitmap?.let { bmp ->
+            parentPage.resource.width = bmp.width
+            parentPage.resource.height = bmp.height
         }
         if (currentPage == absorbedPage) {
             currentPage = parentPage
@@ -471,8 +471,8 @@ abstract class PagerViewer(
                     }
                 }
 
-                val streamFn = page.stream
-                val nextStreamFn = nextPage.stream
+                val streamFn = page.resource.stream
+                val nextStreamFn = nextPage.resource.stream
                 if (streamFn == null || nextStreamFn == null) {
                     index++
                     continue
@@ -490,7 +490,7 @@ abstract class PagerViewer(
 
                     // 1. Top-stub: the CURRENT page is a short strip above the NEXT page. The
                     //    merged bitmap lands on the NEXT page, which keeps its own slot.
-                    if (page.mergedBitmap == null) {
+                    if (page.resource.mergedBitmap == null) {
                         val nextAnimated = nextStreamFn().use { ImageUtil.isAnimatedAndSupported(it) }
                         if (!nextAnimated) {
                             val currentDims = streamFn().use { ImageUtil.getImageDimensions(it) }
@@ -510,9 +510,9 @@ abstract class PagerViewer(
                                 val nextSource = nextStreamFn().use { Buffer().readFrom(it) }
                                 val mergedBitmap = ImageUtil.mergePages(currentSource, nextSource)
                                 page.isAbsorbed = true
-                                nextPage.mergedBitmap = mergedBitmap
-                                nextPage.width = mergedBitmap.width
-                                nextPage.height = mergedBitmap.height
+                                nextPage.resource.mergedBitmap = mergedBitmap
+                                nextPage.resource.width = mergedBitmap.width
+                                nextPage.resource.height = mergedBitmap.height
                                 activity.runOnUiThread {
                                     onPageAbsorb(nextPage, page)
                                 }
@@ -532,7 +532,7 @@ abstract class PagerViewer(
                     // 30 % of the merged image — a real page — could still be absorbed. A stub
                     // is a stub relative to what it was scanned beside, not relative to what the
                     // merge has so far produced.
-                    val anchorRef = page.mergedBitmap?.let { it.width to it.height }
+                    val anchorRef = page.resource.mergedBitmap?.let { it.width to it.height }
                         ?: streamFn().use { ImageUtil.getImageDimensions(it) }
                     if (anchorRef == null) {
                         index++
@@ -557,7 +557,7 @@ abstract class PagerViewer(
                             }
                             if (arrived != Page.State.Ready || !isActive) break
                         }
-                        val candidateStreamFn = candidateNext.stream ?: break
+                        val candidateStreamFn = candidateNext.resource.stream ?: break
 
                         val candidateDims = candidateStreamFn().use { ImageUtil.getImageDimensions(it) }
                         val isBottomStub = candidateDims != null && SmartMergePolicy.isStub(
@@ -574,7 +574,7 @@ abstract class PagerViewer(
                         val candidateSource = candidateStreamFn().use { Buffer().readFrom(it) }
                         if (ImageUtil.isAnimatedAndSupported(candidateSource)) break
 
-                        val mergedBitmap = page.mergedBitmap?.let { previous ->
+                        val mergedBitmap = page.resource.mergedBitmap?.let { previous ->
                             // The superseded merge is dropped rather than recycled: ART
                             // reclaims its pixel buffer, and the pager may still be
                             // rendering it via a live Compose snapshot.
@@ -587,9 +587,9 @@ abstract class PagerViewer(
                         }
 
                         candidateNext.isAbsorbed = true
-                        page.mergedBitmap = mergedBitmap
-                        page.width = mergedBitmap.width
-                        page.height = mergedBitmap.height
+                        page.resource.mergedBitmap = mergedBitmap
+                        page.resource.width = mergedBitmap.width
+                        page.resource.height = mergedBitmap.height
                         absorbedAny = true
 
                         activity.runOnUiThread {

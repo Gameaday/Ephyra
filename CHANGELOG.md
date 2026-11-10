@@ -126,6 +126,53 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 📚 Reader Page Payload Handle (R-C: Stage 4 — `ReaderPage` becomes immutable metadata plus a `PageResource` handle; completes `MED-002`, resolves audit F5/F7 — PR #343)
+
+- **The debt (audit F5/F7):** `ReaderPage` was both navigation metadata and a mutable resource
+  carrier — a `stream` lambda, `@Volatile cachedBytes`, a decoded-pixel `mergedBitmap`, mutable
+  `width`/`height` — so the page object crossed every layer carrying working bytes, and the UI's
+  automatic-background decision read a page's raw `cachedBytes` by re-deriving a page from the
+  display number. `MED-002` had bounded the bytes; the model shape still made "UI renders immutable
+  snapshots" unsatisfiable. Deliberately last of the redesign stages: it touches the loaders,
+  smart-merge, the pre-processor and both viewers, and doing it before Stage 3 existed would have
+  re-plumbed the same seams twice.
+- **What landed:** the payload moves behind a `PageResource` handle
+  (`feature/reader/.../model/PageResource.kt`, new) — the stream lambda, cached bytes, measured
+  dimensions and the merged bitmap live on the handle. `ReaderPage`'s own vars reduce to navigation
+  metadata (`chapter`, `isAbsorbed`, `isBlockedByFilter`, `needsFreshAddress`) and the page keeps
+  its identity for its whole life: the handle is created with the page and never replaced. All five
+  loaders, the smart-merge pre-processor, both viewers (pager + webtoon) and the render path read
+  and write through `.resource` — behaviour-identical rewiring, no decision moved.
+  `InsertPage` shares the parent's whole handle instead of copying the stream lambda (strictly more
+  correct: the insert renders exactly what the parent renders, including a recorded merge or cached
+  bytes). `ReaderChapter.cacheBytes` retains through the chapter's `PageByteStoreOwner` when one
+  exists and falls back to the page's handle exactly as before — the store bounds the array and the
+  owner's eviction callback clears the handle, so a bounded store and a retained page cannot
+  disagree. Boundary disposal (`unref` → `clearLoadedImage`) clears the handle's payload and
+  measured dimensions without changing page identity.
+- **F7 fix:** the view model records the selected page's identity (`State.currentReaderPage`,
+  cleared on chapter reset) alongside the display index, and `ReaderScreen`'s automatic background
+  samples the recorded page's rendered surface instead of indexing
+  `pages[getOrNull(currentPage)]` — which, with no pages hidden, read the *next* page's bytes.
+- **Gates:** `ReaderPageResourceOwnershipTest` (new, six tests: payload reachable only through the
+  handle; handle never replaced; insert-page sharing; boundary disposal clears payload not
+  identity; hidden flags are navigation metadata; the write-site allow-list), the
+  `PageByteWriteSiteTest` allow-list swap `ReaderPage.kt` → `PageResource.kt`, a rewritten
+  `ReaderPageTest` for the handle shape, and `ReaderViewModelTest`'s boundary-disposal and
+  page-selection-identity tests.
+- **Honesty:** no JDK locally; remote CI is the verification channel; every red round disclosed on
+  the PR and in the ledger — round 1 spotless red (a blank-line artifact of the chunked 72KB file
+  upload, not of the change), test-compile rounds (one test file missed in the sweep still wrote the
+  removed `page.stream`; the rewritten `ReaderPageTest` missed a `Page` import), and a unit-test
+  round (the new insert-page test never attached its parent to a chapter — a test gap, `InsertPage`
+  behaviour unchanged since before this PR; a bare relaxed mock cannot answer the generic `get(): T`
+  with a Boolean, so the newly-tested page-progress path needed an explicit `smartCombinePaged` stub
+  — a test-environment gap, not a production defect; `WorkflowRedundancyTest` red only on the
+  diagnose heads, self-inflicted by the throwaway workflow invoking the suite). All diagnosed via
+  throwaway workflows that posted their evidence to the PR and were deleted before the final round;
+  all four checks green on the final head `179cb6ea`; never merged red. No device evidence claimed —
+  the rendered-surface behaviour is the owner's A5 call.
+
 ### 🧭 Component Motion Crossfade Sweep (owner follow-up 2026-11-09: bug-wave item 7 — PR #341's kept-surfaces residue still read as elements flying, fading and zooming into the background, which made the app feel slower rather than faster; directive locked: minimal crossfade, no movement at all)
 
 - **The defect:** PR #341 re-owned the Activity boundary and deliberately kept the component-scale
@@ -858,5 +905,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`ROADMAP.md`**: Updated to reflect completed Phase 1 (Pure DI), in-progress Phase 3
   (Content-Agnostic UI) and Phase 4 (Build Config), and planned Phase 2 (Sandboxed Scripting).
 - **`CHANGELOG.md`**: This file — initialized.
+
 
 

@@ -398,7 +398,7 @@ fun ComposePagerReader(
 
 private fun getPagerItemKey(item: Any?): Any {
     return when (item) {
-        is ReaderPage -> "page_${item.chapter.chapter.id}_${item.index}_${item.mergedBitmap != null}"
+        is ReaderPage -> "page_${item.chapter.chapter.id}_${item.index}_${item.resource.mergedBitmap != null}"
         is ChapterTransition.Prev -> "prev_${item.from.chapter.id}"
         is ChapterTransition.Next -> "next_${item.from.chapter.id}"
         is InsertPage -> "insert_${item.parent.index}_${item.index}"

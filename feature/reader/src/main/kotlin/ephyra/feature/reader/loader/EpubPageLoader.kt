@@ -15,7 +15,7 @@ internal class EpubPageLoader(private val reader: EpubReader) : PageLoader() {
         check(!isRecycled)
         return reader.getImagesFromPages().mapIndexed { i, path ->
             ReaderPage(i).apply {
-                stream = { requireNotNull(reader.getInputStream(path)) { "Entry '$path' not found in EPUB" } }
+                resource.stream = { requireNotNull(reader.getInputStream(path)) { "Entry '$path' not found in EPUB" } }
                 status = Page.State.Ready
             }
         }

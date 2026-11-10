@@ -468,7 +468,7 @@ internal class HttpPageLoader(
             }
 
             // Release stream lambdas so the captured imageUrl strings and file references can be GC'd
-            pages.forEach { it.stream = null }
+            pages.forEach { it.resource.stream = null }
 
             // Cache current page list progress for online chapters to allow a faster reopen.
             // [needsPageListSave] decides whether that write is redundant; it is not simply the
@@ -604,8 +604,8 @@ internal class HttpPageLoader(
         page: ReaderPage,
         dropImageUrl: Boolean = false,
     ) {
-        page.clearLoadedImage()
-        page.stream = null
+        page.resource.clearLoadedImage()
+        page.resource.stream = null
         if (dropImageUrl) {
             // Flagged rather than cleared: the address is replaced from a fresh page list when the
             // page is next loaded, which is the only place a 1.6 source keeps them. Clearing it
@@ -698,6 +698,7 @@ internal class HttpPageLoader(
                     // a *repeat* address is worth another round-trip, so it must answer from the value
                     // it is about to store rather than inherit an answer computed for a different
                     // string.
+
                     if (recovery.isKnownUnusable(resolved)) {
                         ImageUrlPolicy.requireUsable(resolved)
                     }
@@ -733,7 +734,7 @@ internal class HttpPageLoader(
                     chapterCache.fetchAndCacheImage(imageUrl) { source.getImage(page) }
                 }
 
-                page.stream = {
+                page.resource.stream = {
                     // getImageFile returns null if the entry was evicted from the disk cache
                     // (e.g. LRU pressure during a rapid progress-bar seek).
                     //

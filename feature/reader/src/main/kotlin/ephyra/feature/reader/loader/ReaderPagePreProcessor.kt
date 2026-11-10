@@ -59,7 +59,7 @@ class ReaderPagePreProcessor(
 
         val candidates = getBoundaryCandidates(pages)
         // Only consider candidates that already have image streams (downloaded / local).
-        val streamCandidates = candidates.filter { it.stream != null }
+        val streamCandidates = candidates.filter { it.resource.stream != null }
         if (streamCandidates.isEmpty()) return
 
         // ── Aspect-ratio pre-filter (mirrors Downloader.filterBlockedPagesImpl) ──
@@ -68,7 +68,7 @@ class ReaderPagePreProcessor(
         val pageRatios = HashMap<Int, Float>(streamCandidates.size)
         val allRatios = mutableListOf<Float>()
         for (page in pages) {
-            val streamFn = page.stream ?: continue
+            val streamFn = page.resource.stream ?: continue
             try {
                 val dims = streamFn().use { ImageUtil.getImageDimensions(it) } ?: continue
                 if (dims.second > 0) {
@@ -89,7 +89,7 @@ class ReaderPagePreProcessor(
 
         var blockedCount = 0
         for (page in streamCandidates) {
-            val streamFn = page.stream ?: continue
+            val streamFn = page.resource.stream ?: continue
             // Skip pages matching the dominant aspect ratio within tolerance —
             // they are almost certainly real content, not credit pages.
             if (dominantAR != null) {
@@ -124,7 +124,7 @@ class ReaderPagePreProcessor(
         if (!isBoundaryPage(page.index, totalPages)) return false
 
         val blockedDHashes = cachedBlockedDHashes ?: return false
-        val streamFn = page.stream ?: return false
+        val streamFn = page.resource.stream ?: return false
 
         if (checkAndFilter(streamFn, blockedDHashes)) {
             page.isBlockedByFilter = true

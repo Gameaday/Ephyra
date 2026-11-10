@@ -3,8 +3,8 @@ package ephyra.domain.reader.media
 /**
  * The byte-budgeted working store for page bytes.
  *
- * This exists because the current reader caches page bytes directly on the page object
- * (`ReaderPage.cachedBytes`), which is never bounded. A long webtoon chapter scrolls through
+ * This exists because the reader caches page bytes directly on the page object
+ * (`ReaderPage.resource.cachedBytes`), which is never bounded. A long webtoon chapter scrolls through
  * hundreds of pages, and every one of them keeps its full encoded bytes alive until the chapter
  * object is released. That is unbounded growth proportional to how far the reader scrolled, which
  * is the mechanism behind the reported jank and instability rather than a rendering problem.

@@ -19,9 +19,9 @@ This document defines the ownership and lifecycle of image data. The goal is not
 |---|---|---|---|---|---|
 | Remote cover | `core:data` `CoverCache` | Coil memory cache | Canonical thumbnail URL plus cover revision | URL change, `coverLastModified`, explicit cache deletion | LRU age/size bounded; library covers protected |
 | Custom cover | `CoverCache` custom directory | Coil memory cache | Manga ID plus cover revision | Replace or delete custom cover | Until user removes it or clears app data |
-| Downloaded page bytes | Chapter download/cache store | `ReaderPage.cachedBytes` and Coil memory | Chapter, page, source revision | Download replacement/removal | Chapter/cache policy |
-| Online page bytes | Chapter cache | `ReaderPage.cachedBytes` and Coil memory | Chapter, page, image URL/revision | Cache eviction or source change | Bounded by chapter/cache policy |
-| Merged page | No independent durable store | `ReaderPage.mergedBitmap` | Parent page identity | Parent page change or retry | Disposable |
+| Downloaded page bytes | Chapter download/cache store | `ReaderPage.resource.cachedBytes` (the `PageResource` handle) and Coil memory | Chapter, page, source revision | Download replacement/removal | Chapter/cache policy |
+| Online page bytes | Chapter cache | `ReaderPage.resource.cachedBytes` (the `PageResource` handle) and Coil memory | Chapter, page, image URL/revision | Cache eviction or source change | Bounded by chapter/cache policy |
+| Merged page | No independent durable store | `ReaderPage.resource.mergedBitmap` (the `PageResource` handle) | Parent page identity | Parent page change or retry | Disposable |
 | Webtoon slice | No independent durable store | Slice bitmaps in composition | Page bytes plus slice geometry | Page change/disposal | Disposable |
 
 ## Cover flow
@@ -43,7 +43,7 @@ The dedicated remote cover store is authoritative. A remote cover must not be in
 ```text
 page loader
   -> durable chapter bytes when available
-  -> bounded ReaderPage working bytes
+  -> bounded page-handle working bytes (`ReaderPage.resource`)
   -> Coil decoded-page cache
   -> pager image or webtoon slices
 ```
@@ -67,7 +67,8 @@ Before changing retention constants, measure:
 
 - Persistent cover hit rate and network fetches.
 - Cover cache bytes and prune counts.
-- `ReaderPage.cachedBytes` retained by long chapters.
+- `ReaderPage.resource.cachedBytes` retained by long chapters.
 - Decoded bitmap memory under pressure.
 - Retry and recovery behavior.
 - Cache behavior after process death, app restart, and app data clear.
+

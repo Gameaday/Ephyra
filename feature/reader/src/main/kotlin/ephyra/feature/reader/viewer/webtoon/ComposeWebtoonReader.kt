@@ -517,7 +517,7 @@ private fun WebtoonPageItem(
         kotlinx.coroutines.delay(WebtoonVisibility.WATCHDOG_GRACE_MS)
         val current = page.status
         if (current !is Page.State.Queue) return@LaunchedEffect
-        if (page.cachedBytes == null && page.mergedBitmap == null) {
+        if (page.resource.cachedBytes == null && page.resource.mergedBitmap == null) {
             withIOContext {
                 page.chapter.pageLoader?.loadPage(page)
             }
@@ -525,12 +525,12 @@ private fun WebtoonPageItem(
     }
 
     val intrinsicDimensions by produceState<Pair<Int, Int>?>(
-        initialValue = page.aspectRatio?.let { page.width to page.height },
+        initialValue = page.aspectRatio?.let { page.resource.width to page.resource.height },
         page,
-        page.cachedBytes,
-        page.mergedBitmap,
+        page.resource.cachedBytes,
+        page.resource.mergedBitmap,
         // React to the page status transition (Queue -> ... -> Ready). The loader worker
-        // sets [page.stream] immediately before flipping [page.status] to Ready; without
+        // sets [page.resource.stream] immediately before flipping [page.status] to Ready; without
         // this key the produceState block never re-runs after the first compose, so a
         // strip whose bytes arrive after first layout stays blank until the composition is
         // discarded (scroll off & back). `page.status` is collected from statusFlow and is
@@ -538,9 +538,9 @@ private fun WebtoonPageItem(
         status,
     ) {
         if (value == null) {
-            val bytes = page.cachedBytes ?: withIOContext {
+            val bytes = page.resource.cachedBytes ?: withIOContext {
                 runCatching {
-                    page.stream?.invoke()?.use { it.readBytes() }
+                    page.resource.stream?.invoke()?.use { it.readBytes() }
                 }.getOrNull()
             }
             if (bytes != null) {
@@ -664,24 +664,24 @@ private fun WebtoonPageItem(
             Page.State.Ready -> {
                 var readyBytesReadFailed by remember(page) { mutableStateOf(false) }
                 val readyBytes by produceState<ByteArray?>(
-                    initialValue = page.mergedBitmap?.let { null } ?: page.cachedBytes,
+                    initialValue = page.resource.mergedBitmap?.let { null } ?: page.resource.cachedBytes,
                     page,
-                    page.mergedBitmap,
+                    page.resource.mergedBitmap,
                     // Retry that re-downloads yields new bytes: include the size tag so the
                     // state re-resolves instead of serving the stale entry (blank section
                     // that only loads after scroll-away-and-back).
-                    page.cachedBytes?.size,
-                    // Re-run when the page crosses into Ready: the worker sets [page.stream]
+                    page.resource.cachedBytes?.size,
+                    // Re-run when the page crosses into Ready: the worker sets [page.resource.stream]
                     // just before marking Ready, so reacting to the status transition lets the
                     // bytes be read (and cachedBytes populated) on first paint instead of
                     // forcing a scroll-away-and-back recycle to invalidate the composition.
                     status,
                 ) {
                     readyBytesReadFailed = false
-                    if (page.mergedBitmap == null && value == null) {
+                    if (page.resource.mergedBitmap == null && value == null) {
                         value = withIOContext {
                             try {
-                                page.stream?.invoke()?.use { it.readBytes() }?.also {
+                                page.resource.stream?.invoke()?.use { it.readBytes() }?.also {
                                     page.chapter.cacheBytes(page, it)
                                 }
                             } catch (e: Exception) {
@@ -698,6 +698,7 @@ private fun WebtoonPageItem(
                 // *threw* into "static", which slices an animated page down to its first frame.
                 //
                 // The format is sniffed once and both facts derive from it.
+
                 val imageFormat = remember(readyBytes) {
                     readyBytes
                         ?.let { ImageUtil.findImageType(it.inputStream())?.toPageImageFormat() }
@@ -743,27 +744,27 @@ private fun WebtoonPageItem(
                 // into the tuple from here (`PageMetadata.contentRect`), so once measurement
                 // exposes one, sliced rendering becomes crop-aware through
                 // `RenderPathPolicy.sliceSourceRect` with no further wiring at this site.
-                val hasKnownSize = intrinsicDimensions != null || (page.width > 0 && page.height > 0)
+                val hasKnownSize = intrinsicDimensions != null || (page.resource.width > 0 && page.resource.height > 0)
                 // Empty bytes are no bytes: an empty array would otherwise reach
                 // PageSource.InMemory(0), which rejects it. hasBytes decides via the policy.
                 val hasBytes = readyBytes?.isNotEmpty() == true
                 val renderPathKey = animationVerdict to imageFormat to cropBorders to
-                    page.mergedBitmap to hasBytes to hasKnownSize
+                    page.resource.mergedBitmap to hasBytes to hasKnownSize
                 val renderPath = remember(renderPathKey) {
                     RenderPathPolicy.choose(
                         verdict = animationVerdict,
                         regionDecodable = imageFormat.supportsRegionDecode(),
                         cropRequested = cropBorders,
                         contentRect = null,
-                        hasMergedBitmap = page.mergedBitmap != null,
+                        hasMergedBitmap = page.resource.mergedBitmap != null,
                         hasBytes = hasBytes,
                         hasKnownSize = hasKnownSize,
                     )
                 }
 
-                if (page.mergedBitmap != null && !cropBorders) {
+                if (page.resource.mergedBitmap != null && !cropBorders) {
                     Image(
-                        bitmap = page.mergedBitmap!!.asImageBitmap(),
+                        bitmap = page.resource.mergedBitmap!!.asImageBitmap(),
                         contentDescription = "Page ${page.number}",
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier
@@ -772,10 +773,10 @@ private fun WebtoonPageItem(
                             // item after layout and jump siblings when moving between sections.
                             .fillMaxSize(),
                     )
-                } else if (page.mergedBitmap != null) {
+                } else if (page.resource.mergedBitmap != null) {
                     SingleWebtoonImage(
                         page = page,
-                        imageModel = page.mergedBitmap!!,
+                        imageModel = page.resource.mergedBitmap!!,
                         cropBorders = true,
                         targetWidthPx = targetWidthPx,
                         densityScale = density.density,
@@ -783,7 +784,7 @@ private fun WebtoonPageItem(
                         onTransformedSize = { transformedDimensions = it },
                     )
                 } else if (renderPath == PageRenderPath.SLICED && readyBytes != null) {
-                    val (knownW, knownH) = intrinsicDimensions ?: (page.width to page.height)
+                    val (knownW, knownH) = intrinsicDimensions ?: (page.resource.width to page.resource.height)
                     // A1: the tuple is threaded, not re-derived — metadata carries the three
                     // facts the policies read (size, animation, format) plus the crop rect, the
                     // source asserts the bytes are resident, and the render path is the decision
@@ -863,7 +864,7 @@ private fun SingleWebtoonImage(
     // width. The inline version asked for more pixels than the image had and relied on the decoder
     // to notice, which made the bound invisible and untestable.
     val decodeWidth = PageDecodeWidth.plan(
-        intrinsicWidth = page.width,
+        intrinsicWidth = page.resource.width,
         displayWidthPx = targetWidthPx,
         densityScale = densityScale,
         zoom = PageZoomPolicy.FIXED_SCALE,

@@ -39,7 +39,7 @@ class WebtoonPageLayoutTest {
 
     @Test
     fun `smart-combined merges pool as single images`() {
-        val merged = page().also { it.mergedBitmap = mockk() }
+        val merged = page().also { it.resource.mergedBitmap = mockk() }
         assertEquals("webtoon_single", webtoonContentType(merged, cropBorders = false))
     }
 
@@ -54,31 +54,31 @@ class WebtoonPageLayoutTest {
         p.recordDimensionsOnce(800, 12000)
         // A later decode at a different size must not resize the box LazyColumn laid out.
         p.recordDimensionsOnce(1080, 16000)
-        assertEquals(800, p.width)
-        assertEquals(12000, p.height)
+        assertEquals(800, p.resource.width)
+        assertEquals(12000, p.resource.height)
     }
 
     @Test
     fun `recordDimensionsOnce ignores invalid dimensions`() {
         val p = page()
         p.recordDimensionsOnce(0, 0)
-        assertEquals(0, p.width)
-        assertEquals(0, p.height)
+        assertEquals(0, p.resource.width)
+        assertEquals(0, p.resource.height)
         p.recordDimensionsOnce(800, 12000)
         p.recordDimensionsOnce(-1, 100)
-        assertEquals(800, p.width)
-        assertEquals(12000, p.height)
+        assertEquals(800, p.resource.width)
+        assertEquals(12000, p.resource.height)
     }
 
     @Test
     fun `released pages may record fresh dimensions on revisit`() {
         val p = page()
         p.recordDimensionsOnce(800, 12000)
-        p.releasePageResources()
-        assertEquals(0, p.width)
-        assertEquals(0, p.height)
+        p.resource.clearLoadedImage()
+        assertEquals(0, p.resource.width)
+        assertEquals(0, p.resource.height)
         p.recordDimensionsOnce(1080, 16200)
-        assertEquals(1080, p.width)
-        assertEquals(16200, p.height)
+        assertEquals(1080, p.resource.width)
+        assertEquals(16200, p.resource.height)
     }
 }
