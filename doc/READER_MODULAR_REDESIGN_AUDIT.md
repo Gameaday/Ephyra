@@ -16,7 +16,8 @@
 > Stage 3 entry in section 4 records what shipped. Seam 3 (`ReaderDownloadPolicy`) landed the same way as PR #336 - the
 > Stage 3 entry in section 4 records what shipped. Seam 4 (`ReaderProgressRecorder`) landed the same way as PR #337 - the
 > Stage 3 entry in section 4 records what shipped. Seam 5 (`ViewerModeResolver`) landed the same way as PR #338 - the
-> Stage 3 entry in section 4 records what shipped. Stage 4 remains a proposal.
+> Stage 3 entry in section 4 records what shipped. Stage 4 (R-C) landed 2026-11-10 as PR #343 - section 3 F5/F7
+> carry the dated resolutions and the Stage 4 entry in section 4 records what shipped.
 
 This is an audit and a plan, not a record of completed work. Section 2 is what already landed;
 nothing in Section 4 has begun.
@@ -141,6 +142,17 @@ the bytes (`PageByteStoreOwner`/`PageByteBudget`), but the model still crosses e
 working bytes and decoded pixels. "UI renders immutable snapshots" is not satisfiable while the
 model has this shape; this is why Stage 4 exists and why it is last.
 
+> **Update 2026-11-10 (Stage 4 landed, PR #343):** the carrier is gone. `ReaderPage` is navigation
+> metadata (`chapter`, `isAbsorbed`, `isBlockedByFilter`, `needsFreshAddress`); the stream lambda,
+> cached bytes, measured dimensions and the merged bitmap live behind a `PageResource` handle that
+> is created with the page and never replaced. Every loader, the pre-processor, both viewers and
+> the render path read and write through `.resource`; `InsertPage` shares the parent's whole
+> handle instead of copying the stream lambda; `ReaderChapter.cacheBytes` retains through the
+> chapter's `PageByteStoreOwner` when one exists and falls back to the handle; boundary disposal
+> clears the handle's payload and dimensions without changing page identity. Gated by
+> `ReaderPageResourceOwnershipTest` and the `PageByteWriteSiteTest` allow-list swap
+> `ReaderPage.kt` → `PageResource.kt`.
+
 ### F6 — the Activity is inside the rendering path by cast
 
 `ReaderScreen` (419 lines) casts `context as? ReaderActivity` and routes viewer callbacks through it
@@ -161,7 +173,14 @@ answer decides whether the View paint path can be retired or must be kept for th
 `state.currentChapter?.pages?.getOrNull(currentPage)?.cachedBytes` (around `:106`) — UI reading a
 page's working bytes rather than a rendered-surface signal. Same root as F5; resolved by Stage 4.
 
-## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stage 3 seams 1-5 done 2026-11-08; the rest proposals)
+> **Update 2026-11-10 (Stage 4 landed, PR #343):** the UI reads the recorded page, not derived
+> bytes. The view model records the selected page's identity (`State.currentReaderPage`) beside
+> the display index, and the automatic background samples the recorded page's rendered surface
+> instead of re-deriving a page from the display number — which, with no pages hidden, indexed the
+> *next* page's bytes. Pinned by the `page selection records the rendered page identity in state`
+> test in `ReaderViewModelTest`.
+
+## 4. Staged redesign (decision record; Stages 1-2 done 2026-11-08; Stage 3 seams 1-5 done 2026-11-08; Stage 4 done 2026-11-10; the rest proposals)
 
 - **Stage 0 (this change, docs-only):** this audit; `B-009` superseded and `B-010` bounded in the
   ledger; the viewport contract's stale gesture sentence corrected; this document indexed.
@@ -268,6 +287,27 @@ page's working bytes rather than a rendered-surface signal. Same root as F5; res
   merged bitmaps move behind the chapter loader/resource owner; completes `MED-002` and resolves
   F5/F7. Deliberately last: it touches the loaders, smart-merge, the pre-processor and both viewers,
   and doing it before Stage 3 exists would re-plumb the same seams twice.
+  - **Stage 4 done 2026-11-10 (PR #343, E1 + CI):** the handle is `PageResource`
+    (`feature/reader/.../model/`, new); `ReaderPage` keeps navigation metadata only and its
+    identity for life (the handle is created with the page and never replaced). All five loaders,
+    the smart-merge pre-processor, both viewers (pager + webtoon) and the render path read and
+    write through `.resource` — behaviour-identical rewiring, no decision moved. `InsertPage`
+    shares the parent's whole handle (previously it copied the stream lambda — sharing is strictly
+    more correct: the insert renders exactly what the parent renders, including a recorded merge
+    or cached bytes). `ReaderChapter.cacheBytes` retains through the chapter's `PageByteStoreOwner`
+    when one exists and falls back to the page's handle exactly as before; the store bounds the
+    array and the owner's eviction callback clears the handle, so a bounded store and a retained
+    page cannot disagree; boundary disposal (`unref` → `clearLoadedImage`) clears the handle's
+    payload and measured dimensions without changing page identity. F7: the view model records the
+    selected page's identity (`State.currentReaderPage`, cleared on chapter reset) beside the
+    display index, and `ReaderScreen`'s automatic background samples the recorded page's rendered
+    surface. Gated by `ReaderPageResourceOwnershipTest` (new, six tests: payload reachable only
+    through the handle; handle never replaced; insert-page sharing; boundary disposal clears payload
+    not identity; no payload fields on the page; write-site allow-list), the
+    `PageByteWriteSiteTest` allow-list swap `ReaderPage.kt` → `PageResource.kt`, a rewritten
+    `ReaderPageTest` for the handle shape, and `ReaderViewModelTest`'s boundary-disposal and
+    page-selection-identity tests. No behaviour change is claimed beyond what the tests pin; no
+    device evidence — the rendered-surface behaviour is the owner's A5 call.
 
 **Not decided here:** `A5` device evidence (device-bound, owner call), any viewer behaviour change,
 retirement of the View fallback (Stage 1 inventory first), and the Stage 3 coordinator names/shapes
@@ -286,4 +326,7 @@ retirement of the View fallback (Stage 1 inventory first), and the Stage 3 coord
   PR #333, CI-verified), and Stage 3 has begun - seams 1 (`ChapterLoadingCoordinator`), 2
   (`ReaderImageActions`), 3 (`ReaderDownloadPolicy`), 4 (`ReaderProgressRecorder`) and 5
   (`ViewerModeResolver`) landed as PR #334, PR #335, PR #336, PR #337 and PR #338, CI-verified.
-  Stage 4 remains a proposal and nothing in it has begun.
+  Stage 4 landed 2026-11-10 as PR #343 (CI-verified; never merged red - every red round disclosed on the PR
+  and in the ledger). No device evidence is claimed; the rendered-surface behaviour is the owner's
+  A5 call.
+
