@@ -526,3 +526,35 @@ path.**
 **Kept, unchanged (audit-only):** the tab slide (m3TabSlide), hierarchical shared-axis X,
 fade-through, sheets, and the component-level slides (ReaderAppBars, CalendarHeader,
 TrackerSearch) — component motion, not boundary motion; each is documented in the contract.
+
+
+---
+
+## 11. Sweep: component motion crossfaded (owner follow-up 2026-11-09, PR #342)
+
+Section 10 ended with a **Kept, unchanged** list — the tab slide, the shared-axis X, the pane slide,
+the calendar roll and the bottom-bar grow/shrink, kept as "component motion, not boundary motion."
+The owner's directive extended the same aesthetic verdict to them: they are the "elements flying up
+and down and fading and zooming into the background" one layer below the boundary, and they make the
+app feel like it is loading slower rather than faster. The residue is resolved rather than kept:
+
+- **Tab peers crossfade.** The slide — kept by §10, recorded in §2's inventory as "order-aware 30%
+  slide + fade" — is a recorded reversal in `MOTION_NAVIGATION_CONTRACT.md`. Peer-ness survives as a
+  unit-tested boolean (`isTabPeerTransition`, `TabPeerTransitionTest`): peers crossfade, a nested
+  screen inside a tab keeps the fade-through.
+- **The hierarchical fallback is the policy crossfade in both directions.** The shared-axis X
+  renderings, the pop variants, the `SHARED_AXIS` container member and the asymmetric
+  `HIERARCHICAL_*` durations are deleted; `MotionConsistencyTest`'s new rule
+  `the hierarchical fallback is the policy crossfade and has no slide rendering` fails the build if
+  they return.
+- **The adaptive detail pane crossfades in both directions.** The back gesture previews a
+  drag-proportional dim instead of a partial travel it no longer performs (disclosed trade: the
+  dim hands over to the committed crossfade in one frame).
+- **The calendar header fades between months** instead of rolling; **the bottom bar fades in/out**
+  instead of growing/shrinking.
+
+**Kept deliberately (the owner's call, recorded in the contract):** the Library↔Series cover pair — a
+shared element with a counterpart, not a container effect; the sheets' predictive-back drag; the
+fade-through for nested screens; interaction-feedback show/hide (reader app bars, banners,
+TrackerSearch). §10's "component motion, not boundary motion" distinction survives only for these.
+
