@@ -35,7 +35,7 @@ import ephyra.feature.reader.model.ReaderPage
  * resolve the image. The URL component prevents a page whose source identity changes (for
  * example after a refreshed online page list) from reusing an older decoded bitmap under
  * the same chapter/index key. Merged (smart-combine) pages never reach Coil because they are
- * rendered from [ReaderPage.mergedBitmap] directly.
+ * rendered from [ReaderPage.resource].mergedBitmap directly.
  */
 internal fun readerPageMemoryCacheKey(page: ReaderPage, cropBorders: Boolean): String = buildString {
     append("page_")

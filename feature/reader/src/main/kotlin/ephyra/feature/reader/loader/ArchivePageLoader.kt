@@ -27,7 +27,7 @@ internal class ArchivePageLoader(private val reader: ArchiveReader) : PageLoader
                 .sortedWith { f1, f2 -> f1.name.compareToCaseInsensitiveNaturalOrder(f2.name) }
                 .mapIndexed { i, entry ->
                     ReaderPage(i).apply {
-                        stream =
+                        resource.stream =
                             {
                                 requireNotNull(reader.getInputStream(entry.name)) {
                                     "Entry '${entry.name}' not found in archive"

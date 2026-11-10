@@ -346,15 +346,15 @@ fun ZoomableMangaPage(
                 Page.State.Ready -> {
                     var imageReadFailed by remember(page) { mutableStateOf(false) }
                     val imageModel by produceState<Any?>(
-                        initialValue = page.mergedBitmap ?: page.cachedBytes,
+                        initialValue = page.resource.mergedBitmap ?: page.resource.cachedBytes,
                         page,
-                        page.mergedBitmap,
-                        page.cachedBytes,
+                        page.resource.mergedBitmap,
+                        page.resource.cachedBytes,
                         page.status,
                     ) {
-                        val resolved = page.mergedBitmap ?: page.cachedBytes ?: withIOContext {
+                        val resolved = page.resource.mergedBitmap ?: page.resource.cachedBytes ?: withIOContext {
                             try {
-                                page.stream?.invoke()?.use { it.readBytes() }?.also {
+                                page.resource.stream?.invoke()?.use { it.readBytes() }?.also {
                                     page.chapter.cacheBytes(page, it)
                                 }
                             } catch (_: Exception) {
@@ -366,7 +366,7 @@ fun ZoomableMangaPage(
                     }
                     var imageAspectRatio by remember(page) { mutableStateOf(page.aspectRatio) }
                     val tallImageScrollState = rememberScrollState()
-                    val merged = page.mergedBitmap
+                    val merged = page.resource.mergedBitmap
 
                     LaunchedEffect(imageModel, merged) {
                         val imageBytes = imageModel as? ByteArray
@@ -378,8 +378,8 @@ fun ZoomableMangaPage(
                             else -> null
                         }
                         if (dimensions != null && dimensions.first > 0 && dimensions.second > 0) {
-                            page.width = dimensions.first
-                            page.height = dimensions.second
+                            page.resource.width = dimensions.first
+                            page.resource.height = dimensions.second
                             imageAspectRatio = dimensions.first.toFloat() / dimensions.second
                         }
                     }

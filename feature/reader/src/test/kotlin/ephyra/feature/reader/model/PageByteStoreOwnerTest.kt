@@ -10,7 +10,7 @@ import org.junit.Test
 
 /**
  * The invariant this class exists to hold: the store's accounting and each page's own
- * [ReaderPage.cachedBytes] reference describe the **same** set of live bytes.
+ * [ReaderPage.resource.cachedBytes] reference describe the **same** set of live bytes.
  *
  * A store that evicts while the page still holds the array bounds the store and not the heap, so
  * these tests assert on the page's field rather than on the store's counters — the store already
@@ -46,7 +46,7 @@ class PageByteStoreOwnerTest {
 
         owner.retain(page, bytes)
         assertEquals(1024, owner.retainedBytes)
-        assertTrue(bytes.contentEquals(page.cachedBytes!!))
+        assertTrue(bytes.contentEquals(page.resource.cachedBytes!!))
     }
 
     @Test
@@ -63,8 +63,8 @@ class PageByteStoreOwnerTest {
         // A third value cannot fit, so the least recently used page is evicted.
         owner.retain(pageOf(chapterOf(), 2), ByteArray(budget / 2))
 
-        assertNull("the evicted page must not still hold its bytes", first.cachedBytes)
-        assertNotNull(second.cachedBytes)
+        assertNull("the evicted page must not still hold its bytes", first.resource.cachedBytes)
+        assertNotNull(second.resource.cachedBytes)
         assertTrue(owner.retainedBytes <= budget)
     }
 
@@ -75,7 +75,7 @@ class PageByteStoreOwnerTest {
         val pages = (0 until 40).map { pageOf(chapterOf(), it) }
         pages.forEach { owner.retain(it, ByteArray(1024)) }
 
-        val holdingBytes = pages.count { it.cachedBytes != null }
+        val holdingBytes = pages.count { it.resource.cachedBytes != null }
         assertEquals(owner.pageCount, holdingBytes)
         assertTrue(owner.retainedBytes <= owner.budgetBytes)
     }
@@ -111,7 +111,7 @@ class PageByteStoreOwnerTest {
         owner.retain(page, ByteArray(owner.budgetBytes + 1))
 
         assertEquals("a declined value must not be recorded as a retained page", 0, owner.pageCount)
-        assertNull("the page must not be left holding bytes the store refused", page.cachedBytes)
+        assertNull("the page must not be left holding bytes the store refused", page.resource.cachedBytes)
         assertEquals(0, owner.retainedBytes)
     }
 
@@ -132,7 +132,7 @@ class PageByteStoreOwnerTest {
         // 10 more chunks against a 4-chunk budget: without the pin, the window would be evicted.
         repeat(10) { owner.retain(pageOf(chapterOf(), 100 + it), ByteArray(chunk)) }
 
-        assertNotNull("the page under the viewport must keep its bytes", window[0].cachedBytes)
+        assertNotNull("the page under the viewport must keep its bytes", window[0].resource.cachedBytes)
         assertTrue("retained ${owner.retainedBytes} > $budget", owner.retainedBytes <= budget)
     }
 
@@ -149,7 +149,7 @@ class PageByteStoreOwnerTest {
         owner.pinViewportAt(index = 0, pageCount = window.size)
         repeat(10) { owner.retain(pageOf(chapterOf(), 100 + it), ByteArray(chunk)) }
 
-        assertNotNull("the pinned window must survive", window[0].cachedBytes)
+        assertNotNull("the pinned window must survive", window[0].resource.cachedBytes)
         // 30 pages were offered; a 4-chunk budget cannot hold them, and only the pinned window is
         // protected, so the store must be holding strictly fewer pages than were offered.
         assertTrue(
@@ -167,7 +167,7 @@ class PageByteStoreOwnerTest {
         owner.clear()
         assertEquals(0, owner.retainedBytes)
         assertEquals(0, owner.pageCount)
-        pages.forEach { assertNull("clear must leave no page holding bytes", it.cachedBytes) }
+        pages.forEach { assertNull("clear must leave no page holding bytes", it.resource.cachedBytes) }
     }
 
     @Test
@@ -178,13 +178,13 @@ class PageByteStoreOwnerTest {
         val chapter = chapterOf()
         val page = pageOf(chapter, 0, number = 1f)
         owner.retain(page, ByteArray(1024))
-        val firstSize = page.cachedBytes?.size
+        val firstSize = page.resource.cachedBytes?.size
 
         val renumbered = pageOf(chapter, 0, number = 2f)
         owner.retain(renumbered, ByteArray(2048))
 
         assertEquals(1024, firstSize)
-        assertEquals(2048, renumbered.cachedBytes?.size)
+        assertEquals(2048, renumbered.resource.cachedBytes?.size)
     }
 
     @Test

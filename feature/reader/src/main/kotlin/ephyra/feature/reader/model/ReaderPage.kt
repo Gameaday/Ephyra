@@ -1,60 +1,44 @@
 package ephyra.feature.reader.model
 
-import android.graphics.Bitmap
 import eu.kanade.tachiyomi.source.model.Page
-import java.io.InputStream
 
+/**
+ * One reader page: immutable identity plus a [PageResource] payload handle (R-C, Stage 4 of the
+ * reader modular redesign, 2026-11-09).
+ *
+ * **What the page is after this sweep.** Identity (`index`, `url`, `imageUrl`, the owning
+ * [ReaderChapter]) and cheap session metadata ([isAbsorbed], [isBlockedByFilter],
+ * [needsFreshAddress]) — everything heavy a page can hold, the stream lambda, the cached bytes,
+ * the merged bitmap and the recorded dimensions, lives behind [resource], whose lifecycle the
+ * chapter owns. Audit finding F5 was this class carrying that payload directly: every adapter,
+ * viewer and dialog that held a page could reach its bytes, and payload lifetime was page
+ * lifetime. Access now goes through the handle, which is enforced by the build rather than by
+ * review — the payload members no longer exist here, and `ReaderPageResourceOwnershipTest` fails
+ * the build if they come back.
+ *
+ * **What still mutates on the page, on purpose.** The inherited [Page.status] is the
+ * extension-facing load state (source-api; changing it breaks the extension ABI), and the three
+ * session flags are boolean navigation metadata — absorbed/blocked pages report [isHidden] to the
+ * completion policy and the adapters, and the recovery ladder reads [needsFreshAddress]. None of
+ * them holds payload, and their contracts are pinned by their own tests. The gate names them so
+ * adding a fourth mutable member is a deliberate edit.
+ */
 open class ReaderPage(
     index: Int,
     url: String = "",
     imageUrl: String? = null,
-    var stream: (() -> InputStream)? = null,
+    resource: PageResource = PageResource(),
 ) : Page(index, url, imageUrl, null) {
 
     open lateinit var chapter: ReaderChapter
 
     /**
-     * Cached [Bitmap] of a smart-combine merge with a following stub page.
-     * Non-null once the merge has succeeded; subsequent renders hand this bitmap to Compose
-     * via `asImageBitmap()` without any encoding or decoding.
+     * The payload handle for this page — bytes, stream, merges and recorded dimensions.
      *
-     * **Lifecycle:** cleared via [clearMergedBitmap] when the page is retried or when the owning
-     * [ReaderChapter] is disposed. Dropping the reference is sufficient — the pixel buffer is
-     * reclaimed by ART, and explicit recycling is unsafe because a Compose snapshot may still
-     * reference the bitmap.
+     * Created with the page and never replaced; [InsertPage] shares its parent's handle. The
+     * chapter owns the handle's lifecycle: see [PageResource] for who writes what.
      */
-    @Volatile
-    var mergedBitmap: Bitmap? = null
-
-    /**
-     * Drops the cached merge so that the next render triggers a fresh merge.
-     *
-     * The previous bitmap is deliberately **not** recycled: see [mergedBitmap].
-     */
-    fun clearMergedBitmap() {
-        mergedBitmap = null
-    }
-
-    /**
-     * Clears the loaded image payload and derived dimensions without changing page identity.
-     * Used before an online page is fetched again after a failed or invalidated load.
-     */
-    fun clearLoadedImage() {
-        cachedBytes = null
-        clearMergedBitmap()
-        width = 0
-        height = 0
-    }
-
-    /**
-     * Drops all heavy page payloads (bytes + merges) and resets measured dims. Called only
-     * at chapter boundaries (chapter falls out of the prev/curr/next window, or the reader
-     * screen is left) — never inside the active chapter, so up/down scrolling within a
-     * chapter can never trigger a re-download.
-     */
-    fun releasePageResources() {
-        clearLoadedImage()
-    }
+    val resource: PageResource = resource
 
     /**
      * True once this page has been absorbed by the previous page as a stub during smart combine.
@@ -80,24 +64,9 @@ open class ReaderPage(
      */
     val isHidden: Boolean get() = isAbsorbed || isBlockedByFilter
 
-    /**
-     * Intrinsic image dimensions recorded once decoded, enabling LazyColumn
-     * to preserve exact item height during reverse scrolling.
-     */
-    @Volatile
-    var width: Int = 0
-
-    @Volatile
-    var height: Int = 0
-
+    /** The intrinsic aspect of the rendered surface, from the dims recorded on the handle. */
     val aspectRatio: Float?
-        get() = if (width > 0 && height > 0) width.toFloat() / height.toFloat() else null
-
-    /**
-     * In-memory cache of the image payload bytes to prevent redundant disk I/O on recomposition.
-     */
-    @Volatile
-    var cachedBytes: ByteArray? = null
+        get() = resource.aspectRatio
 
     /**
      * Set when the recovery ladder has indicted this page's address and a replacement must come from

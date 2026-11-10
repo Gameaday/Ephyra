@@ -35,10 +35,11 @@ class ReaderChapter(var chapter: Chapter) {
      * Chapter-scoped so [clear] is the whole teardown: no stale chapter's bytes survive into the
      * next one, and disposal cannot leave a store alive. Null until the ViewModel constructs it
      * (it needs the `Application` for the heap class) and null in tests and previews, where the
-     * write sites fall back to the page's own field exactly as before.
+     * write sites fall back to the page's own payload handle exactly as before.
      *
-     * The store bounds the *array*; it is the owner's eviction callback that clears
-     * [ReaderPage.cachedBytes], so a bounded store and a retained page can never disagree.
+     * The store bounds the *array*; it is the owner's eviction callback that clears the bytes on
+     * the page's [ReaderPage.resource] handle, so a bounded store and a retained page can never
+     * disagree.
      */
     var byteStore: PageByteStoreOwner? = null
 
@@ -46,11 +47,11 @@ class ReaderChapter(var chapter: Chapter) {
      * Caches [bytes] for [page] through this chapter's store, if one exists.
      *
      * Returns the same array either way, so a call site reads exactly as before. What changes is
-     * whether the bytes are *retained*: when the store declines them the page's own reference is
-     * left null, and the array becomes unreachable as soon as the caller lets go of it.
+     * whether the bytes are *retained*: when the store declines them the page's handle is left
+     * empty, and the array becomes unreachable as soon as the caller lets go of it.
      */
     fun cacheBytes(page: ReaderPage, bytes: ByteArray): ByteArray =
-        byteStore?.retain(page, bytes) ?: bytes.also { page.cachedBytes = it }
+        byteStore?.retain(page, bytes) ?: bytes.also { page.resource.cachedBytes = it }
 
     /** Pins the window around [index] of [pageCount]. No-op without a store. */
     fun pinViewport(index: Int, pageCount: Int) {
@@ -92,8 +93,10 @@ class ReaderChapter(var chapter: Chapter) {
             // (recycling while Compose holds a snapshot crashes). This is the boundary
             // disposal that keeps long sessions from pinning every visited chapter:
             // the active chapter is untouched, so in-chapter scrolling never re-downloads.
+            // The payload lives on the page's resource handle (Stage 4), so the disposal
+            // clears through the handle — the page itself holds only identity and metadata.
             (state as? State.Loaded)?.pages?.forEach { page ->
-                page.releasePageResources()
+                page.resource.clearLoadedImage()
             }
             state = State.Wait
         }

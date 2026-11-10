@@ -34,12 +34,15 @@ fun webtoonAspectRatio(dimensions: Pair<Int, Int>?): Float? {
  * slice path, revisit) must not overwrite the size LazyColumn already laid out with —
  * that overwrite was the "item suddenly becomes huge / jumps" bug between sections.
  * Source dims never change on rotation; only the target width does.
+ *
+ * The dims are payload and live on the page's resource handle (Stage 4), so the write goes
+ * through the handle like every other payload write.
  */
 fun ReaderPage.recordDimensionsOnce(width: Int, height: Int) {
     if (width <= 0 || height <= 0) return
-    if (this.width <= 0 || this.height <= 0) {
-        this.width = width
-        this.height = height
+    if (resource.width <= 0 || resource.height <= 0) {
+        resource.width = width
+        resource.height = height
     }
 }
 
@@ -54,7 +57,7 @@ fun webtoonContentType(item: Any?, cropBorders: Boolean): String = when (item) {
     is ChapterTransition -> "webtoon_transition"
     is ReaderPage ->
         when {
-            cropBorders || item.mergedBitmap != null -> "webtoon_single"
+            cropBorders || item.resource.mergedBitmap != null -> "webtoon_single"
             item.status == Page.State.Ready -> "webtoon_page_ready"
             else -> "webtoon_page_pending"
         }

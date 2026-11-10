@@ -361,8 +361,16 @@ class ReaderViewModel @Inject constructor(
                 // "page 2" while nothing had reported a page yet (the pager was still showing the
                 // transition card). Clear it until the first page selection reports the real
                 // position; the indicator is hidden at 0 rather than showing a stale number.
+                // The recorded page identity (R-C, F7) is cleared for the same reason — it
+                // belongs to the *previous* chapter's page list until a selection reports the
+                // new chapter's actual page, and the automatic background must not sample a
+                // stale chapter's surface.
                 updateState { current ->
-                    if (current.currentPage == 0) current else current.copy(currentPage = 0)
+                    if (current.currentPage == 0) {
+                        current.copy(currentReaderPage = null)
+                    } else {
+                        current.copy(currentPage = 0, currentReaderPage = null)
+                    }
                 }
             }
             .launchIn(viewModelScope)
@@ -690,6 +698,7 @@ class ReaderViewModel @Inject constructor(
      * Called when the user is going to load the prev/next chapter through the toolbar buttons.
      */
     private suspend fun loadAdjacent(
+
         chapter: ReaderChapter,
         startFromEnd: Boolean,
     ) {
@@ -984,7 +993,7 @@ class ReaderViewModel @Inject constructor(
      */
     private suspend fun updateChapterProgress(
         readerChapter: ReaderChapter,
-        page: Page,
+        page: ReaderPage,
         navigationVector: NavigationVector = NavigationVector.FORWARD,
     ) {
         val pageIndex = page.index
@@ -999,8 +1008,14 @@ class ReaderViewModel @Inject constructor(
         } else {
             pageIndex + 1
         }
+        // R-C (Stage 4, audit F7): the selected page's identity is recorded alongside the display
+        // index. `currentPage` counts *visible* pages, so it is a display position, not a raw list
+        // index — the screen that previously indexed `pages[getOrNull(currentPage)]` with it was
+        // reading (with no pages hidden) the *next* page's bytes. Consumers that need the page
+        // itself — the automatic background's rendered-surface sampling — read this field instead
+        // of re-deriving a page from a display number.
         updateState {
-            it.copy(currentPage = displayIndex)
+            it.copy(currentPage = displayIndex, currentReaderPage = page)
         }
         readerChapter.requestedPage = pageIndex
         chapterPageIndex = pageIndex
@@ -1323,13 +1338,13 @@ class ReaderViewModel @Inject constructor(
      * encode cost is negligible.
      */
     private fun resolveImageStream(page: ReaderPage): () -> InputStream =
-        page.mergedBitmap?.let { bitmap ->
+        page.resource.mergedBitmap?.let { bitmap ->
             {
                 val buffer = okio.Buffer()
                 bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, buffer.outputStream())
                 buffer.inputStream()
             }
-        } ?: page.stream!!
+        } ?: page.resource.stream!!
 
     /**
      * Shares the image of the selected page and notifies the UI with the path of the file to
@@ -1363,7 +1378,7 @@ class ReaderViewModel @Inject constructor(
     }
 
     override suspend fun pageDHash(page: ReaderPage): Long? {
-        val stream = page.stream ?: return null
+        val stream = page.resource.stream ?: return null
         return try {
             withIOContext { stream().use { ImageUtil.computeDHash(it) } }
         } catch (e: Exception) {
@@ -1383,6 +1398,7 @@ class ReaderViewModel @Inject constructor(
         pref.set(current)
         logcat(LogPriority.INFO) { "Blocked page dHash=$hex" }
     }
+
 
     override suspend fun removeBlockedHash(hex: String): Boolean =
         withIOContext {
@@ -1581,6 +1597,16 @@ class ReaderViewModel @Inject constructor(
         val bookmarked: Boolean = false,
         val isLoadingAdjacentChapter: Boolean = false,
         val currentPage: Int = -1,
+
+        /**
+         * The [ReaderPage] the user is currently on (R-C, Stage 4, audit F7). Unlike
+         * [currentPage] — a *display* position that counts only visible pages — this is the
+         * actual page object, recorded by [updateChapterProgress] at selection time. Consumers
+         * that need page payload (e.g. the automatic background's rendered-surface sampling)
+         * read this instead of re-deriving a page from the display number, which previously
+         * sampled the wrong (next) page's bytes.
+         */
+        val currentReaderPage: ReaderPage? = null,
 
         /**
          * Viewer used to display the pages (pager, webtoon, ...).

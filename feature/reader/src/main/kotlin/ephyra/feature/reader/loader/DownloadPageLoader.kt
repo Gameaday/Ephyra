@@ -7,6 +7,7 @@ import ephyra.core.archive.archiveReader
 import ephyra.core.download.DownloadProvider
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.model.Manga
+import ephyra.feature.reader.model.PageResource
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.Source
@@ -60,11 +61,18 @@ internal class DownloadPageLoader(
             chapter.chapter,
         )
         return pages.map { page ->
-            ReaderPage(page.index, page.url, page.imageUrl) {
-                requireNotNull(context.contentResolver.openInputStream(page.uri ?: Uri.EMPTY)) {
-                    "Could not open input stream for page URI: ${page.uri}"
-                }
-            }.apply {
+            ReaderPage(
+                page.index,
+                page.url,
+                page.imageUrl,
+                PageResource().apply {
+                    stream = {
+                        requireNotNull(context.contentResolver.openInputStream(page.uri ?: Uri.EMPTY)) {
+                            "Could not open input stream for page URI: ${page.uri}"
+                        }
+                    }
+                },
+            ).apply {
                 status = Page.State.Ready
             }
         }

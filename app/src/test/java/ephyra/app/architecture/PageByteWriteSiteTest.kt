@@ -8,11 +8,12 @@ import org.junit.jupiter.api.Test
  * Structural gate: the reader's page bytes must be cached **only** through the chapter's bounded
  * store.
  *
- * The defect this prevents is invisible from a test. `ReaderPage.cachedBytes` is a plain field, so
- * a write site that assigns it directly behaves exactly like a routed one, and the reader keeps its
- * unbounded working set while every test stays green — the budget describes a cache and not the
- * heap. Behavioural testing cannot catch it either: with no store attached, `cacheBytes` *is* a
- * direct assignment, so both paths look identical from a unit test.
+ * The defect this prevents is invisible from a test. `PageResource.cachedBytes` is a plain field
+ * on the page's payload handle, so a write site that assigns it directly behaves exactly like a
+ * routed one, and the reader keeps its unbounded working set while every test stays green — the
+ * budget describes a cache and not the heap. Behavioural testing cannot catch it either: with no
+ * store attached, `cacheBytes` *is* a direct assignment, so both paths look identical from a unit
+ * test.
  *
  * Only the three files that legitimately touch the field are named, each with the reason it may.
  * Anything else — a new viewer, a prefetcher, a download-warm path — is a production write site
@@ -47,11 +48,12 @@ class PageByteWriteSiteTest {
     @Test
     fun `the matcher distinguishes an assignment from a guard`() {
         // A gate that cannot fail is worse than no gate. These are the exact forms the viewer code
-        // uses, so the matcher is proven against the real syntax rather than a paraphrase.
-        val write = "?.also { page.cachedBytes = it }"
-        val chainedWrite = "if (a) page.cachedBytes = bytes else null"
-        val guard = "if (page.cachedBytes == null && page.mergedBitmap == null) {"
-        val nullCheck = "initialValue = page.cachedBytes"
+        // uses — post-sweep they address the handle, `page.resource.cachedBytes` — so the matcher
+        // is proven against the real syntax rather than a paraphrase.
+        val write = "?.also { page.resource.cachedBytes = it }"
+        val chainedWrite = "if (a) page.resource.cachedBytes = bytes else null"
+        val guard = "if (page.resource.cachedBytes == null && page.resource.mergedBitmap == null) {"
+        val nullCheck = "initialValue = page.resource.cachedBytes"
 
         assertTrue(ASSIGNMENT.containsMatchIn(write))
         assertTrue(ASSIGNMENT.containsMatchIn(chainedWrite))
@@ -79,8 +81,8 @@ class PageByteWriteSiteTest {
             "PageByteStoreOwner.kt",
             // The chapter's no-store fallback, used in tests and previews.
             "ReaderChapter.kt",
-            // The explicit reload path, which must drop the payload before refetching.
-            "ReaderPage.kt",
+            // The payload handle: the field's declaration and its own disposal methods.
+            "PageResource.kt",
         )
     }
 }

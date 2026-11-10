@@ -275,21 +275,41 @@ class ReaderViewModelTest {
         val readerChapter = ReaderChapter(chapter)
         val page = ReaderPage(0, "http://p/0").apply {
             this.chapter = readerChapter
-            cachedBytes = ByteArray(8)
-            width = 800
-            height = 1600
+            resource.cachedBytes = ByteArray(8)
+            resource.width = 800
+            resource.height = 1600
         }
         readerChapter.state = ReaderChapter.State.Loaded(listOf(page))
 
         // Active chapter: release is never called in-chapter — bytes stay for up/down scroll.
-        assertEquals(8, page.cachedBytes?.size)
+        assertEquals(8, page.resource.cachedBytes?.size)
 
         // Chapter falls out of the prev/curr/next window: ref/unref boundary disposes.
         readerChapter.ref()
         readerChapter.unref()
 
-        assertEquals(null, page.cachedBytes, "Boundary disposal must drop bytes")
-        assertEquals(0, page.width, "Boundary disposal must reset measured dims")
+        assertEquals(null, page.resource.cachedBytes, "Boundary disposal must drop bytes")
+        assertEquals(0, page.resource.width, "Boundary disposal must reset measured dims")
         assertTrue(readerChapter.state is ReaderChapter.State.Wait)
+    }
+
+    @Test
+    fun `page selection records the rendered page identity in state`() = runTest {
+        val viewModel = createViewModel()
+        val chapter = Chapter.create().copy(id = 61L, mangaId = 1L, name = "Ch 61", read = false)
+        val readerChapter = ReaderChapter(chapter)
+        val page0 = ReaderPage(0, "http://p/0").apply { this.chapter = readerChapter }
+        val page1 = ReaderPage(1, "http://p/1").apply { this.chapter = readerChapter }
+        readerChapter.state = ReaderChapter.State.Loaded(listOf(page0, page1))
+
+        viewModel.onEvent(ReaderEvent.PageSelected(page1))
+
+        val state = viewModel.state.value
+        // R-C (Stage 4, audit F7): the display index counts visible pages (page 1 → position 2),
+        // while the recorded identity is the page object itself. The automatic background reads
+        // the recorded page's rendered surface, so it can never sample the wrong page by
+        // re-deriving one from the display number.
+        assertEquals(2, state.currentPage)
+        assertEquals(page1, state.currentReaderPage)
     }
 }

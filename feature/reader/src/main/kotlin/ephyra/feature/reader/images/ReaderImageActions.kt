@@ -129,7 +129,7 @@ class ReaderImageActions(
     /** Sets the selected page's image as the manga's cover and reports the result. */
     suspend fun setAsCover() {
         val target = targetOrNull() ?: return
-        val stream = target.page.stream ?: return
+        val stream = target.page.resource.stream ?: return
         val result = try {
             effects.applyCover(target.manga, stream)
             coverResult(target.manga)
