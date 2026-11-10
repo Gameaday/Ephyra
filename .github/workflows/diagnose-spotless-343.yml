@@ -1,4 +1,4 @@
-name: Diagnose spotless 343
+name: Diagnose build 343
 on:
   push:
     branches:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   diagnose:
-    name: spotlessApply diff
+    name: gradle failure excerpt
     runs-on: 'ubuntu-24.04'
     steps:
       - name: Checkout
@@ -28,22 +28,30 @@ jobs:
           cache-read-only: true
           gradle-home-cache-cleanup: true
 
-      - name: Run spotlessApply
-        run: ./gradlew spotlessApply --build-cache --parallel --no-daemon
+      - name: Run unit tests
+        run: |
+          set +e
+          ./gradlew testDebugUnitTest --build-cache --parallel --no-daemon > /tmp/build.log 2>&1
+          echo "gradle_exit=$?" >> /tmp/build.log
+          exit 0
 
-      - name: Post canonical diff to PR
+      - name: Post failure excerpt to PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           FENCE='```'
-          DIFF=$(git diff)
-          if [ -z "$DIFF" ]; then
-            DIFF='(no diff - spotlessCheck failure is not a format violation)'
-          fi
           {
-            echo 'spotlessApply canonical diff for this head (auto-posted):'
-            echo "$FENCE"'diff'
-            echo "$DIFF"
+            echo 'gradle failure excerpt (auto-posted):'
+            echo "$FENCE"
+            grep -E '^e: |FAILED|FAILURE|What went wrong|gradle_exit=' /tmp/build.log | head -160
+            echo '--- recorded test failures ---'
+            for f in $(find . -path '*/build/test-results/testDebugUnitTest/TEST-*.xml' 2>/dev/null); do
+              if grep -q '<failure' "$f"; then
+                echo "FILE: $f"
+                grep -o '<failure[^>]*message="[^"]*"' "$f" | head -6
+                grep -o 'testcase name="[^"]*"' "$f" | head -8
+              fi
+            done
             echo "$FENCE"
           } > /tmp/comment.md
           gh pr comment 343 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.md
