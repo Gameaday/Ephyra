@@ -10,7 +10,7 @@
 | Any cover list ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
 | Tab peer | None | Directional horizontal slide | Tab history model, same slide reversed |
 | Hierarchical destination | Optional shared element | Shared axis X | Reverse shared axis X |
-| Activity destination (reader, WebView) | None | Platform activity animation | Platform: predictive reveal on gesture, theme close otherwise |
+| Activity destination (reader, WebView) | None | Pure-alpha window crossfade (theme fades, 200ms) | Same crossfade; gesture commits through finish() with a drag dim |
 | Compact pane → expanded pane | Optional item identity | Directional pane | Directional reverse |
 | Sheet/dialog → parent | None | Component motion | Parent state |
 
@@ -55,49 +55,61 @@ each host's scope is asserted.
 direction rule reads "leaving a series page" as backward and a forward move to a *related* series
 would then take the shorter return timeline.
 
-## An Activity destination's motion is the platform's
+## An Activity destination's motion is one app-owned crossfade
 
 The reader (and the WebView) are separate Activities, so they cannot use the Compose transition.
-For a time their windows mirrored the shared axis instead: `overrideActivityTransition` registered
+Their boundary motion has changed hands twice, and both reversals are recorded here because each
+one answered the defect before it.
+
+**Override era.** The windows mirrored the shared axis: `overrideActivityTransition` registered
 the push on open and the pop on close, with the four `shared_axis_x_*.xml` files asserted against
-the Compose token's travel and durations. That was the best answer available before predictive back
-crossed the activity boundary, and this contract recorded it.
+the Compose token's travel and durations. Once the app opted into predictive back
+(`enableOnBackInvokedCallback`), this broke: on Android 14+ the back **gesture** runs the system's
+cross-activity animation and bypasses a custom close transition, so the custom pair only played on
+the paths that did not go through the gesture. One boundary, three motions (gesture, affordance,
+entry) — the owner-reported defect of 2026-11-08: the back motion returning from pages to the main
+tab "is not consistent and looks bad".
 
-It stopped being true once the app opted into predictive back (`enableOnBackInvokedCallback`): on
-Android 14+ the back **gesture** runs the system's cross-activity animation and bypasses a custom
-close transition. The custom pair therefore only played on the paths that did not go through the
-gesture — the toolbar's up arrow, programmatic finishes — while the gesture scaled the window away
-with the system's reveal. One boundary, three motions (gesture, affordance, entry), and the entry
-slide paired with an exit that was not its reverse. That is the owner-reported defect of 2026-11-08:
-the back motion returning from pages to the main tab "is not consistent and looks bad", covering the
-transitions forward and back.
+**Platform era.** The fix was to stop overriding: the activities registered no window transition,
+and the boundary was deliberately left to the platform. That made every exit path move the same
+way — consistent — but the platform's answer was the Android 14+ predictive reveal, which scales
+and slides the window: it reads as elements flying and zooming into the background, and the open
+path played no preview at all. The owner's motion audit of 2026-11-09 rejected it and locked the
+directive: **a minimal crossfade with no movement at this boundary, owned by the app on every
+path.**
 
-No app window animation can fix this by participating, because a window cannot reveal the activity
-underneath itself — an in-window preview of the receiving screen is impossible by construction. So
-the boundary is the platform's, deliberately:
+**Current rule.** The boundary is one app-owned crossfade:
 
-- **the activities register no window transitions.** Entry and every non-gesture exit use the
-  theme's standard activity animations (the app theme declares no `windowAnimationStyle`, so the
-  platform defaults are in force), and the Android 14+ gesture uses the system's predictive
-  cross-activity reveal, which previews the tab the reader was opened from.
-- **the shared-axis window renderings are deleted**, not orphaned: `MotionConsistencyTest` fails the
-  build if the reader or the WebView names an `OVERRIDE_TRANSITION` or a `shared_axis_x_` resource
-  again, and fails if the four XML files come back without consumers.
+- **the theme renders the window fades.** `Theme.Tachiyomi.ActivityBoundary` (declared on the
+  reader and the WebView in the manifest) installs `ActivityBoundaryWindowAnimations`, which points
+  all four activity transition slots at the pure-alpha `activity_boundary_fade_in/out` pair —
+  200ms, fast-out-slow-in, matching the policy's `CROSSFADE_DURATION_MILLIS` and the easing the
+  Compose crossfade token uses. A theme reaches every start path — intent, deep link, shortcut,
+  programmatic finish — with no starter cooperation, on all API levels.
+- **the host owns the gesture.** `ActivityBoundaryCrossfadeHost` wraps both activities' content:
+  `PredictiveBackProgress` previews the gesture with a drag-proportional dim and commits through
+  `finish()`, so the *theme's* close crossfade plays instead of the system reveal. A window cannot
+  reveal the activity underneath itself, so the system's cross-activity "peek" was always a mockup
+  of a screen that was not on screen; the dim is honest — gesture-coupled opacity, resolved to
+  zero on cancellation, and not movement.
+- **no movement, enforced.** The fade XMLs are `<alpha>` only;
+  `MotionConsistencyTest` fails the build on a translate/scale/rotate smuggled into them, on a
+  duration that drifts from the policy, or on a missing transition slot.
+- **the shared-axis window renderings stay deleted**, not orphaned: the gate fails the build if the
+  reader or the WebView names an `OVERRIDE_TRANSITION` or a `shared_axis_x_` resource again, and
+  fails if the four XML files come back without consumers.
 - **one override survives on purpose.** `SecureActivityDelegate` launches the unlock screen with a
   zero-animation override — the lock screen neither slides nor previews, a privacy decision rather
   than a motion-language one — and the gate names it so no sweep deletes it as "the last override".
-- **the policy loop keeps its remaining edges.** `MotionConsistencyTest` still ties
-  `HIERARCHICAL_FORWARD`/`BACK_DURATION_MILLIS` to the Compose legs that render them; the window
-  leg of that triangle is gone with the renderings.
+- **reduced motion.** The OS animator scale collapses the window fades on its own; the in-app
+  reduce-motion preference additionally skips the gesture dim (the host reads
+  `LocalMotionPreference`, which both activities provide).
 
-Reduced motion needs no branch in the Activity path: the platform honours the animator scale and
-collapses its own activity animations on its own.
-
-The trade is recorded rather than hidden: the boundary no longer speaks the app's shared-axis
-language, and on a device with predictive back unavailable (or below Android 14) the platform's
-default close replaces the app's pop slide. An app motion that cannot join the gesture produced the
-inconsistency this section exists to remove; the platform's motion is the only one every exit path
-can share.
+The trade is recorded rather than hidden: the Android 14+ system predictive reveal no longer plays
+at this boundary — the drag dim replaces it — and the boundary does not pretend to preview the
+receiving tab, which an in-window animation cannot do honestly anyway. The reader→manga open path
+(`openMangaScreen` into MainActivity's nav graph) is not part of this boundary; it still uses
+MainActivity's motion and is a candidate follow-up, the owner's call.
 
 For Series ↔ Library:
 
@@ -143,8 +155,9 @@ closes all three.
   of its own journey invisible). Pop enter 250ms, pop exit 200ms — back is shorter than forward
   because the user already knows where back goes. The durations live in `MotionPolicy` and `MotionTokens.kt`
   only; the four `shared_axis_x_*.xml` Activity renderings ran the same numbers as the Compose legs
-  until the renderings were deleted with the activity-boundary reversal (the platform owns that
-  boundary now — see "An Activity destination's motion is the platform's"), and the parity gate now
+  until the renderings were deleted with the activity-boundary reversal (that boundary is one
+  app-owned crossfade now — see "An Activity destination's motion is one app-owned crossfade"), and
+  the parity gate now
   asserts the policy against the Compose legs that remain.
 - **The vocabulary is pruned and gated.** The springs, tween presets, orphan duration constants and
   orphan easings are deleted (no call sites anywhere); the alias members stay because they are the
@@ -236,10 +249,13 @@ code does *not* do and no unit test can drive the transition:
 - `LibrarySeriesTransitionTest` — the container is a real no-op, the cover's ratio is resolved before
   it is shared, `MainActivity` consults `MotionPolicy` rather than re-deciding, and both directions of
   the pair resolve over one predicate.
-- `MotionConsistencyTest` — the Activity boundary belongs to the platform: the reader and the
-  WebView register no window transition and name no shared-axis window resource, the deleted
-  `shared_axis_x_*.xml` renderings stay deleted, and the unlock screen's zero-animation override is
-  named as the one deliberate remaining use; the policy's HIERARCHICAL durations are the numbers
+- `MotionConsistencyTest` — the Activity boundary is one app-owned crossfade: the reader and the
+  WebView host `ActivityBoundaryCrossfadeHost` and provide `LocalMotionPreference`, register no
+  window override and name no shared-axis window resource, the manifest declares the boundary theme
+  on exactly those two activities, the fade renderings are pure alpha at the policy's crossfade
+  duration and easing with all four transition slots wired, the deleted `shared_axis_x_*.xml`
+  renderings stay deleted, and the unlock screen's zero-animation override is named as the one
+  deliberate remaining use; the policy's HIERARCHICAL durations are the numbers
   the Compose legs play — policy and its rendering gated as one loop; every shared-cover host provides
   an animated-visibility scope; each list that opens a
   series keys its cover on the id it opens; and the undeclared-route fallback is a policy plan, not an
@@ -259,11 +275,12 @@ transition, the in-app handler consumes the event, and the user sees nothing mov
 Surfaces are therefore in one of three states, and the third is a deliberate, recorded choice rather
 than an oversight:
 
-- **Previewed** — drives the shared helper: the bottom sheets (`PredictiveBackDraggableProgress`) and
-  the series page (`PredictiveBackProgress`).
-- **Platform-animated** — the two `NavHost`s and the Activity boundaries (the reader and the
-  WebView, which register no window transitions of their own). These are animated by the
-  navigation library / platform, so they preview without app code.
+- **Previewed** — drives the shared helper: the bottom sheets (`PredictiveBackDraggableProgress`),
+  the series page and the Activity boundaries (`PredictiveBackProgress` — the reader and the
+  WebView host `ActivityBoundaryCrossfadeHost`, which previews the gesture with a drag dim and
+  commits through `finish()` so the boundary crossfade plays).
+- **Platform-animated** — the two `NavHost`s (the navigation library animates and previews them
+  without app code).
 - **State change, not a spatial move** — selection-mode exits (Library, Updates, Manga chapter list,
   Migration, Migrate), search-in-tab exits (Sources, Extensions, ExtensionsRoute), WebView history,
   and onboarding step-back. There is no surface position to animate: back flips a boolean or a
@@ -288,3 +305,4 @@ Reduced motion has two sources, merged rather than one overriding the other:
 `effectiveReducedMotion(system, app)` is the merge and is asserted directly. Under reduced motion the
 navigation transitions collapse to instant, as before; the in-app preference adds no new transition
 behaviour, only a second way to ask for the existing one.
+

@@ -5,13 +5,21 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.core.net.toUri
 import dagger.hilt.android.AndroidEntryPoint
 import ephyra.core.common.util.system.WebViewUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.source.service.SourceManager
+import ephyra.domain.ui.UiPreferences
 import ephyra.presentation.core.ui.activity.BaseActivity
+import ephyra.presentation.core.ui.navigation.ActivityBoundaryCrossfadeHost
+import ephyra.presentation.core.ui.navigation.LocalMotionPreference
+import ephyra.presentation.core.ui.navigation.effectiveReducedMotion
+import ephyra.presentation.core.ui.navigation.rememberSystemReducedMotion
+import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.core.util.view.setComposeContent
@@ -28,12 +36,16 @@ class WebViewActivity : BaseActivity() {
 
     @Inject lateinit var network: NetworkHelper
 
+    @Inject lateinit var uiPreferences: UiPreferences
+
     private var assistUrl: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // No window transition is registered, on purpose: the platform owns this Activity
-        // boundary, so entry, the toolbar exit and the Android 14+ predictive back gesture all
-        // move the same way (`ReaderActivity` documents the full rationale, and
+        // This activity owns its boundary motion as one minimal crossfade with no movement
+        // (owner directive 2026-11-09): the theme (Theme.Tachiyomi.ActivityBoundary) renders
+        // every open and non-gesture close, and ActivityBoundaryCrossfadeHost routes a committed
+        // predictive back gesture through finish() so the same close crossfade plays instead of
+        // the system's scale reveal (`ReaderActivity` documents the full rationale, and
         // `MotionConsistencyTest` gates it).
         super.onCreate(savedInstanceState)
 
@@ -56,16 +68,24 @@ class WebViewActivity : BaseActivity() {
         }
 
         setComposeContent {
-            WebViewScreenContent(
-                onNavigateUp = { finish() },
-                initialTitle = intent.extras?.getString(TITLE_KEY),
-                url = url,
-                headers = headers,
-                onUrlChange = { assistUrl = it },
-                onShare = this::shareWebpage,
-                onOpenInBrowser = this::openInBrowser,
-                onClearCookies = this::clearCookies,
-            )
+            val systemReducedMotion = rememberSystemReducedMotion()
+            val appReduceMotion by uiPreferences.reduceMotion().collectAsState()
+            CompositionLocalProvider(
+                LocalMotionPreference provides effectiveReducedMotion(systemReducedMotion, appReduceMotion),
+            ) {
+                ActivityBoundaryCrossfadeHost(onExit = ::finish) {
+                    WebViewScreenContent(
+                        onNavigateUp = { finish() },
+                        initialTitle = intent.extras?.getString(TITLE_KEY),
+                        url = url,
+                        headers = headers,
+                        onUrlChange = { assistUrl = it },
+                        onShare = this::shareWebpage,
+                        onOpenInBrowser = this::openInBrowser,
+                        onClearCookies = this::clearCookies,
+                    )
+                }
+            }
         }
     }
 

@@ -30,13 +30,20 @@ import java.io.File
  *    was not its reverse. That is the owner-reported inconsistency at this boundary (2026-11-08),
  *    and no app window animation can fix it by participating, because a window cannot reveal the
  *    activity underneath itself.
+ * 5. **The platform's reveal was the residue.** Leaving the boundary to the platform — the fix for
+ *    (4) — was consistent but ugly: the Android 14+ predictive reveal scales and slides the window,
+ *    which reads as elements flying and zooming into the background, and the open path played no
+ *    preview at all. The owner's motion audit rejected it (2026-11-09), and the directive locked
+ *    the replacement: one minimal crossfade, no movement, owned by the app on every path.
  *
- * **The reversal, recorded.** Defects (1) and (2) were originally gated by requiring the window
- * pair; defect (4) is why those gates are now inverted. The Activity boundary is the platform's:
- * the reader and the WebView register no window transition, the deleted `shared_axis_x_*.xml`
- * renderings stay deleted, and the one deliberate remaining override — the unlock screen's
- * zero-animation open, a privacy decision — is named so a sweep cannot delete it as "the last
- * override" by mistake.
+ * **The reversals, recorded.** Defects (1) and (2) were originally gated by requiring the window
+ * pair; defect (4) inverted those gates and made the boundary the platform's; defect (5) is why
+ * the boundary is back under the app — as a crossfade rather than a movement. The theme
+ * (`Theme.Tachiyomi.ActivityBoundary`) renders every open and non-gesture close,
+ * `ActivityBoundaryCrossfadeHost` routes the predictive gesture's commit through `finish()` so the
+ * same close crossfade plays instead of the system reveal, and the one deliberate remaining
+ * override — the unlock screen's zero-animation open, a privacy decision — is still named so a
+ * sweep cannot delete it as "the last override" by mistake.
  *
  * These read the source, following the pattern established by `LibrarySeriesTransitionTest`: a
  * behavioural test would have to drive a transition nobody can drive in a unit test.
@@ -76,6 +83,7 @@ class MotionConsistencyTest {
     private val secureActivityDelegate =
         "app/src/main/java/ephyra/app/ui/base/delegate/SecureActivityDelegate.kt"
     private val mainActivity = "app/src/main/java/ephyra/app/ui/main/MainActivity.kt"
+    private val manifest = "app/src/main/AndroidManifest.xml"
     private val browseFeatureApi =
         "feature/browse/src/main/kotlin/ephyra/feature/browse/BrowseFeatureApi.kt"
     private val mangaFeatureApi =
@@ -111,33 +119,56 @@ class MotionConsistencyTest {
     }
 
     /**
-     * The reader and the WebView are separate Activities, and their boundary motion is the
-     * platform's. A registered window transition only plays on the paths that do not go through
-     * the predictive back gesture — on Android 14+ the gesture runs the system's cross-activity
-     * animation and bypasses a custom close transition — so an override splits one boundary into
-     * motions that differ by how the user leaves. That is the owner-reported inconsistency
-     * (2026-11-08) this rule prevents from returning.
+     * The reader and the WebView are separate Activities, and their boundary motion is one
+     * app-owned crossfade (owner directive 2026-11-09). The theme renders the window fades on
+     * every open and non-gesture close; the host is what makes the *gesture* obey it, because a
+     * committed predictive back otherwise lets the system finish the activity with its own
+     * cross-activity reveal and the theme is bypassed. An activity without the host, or without
+     * the reduce-motion local provided, splits one boundary back into motions that differ by how
+     * the user leaves — the exact defect class this class exists for.
      */
     @Test
-    fun `the activity boundary motion belongs to the platform`() {
+    fun `the activity boundary motion is one app-owned crossfade`() {
         listOf(
             "ReaderActivity" to readerActivity,
             "WebViewActivity" to webViewActivity,
         ).forEach { (name, path) ->
             val code = codeOf(path)
+            assertTrue(
+                code.contains("ActivityBoundaryCrossfadeHost("),
+                "$name must wrap its content in ActivityBoundaryCrossfadeHost: the theme cannot " +
+                    "intercept the predictive back gesture, so without the host a committed swipe " +
+                    "lets the system finish the activity with its scale reveal — the motion the " +
+                    "owner rejected — instead of the boundary crossfade.",
+            )
+            assertTrue(
+                code.contains("LocalMotionPreference provides"),
+                "$name must provide LocalMotionPreference: the host reads it to skip the gesture " +
+                    "dim under the reduce-motion preference, and an unprovided local silently " +
+                    "reduces nothing.",
+            )
             assertFalse(
                 code.contains("OVERRIDE_TRANSITION"),
-                "$name must not override its window transitions. On Android 14+ the predictive " +
-                    "back gesture runs the system's cross-activity animation and bypasses a custom " +
-                    "close transition, so an override gives one boundary motions that differ by how " +
-                    "the user leaves — the exact inconsistency the owner reported at this boundary.",
+                "$name must not override its window transitions. An override competes with the " +
+                    "theme's crossfade on the non-gesture paths and returns the " +
+                    "one-boundary-several-motions defect.",
             )
             assertFalse(
                 code.contains("shared_axis_x_"),
                 "$name must not name a shared-axis window resource; the boundary motion is the " +
-                    "platform's, per the rule above.",
+                    "crossfade, per the rule above.",
             )
         }
+
+        val boundaryTheme = "Theme.Tachiyomi.ActivityBoundary"
+        assertEquals(
+            2,
+            sourceFile(manifest).readText().split(boundaryTheme).size - 1,
+            "The manifest must declare the boundary theme on exactly the reader and the WebView " +
+                "(2 occurrences of $boundaryTheme): fewer leaves one boundary on the platform's " +
+                "default motion, more spreads the boundary theme to activities that are not this " +
+                "boundary.",
+        )
 
         assertTrue(
             codeOf(secureActivityDelegate).contains("overrideTransitionCompat"),
@@ -145,6 +176,119 @@ class MotionConsistencyTest {
                 "with no animation at all, a privacy decision rather than a motion-language one, " +
                 "and this rule names it so a future sweep cannot delete it as 'the last override' " +
                 "by mistake.",
+        )
+    }
+
+    /**
+     * The boundary crossfade is the policy's crossfade, and it moves nothing. The window fades
+     * are the only new motion at this boundary, so every property the owner can perceive is
+     * decided here: pure alpha (no translate/scale/rotate — the directive bans movement, and a
+     * transform smuggled into an `<alpha>`-shaped file would be invisible in review), the
+     * policy's crossfade duration so the window and Compose crossfades read as one gesture, the
+     * fast-out-slow-in interpolator the Compose crossfade eases with, and all four activity
+     * transitions pointed at the same fade pair so every open and close path renders identically.
+     */
+    @Test
+    fun `the boundary window rendering is the policy crossfade and moves nothing`() {
+        val crossfadeMillis = Regex("""CROSSFADE_DURATION_MILLIS\s*:\s*Int\s*=\s*(\d+)""")
+            .find(codeOf(motionPolicy))
+            ?.groupValues
+            ?.get(1)
+            ?: throw AssertionError(
+                "MotionPolicy must declare CROSSFADE_DURATION_MILLIS as a readable literal.",
+            )
+
+        listOf("in", "out").forEach { half ->
+            val xml = sourceFile("$anim/activity_boundary_fade_$half.xml").readText()
+            assertTrue(
+                xml.contains("android:duration=\"$crossfadeMillis\""),
+                "activity_boundary_fade_$half must run the policy's crossfade duration " +
+                    "($crossfadeMillis ms): the window crossfade and the Compose crossfades are " +
+                    "one gesture with one duration, and a number that drifts makes the boundary " +
+                    "read like a different motion language.",
+            )
+            assertTrue(
+                xml.contains("@android:interpolator/fast_out_slow_in"),
+                "activity_boundary_fade_$half must ease with fast-out-slow-in, the easing the " +
+                    "Compose crossfade token uses, for the same reason as the duration.",
+            )
+            assertTrue(
+                xml.contains("<alpha"),
+                "activity_boundary_fade_$half must be an <alpha> animation.",
+            )
+            listOf("translate", "scale", "rotate").forEach { transform ->
+                assertFalse(
+                    xml.contains(transform),
+                    "activity_boundary_fade_$half must not contain '$transform': the directive is " +
+                        "no movement at this boundary, and a transform smuggled into the window " +
+                        "fade returns the flying-and-zooming motion the owner rejected.",
+                )
+            }
+        }
+
+        assertTrue(
+            codeOf(motion).contains("FastOutSlowInEasing"),
+            "MotionTokens must name FastOutSlowInEasing: the window fades declare the same " +
+                "easing by interpolator, and this ties the declaration to the token that " +
+                "renders the in-app crossfade.",
+        )
+
+        val style = sourceFile("presentation-core/src/main/res/values/styles.xml").readText()
+            .substringAfter("<style name=\"ActivityBoundaryWindowAnimations\"")
+            .substringBefore("</style>")
+        listOf(
+            "activityOpenEnterAnimation",
+            "activityOpenExitAnimation",
+            "activityCloseEnterAnimation",
+            "activityCloseExitAnimation",
+        ).forEach { item ->
+            assertTrue(
+                style.contains("name=\"android:$item\""),
+                "ActivityBoundaryWindowAnimations must set android:$item: the four activity " +
+                    "transition slots are how a theme reaches every start path (intent, deep " +
+                    "link, gesture commit), and a missing slot leaves that path on the " +
+                    "platform's default motion.",
+            )
+        }
+        assertTrue(
+            style.contains("@anim/activity_boundary_fade_in") &&
+                style.contains("@anim/activity_boundary_fade_out"),
+            "ActivityBoundaryWindowAnimations must point at the boundary fade pair, not the " +
+                "platform defaults.",
+        )
+
+        val themes = sourceFile("app/src/main/res/values/themes.xml").readText()
+        assertTrue(
+            themes.contains("<style name=\"Theme.Tachiyomi.ActivityBoundary\">"),
+            "app themes must define Theme.Tachiyomi.ActivityBoundary — the style the manifest " +
+                "declares on both boundary activities.",
+        )
+        assertTrue(
+            themes.contains("@style/ActivityBoundaryWindowAnimations"),
+            "Theme.Tachiyomi.ActivityBoundary must install ActivityBoundaryWindowAnimations as " +
+                "its windowAnimationStyle.",
+        )
+
+        val host = codeOf(
+            "presentation-core/src/main/java/ephyra/presentation/core/ui/navigation/ActivityBoundaryCrossfadeHost.kt",
+        )
+        assertTrue(
+            host.contains("PredictiveBackProgress("),
+            "ActivityBoundaryCrossfadeHost must participate through the shared " +
+                "PredictiveBackProgress helper, not a bare PredictiveBackHandler — see " +
+                "PredictiveBackGateTest.",
+        )
+        assertTrue(
+            host.contains("onCancelled"),
+            "ActivityBoundaryCrossfadeHost must restore its dim on cancellation: a cancelled " +
+                "gesture leaves the scrim stranded otherwise, the exact defect the " +
+                "PredictiveBack helper contract exists for.",
+        )
+        assertTrue(
+            host.contains("effectiveReducedMotion"),
+            "ActivityBoundaryCrossfadeHost must resolve reduced motion through " +
+                "effectiveReducedMotion, so the OS animator scale and the in-app preference " +
+                "merge instead of competing.",
         )
     }
 

@@ -126,6 +126,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🧭 Activity Boundary Crossfade (owner follow-up 2026-11-09: bug-wave item 2 is "consistent now but still not desirable or elegant" — the platform's answer was the motion the audit rejected; directive: a minimal crossfade with no movement, app-owned on every path)
+
+- **The defect:** PR #339 fixed the one-boundary-three-motions inconsistency by leaving the
+  reader/WebView boundary to the platform — every exit path moved the same way, but *what* they
+  moved was the Android 14+ predictive cross-activity reveal: a scale-and-slide that reads as
+  elements flying and zooming into the background, the exact aesthetic the owner rejected. The
+  open path played no preview at all (the system previews out, not in), so the boundary's halves
+  were not even one motion pair. A window cannot reveal the activity beneath itself, so the
+  system's "peek" at the parent was always a mockup of a screen that was not there.
+- **What landed:** `Theme.Tachiyomi.ActivityBoundary` (declared on `ReaderActivity` +
+  `WebViewActivity` in the manifest) installs `ActivityBoundaryWindowAnimations`, which points all
+  four activity transition slots at the new pure-alpha `activity_boundary_fade_in/out` pair —
+  200ms, matching `MotionPolicy.CROSSFADE_DURATION_MILLIS`, fast-out-slow-in (the easing the
+  `MotionTokens` crossfades use). New `ActivityBoundaryCrossfadeHost` in presentation-core wraps
+  both activities' content: `PredictiveBackProgress` previews the back gesture with a
+  drag-proportional dim (max 0.25, resolved to zero on cancellation, skipped under reduced motion)
+  and commits through `finish()`, so the *theme's* close crossfade plays instead of the system's
+  scale reveal. Both activities provide `LocalMotionPreference` (OS scale + in-app preference
+  merged, mirroring `MainActivity`).
+- **The gate:** `MotionConsistencyTest`'s boundary rule is rewritten again — `the activity boundary
+  motion is one app-owned crossfade` fails the build if either activity lacks the host or the
+  reduce-motion local, names a window override or a shared-axis window resource, or if the
+  manifest's boundary-theme count drifts from exactly two; new `the boundary window rendering is
+  the policy crossfade and moves nothing` pins the fades to pure alpha, the policy's duration and
+  easing, all four transition slots, and the host's cancellation/reduced-motion handling.
+- **Disclosed:** the system's predictive cross-activity reveal no longer plays at this boundary —
+  the drag dim replaces it (it could never show anything real anyway); the reader→manga open path
+  (`openMangaScreen` into MainActivity's nav graph) is not part of this boundary and still uses
+  MainActivity's motion — a candidate follow-up, the owner's call; component motion (tab slide,
+  shared-axis X, fade-through, sheets, app-bar/header slides) is unchanged by this sweep.
+- **Honesty:** no JDK locally; remote CI is the verification channel; every red round will be
+  disclosed with a PR comment and a ledger row amendment; no device evidence claimed — the look of
+  the crossfade on a panel is the owner's A5 call.
+
 ### 🧭 Smart Merge Tiny-Stub Absorption (owner directive 2026-11-09: "improve the page smart merge capability, extend range to smaller stubs so that even a 1px tall stub is merged in, instead of being treated as its own page. audit the entire process and improve based on findings or rewrite")
 
 - **The defect:** the smart-combine floor excluded the smallest stubs. Both the reader's combine
@@ -785,4 +819,5 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`ROADMAP.md`**: Updated to reflect completed Phase 1 (Pure DI), in-progress Phase 3
   (Content-Agnostic UI) and Phase 4 (Build Config), and planned Phase 2 (Sandboxed Scripting).
 - **`CHANGELOG.md`**: This file — initialized.
+
 
