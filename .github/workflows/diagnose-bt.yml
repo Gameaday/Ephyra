@@ -1,0 +1,60 @@
+name: diagnose-bt
+
+on:
+  push:
+    branches:
+      - diagnose/bt-ce8d29e
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  diag:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download test report artifact from the failed run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh run download 43026444089 --repo Gameaday/Ephyra -n test-report-ce8d29e15776aee10db0c1c8cda0a1add2ebab6d -D /tmp/tr
+
+      - name: Extract failing tests
+        run: |
+          python3 - <<'PYEOF'
+          import glob, re, html
+          out = []
+          files = glob.glob('/tmp/tr/**/TEST-*.xml', recursive=True)
+          out.append('Diagnose: %d test-result XML files scanned (run 43026444089, head ce8d29e).' % len(files))
+          n = 0
+          for f in files:
+              txt = open(f, encoding='utf-8', errors='replace').read()
+              if '<failure' not in txt:
+                  continue
+              for tc in re.finditer(r'<testcase name="([^"]*)" classname="([^"]*)"[^>]*>(.*?)</testcase>', txt, re.S):
+                  body = tc.group(3)
+                  if '<failure' not in body and '<error' not in body:
+                      continue
+                  n += 1
+                  msg = re.search(r'(?:failure|error)[^>]*message="([^"]*)"', body)
+                  mtxt = html.unescape(msg.group(1))[:600] if msg else ''
+                  trace = re.search(r'(?:failure|error)>(.*?)</(?:failure|error)>', body, re.S)
+                  ttxt = html.unescape(trace.group(1)).strip()[:900] if trace else ''
+                  out.append('- %s.%s' % (tc.group(2), tc.group(1)))
+                  if mtxt: out.append('  message: %s' % mtxt.replace(chr(10), ' | '))
+                  if ttxt: out.append('  trace: %s' % ttxt.replace(chr(10), ' | ')[:900])
+          if n == 0:
+              out.append('No <failure>/<error> testcase found in any XML. The step failure was not a recorded assertion -- JVM crash, OOM, or Gradle-level failure.')
+          open('/tmp/failures.md', 'w').write(chr(10).join(out))
+          PYEOF
+          head -c 300 /tmp/failures.md
+
+      - name: Post results to PR 355
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr comment 355 --repo Gameaday/Ephyra --body-file /tmp/failures.md
+
+      - name: Delete this branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: git push origin --delete diagnose/bt-ce8d29e || true
