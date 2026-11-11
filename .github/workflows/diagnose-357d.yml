@@ -1,0 +1,82 @@
+name: Diagnose 357d
+
+# Throwaway triage workflow (round 3, head 97c6674): job logs sit behind an
+# admin-only API wall, so this runs the unit-test suite with --continue and
+# posts the failure detail to PR #357 as a comment. Deleted in the fix commit.
+# diagnose-357c posted an empty body: its bash step fenced output in backticks,
+# which bash treats as command substitution. This one uses HTML details fences.
+
+on:
+  push:
+    branches:
+      - fix/retry-forces-past-cache
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  diagnose:
+    name: Diagnose unit test failures (throwaway)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run unit tests, capture output
+        run: |
+          ./gradlew --continue testDebug"UnitTest" --stacktrace > /tmp/diag.txt 2>&1 || true
+          tail -c 55000 /tmp/diag.txt > /tmp/diag-trim.txt
+
+      - name: Extract JUnit failures
+        if: always()
+        run: |
+          {
+            echo "JUnit XML failure messages:"
+            echo
+            found=0
+            for f in $(find . -path "*/build/test-results/testDebugUnitTest/TEST-*.xml" 2>/dev/null); do
+              if grep -q "<failure" "$f"; then
+                found=1
+                echo "FILE: $f"
+                grep -o "testcase name=\"[^\"]*\" classname=\"[^\"]*\"" "$f" | head -50 || true
+                grep -o "<failure[^>]*message=\"[^\"]*\"" "$f" | head -20 || true
+                echo
+              fi
+            done
+            if [ "$found" = "0" ]; then
+              echo "No failure element found in any test-result XML."
+            fi
+          } > /tmp/junit.md
+
+      - name: Post output to PR 357
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Diagnose 357d (throwaway, deleted with the fix commit) on commit ${GITHUB_SHA}."
+            echo
+            echo "<details><summary>JUnit XML failure messages</summary>"
+            echo
+            cat /tmp/junit.md
+            echo
+            echo "</details>"
+            echo
+            echo "<details><summary>Gradle output tail</summary>"
+            echo
+            cat /tmp/diag-trim.txt
+            echo
+            echo "</details>"
+          } > /tmp/body.md
+          gh pr comment 357 --repo Gameaday/Ephyra --body-file /tmp/body.md
