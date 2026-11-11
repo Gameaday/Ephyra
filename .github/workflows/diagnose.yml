@@ -9,10 +9,8 @@ on:
   workflow_dispatch:
     inputs:
       run_id:
-        description: 'Run id whose test-report artifact to download'
         required: false
       issue_number:
-        description: 'Issue or PR number to post findings to'
         required: false
 
 permissions:
@@ -28,35 +26,34 @@ jobs:
       ISSUE: ${{ inputs.issue_number || '351' }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Download and analyse test reports
+      - name: Analyse failed job log
         run: |
           set -euo pipefail
-          echo "Analysing run $RUN_ID, posting to issue/PR $ISSUE"
-          ART_ID=$(gh api "repos/Gameaday/Ephyra/actions/runs/$RUN_ID/artifacts" --jq '[.artifacts[] | select(.name | startswith("test-report"))][0].id')
-          echo "Artifact id: $ART_ID"
-          gh api "repos/Gameaday/Ephyra/actions/artifacts/$ART_ID/zip" > artifact.zip
-          mkdir -p reports
-          unzip -q artifact.zip -d reports
           {
-            echo "## Failing unit tests on run $RUN_ID (commit 70a7d7c)"
+            echo "## Job log triage for run $RUN_ID (commit 70a7d7c)"
             echo
-            found=0
-            while IFS= read -r f; do
-              if grep -q '<failure' "$f"; then
-                found=1
-                echo "### $f"
-                echo
-                echo '```'
-                grep -o 'testcase name="[^"]*" classname="[^"]*"' "$f"
-                grep -o '<failure[^>]*message="[^"]*"' "$f" | cut -c1-1500
-                echo '```'
-                echo
-              fi
-            done < <(find reports -name 'TEST-*.xml')
-            if [ "$found" = "0" ]; then
-              echo "No <failure> element found in any downloaded test result. Files in artifact:"
+            JOBS_JSON=$(gh api "repos/Gameaday/Ephyra/actions/runs/$RUN_ID/jobs?per_page=100")
+            FAILED_JOB=$(echo "$JOBS_JSON" | jq -r '[.jobs[] | select(.conclusion == "failure")][0].id')
+            echo "Failed job id: $FAILED_JOB"
+            gh api "repos/Gameaday/Ephyra/actions/jobs/$FAILED_JOB/logs" > job.log 2>job_err.log || echo "log download failed: $(cat job_err.log)"
+            if [ -s job.log ]; then
+              echo "### First FAILURE context"
               echo '```'
-              find reports -type f | sed -n '1,50p'
+              grep -n -m 5 -E 'FAILURE:|> Task .* FAILED|What went wrong|Caused by:|BUILD FAILED' job.log | sed -n '1,20p'
+              echo '```'
+              echo
+              FIRST=$(grep -n -m 1 -E 'FAILURE:|BUILD FAILED' job.log | cut -d: -f1)
+              if [ -n "$FIRST" ]; then
+                START=$(( FIRST > 15 ? FIRST - 15 : 1 ))
+                echo "### Context around first failure (lines $START-)"
+                echo '```'
+                sed -n "${START},$(( FIRST + 60 ))p" job.log | cut -c1-500
+                echo '```'
+              fi
+              echo
+              echo "### Gradle task failures"
+              echo '```'
+              grep -n -E '^> Task .*FAILED$' job.log | sed -n '1,20p'
               echo '```'
             fi
           } > summary.md
