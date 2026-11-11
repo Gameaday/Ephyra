@@ -7,6 +7,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Unreleased]
+### 🎞️ Motion — sibling tabs slide again (owner reversal, 2026-11-11)
+- **Tab peers slide in bar order.** The 2026-11-09 no-movement lock is reversed for exactly this
+  surface by owner decision: sibling bottom-bar tabs slide in bar order — pure translation at the
+  policy-owned `TAB_SLIDE_DURATION_MILLIS` (300ms), direction from `MotionPolicy.tabSlideDirection`,
+  reduced motion collapses to instant, nested screens keep the fade-through, and every non-peer
+  pair keeps the crossfade. `MotionConsistencyTest`'s slide ban is replaced by a scoped
+  crossfade-purity assertion plus a directional policy test, and `TabPeerTransitionTest` regains
+  its direction tests.
+- **The reader→manga open path plays the boundary fade** (#341 residue):
+  `NavigatorImpl.openMangaScreen` applies the activity boundary fade pair after `startActivity`;
+  non-activity callers keep the platform default. On-device feel remains the owner's call
+  (A5/B-050).
+
 ### 🧭 Upstream alignment (plan)
 - **Adoption plan for Mihon v0.21.1** added at
   [`doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`](doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md). It maps
