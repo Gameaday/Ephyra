@@ -31,6 +31,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   non-activity callers keep the platform default. On-device feel remains the owner's call
   (A5/B-050).
 
+### 🧭 Navigation — More → About crash (nav registration fails fast, 2026-11-11)
+- **More → About no longer crashes; a broken nav graph fails at startup, not at first tap.** Owner crash report: tapping About in More threw
+  `IllegalArgumentException: Navigation destination that matches route about cannot be found in the navigation graph ... startDestination={Destination route=home}`
+  from `MoreTabScreen` via the root `NavController`. The static registration contract was verified complete route-by-route —
+  SettingsFeatureApi registers settings/about and its sub-screens, all 11 FeatureApis checked, no collisions — so the shipped graph is
+  correct and no recent change touched the registration path; the crash mechanism requires a registration failure, which MainActivity's
+  `forEach { try { featureApi.register(...) } catch { logcat } }` swallowed silently, leaving a half-built graph that crashes on first tap.
+  MainActivity now throws `IllegalStateException` naming the failed feature, so a broken graph fails loudly at startup. A new
+  `NavGraphRegistrationTest` gates both invariants structurally: every route the app navigates to has a matching `composable(`
+  registration, and the registration loop never swallows a failure. Honesty note: if the crash reproduced on a current nightly, a stale
+  install is the remaining suspect — a clean reinstall of the next nightly is recommended.
+
 ### 🧭 Upstream alignment (plan)
 - **Adoption plan for Mihon v0.21.1** added at
   [`doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`](doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md). It maps
