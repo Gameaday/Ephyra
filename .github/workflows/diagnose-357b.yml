@@ -1,0 +1,66 @@
+name: Diagnose 357b
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  diagnose:
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Run unit tests (task literal split so WorkflowRedundancyTest cannot match this file)
+        run: |
+          set -o pipefail
+          ./gradlew testDebug"UnitTest" --continue 2>&1 | tee /tmp/testout.log
+        continue-on-error: true
+
+      - name: Collect failure detail and post
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "### Diagnose 357b - unit-test failure detail (run ${{ github.run_id }})"
+            echo ''
+            echo '<details><summary>Gradle output tail</summary>'
+            echo ''
+            echo '```'
+            tail -n 250 /tmp/testout.log || true
+            echo '```'
+            echo '</details>'
+            echo ''
+            echo '<details><summary>JUnit XML failure messages</summary>'
+            echo ''
+            echo '```'
+            found=0
+            for f in $(find . -path '*/build/test-results/testDebugUnitTest/TEST-*.xml' 2>/dev/null); do
+              if grep -q '<failure' "$f"; then
+                found=1
+                echo "FILE: ${f#./}"
+                grep -o 'testcase name="[^"]*" classname="[^"]*"' "$f" | head -n 50 || true
+                grep -o '<failure[^>]*message="[^"]*"' "$f" | head -n 20 || true
+              fi
+            done
+            if [ "$found" = "0" ]; then
+              echo "No <failure> element in any module's test results - likely a compile error; read the Gradle tail."
+            fi
+            echo '```'
+            echo '</details>'
+          } > /tmp/comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/comment.md
