@@ -1,14 +1,19 @@
 name: Diagnose
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/diagnose.yml'
   workflow_dispatch:
     inputs:
       run_id:
         description: 'Run id whose test-report artifact to download'
-        required: true
+        required: false
       issue_number:
         description: 'Issue or PR number to post findings to'
-        required: true
+        required: false
 
 permissions:
   actions: read
@@ -18,21 +23,22 @@ permissions:
 jobs:
   diagnose:
     runs-on: 'ubuntu-24.04'
+    env:
+      RUN_ID: ${{ inputs.run_id || '42960233975' }}
+      ISSUE: ${{ inputs.issue_number || '351' }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Download and analyse test reports
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ inputs.run_id }}
-          ISSUE: ${{ inputs.issue_number }}
         run: |
           set -euo pipefail
+          echo "Analysing run $RUN_ID, posting to issue/PR $ISSUE"
           ART_ID=$(gh api "repos/Gameaday/Ephyra/actions/runs/$RUN_ID/artifacts" --jq '[.artifacts[] | select(.name | startswith("test-report"))][0].id')
           echo "Artifact id: $ART_ID"
           gh api "repos/Gameaday/Ephyra/actions/artifacts/$ART_ID/zip" > artifact.zip
           mkdir -p reports
           unzip -q artifact.zip -d reports
           {
-            echo "## Failing unit tests on run $RUN_ID (head ${{ github.sha }})"
+            echo "## Failing unit tests on run $RUN_ID (commit 70a7d7c)"
             echo
             found=0
             while IFS= read -r f; do
