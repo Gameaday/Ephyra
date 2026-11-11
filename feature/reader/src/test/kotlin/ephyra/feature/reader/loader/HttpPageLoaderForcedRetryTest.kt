@@ -291,8 +291,8 @@ class HttpPageLoaderForcedRetryTest {
             /** Bytes a decoder would reject — the HTML error page a source cached as an image. */
             val BAD_BYTES = "<html><body>rate limited</body></html>".toByteArray()
 
-            /** Bytes a decoder accepts, standing in for the recovered image. */
-            val GOOD_BYTES = byteArrayOf(0x89, 0x50, 0x4E, 0x47)
+            /** Bytes a decoder accepts, standing in for the recovered image. `0x89` needs an explicit `.toByte()`: 137 exceeds `Byte`'s signed range, so the constant conversion to `Byte` does not apply. */
+            val GOOD_BYTES = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
         }
     }
 
