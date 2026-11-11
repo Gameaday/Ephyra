@@ -321,13 +321,17 @@ class HistoryViewModelTest {
 
             historyFlow.emit(
                 listOf(
+                    // Same day for both reads: this test isolates the single-entry-group
+                    // rule (plain Item, not Series), so it must not also exercise the
+                    // day-header path — a second, later day would add its own header
+                    // (round 4 red: expected 3 rows, got 4, correctly).
                     seriesEntry(id = 1L, mangaId = 7L, readAt = day(2)),
-                    seriesEntry(id = 2L, mangaId = 9L, readAt = day(1)),
+                    seriesEntry(id = 2L, mangaId = 9L, readAt = day(2)),
                 ),
             )
 
             val list = requireNotNull(awaitItem().list) { "history must populate the list" }
-            assertEquals(3, list.size) // leading day header + two plain items
+            assertEquals(3, list.size) // one leading day header + two plain items
             assertTrue(list.drop(1).all { it is HistoryUiModel.Item })
             assertEquals(7L, (list[1] as HistoryUiModel.Item).item.mangaId)
             assertEquals(9L, (list[2] as HistoryUiModel.Item).item.mangaId)
