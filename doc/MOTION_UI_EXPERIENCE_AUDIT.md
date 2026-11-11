@@ -538,10 +538,14 @@ The owner's directive extended the same aesthetic verdict to them: they are the 
 and down and fading and zooming into the background" one layer below the boundary, and they make the
 app feel like it is loading slower rather than faster. The residue is resolved rather than kept:
 
-- **Tab peers crossfade.** The slide — kept by §10, recorded in §2's inventory as "order-aware 30%
-  slide + fade" — is a recorded reversal in `MOTION_NAVIGATION_CONTRACT.md`. Peer-ness survives as a
-  unit-tested boolean (`isTabPeerTransition`, `TabPeerTransitionTest`): peers crossfade, a nested
-  screen inside a tab keeps the fade-through.
+- **Tab peers slide in bar order (re-legalised 2026-11-11).** The owner's 2026-11-10 report — the
+  main hub still felt like elements flying rather than a book or tablet being navigated —
+  reversed the 2026-11-09 verdict for exactly this surface: sibling tab roots slide in bar order
+  (pure translation, 300ms, `MotionPolicy.tabSlideDirection`), reduced motion collapses to
+  instant, nested screens keep the fade-through, and every non-peer pair keeps the crossfade. The
+  reversal is recorded in `MOTION_NAVIGATION_CONTRACT.md`; peer-ness survives as a unit-tested
+  boolean (`isTabPeerTransition`, `TabPeerTransitionTest`, direction tests restored). The
+  2026-11-09 verdict stands everywhere else.
 - **The hierarchical fallback is the policy crossfade in both directions.** The shared-axis X
   renderings, the pop variants, the `SHARED_AXIS` container member and the asymmetric
   `HIERARCHICAL_*` durations are deleted; `MotionConsistencyTest`'s new rule

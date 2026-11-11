@@ -174,6 +174,17 @@ object MotionPolicy {
     const val CROSSFADE_DURATION_MILLIS: Int = 200
 
     /**
+     * Duration for a slide between two sibling tabs of the bottom bar.
+     *
+     * The owner's 2026-11-11 directive reverses the 2026-11-09 no-movement lock for exactly one
+     * surface: two tabs are siblings on one ordered axis, so a horizontal move between them reads
+     * as paging a book or tablet — the aesthetic the owner asked for — rather than as elements
+     * flying. Everywhere else the crossfade rule stands. One duration, owned here like the
+     * crossfade's, so the Compose rendering cannot drift from the policy.
+     */
+    const val TAB_SLIDE_DURATION_MILLIS: Int = 300
+
+    /**
      * The key both screens use for one manga's cover, so the library grid cell and the series
      * header agree on which element is shared.
      *
@@ -189,6 +200,19 @@ object MotionPolicy {
      * carries a shared element.
      */
     fun MotionRoutePair.usesSharedCover(): Boolean = this == MotionRoutePair.LIBRARY_SERIES
+
+    /**
+     * Which way a slide between two sibling tabs travels, as a Compose
+     * `slideInHorizontally`/`slideOutHorizontally` offset sign: `+1` when the target tab
+     * sits later in the bar (content enters from the right edge and exits left), `-1` when it
+     * sits earlier.
+     *
+     * Pure and index-based so the direction is derived from the same ordered list that builds the
+     * bar — the transition can never disagree with the order of the buttons the user taps. Equal
+     * indices cannot happen (a tab is never its own transition target) but the function still
+     * answers `-1` rather than inventing a third state.
+     */
+    fun tabSlideDirection(fromIndex: Int, toIndex: Int): Int = if (toIndex > fromIndex) 1 else -1
 
     /**
      * Builds the plan for [pair] travelling in [direction].

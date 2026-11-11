@@ -8,13 +8,13 @@
 |---|---|---|---|
 | Library ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
 | Any cover list ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
-| Tab peer | None | Crossfade | Back at a tab root exits to the system predictive back (no tab walk) |
+| Tab peer | None | Slide in bar order (300ms, pure translation) | Back at a tab root exits to the system predictive back (no tab walk) |
 | Hierarchical destination | Optional shared element | Policy crossfade (200ms), both directions | Same crossfade — no asymmetry without movement |
 | Activity destination (reader, WebView) | None | Pure-alpha window crossfade (theme fades, 200ms) | Same crossfade; gesture commits through finish() with a drag dim |
 | Compact pane → expanded pane | Optional item identity | Crossfade, both directions | Back gesture previews a drag dim, then commits to the same crossfade |
 | Sheet/dialog → parent | None | Component motion | Parent state |
 
-## Tab peers crossfade; the slide is a recorded reversal
+## Tab peers slide in bar order; the crossfade era is the recorded reversal
 
 **Slide era (2026-11-08 → 2026-11-09).** The five bottom-nav destinations were treated as ordered
 peers on one axis, so a tab change was a directional horizontal slide: direction came from each
@@ -24,15 +24,20 @@ read as a discrete screen — but it read as elements flying along the bar, and 
 audit (2026-11-09) rejected movement at this scale outright. Tab roots are destinations of equal
 rank; a slide implies an ordering the bar never promised.
 
-**Current rule.** A tab change is one crossfade between the five roots (`MotionTokens` crossfade
-tokens at the policy's duration). Peer-ness still decides *which* no-movement transition runs: two
-tab roots crossfade, while a nested screen reached inside a tab keeps the fade-through — it is not
-a peer of anything on the bar. The decision is a boolean (`isTabPeerTransition`), unit-tested in
-`TabPeerTransitionTest`: a wrong decision still animates, it just dissolves the wrong way, which is
-the class of defect that survives review. Back at a tab root hands the gesture to the system's
-predictive back and exits — the tab-history walk was removed by the owner's 2026-11-08 defect
-report, and no `BackHandler` is installed. Under reduced motion the crossfade collapses to an
-instant state change, like every other transition.
+**Current rule (third era, re-legalised 2026-11-11).** A tab change between sibling tabs is a
+slide in bar order: pure translation at `MotionTokens.TAB_SLIDE_DURATION_MILLIS` (300ms,
+policy-owned), the direction taken from `MotionPolicy.tabSlideDirection(from, to)` — the incoming
+page enters from the side of the tapped button, and back to an earlier tab is the same movement
+reversed. Sibling tabs read as pages of a book or tablet being navigated, which is the aesthetic
+the owner asked for when reversing the 2026-11-09 no-movement lock for exactly this surface; the
+crossfade era (2026-11-09 → 2026-11-11) is the recorded reversal between the two slide eras.
+Peer-ness still decides *which* transition runs: two tab roots slide, while a nested screen
+reached inside a tab keeps the fade-through — it is not a peer of anything on the bar. The
+decision is a boolean (`isTabPeerTransition`), unit-tested in `TabPeerTransitionTest`, which
+again asserts that direction follows bar order. Back at a tab root hands the gesture to the
+system's predictive back and exits — the tab-history walk was removed by the owner's
+2026-11-08 defect report, and no `BackHandler` is installed. Under reduced motion the slide
+collapses to an instant state change, like every other transition.
 
 ## A series is reachable from every list that shows its cover
 
