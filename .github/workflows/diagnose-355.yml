@@ -1,0 +1,52 @@
+name: Diagnose 355 spotless
+
+on:
+  push:
+    branches:
+      - fix/tab-back-and-slide-direction
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  spotless-diff:
+    name: Diagnose spotless diff
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Apply spotless and capture diff
+        run: |
+          ./gradlew spotlessApply --no-daemon
+          git diff --no-color > spotless.diff
+          if [ ! -s spotless.diff ]; then
+            echo 'spotlessApply produced no changes; the spotlessCheck failure is not a formatting diff.'
+          fi
+          head -c 48000 spotless.diff > spotless.head.diff
+          wc -c spotless.diff spotless.head.diff
+
+      - name: Post diff to the PR
+        run: |
+          {
+            printf '%s\n' '### Diagnose: spotlessApply diff (throwaway diagnose head - do not merge)'
+            printf '%s\n' '```diff'
+            cat spotless.head.diff
+            printf '%s\n' '```'
+            if [ $(wc -c < spotless.diff) -gt 48000 ]; then
+              printf '%s\n' 'Diff truncated at 48000 bytes; full size:' $(wc -c < spotless.diff)
+            fi
+          } > comment.md
+          gh pr comment 355 --body-file comment.md
+        env:
+          GH_TOKEN: ${{ github.token }}
