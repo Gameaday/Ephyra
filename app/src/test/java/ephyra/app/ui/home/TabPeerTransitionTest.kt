@@ -3,11 +3,11 @@ package ephyra.app.ui.home
 import ephyra.app.security.TrackedFileNames
 import ephyra.domain.navigation.motion.MotionPolicy
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.io.File
 
 /**
  * The main area slides between the five bottom-nav destinations in bar order and keeps the
