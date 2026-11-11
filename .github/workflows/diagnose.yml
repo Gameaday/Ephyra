@@ -28,34 +28,43 @@ jobs:
     steps:
       - name: Analyse failed job log
         run: |
-          set -euo pipefail
+          set -uo pipefail
           {
             echo "## Job log triage for run $RUN_ID (commit 70a7d7c)"
             echo
-            FAILED_JOB=$(gh api "repos/Gameaday/Ephyra/actions/runs/$RUN_ID/jobs?per_page=100" --jq '[.jobs[] | select(.conclusion == "failure")][0].id')
+            FAILED_JOB=$(gh api "repos/Gameaday/Ephyra/actions/runs/$RUN_ID/jobs?per_page=100" --jq '[.jobs[] | select(.conclusion == "failure")][0].id' || echo none)
             echo "Failed job id: $FAILED_JOB"
-            curl -sL -H "Authorization: Bearer $GH_TOKEN" \
-              "https://api.github.com/repos/Gameaday/Ephyra/actions/jobs/$FAILED_JOB/logs" > job.log
-            echo "Log bytes: $(wc -c < job.log)"
-            echo
-            echo "### First FAILURE context"
-            echo '```'
-            grep -n -m 5 -E 'FAILURE:|> Task .* FAILED|What went wrong|BUILD FAILED' job.log | cut -c1-400
-            echo '```'
-            echo
-            FIRST=$(grep -n -m 1 -E 'FAILURE:|BUILD FAILED' job.log | cut -d: -f1)
-            if [ -n "$FIRST" ]; then
-              START=$(( FIRST > 15 ? FIRST - 15 : 1 ))
-              echo "### Context (lines $START onward, 80 lines)"
+            if [ "$FAILED_JOB" != "none" ]; then
+              curl -sL -H "Authorization: Bearer $GH_TOKEN" \
+                "https://api.github.com/repos/Gameaday/Ephyra/actions/jobs/$FAILED_JOB/logs" -o job.log || true
+              echo "Log bytes: $(wc -c < job.log)"
+              tr -d '\000-\010\013\014\016-\037' < job.log > job_clean.log || true
+              echo
+              echo "### First FAILURE context"
               echo '```'
-              sed -n "${START},$(( FIRST + 60 ))p" job.log | tr -d '\000' | cut -c1-500
+              grep -n -m 5 -E 'FAILURE:|> Task .* FAILED|What went wrong|BUILD FAILED' job_clean.log | cut -c1-400 || echo "(no match)"
+              echo '```'
+              echo
+              FIRST=$(grep -n -m 1 -E 'FAILURE:|BUILD FAILED' job_clean.log | cut -d: -f1 || true)
+              if [ -n "$FIRST" ]; then
+                START=$(( FIRST > 15 ? FIRST - 15 : 1 ))
+                echo "### Context (lines $START onward, 80 lines)"
+                echo '```'
+                sed -n "${START},$(( FIRST + 60 ))p" job_clean.log | cut -c1-500
+                echo '```'
+              fi
+              echo
+              echo "### Gradle task failures"
+              echo '```'
+              grep -n -E '^> Task .*FAILED' job_clean.log | cut -c1-300 || echo "(none)"
+              echo '```'
+              echo
+              echo "### Log tail (last 1500 bytes, cleaned)"
+              echo '```'
+              tail -c 1500 job_clean.log
+              echo
               echo '```'
             fi
-            echo
-            echo "### Gradle task failures"
-            echo '```'
-            grep -n -E '^> Task .*FAILED' job.log | cut -c1-300
-            echo '```'
           } > summary.md
           gh api -X POST "repos/Gameaday/Ephyra/issues/$ISSUE/comments" -f body="$(cat summary.md)"
           echo "Posted."
