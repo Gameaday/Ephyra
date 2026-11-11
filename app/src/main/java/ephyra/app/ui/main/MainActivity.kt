@@ -522,13 +522,28 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                             )
                                         }
 
+                                        // **Registration is total — a failure here must not be
+                                        // swallowed.** This loop used to catch, log and continue, so a
+                                        // failing feature left the graph silently missing every
+                                        // destination it owns: the owner tapped More -> About
+                                        // (2026-11-11) and crashed with "Navigation destination that
+                                        // matches route about cannot be found in the navigation graph"
+                                        // — a registration-time defect surfacing as a random user tap,
+                                        // its real cause visible only in a logcat line nobody reads. A
+                                        // half-built graph cannot be repaired at runtime, so a failure
+                                        // now fails composition immediately and names the feature.
+                                        // `NavGraphRegistrationTest` holds the other half of the
+                                        // contract: every route the app navigates to is registered.
                                         featureApis.forEach { featureApi ->
                                             try {
                                                 featureApi.register(this, navController)
                                             } catch (e: Exception) {
-                                                logcat(LogPriority.ERROR, e) {
-                                                    "Failed to register feature: ${featureApi.javaClass.simpleName}"
-                                                }
+                                                throw IllegalStateException(
+                                                    "Failed to register navigation feature " +
+                                                        "${featureApi.javaClass.simpleName}; the graph " +
+                                                        "would silently miss its destinations",
+                                                    e,
+                                                )
                                             }
                                         }
                                     }
