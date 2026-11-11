@@ -22,7 +22,9 @@ tab's index in the bar, the incoming page entered from the side of the tapped bu
 earlier tab was the same movement reversed. It was argued for in good faith — a fade made each tab
 read as a discrete screen — but it read as elements flying along the bar, and the owner's motion
 audit (2026-11-09) rejected movement at this scale outright. Tab roots are destinations of equal
-rank;**Current rule (third era, re-legalised 2026-11-11).** A tab change between sibling tabs is a
+rank; a slide implies an ordering the bar never promised.
+
+**Current rule (third era, re-legalised 2026-11-11).** A tab change between sibling tabs is a
 slide in bar order: pure translation at `MotionTokens.TAB_SLIDE_DURATION_MILLIS` (300ms,
 policy-owned), the direction taken from `MotionPolicy.tabSlideDirection(from, to)` — the incoming
 page enters from the side of the tapped button, and back to an earlier tab is the same movement
