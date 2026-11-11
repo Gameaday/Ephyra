@@ -60,7 +60,7 @@ class HistoryExpandedChildrenTest {
 
         val out = listOf(series).withExpandedSeriesChildren(setOf(7L))
 
-        assertEquals(4, out.size)
+        assertEquals(3, out.size)
         assertEquals(series, out[0])
         val children = out.drop(1).map { it as HistoryUiModel.Item }
         // Most-recent-first, the repository order the group holds; the children are the
@@ -76,12 +76,11 @@ class HistoryExpandedChildrenTest {
 
         val out = listOf(expanded, collapsed).withExpandedSeriesChildren(setOf(7L))
 
-        // series 7 + its two children + series 9, still stacked.
-        assertEquals(4, out.size)
+        // series 7 + its one child + series 9, still stacked.
+        assertEquals(3, out.size)
         assertTrue(out[0] is HistoryUiModel.Series)
-        assertTrue(out[1] is HistoryUiModel.Item)
-        assertTrue(out[2] is HistoryUiModel.Item)
-        val second = out[3] as HistoryUiModel.Series
+        assertEquals(2L, (out[1] as HistoryUiModel.Item).item.id)
+        val second = out[2] as HistoryUiModel.Series
         assertEquals(9L, second.latest.mangaId)
         assertEquals(listOf(4L), second.older.map { it.id })
     }
