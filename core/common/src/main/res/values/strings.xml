@@ -1108,3 +1108,497 @@
     <string name="not_installed">Not installed</string>
 
     <!-- Crash screen -->
+    <string name="crash_screen_title">Whoops!</string>
+    <string name="crash_screen_description">%s ran into an unexpected error. We suggest you share
+        the crash logs in our support channel on Discord.
+    </string>
+    <string name="crash_screen_restart_application">Restart the application</string>
+
+    <!-- Stats screen -->
+    <string name="label_overview_section">Overview</string>
+    <string name="label_completed_titles">Completed entries</string>
+    <string name="label_read_duration">Read duration</string>
+    <string name="label_titles_section">Entries</string>
+    <string name="label_titles_in_global_update">In global update</string>
+    <string name="label_total_chapters">Total</string>
+    <string name="label_read_chapters">Read</string>
+    <string name="label_tracker_section">Trackers</string>
+    <string name="label_tracked_titles">Tracked entries</string>
+    <string name="label_mean_score">Mean score</string>
+    <string name="label_used">Used</string>
+    <string name="not_applicable">N/A</string>
+    <string name="day_short">%dd</string>
+    <string name="hour_short">%dh</string>
+    <string name="minute_short">%dm</string>
+    <string name="seconds_short">%ds</string>
+
+    <!-- Downloads activity and service -->
+    <string name="download_queue_error">Couldn\'t download chapters. You can try again in the
+        downloads section
+    </string>
+    <string name="download_insufficient_space">Couldn\'t download chapters due to low storage
+        space
+    </string>
+    <string name="download_queue_size_warning">Warning: large bulk downloads may lead to sources
+        becoming slower and/or blocking %s. Tap to learn more.
+    </string>
+
+    <!-- Library update service notifications -->
+    <string name="notification_updating_progress">Updating library… (%s)</string>
+    <string name="notification_size_warning">Large updates harm sources and may lead to slower
+        updates and also increased battery usage. Tap to learn more.
+    </string>
+    <string name="notification_new_chapters">New chapters found</string>
+    <string name="notification_chapters_single">Chapter %1$s</string>
+    <string name="notification_chapters_single_and_more">Chapter %1$s and %2$d more</string>
+    <string name="notification_chapters_multiple">Chapters %1$s</string>
+    <string name="notification_update_error">%1$d update(s) failed</string>
+    <string name="learn_more">Tap to learn more</string>
+    <string name="notification_cover_update_failed">Failed to update cover</string>
+    <string name="notification_first_add_to_library">Please add the entry to your library before
+        doing this
+    </string>
+    <string name="library_errors_help">For help on how to fix library update errors, see %1$s
+    </string>
+    <string name="skipped_reason_completed">Skipped because series is complete</string>
+    <string name="skipped_reason_not_caught_up">Skipped because there are unread chapters</string>
+    <string name="skipped_reason_not_started">Skipped because no chapters are read</string>
+    <string name="skipped_reason_not_always_update">Skipped because series does not require
+        updates
+    </string>
+    <string name="skipped_reason_not_in_release_period">Skipped because no release was expected
+        today
+    </string>
+
+    <!-- File Picker Titles -->
+    <string name="file_select_cover">Select cover image</string>
+    <string name="file_select_backup">Select backup file</string>
+    <string name="file_picker_error">No file picker app found</string>
+    <string name="file_picker_uri_permission_unsupported">Failed to acquire persistent folder
+        access. The app may behave unexpectedly.
+    </string>
+    <string name="file_null_uri_error">No file selected</string>
+
+    <!--UpdateCheck-->
+    <string name="update_check_confirm">Download</string>
+    <string name="update_check_open">Open on GitHub</string>
+    <!-- reserved for future use -->
+    <string name="update_check_eol">This Android version is no longer supported</string>
+    <string name="update_check_no_new_updates">No new updates available</string>
+
+    <!--UpdateCheck Notifications-->
+    <string name="update_check_notification_download_in_progress">Downloading…</string>
+    <string name="update_check_notification_download_complete">Tap to install update</string>
+    <string name="update_check_notification_download_error">Download error</string>
+    <string name="update_check_notification_update_available">New version available!</string>
+
+    <!-- Information Text -->
+    <string name="information_no_downloads">No downloads</string>
+    <string name="information_no_recent">No recent updates</string>
+    <string name="information_no_recent_manga">Nothing read recently</string>
+    <string name="information_empty_library">Your library is empty</string>
+    <string name="information_no_manga_category">Category is empty</string>
+    <string name="information_no_entries_found">No entries found in this category</string>
+    <string name="getting_started_guide">Getting started guide</string>
+    <string name="information_empty_category">You have no categories. Tap the plus button to create
+        one for organizing your library.
+    </string>
+    <string name="information_empty_category_dialog">You don\'t have any categories yet.</string>
+    <string name="information_cloudflare_bypass_failure">Failed to bypass Cloudflare</string>
+    <string name="information_cloudflare_help">Tap here for help with Cloudflare</string>
+    <string name="information_cloudflare_challenge">Cloudflare protection active. Open in WebView to verify.</string>
+    <string name="information_required_plain">*required</string>
+    <!-- Do not translate "WebView" -->
+    <string name="information_webview_required">WebView is required for the app to function</string>
+    <!-- Do not translate "WebView" -->
+    <string name="information_webview_outdated">Please update the WebView app for better
+        compatibility
+    </string>
+    <!-- Do not translate "WebView" -->
+    <string name="information_webview_crashed">WebView stopped working and the page was closed</string>
+    <string name="chapter_settings_updated">Updated default chapter settings</string>
+
+    <!-- Download Notification -->
+    <string name="download_notifier_downloader_title">Downloader</string>
+    <string name="download_notifier_title_error">Error</string>
+    <string name="download_notifier_unknown_error">Could not download chapter due to unexpected
+        error
+    </string>
+    <string name="download_notifier_text_only_wifi">No Wi-Fi connection available</string>
+    <string name="download_notifier_no_network">No network connection available</string>
+    <string name="download_notifier_download_paused">Downloads paused</string>
+    <string name="download_notifier_split_page_not_found">Page %d not found while splitting</string>
+    <string name="download_notifier_split_page_path_not_found">Couldn\'t find file path of page %d
+    </string>
+    <string name="download_notifier_cache_renewal">Checking downloads</string>
+
+    <!-- Notification channels -->
+    <string name="channel_common">Common</string>
+    <string name="channel_progress">Progress</string>
+    <string name="channel_complete">Complete</string>
+    <string name="channel_errors">Errors</string>
+    <string name="channel_new_chapters">Chapter updates</string>
+    <string name="channel_app_updates">App updates</string>
+    <string name="channel_ext_updates">Extension updates</string>
+
+    <!-- S Pen actions -->
+    <string name="spen_previous_page">Previous page</string>
+    <string name="spen_next_page">Next page</string>
+
+    <!-- App widget -->
+    <string name="appwidget_updates_description">See your recently updated library entries</string>
+    <string name="appwidget_unavailable_locked">Widget not available when app lock is enabled
+    </string>
+    <string name="remove_manga">You are about to remove \"%s\" from your library</string>
+
+    <!-- Common exceptions -->
+    <!-- Do not translate "WebView" -->
+    <string name="exception_http">HTTP %d, check website in WebView</string>
+    <string name="exception_offline">No Internet connection</string>
+    <string name="exception_unknown_host">Couldn\'t reach %s</string>
+
+    <!-- Notes screen -->
+    <string name="notes_placeholder">Enjoyed the part where…</string>
+
+    <string name="migrationConfigScreen.selectedHeader">Selected</string>
+    <string name="migrationConfigScreen.availableHeader">Available</string>
+    <string name="migrationConfigScreen.selectAllLabel">Select all</string>
+    <string name="migrationConfigScreen.selectNoneLabel">Select none</string>
+    <string name="migrationConfigScreen.selectEnabledLabel">Select enabled sources</string>
+    <string name="migrationConfigScreen.selectPinnedLabel">Select pinned sources</string>
+    <string name="migrationConfigScreen.continueButtonText">Continue</string>
+    <string name="migrationConfigScreen.dataToMigrateHeader">Data to migrate</string>
+    <string name="migrationConfigScreen.removeDownloadsTitle">Delete downloads of current entry
+        after migration
+    </string>
+    <string name="migrationConfigScreen.additionalSearchQueryLabel">Additional keywords (optional)
+    </string>
+    <string name="migrationConfigScreen.additionalSearchQuerySupportingText">Helps narrow down
+        search results by adding additional keywords
+    </string>
+    <string name="migrationConfigScreen.hideUnmatchedTitle">Hide entries without a match</string>
+    <string name="migrationConfigScreen.hideWithoutUpdatesTitle">Hide entries without newer
+        chapters
+    </string>
+    <string name="migrationConfigScreen.hideWithoutUpdatesSubtitle">Only show entry if the match has
+        additional chapters
+    </string>
+    <string name="migrationConfigScreen.enhancedOptionsWarning">These options are slow and dangerous
+        and may lead to restrictions from sources
+    </string>
+    <string name="migrationConfigScreen.deepSearchModeTitle">Advanced search mode</string>
+    <string name="migrationConfigScreen.deepSearchModeSubtitle">Breaks down the title into keywords
+        for a wider search
+    </string>
+    <string name="migrationConfigScreen.prioritizeByChaptersTitle">Match based on chapter number
+    </string>
+    <string name="migrationConfigScreen.prioritizeByChaptersSubtitle">If enabled, chooses the match
+        furthest ahead. Otherwise, picks the first match by source priority.
+    </string>
+    <string name="migrationListScreenTitle">Migration</string>
+    <string name="migrationListScreenTitleWithProgress">Migration (%1$d/%2$d)</string>
+    <string name="migrationListScreen.copyActionLabel">Copy</string>
+    <string name="migrationListScreen.migrateActionLabel">Migrate</string>
+    <string name="migrationListScreen.noMatchFoundText">No alternatives found</string>
+    <string name="migrationListScreen.latestChapterLabel">Latest: %1$s</string>
+    <string name="migrationListScreen.unknownLatestChapter">Unknown</string>
+    <string name="migrationListScreen.searchManuallyActionLabel">Search manually</string>
+    <string name="migrationListScreen.skipActionLabel">Don\'t migrate</string>
+    <string name="migrationListScreen.migrateNowActionLabel">Migrate now</string>
+    <string name="migrationListScreen.copyNowActionLabel">Copy now</string>
+    <string name="migrationListScreen.exitDialogTitle">Stop migrating?</string>
+    <string name="migrationListScreen.exitDialog.stopLabel">Stop</string>
+    <string name="migrationListScreen.exitDialog.cancelLabel">Cancel</string>
+    <string name="migrationListScreen.migrateDialog.copyLabel">Copy</string>
+    <string name="migrationListScreen.migrateDialog.migrateLabel">Migrate</string>
+    <string name="migrationListScreen.migrateDialog.cancelLabel">Cancel</string>
+    <string name="migrationListScreen.progressDialog.cancelLabel">Cancel</string>
+    <string name="migrationListScreen.matchWithoutChapterToast">No chapters found, this entry cannot
+        be used for migration
+    </string>
+    <!-- Source health status -->
+    <string name="source_health_degraded">Source may be degraded — fewer chapters than expected
+    </string>
+    <string name="source_health_dead">Source appears dead — no chapters found on last update
+    </string>
+    <!-- Source health notifications -->
+    <string name="notification_source_health_title">%d manga with source issues</string>
+    <string name="notification_dead_sources">🔴 %d manga with dead sources:</string>
+    <string name="notification_degraded_sources">🟡 %d manga with degraded sources:</string>
+
+    <!-- Migration suggestion notifications -->
+    <string name="notification_migration_suggestion_title">Sources still dead — consider migrating
+    </string>
+    <string name="notification_migration_suggestion_body">%d manga have had dead sources for 3+
+        days
+    </string>
+
+    <!-- Notification list formatting -->
+    <string name="notification_list_item">• %1$s (%2$s)</string>
+    <string name="notification_and_more">… and %d more</string>
+
+    <!-- Library health banner -->
+    <string name="library_health_banner_dead">%d dead</string>
+    <string name="library_health_banner_degraded">%d degraded</string>
+    <string name="library_health_banner_summary">Source issues:</string>
+
+    <!-- Migration match confidence -->
+    <string name="migration_match_confidence">%d%% match</string>
+    <string name="migration_exact_match">Exact match</string>
+    <string name="migration_fewer_chapters_warning">Fewer chapters (%1$d vs %2$d)</string>
+
+    <!-- Tracker import -->
+    <string name="tracker_import_title">Import from %s</string>
+    <string name="tracker_import_label">Import library from %s</string>
+    <string name="tracker_import_subtitle">Add your %s reading list to library with chapter
+        progress
+    </string>
+    <string name="tracker_import_loading">Importing from %s…</string>
+    <string name="tracker_import_confirm_body">This will add all manga from your %s reading list to
+        your library with chapter progress. Manga already in your library will be skipped.
+    </string>
+    <string name="tracker_import_success">Imported %1$d manga</string>
+    <string name="tracker_import_skipped">(%d already in library)</string>
+    <string name="tracker_import_error">Import failed: %s</string>
+    <string name="tracker_login_error">Login failed — check your credentials</string>
+    <string name="tracker_import_group_title">Import from tracker</string>
+    <string name="action_import">Import</string>
+
+    <!-- AutoTrackState entry labels for the tracking-on-mark-read preference -->
+    <string name="auto_track_always">Always</string>
+    <string name="auto_track_ask">Ask</string>
+    <string name="auto_track_never">Never</string>
+
+    <!-- Authority management (import + retroactive link in one section) -->
+    <string name="tracker_authority_group_title">Authority management</string>
+    <string name="pref_authority_order_title">Authority source order</string>
+    <string name="pref_authority_order_subtitle">Sources are checked in this order. Unavailable
+        sources are skipped.
+    </string>
+    <string name="pref_authority_not_available">Not logged in</string>
+    <string name="pref_content_source_priority_title">Content source priority</string>
+    <string name="pref_content_source_priority_subtitle">Choose which fields prefer your content
+        source over the authority source during metadata refresh. Locked fields are always
+        preserved.
+    </string>
+    <string name="source_priority_authority">Authority</string>
+    <string name="source_priority_content">Content source</string>
+    <string name="tracker_link_action">Link tracked manga</string>
+    <string name="tracker_link_subtitle">Set authority IDs for manga that already have trackers
+    </string>
+    <plurals name="tracker_link_success">
+        <item quantity="one">Linked %d manga to authority</item>
+        <item quantity="other">Linked %d manga to authority</item>
+    </plurals>
+    <string name="tracker_link_none">All tracked manga are already linked</string>
+    <string name="tracker_link_running">Linking…</string>
+
+    <!-- Discover tab (top-level, authority-first) -->
+    <string name="label_discover">Discover</string>
+    <string name="label_search">Search</string>
+    <string name="discover_search_hint">Search by title…</string>
+    <string name="discover_empty_state">Search to find manga and add to your library</string>
+    <string name="discover_no_trackers">Log in to a tracker in Settings → Tracking to search here
+    </string>
+    <string name="discover_add">Add to library</string>
+    <string name="discover_added">Already in library</string>
+    <string name="discover_find_source_title">Add a content source?</string>
+    <string name="discover_find_source_message">Would you like to find a content source for \"%s\"?
+        You can read chapters from a source, or keep tracking progress without one.
+    </string>
+    <string name="discover_find_source_searching">Searching installed sources…</string>
+    <string name="discover_find_source_found">Found sources matching \"%s\". Tap one to browse, or
+        search manually for more options.
+    </string>
+    <string name="discover_find_source_action">Search manually</string>
+    <plurals name="discover_find_source_chapters">
+        <item quantity="one">%d chapter</item>
+        <item quantity="other">%d chapters</item>
+    </plurals>
+    <string name="discover_find_source_no_chapters">No chapters</string>
+    <string name="discover_find_source_skip">Skip</string>
+    <string name="discover_login_for_more">Log in to more trackers for additional results</string>
+    <string name="discover_merge_title">Merge with existing?</string>
+    <string name="discover_merge_message">Your library already has entries matching \"%s\" without
+        canonical IDs. Tap one to link it, or skip to create a new entry.
+    </string>
+    <plurals name="discover_merge_chapters">
+        <item quantity="one">%d chapter</item>
+        <item quantity="other">%d chapters</item>
+    </plurals>
+    <string name="discover_merge_skip">Create new entry</string>
+    <string name="discover_detail_author">Author</string>
+    <string name="discover_detail_artist">Artist</string>
+    <string name="discover_detail_status">Status</string>
+    <string name="discover_detail_type">Type</string>
+    <string name="discover_detail_start_date">Start date</string>
+    <string name="discover_detail_chapters">Chapters</string>
+    <string name="discover_detail_alt_titles">Alternative titles</string>
+    <string name="discover_filter_all">All</string>
+    <string name="discover_filter_manga">Manga</string>
+    <string name="discover_filter_novel">Novel</string>
+    <plurals name="discover_result_count">
+        <item quantity="one">%d result</item>
+        <item quantity="other">%d results</item>
+    </plurals>
+    <plurals name="discover_result_count_filtered">
+        <item quantity="one">%1$d of %2$d result</item>
+        <item quantity="other">%1$d of %2$d results</item>
+    </plurals>
+    <string name="discover_search_error">Search failed — check your connection</string>
+    <string name="discover_retry">Retry</string>
+    <string name="tracker_match_all_action">Resolve all unlinked manga</string>
+    <string name="tracker_match_all_subtitle">Link from trackers and search canonical IDs for
+        remaining
+    </string>
+    <string name="tracker_match_all_running">Resolving…</string>
+    <string name="tracker_match_all_running_progress">Resolving… %1$d/%2$d</string>
+    <string name="tracker_match_all_running_subtitle">Searching trackers by name for each unlinked
+        manga…
+    </string>
+    <string name="tracker_match_all_started">Authority matching started — check notifications for
+        progress
+    </string>
+    <string name="tracker_match_all_complete_title">Authority matching complete</string>
+    <plurals name="tracker_match_all_result_detail">
+        <item quantity="one">Resolved %1$d manga: %2$d from trackers, %3$d from search (%4$d unmatched)</item>
+        <item quantity="other">Resolved %1$d manga: %2$d from trackers, %3$d from search (%4$d unmatched)</item>
+    </plurals>
+    <string name="tracker_match_all_none">All library manga already have canonical IDs</string>
+    <plurals name="tracker_match_all_no_matches_detail">
+        <item quantity="one">No matches found for %d unlinked manga — try adding tracker bindings or resolve manually</item>
+        <item quantity="other">No matches found for %d unlinked manga — try adding tracker bindings or resolve manually</item>
+    </plurals>
+    <string name="tracker_match_all_failed">Matching failed — check your connection and try again
+    </string>
+    <string name="channel_match_progress">Authority matching</string>
+    <string name="action_resolve_canonical">Link to authority</string>
+    <string name="manga_already_linked">This manga already has a canonical ID</string>
+    <string name="manga_linked_success">Linked to %s — metadata enriched from authority</string>
+    <string name="manga_linked_no_match">No canonical match found — try adding a tracker binding
+        first
+    </string>
+    <string name="manga_linked_error">Failed to search — check your connection and try again
+    </string>
+    <string name="no_tracker_for_linking">No tracker available for search — log in to MAL, AniList,
+        or MangaUpdates in Settings › Tracking
+    </string>
+    <string name="label_content_sources">Sources</string>
+
+    <!-- Accessibility content descriptions for source health -->
+    <string name="source_health_warning_dead">Warning: source is dead</string>
+    <string name="source_health_warning_degraded">Warning: source is degraded</string>
+    <string name="source_health_banner_description">Source health warning — tap to filter</string>
+
+    <!-- Dead duration formatting -->
+    <plurals name="source_dead_duration_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <string name="source_dead_duration_less_than_day">less than a day</string>
+
+    <!-- Authority linking -->
+    <string name="authority_badge_description">Linked to authority</string>
+    <string name="authority_linked_label">Authority</string>
+    <string name="authority_source_name">No content provider</string>
+
+    <!-- Authority match results screen -->
+    <string name="match_results_title">Authority Matching Results</string>
+    <plurals name="match_results_summary">
+        <item quantity="one">Resolved %1$d of %2$d manga</item>
+        <item quantity="other">Resolved %1$d of %2$d manga</item>
+    </plurals>
+    <string name="match_results_all_linked">All library manga are linked to an authority</string>
+    <string name="match_results_unlinked_header">Unlinked manga</string>
+    <string name="match_results_linked_header">Recently linked</string>
+    <plurals name="match_results_unlinked_count">
+        <item quantity="one">%d unlinked</item>
+        <item quantity="other">%d unlinked</item>
+    </plurals>
+    <string name="match_results_retry_single">Retry</string>
+    <string name="match_results_matching">Matching…</string>
+    <string name="match_results_no_match">No match found</string>
+    <string name="match_results_retry_all">Retry all unlinked</string>
+    <plurals name="match_results_count_manga">
+        <item quantity="one">%d manga</item>
+        <item quantity="other">%d manga</item>
+    </plurals>
+    <plurals name="match_results_count_novels">
+        <item quantity="one">%d novel</item>
+        <item quantity="other">%d novels</item>
+    </plurals>
+    <plurals name="match_results_count_other">
+        <item quantity="one">%d other</item>
+        <item quantity="other">%d other</item>
+    </plurals>
+    <string name="content_type_manga">Manga</string>
+    <string name="content_type_novel">Novel</string>
+    <string name="content_type_book">Book</string>
+
+    <!-- Metadata editing & field locking (Jellyfin-style) -->
+    <string name="edit_metadata_title">Edit metadata</string>
+    <string name="edit_metadata_subtitle">Edit fields and toggle locks. Locked fields are preserved
+        during authority refresh.
+    </string>
+    <string name="edit_metadata_identify">Identify</string>
+    <string name="edit_metadata_refresh">Refresh</string>
+    <string name="edit_metadata_section_basic">Basic info</string>
+    <string name="edit_metadata_section_details">Details</string>
+    <string name="edit_metadata_section_tags">Tags &amp; genres</string>
+    <string name="edit_metadata_linked_to">Linked to %s</string>
+    <string name="edit_metadata_unlink">Unlink</string>
+    <string name="locked_field_description">Description</string>
+    <string name="locked_field_author">Author</string>
+    <string name="locked_field_artist">Artist</string>
+    <string name="locked_field_status">Status</string>
+    <string name="locked_field_genre">Genre</string>
+    <string name="locked_field_title">Title</string>
+    <string name="locked_field_cover">Cover</string>
+    <string name="locked_field_content_type">Content type</string>
+    <string name="edit_metadata_add_genre">Add genre</string>
+    <string name="metadata_locks_lock_all">Lock all</string>
+    <string name="metadata_locks_unlock_all">Unlock all</string>
+    <string name="metadata_lock_field">Lock field</string>
+    <string name="metadata_unlock_field">Unlock field</string>
+    <string name="action_remove_genre">Remove %s</string>
+    <string name="action_add_genre">Add genre</string>
+    <string name="authority_locked_count">%d locked</string>
+    <string name="action_filter_content_type_manga">Manga only</string>
+
+    <!-- Jellyfin tracker -->
+    <string name="jellyfin_server_info">Server info</string>
+    <string name="pref_jellyfin_sync_enabled">Jellyfin bidirectional sync</string>
+    <string name="pref_jellyfin_sync_enabled_summary">Sync read progress and metadata edits with
+        Jellyfin server. Chapters read in the app are marked as played on the server, and metadata
+        edits are pushed back.
+    </string>
+    <string name="jellyfin_test_connection">Test connection</string>
+    <string name="jellyfin_test_connection_summary">Verify connectivity with the configured Jellyfin
+        server
+    </string>
+    <string name="jellyfin_test_success">Connected to %1$s (v%2$s)</string>
+    <string name="jellyfin_test_failed">Connection failed — check server URL and credentials
+    </string>
+    <string name="jellyfin_library">Jellyfin library</string>
+    <string name="jellyfin_library_all">All libraries</string>
+    <string name="jellyfin_library_selected">Library: %s</string>
+    <string name="jellyfin_user_selected">User: %s</string>
+    <string name="jellyfin_server_url">Server URL</string>
+    <string name="jellyfin_username">Username</string>
+    <string name="jellyfin_password">Password</string>
+    <string name="jellyfin_update_server_url">Update server address</string>
+    <string name="jellyfin_update_server_url_summary">Change the server URL when your Jellyfin
+        server moves to a new address. Existing tracking data is preserved.
+    </string>
+    <string name="jellyfin_server_updated">Server URL updated successfully</string>
+    <string name="jellyfin_server_mismatch">This is a different Jellyfin server — please log in
+        again
+    </string>
+    <string name="tracking_linked">Linked</string>
+
+    <!-- History: expander label under a stacked series group (PR #353). -->
+    <plurals name="history_series_more_chapters">
+        <item quantity="one">%1$d more chapter read</item>
+        <item quantity="other">%1$d more chapters read</item>
+    </plurals>
+</resources>
