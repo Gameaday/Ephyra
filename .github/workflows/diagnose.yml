@@ -32,30 +32,30 @@ jobs:
           {
             echo "## Job log triage for run $RUN_ID (commit 70a7d7c)"
             echo
-            JOBS_JSON=$(gh api "repos/Gameaday/Ephyra/actions/runs/$RUN_ID/jobs?per_page=100")
-            FAILED_JOB=$(echo "$JOBS_JSON" | jq -r '[.jobs[] | select(.conclusion == "failure")][0].id')
+            FAILED_JOB=$(gh api "repos/Gameaday/Ephyra/actions/runs/$RUN_ID/jobs?per_page=100" --jq '[.jobs[] | select(.conclusion == "failure")][0].id')
             echo "Failed job id: $FAILED_JOB"
-            gh api "repos/Gameaday/Ephyra/actions/jobs/$FAILED_JOB/logs" > job.log 2>job_err.log || echo "log download failed: $(cat job_err.log)"
-            if [ -s job.log ]; then
-              echo "### First FAILURE context"
+            curl -sL -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/Gameaday/Ephyra/actions/jobs/$FAILED_JOB/logs" > job.log
+            echo "Log bytes: $(wc -c < job.log)"
+            echo
+            echo "### First FAILURE context"
+            echo '```'
+            grep -n -m 5 -E 'FAILURE:|> Task .* FAILED|What went wrong|BUILD FAILED' job.log | cut -c1-400
+            echo '```'
+            echo
+            FIRST=$(grep -n -m 1 -E 'FAILURE:|BUILD FAILED' job.log | cut -d: -f1)
+            if [ -n "$FIRST" ]; then
+              START=$(( FIRST > 15 ? FIRST - 15 : 1 ))
+              echo "### Context (lines $START onward, 80 lines)"
               echo '```'
-              grep -n -m 5 -E 'FAILURE:|> Task .* FAILED|What went wrong|Caused by:|BUILD FAILED' job.log | sed -n '1,20p'
-              echo '```'
-              echo
-              FIRST=$(grep -n -m 1 -E 'FAILURE:|BUILD FAILED' job.log | cut -d: -f1)
-              if [ -n "$FIRST" ]; then
-                START=$(( FIRST > 15 ? FIRST - 15 : 1 ))
-                echo "### Context around first failure (lines $START-)"
-                echo '```'
-                sed -n "${START},$(( FIRST + 60 ))p" job.log | cut -c1-500
-                echo '```'
-              fi
-              echo
-              echo "### Gradle task failures"
-              echo '```'
-              grep -n -E '^> Task .*FAILED$' job.log | sed -n '1,20p'
+              sed -n "${START},$(( FIRST + 60 ))p" job.log | tr -d '\000' | cut -c1-500
               echo '```'
             fi
+            echo
+            echo "### Gradle task failures"
+            echo '```'
+            grep -n -E '^> Task .*FAILED' job.log | cut -c1-300
+            echo '```'
           } > summary.md
           gh api -X POST "repos/Gameaday/Ephyra/issues/$ISSUE/comments" -f body="$(cat summary.md)"
           echo "Posted."
