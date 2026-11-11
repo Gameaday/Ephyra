@@ -18,9 +18,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.Headers
+import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.ResponseBody
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -174,6 +177,12 @@ class HttpPageLoaderForcedRetryTest {
     /**
      * A source that hands back a complete page list — every page already carrying its resolved
      * image URL, the 1.6-extension shape — and counts the image requests it serves.
+     *
+     * The counting happens at [client], not at an overridden `getImage`: on this host `getImage`
+     * is a concrete, final convenience that pipes [imageRequest] through the real OkHttp client,
+     * so there is nothing to override. Overriding [client] with an interceptor-backed one is the
+     * seam the loader actually reaches — every `getImage` call passes through the interceptor,
+     * which counts the request and answers a canned 200 without touching a network.
      */
     private class CountingSource(pageCount: Int) : HttpSource() {
         override val baseUrl: String = "https://example.org"
@@ -184,25 +193,24 @@ class HttpPageLoaderForcedRetryTest {
         var getImageCalls: Int = 0
             private set
 
+        override val client: OkHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                getImageCalls++
+                Response.Builder()
+                    .code(200)
+                    .message("OK")
+                    .protocol(Protocol.HTTP_1_1)
+                    .request(chain.request())
+                    .body(ByteArray(0).toResponseBody(null))
+                    .build()
+            }
+            .build()
+
         private val pages = (0 until pageCount).map { index ->
             Page(index, "/data/${index + 1}.jpg", "https://img.example.com/data/${index + 1}.jpg")
         }
 
         override suspend fun getPageList(chapter: SChapter): List<Page> = pages
-
-        override suspend fun getImage(page: Page): Response {
-            getImageCalls++
-            return Response.Builder()
-                .code(200)
-                .message("OK")
-                .protocol(Protocol.HTTP_1_1)
-                .request(
-                    Request.Builder()
-                        .url(page.imageUrl ?: Fixtures.IMAGE_URL)
-                        .build(),
-                )
-                .build()
-        }
 
         override fun headersBuilder(): Headers.Builder = Headers.Builder()
 
