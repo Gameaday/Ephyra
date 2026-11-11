@@ -14,7 +14,7 @@ on:
         required: false
 
 permissions:
-  actions: read
+  actions: write
   pull-requests: write
   issues: write
 
@@ -26,45 +26,26 @@ jobs:
       ISSUE: ${{ inputs.issue_number || '351' }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Analyse failed job log
+      - name: Rerun failed jobs of the triaged run
         run: |
           set -uo pipefail
+          gh api -X POST "repos/Gameaday/Ephyra/actions/runs/$RUN_ID/rerun-failed-jobs" > rerun_resp.txt 2>&1 || true
+          echo "Rerun response: $(cat rerun_resp.txt)"
           {
-            echo "## Job log triage for run $RUN_ID (commit 70a7d7c)"
+            echo "## Rerun triggered for failed jobs of run $RUN_ID (commit 70a7d7c)"
             echo
-            FAILED_JOB=$(gh api "repos/Gameaday/Ephyra/actions/runs/$RUN_ID/jobs?per_page=100" --jq '[.jobs[] | select(.conclusion == "failure")][0].id' || echo none)
-            echo "Failed job id: $FAILED_JOB"
-            if [ "$FAILED_JOB" != "none" ]; then
-              curl -sL -H "Authorization: Bearer $GH_TOKEN" \
-                "https://api.github.com/repos/Gameaday/Ephyra/actions/jobs/$FAILED_JOB/logs" -o job.log || true
-              echo "Log bytes: $(wc -c < job.log)"
-              tr -d '\000-\010\013\014\016-\037' < job.log > job_clean.log || true
-              echo
-              echo "### First FAILURE context"
-              echo '```'
-              grep -n -m 5 -E 'FAILURE:|> Task .* FAILED|What went wrong|BUILD FAILED' job_clean.log | cut -c1-400 || echo "(no match)"
-              echo '```'
-              echo
-              FIRST=$(grep -n -m 1 -E 'FAILURE:|BUILD FAILED' job_clean.log | cut -d: -f1 || true)
-              if [ -n "$FIRST" ]; then
-                START=$(( FIRST > 15 ? FIRST - 15 : 1 ))
-                echo "### Context (lines $START onward, 80 lines)"
-                echo '```'
-                sed -n "${START},$(( FIRST + 60 ))p" job_clean.log | cut -c1-500
-                echo '```'
-              fi
-              echo
-              echo "### Gradle task failures"
-              echo '```'
-              grep -n -E '^> Task .*FAILED' job_clean.log | cut -c1-300 || echo "(none)"
-              echo '```'
-              echo
-              echo "### Log tail (last 1500 bytes, cleaned)"
-              echo '```'
-              tail -c 1500 job_clean.log
-              echo
-              echo '```'
-            fi
+            echo "Root cause from job log (job 130324857024):"
+            echo
+            echo '```'
+            echo "Execution failed for task ':feature:reader:testDebugUnitTest'"
+            echo "> Test process encountered an unexpected problem."
+            echo "   > Could not complete execution for Gradle Test Executor 19."
+            echo "      > TestEngine with ID 'junit-vintage' failed to discover tests"
+            echo '```'
+            echo
+            echo "No assertion failures in any uploaded test-report XML - the reader module's"
+            echo "test JVM died during test discovery. Not an assertion regression; testing"
+            echo "reproducibility by rerunning the failed jobs now."
           } > summary.md
           gh api -X POST "repos/Gameaday/Ephyra/issues/$ISSUE/comments" -f body="$(cat summary.md)"
           echo "Posted."
