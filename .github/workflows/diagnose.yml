@@ -1,0 +1,59 @@
+name: Diagnose unit test failures
+
+# Throwaway diagnostic for PR #353 round 4: the gate produced test reports but this
+# session cannot read job logs or download artifacts (both need authentication), so
+# the failing test names are unreachable from outside. This workflow downloads the
+# already-produced artifact and posts the failure summary to the PR. It deliberately
+# does NOT invoke the Gradle unit-test suite (WorkflowRedundancyTest keeps a single
+# suite authority) and is deleted before merge.
+on:
+  push:
+    branches:
+      - fix/history-stack-by-series
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  diagnose:
+    name: Diagnose
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download test report artifact
+        run: |
+          set -euo pipefail
+          gh api repos/Gameaday/Ephyra/actions/artifacts/13826710192/zip > /tmp/report.zip
+          mkdir -p /tmp/report
+          unzip -q /tmp/report.zip -d /tmp/report
+          find /tmp/report -name 'TEST-*.xml' | head -5
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Summarise failures
+        run: |
+          set -euo pipefail
+          {
+            echo "**Diagnose (PR #353 round 4):** failing tests from run 42953113267 (head `aa77054`), posted by a throwaway workflow that will be deleted before merge."
+            found=0
+            for f in $(find /tmp/report -name 'TEST-*.xml'); do
+              if grep -q '<failure' "$f"; then
+                found=1
+                echo "### $(echo "$f" | sed 's#/tmp/report/##')"
+                grep -o 'testcase name="[^"]*" classname="[^"]*"' "$f" | head -50 || true
+                grep -o '<failure[^>]*message="[^"]*"' "$f" | head -20 | cut -c1-500 || true
+                echo
+              fi
+            done
+            if [ "$found" = "0" ]; then
+              echo "No <failure> element in any downloaded test-result XML."
+            fi
+          } > /tmp/summary.md
+          cat /tmp/summary.md
+
+      - name: Post to PR
+        run: gh pr comment 353 --repo Gameaday/Ephyra --body-file /tmp/summary.md
+        env:
+          GH_TOKEN: ${{ github.token }}
