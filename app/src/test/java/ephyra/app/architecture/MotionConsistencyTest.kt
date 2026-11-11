@@ -51,6 +51,12 @@ import java.io.File
  * override — the unlock screen's zero-animation open, a privacy decision — is still named so a
  * sweep cannot delete it as "the last override" by mistake.
  *
+ * **The 2026-11-11 reversal.** The owner re-legalised exactly one movement: two sibling tabs of
+ * the bottom bar now slide in bar order — the "tablet or book being read and navigated"
+ * aesthetic — reversing defect (6)'s total no-movement rule for that one surface. Everywhere
+ * else the crossfade rule stands. The slide is re-pinned, not merely permitted: a policy-owned
+ * duration, a bar-order direction, pure translation, and a dedicated gate below.
+ *
  * These read the source, following the pattern established by `LibrarySeriesTransitionTest`: a
  * behavioural test would have to drive a transition nobody can drive in a unit test.
  */
@@ -101,6 +107,7 @@ class MotionConsistencyTest {
         "feature/history/src/main/kotlin/ephyra/feature/history/components/HistoryItem.kt"
     private val updatesUiItem =
         "feature/updates/src/main/kotlin/ephyra/feature/updates/UpdatesUiItem.kt"
+    private val homeScreen = "app/src/main/java/ephyra/app/ui/home/HomeScreen.kt"
 
     private val anim = "presentation-core/src/main/res/anim"
 
@@ -403,11 +410,12 @@ class MotionConsistencyTest {
     }
 
     /**
-     * The HIERARCHICAL pair is the policy crossfade, and no slide rendering of it exists to
-     * drift. The owner's motion audit (2026-11-09) removed the shared axis from ordinary
+     * The HIERARCHICAL pair is the policy crossfade, and no shared-axis rendering of it exists
+     * to drift. The owner's motion audit (2026-11-09) removed the shared axis from ordinary
      * navigation — a cross-screen slide reads as elements flying — so the fallback's rendering is
-     * the crossfade the boundary already plays, and any slide token that returns is a second
-     * definition of a transition the policy no longer assigns.
+     * the crossfade the boundary already plays. The sibling-tab slide is separately legal (the
+     * owner's 2026-11-11 reversal) and separately gated below; this rule pins the HIERARCHICAL
+     * plan and the crossfade rendering it actually plays.
      */
     @Test
     fun `the hierarchical fallback is the policy crossfade and has no slide rendering`() {
@@ -431,14 +439,63 @@ class MotionConsistencyTest {
                 "wrong transition waiting to be picked.",
         )
         assertFalse(
-            token.contains("m3TabSlide"),
-            "MotionTokens must not define a tab-slide rendering: tab peers crossfade, and an " +
-                "orphan slide function is the wrong transition waiting to be picked.",
+            token
+                .substringAfter("fun m3CrossfadeEnter")
+                .substringBefore("fun m3TabSlideEnter")
+                .contains("slideInHorizontally"),
+            "The policy crossfade must stay pure alpha: the slide primitive is legal only " +
+                "inside the sibling-tab tokens, and a slide that leaks into the crossfade " +
+                "returns the flying-screens motion to every ordinary navigation.",
+        )
+    }
+
+    /**
+     * The sibling-tab slide is policy-owned and directional. The owner's 2026-11-11 directive
+     * reversed the 2026-11-09 no-movement lock for exactly one surface — two sibling tabs on the
+     * bottom bar, read as pages of a book or tablet — so the re-legalised movement is re-pinned
+     * immediately: one policy-owned duration, a direction derived from bar order (the same
+     * ordered list that builds the bar), and a pure-translation rendering with no fade component.
+     */
+    @Test
+    fun `the sibling tab slide is policy owned and directional`() {
+        val policy = codeOf(motionPolicy)
+        Regex("""TAB_SLIDE_DURATION_MILLIS\s*:\s*Int\s*=\s*(\d+)""")
+            .find(policy)
+            ?.groupValues
+            ?.get(1)
+            ?: throw AssertionError(
+                "MotionPolicy must declare TAB_SLIDE_DURATION_MILLIS as a readable literal: the " +
+                    "slide's duration is a policy decision, not a number at the render site.",
+            )
+        assertTrue(
+            policy.contains("fun tabSlideDirection(fromIndex: Int, toIndex: Int): Int"),
+            "The slide direction must be a policy function of bar order, not a decision made " +
+                "at the render site: a local direction is how the transition ends up " +
+                "disagreeing with the order of the buttons the user taps.",
+        )
+
+        val token = codeOf(motion)
+        assertTrue(
+            token.contains("fun m3TabSlideEnter") && token.contains("fun m3TabSlideExit"),
+            "MotionTokens must render the sibling-tab slide as named enter/exit tokens.",
+        )
+        assertTrue(
+            token.contains("MotionPolicy.TAB_SLIDE_DURATION_MILLIS"),
+            "The slide tokens must run the policy's tab-slide duration, not their own literal.",
         )
         assertFalse(
-            token.contains("slideInHorizontally"),
-            "MotionTokens must not import a slide primitive: every token it renders is pure " +
-                "alpha or a no-op.",
+            token
+                .substringAfter("fun m3TabSlideEnter")
+                .substringBefore("fun m3FadeThroughEnter")
+                .contains("fade", ignoreCase = true),
+            "The sibling-tab slide must be pure translation: a fade component turns the page " +
+                "turn back into a dissolve, the motion the owner rejected.",
+        )
+
+        val home = codeOf(homeScreen)
+        assertTrue(
+            home.contains("MotionPolicy.tabSlideDirection("),
+            "HomeScreen must derive the slide direction from the policy's bar-order function.",
         )
     }
 

@@ -44,6 +44,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import ephyra.app.util.system.updaterEnabled
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.navigation.motion.MotionPolicy
 import ephyra.feature.browse.BrowseTabScreen
 import ephyra.feature.history.HistoryTabScreen
 import ephyra.feature.library.LibraryScreen
@@ -111,10 +112,10 @@ internal fun tabIndexOf(route: String?): Int = TAB_ROOT_ROUTES.indexOf(route)
 /**
  * Whether a transition runs between two tab roots — two peers on the tab axis.
  *
- * The owner's motion audit (2026-11-09) removed the tab slide: a horizontal move reads as
- * elements flying, the motion the audit rejected. Peer-ness still decides between the two
- * no-movement transitions that remain — peers crossfade, a nested screen reached inside a tab
- * is not a peer and keeps the fade-through — so the question stays a test, not a comment.
+ * The owner's directive (2026-11-11) reverses the 2026-11-09 no-movement lock for this one
+ * surface: two tabs are siblings on one ordered axis, so peers now slide in bar order — the
+ * "tablet or book being read and navigated" aesthetic — while a nested screen reached inside a
+ * tab is not a peer and keeps the fade-through. Peer-ness stays a test, not a comment.
  */
 internal fun isTabPeerTransition(fromRoute: String?, toRoute: String?): Boolean {
     val from = tabIndexOf(fromRoute)
@@ -247,11 +248,14 @@ fun HomeScreen(
                     .padding(contentPadding)
                     .consumeWindowInsets(contentPadding),
             ) {
-                // The five tabs are ordered peers, but a tab change crossfades rather than slides:
-                // the owner's motion audit (2026-11-09) rejected the horizontal slide as elements
-                // flying, the motion that made the app feel slower than it loads. Non-tab
-                // destinations (a nested screen reached inside a tab) keep the fade-through,
-                // since they are not peers on the tab axis.
+                // The five tabs are ordered siblings, and a tab change slides in bar order: the
+                // owner's directive (2026-11-11, reversing the 2026-11-09 no-movement audit)
+                // asked for the "tablet or book being read and navigated" aesthetic — a move
+                // between sibling pages, not elements flying, fading or zooming. The slide is
+                // pure translation at the policy's duration, its direction derived from the same
+                // ordered list that builds the bar. Non-tab destinations (a nested screen
+                // reached inside a tab) are not siblings on the tab axis and keep the
+                // fade-through.
                 val reducedMotion = LocalMotionPreference.current
                 NavHost(
                     navController = bottomNavController,
@@ -263,7 +267,12 @@ fun HomeScreen(
                         )
                         when {
                             reducedMotion -> EnterTransition.None
-                            tabPair -> MotionTokens.m3CrossfadeEnter()
+                            tabPair -> MotionTokens.m3TabSlideEnter(
+                                MotionPolicy.tabSlideDirection(
+                                    tabIndexOf(initialState.destination.route),
+                                    tabIndexOf(targetState.destination.route),
+                                ),
+                            )
                             else -> MotionTokens.m3FadeThroughEnter()
                         }
                     },
@@ -274,7 +283,12 @@ fun HomeScreen(
                         )
                         when {
                             reducedMotion -> ExitTransition.None
-                            tabPair -> MotionTokens.m3CrossfadeExit()
+                            tabPair -> MotionTokens.m3TabSlideExit(
+                                MotionPolicy.tabSlideDirection(
+                                    tabIndexOf(initialState.destination.route),
+                                    tabIndexOf(targetState.destination.route),
+                                ),
+                            )
                             else -> MotionTokens.m3FadeThroughExit()
                         }
                     },
@@ -285,7 +299,12 @@ fun HomeScreen(
                         )
                         when {
                             reducedMotion -> EnterTransition.None
-                            tabPair -> MotionTokens.m3CrossfadeEnter()
+                            tabPair -> MotionTokens.m3TabSlideEnter(
+                                MotionPolicy.tabSlideDirection(
+                                    tabIndexOf(targetState.destination.route),
+                                    tabIndexOf(initialState.destination.route),
+                                ),
+                            )
                             else -> MotionTokens.m3FadeThroughEnter()
                         }
                     },
@@ -296,7 +315,12 @@ fun HomeScreen(
                         )
                         when {
                             reducedMotion -> ExitTransition.None
-                            tabPair -> MotionTokens.m3CrossfadeExit()
+                            tabPair -> MotionTokens.m3TabSlideExit(
+                                MotionPolicy.tabSlideDirection(
+                                    tabIndexOf(targetState.destination.route),
+                                    tabIndexOf(initialState.destination.route),
+                                ),
+                            )
                             else -> MotionTokens.m3FadeThroughExit()
                         }
                     },

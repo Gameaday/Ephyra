@@ -8,6 +8,8 @@ import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import ephyra.domain.navigation.motion.ContainerMotion
 import ephyra.domain.navigation.motion.MotionPolicy
 
@@ -167,12 +169,38 @@ object MotionTokens {
         }
 
     /**
-     * Material 3 Fade Through enter transition for peer navigation (e.g. bottom nav tabs).
-     * Smoothly scales up from 96% with slight entry delay to let the departing screen clear.
+     * The sibling-tab slide: the one place the app still moves content horizontally, by owner
+     * directive (2026-11-11, reversing the 2026-11-09 no-movement lock for this one surface).
      *
-     * Retained as the fallback for route pairs that are not two peers on the tab axis (a nested
-     * screen reached inside a tab), where a horizontal slide would imply an ordering that does not
-     * exist.
+     * Two bottom-bar tabs are siblings on one ordered axis, so the move reads as paging a book or
+     * tablet — the aesthetic the owner asked for. Direction comes from
+     * [MotionPolicy.tabSlideDirection] (bar order), the duration from
+     * [MotionPolicy.TAB_SLIDE_DURATION_MILLIS]. Pure translation, no fade component: both screens
+     * hold full opacity so the move reads as a page turn rather than a dissolve.
+     */
+    fun m3TabSlideEnter(direction: Int): EnterTransition =
+        slideInHorizontally(
+            animationSpec = tween(
+                durationMillis = MotionPolicy.TAB_SLIDE_DURATION_MILLIS,
+                easing = EasingStandard,
+            ),
+        ) { fullWidth -> fullWidth * direction }
+
+    /** Matching outgoing half of [m3TabSlideEnter]: the departing tab leaves the way it came. */
+    fun m3TabSlideExit(direction: Int): ExitTransition =
+        slideOutHorizontally(
+            animationSpec = tween(
+                durationMillis = MotionPolicy.TAB_SLIDE_DURATION_MILLIS,
+                easing = EasingStandard,
+            ),
+        ) { fullWidth -> -fullWidth * direction }
+
+    /**
+     * Material 3 Fade Through enter transition for a nested screen reached inside a tab.
+     *
+     * Retained as the fallback for destinations that are not two siblings on the tab axis: a
+     * horizontal slide would imply an ordering between screens that have none. The sibling-tab
+     * slide above is the ordered case.
      */
     fun m3FadeThroughEnter(): EnterTransition =
         // Fade only. The scale-in this used to carry is an M2 leftover: scaling a whole page
