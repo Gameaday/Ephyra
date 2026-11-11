@@ -28,7 +28,7 @@ jobs:
           gh api repos/Gameaday/Ephyra/actions/artifacts/13826710192/zip > /tmp/report.zip
           mkdir -p /tmp/report
           unzip -q /tmp/report.zip -d /tmp/report
-          find /tmp/report -name 'TEST-*.xml' | head -5
+          echo "xml files: $(find /tmp/report -name 'TEST-*.xml' | wc -l)"
         env:
           GH_TOKEN: ${{ github.token }}
 
