@@ -29,6 +29,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -219,6 +220,117 @@ class HistoryViewModelTest {
             viewModel.onEvent(HistoryScreenEvent.GetNextChapterForManga(1L, 2L))
             val effect = awaitItem()
             assertEquals(HistoryViewModel.Effect.OpenChapter(mockChapter), effect)
+        }
+    }
+
+    // ── Stacked-by-series grouping (PR #345) ─────────────────────────────────
+
+    /**
+     * Separate builder from [historyEntry] (which pins `mangaId = 1L`) so multi-series tests
+     * can control the manga id without touching the existing helper's call sites.
+     */
+    private fun seriesEntry(id: Long, mangaId: Long, readAt: Date) =
+        historyEntry(id, readAt).copy(mangaId = mangaId)
+
+    /** Distinct calendar dates: a fixed base plus whole days, so day headers are stable. */
+    private fun day(offsetDays: Long) = Date(1_700_000_000_000L + offsetDays * 86_400_000L)
+
+    @Test
+    fun `multiple reads of one series stack into one group with latest first`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(backgroundScope)
+
+        viewModel.state.test {
+            assertNull(awaitItem().list)
+
+            historyFlow.emit(
+                listOf(
+                    seriesEntry(id = 3L, mangaId = 7L, readAt = day(3)),
+                    seriesEntry(id = 2L, mangaId = 7L, readAt = day(2)),
+                    seriesEntry(id = 1L, mangaId = 7L, readAt = day(1)),
+                ),
+            )
+
+            val list = requireNotNull(awaitItem().list) { "history must populate the list" }
+            val series = list.filterIsInstance<HistoryUiModel.Series>().single()
+            assertEquals(3L, series.latest.id)
+            assertEquals(listOf(2L, 1L), series.older.map { it.id })
+        }
+    }
+
+    @Test
+    fun `toggling a series reveals its older reads and toggling again hides them`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(backgroundScope)
+
+        viewModel.state.test {
+            assertNull(awaitItem().list)
+
+            historyFlow.emit(
+                listOf(
+                    seriesEntry(id = 2L, mangaId = 7L, readAt = day(2)),
+                    seriesEntry(id = 1L, mangaId = 7L, readAt = day(1)),
+                ),
+            )
+            val stacked = awaitItem().list!!.filterIsInstance<HistoryUiModel.Series>().single()
+            assertEquals(listOf(1L), stacked.older.map { it.id })
+
+            viewModel.onEvent(HistoryScreenEvent.ToggleSeriesExpanded(mangaId = 7L))
+            assertTrue(awaitItem().expandedSeriesIds.contains(7L))
+
+            viewModel.onEvent(HistoryScreenEvent.ToggleSeriesExpanded(mangaId = 7L))
+            assertTrue(awaitItem().expandedSeriesIds.isEmpty())
+        }
+    }
+
+    @Test
+    fun `groups stay ordered by most recent activity across interleaved series`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(backgroundScope)
+
+        viewModel.state.test {
+            assertNull(awaitItem().list)
+
+            historyFlow.emit(
+                listOf(
+                    seriesEntry(id = 1L, mangaId = 7L, readAt = day(3)),
+                    seriesEntry(id = 2L, mangaId = 9L, readAt = day(2)),
+                    seriesEntry(id = 3L, mangaId = 7L, readAt = day(1)),
+                    seriesEntry(id = 4L, mangaId = 9L, readAt = day(0)),
+                ),
+            )
+
+            val list = requireNotNull(awaitItem().list) { "history must populate the list" }
+            // A leading header for the newest day, then one group per series in
+            // most-recent-activity order, each headered by its own latest day.
+            assertEquals(4, list.size)
+            assertTrue(list[0] is HistoryUiModel.Header)
+            assertTrue(list[2] is HistoryUiModel.Header)
+            val first = list[1] as HistoryUiModel.Series
+            val second = list[3] as HistoryUiModel.Series
+            assertEquals(7L, first.latest.mangaId)
+            assertEquals(listOf(3L), first.older.map { it.id })
+            assertEquals(9L, second.latest.mangaId)
+            assertEquals(listOf(4L), second.older.map { it.id })
+        }
+    }
+
+    @Test
+    fun `single-read series stay plain items`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(backgroundScope)
+
+        viewModel.state.test {
+            assertNull(awaitItem().list)
+
+            historyFlow.emit(
+                listOf(
+                    seriesEntry(id = 1L, mangaId = 7L, readAt = day(2)),
+                    seriesEntry(id = 2L, mangaId = 9L, readAt = day(1)),
+                ),
+            )
+
+            val list = requireNotNull(awaitItem().list) { "history must populate the list" }
+            assertEquals(3, list.size) // leading day header + two plain items
+            assertTrue(list.drop(1).all { it is HistoryUiModel.Item })
+            assertEquals(7L, (list[1] as HistoryUiModel.Item).item.mangaId)
+            assertEquals(9L, (list[2] as HistoryUiModel.Item).item.mangaId)
         }
     }
 }

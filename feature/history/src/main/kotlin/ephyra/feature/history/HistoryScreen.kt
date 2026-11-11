@@ -1,20 +1,32 @@
 package ephyra.feature.history
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -34,6 +46,7 @@ import ephyra.presentation.core.components.ListGroupHeader
 import ephyra.presentation.core.components.SearchToolbar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.relativeDateText
+import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
@@ -58,6 +71,7 @@ fun HistoryScreen(
     onClickResume: (mangaId: Long, chapterId: Long) -> Unit,
     onClickFavorite: (mangaId: Long) -> Unit,
     onDialogChange: (HistoryViewModel.Dialog?) -> Unit,
+    onToggleSeries: (mangaId: Long) -> Unit,
     navigationCoordinator: NavigationCoordinator,
 ) {
     Scaffold(
@@ -101,10 +115,12 @@ fun HistoryScreen(
                 HistoryScreenContent(
                     history = it,
                     contentPadding = contentPadding,
+                    expandedSeriesIds = state.expandedSeriesIds,
                     onClickCover = { history -> onClickCover(history.mangaId) },
                     onClickResume = { history -> onClickResume(history.mangaId, history.chapterId) },
                     onClickDelete = { item -> onDialogChange(HistoryViewModel.Dialog.Delete(item)) },
                     onClickFavorite = { history -> onClickFavorite(history.mangaId) },
+                    onToggleSeries = onToggleSeries,
                 )
             }
         }
@@ -115,10 +131,12 @@ fun HistoryScreen(
 private fun HistoryScreenContent(
     history: List<HistoryUiModel>,
     contentPadding: PaddingValues,
+    expandedSeriesIds: Set<Long>,
     onClickCover: (HistoryWithRelations) -> Unit,
     onClickResume: (HistoryWithRelations) -> Unit,
     onClickDelete: (HistoryWithRelations) -> Unit,
     onClickFavorite: (HistoryWithRelations) -> Unit,
+    onToggleSeries: (mangaId: Long) -> Unit,
 ) {
     FastScrollLazyColumn(
         contentPadding = contentPadding,
@@ -129,12 +147,14 @@ private fun HistoryScreenContent(
                 when (it) {
                     is HistoryUiModel.Header -> "history-header-${it.date}"
                     is HistoryUiModel.Item -> "history-${it.item.id}"
+                    is HistoryUiModel.Series -> "history-series-${it.latest.mangaId}"
                 }
             },
             contentType = {
                 when (it) {
                     is HistoryUiModel.Header -> "header"
                     is HistoryUiModel.Item -> "item"
+                    is HistoryUiModel.Series -> "series"
                 }
             },
         ) { item ->
@@ -156,6 +176,59 @@ private fun HistoryScreenContent(
                         onClickFavorite = { onClickFavorite(value) },
                     )
                 }
+
+                is HistoryUiModel.Series -> {
+                    // The whole stack is one lazy item: the expanded children deliberately get
+                    // no keys of their own and no animateItemFastScroll (that modifier only
+                    // exists on the direct LazyItemScope receiver of the top-level item).
+                    Column(Modifier.animateItemFastScroll()) {
+                        HistoryItem(
+                            history = item.latest,
+                            onClickCover = { onClickCover(item.latest) },
+                            onClickResume = { onClickResume(item.latest) },
+                            onClickDelete = { onClickDelete(item.latest) },
+                            onClickFavorite = { onClickFavorite(item.latest) },
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onToggleSeries(item.latest.mangaId) }
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = if (item.latest.mangaId in expandedSeriesIds) {
+                                    Icons.Filled.ExpandLess
+                                } else {
+                                    Icons.Filled.ExpandMore
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = pluralStringResource(
+                                    ephyra.app.core.common.R.plurals.history_series_more_chapters,
+                                    item.older.size,
+                                    item.older.size,
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (item.latest.mangaId in expandedSeriesIds) {
+                            item.older.forEach { older ->
+                                HistoryItem(
+                                    history = older,
+                                    onClickCover = { onClickCover(older) },
+                                    onClickResume = { onClickResume(older) },
+                                    onClickDelete = { onClickDelete(older) },
+                                    onClickFavorite = { onClickFavorite(older) },
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -164,6 +237,16 @@ private fun HistoryScreenContent(
 sealed interface HistoryUiModel {
     data class Header(val date: LocalDate) : HistoryUiModel
     data class Item(val item: HistoryWithRelations) : HistoryUiModel
+
+    /**
+     * A series read more than once in the loaded window, stacked so reading 100 chapters of
+     * one series does not produce 100 rows. [latest] is the most recent read (rendered as the
+     * row); [older] are the remaining reads, newest-first, revealed by the expand toggle.
+     */
+    data class Series(
+        val latest: HistoryWithRelations,
+        val older: List<HistoryWithRelations>,
+    ) : HistoryUiModel
 }
 
 @Composable
@@ -190,6 +273,7 @@ fun HistoryTabScreen(
         },
         onDialogChange = { viewModel.onEvent(HistoryScreenEvent.SetDialog(it)) },
         onClickFavorite = { viewModel.onEvent(HistoryScreenEvent.AddFavoriteById(it)) },
+        onToggleSeries = { viewModel.onEvent(HistoryScreenEvent.ToggleSeriesExpanded(it)) },
         navigationCoordinator = navigationCoordinator,
     )
 
@@ -324,6 +408,7 @@ internal fun HistoryScreenPreviews(
             onClickResume = { _, _ -> run {} },
             onDialogChange = {},
             onClickFavorite = {},
+            onToggleSeries = {},
             navigationCoordinator = NavigationCoordinator(),
         )
     }

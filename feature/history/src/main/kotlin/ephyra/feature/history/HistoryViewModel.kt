@@ -30,13 +30,17 @@ import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.lang.searchResults
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -77,31 +81,60 @@ class HistoryViewModel @Inject constructor(
 
     init {
         (collectionScope ?: viewModelScope).launch {
-            state.map { it.searchQuery }
-                .searchResults(debounce = 0L) { query ->
-                    historyRepository.getHistory(query)
-                        .distinctUntilChanged()
-                        .catch { error ->
-                            logcat(LogPriority.ERROR, error)
-                            emitEffect(Effect.InternalError)
-                        }
-                        .map { it.toHistoryUiModels() }
-                }
+            combine(
+                state.map { it.searchQuery }
+                    .searchResults(debounce = 0L) { query ->
+                        historyRepository.getHistory(query)
+                            .distinctUntilChanged()
+                            .catch { error ->
+                                logcat(LogPriority.ERROR, error)
+                                emitEffect(Effect.InternalError)
+                            }
+                    },
+                // Expansion toggles re-derive the grouping from already-loaded entries; the
+                // repository is never re-queried for a presentational expand/collapse.
+                state.map { it.expandedSeriesIds }.distinctUntilChanged(),
+            ) { entries, expanded ->
+                entries.toHistoryUiModels(expanded)
+            }
                 .collect { newList -> updateState { it.copy(list = newList) } }
         }
     }
 
-    private fun List<HistoryWithRelations>.toHistoryUiModels(): List<HistoryUiModel> {
-        return map { HistoryUiModel.Item(it) }
-            .insertSeparators { before, after ->
-                val beforeDate = before?.item?.readAt?.time?.toLocalDate()
-                val afterDate = after?.item?.readAt?.time?.toLocalDate()
-                when {
-                    beforeDate != afterDate && afterDate != null -> HistoryUiModel.Header(afterDate)
-                    // Return null to avoid adding a separator between two items.
-                    else -> null
-                }
+    private fun List<HistoryWithRelations>.toHistoryUiModels(
+        expandedSeries: Set<Long>,
+    ): List<HistoryUiModel> {
+        // getHistory returns entries most-recent-first, so each manga group's first element is
+        // its latest read and the groups themselves stay in most-recent-activity order.
+        val topLevel = mutableListOf<HistoryUiModel>()
+        groupBy { it.mangaId }.values.forEach { entries ->
+            val latest = entries.first()
+            topLevel += if (entries.size == 1) {
+                HistoryUiModel.Item(latest)
+            } else {
+                HistoryUiModel.Series(latest = latest, older = entries.drop(1))
             }
+        }
+        return topLevel.insertSeparators { before, after ->
+            val beforeDate = before?.representativeReadAt()?.time?.toLocalDate()
+            val afterDate = after?.representativeReadAt()?.time?.toLocalDate()
+            when {
+                beforeDate != afterDate && afterDate != null -> HistoryUiModel.Header(afterDate)
+                // Return null to avoid adding a separator between two items.
+                else -> null
+            }
+        }
+    }
+
+    /**
+     * The read date a top-level entry is dated by for day headers. A stacked series is dated by
+     * its latest read; its older chapters may span earlier days, which is the intended
+     * trade-off — the group lives where the user last touched that series.
+     */
+    private fun HistoryUiModel.representativeReadAt(): Date? = when (this) {
+        is HistoryUiModel.Series -> latest.readAt
+        is HistoryUiModel.Item -> item.readAt
+        is HistoryUiModel.Header -> null
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -122,6 +155,7 @@ class HistoryViewModel @Inject constructor(
             is HistoryScreenEvent.ShowMigrateDialog -> showMigrateDialog(event.target, event.current)
             is HistoryScreenEvent.ShowChangeCategoryDialog -> showChangeCategoryDialog(event.manga)
             is HistoryScreenEvent.SetDialog -> setDialog(event.dialog)
+            is HistoryScreenEvent.ToggleSeriesExpanded -> toggleSeriesExpanded(event.mangaId)
         }
     }
 
@@ -175,6 +209,16 @@ class HistoryViewModel @Inject constructor(
 
     private fun setDialog(dialog: Dialog?) {
         updateState { it.copy(dialog = dialog) }
+    }
+
+    /** Toggles a stacked series group. Presentational only — no repository call. */
+    private fun toggleSeriesExpanded(mangaId: Long) {
+        updateState { current ->
+            val ids = current.expandedSeriesIds
+            current.copy(
+                expandedSeriesIds = if (mangaId in ids) ids.remove(mangaId) else ids.add(mangaId),
+            )
+        }
     }
 
     /**
@@ -282,6 +326,7 @@ class HistoryViewModel @Inject constructor(
         val searchQuery: String? = null,
         val list: List<HistoryUiModel>? = null,
         val dialog: Dialog? = null,
+        val expandedSeriesIds: PersistentSet<Long> = persistentSetOf(),
     )
 
     sealed interface Dialog {

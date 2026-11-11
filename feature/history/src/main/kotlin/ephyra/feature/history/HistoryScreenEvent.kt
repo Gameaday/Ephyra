@@ -49,4 +49,10 @@ sealed interface HistoryScreenEvent {
 
     /** Change (or dismiss) the active dialog. */
     data class SetDialog(val dialog: HistoryViewModel.Dialog?) : HistoryScreenEvent
+
+    /**
+     * User tapped the expand/collapse toggle on a stacked series group identified by [mangaId].
+     * Purely presentational: the grouping is re-derived from already-loaded entries (no refetch).
+     */
+    data class ToggleSeriesExpanded(val mangaId: Long) : HistoryScreenEvent
 }
