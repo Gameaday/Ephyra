@@ -1595,4 +1595,10 @@
         again
     </string>
     <string name="tracking_linked">Linked</string>
+
+    <!-- History: expander label under a stacked series group (PR #353). -->
+    <plurals name="history_series_more_chapters">
+        <item quantity="one">%1$d more chapter read</item>
+        <item quantity="other">%1$d more chapters read</item>
+    </plurals>
 </resources>

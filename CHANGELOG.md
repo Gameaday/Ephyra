@@ -126,6 +126,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   degrade a registration (`SourceAvailability`) instead of erasing the source from existence; and
   a new ownership gate fails the build if any component opens the preference directly again.
 
+### 🧭 History stacked by series (owner-reported 2026-11-10 — PR #353)
+- **The History tab stacks a series' reads behind one row instead of one row per chapter.** The
+  tab grouped by day only, so a series with ~100 read chapters cost ~100 scrolled-past rows
+  before older activity was reachable. `HistoryViewModel` now groups the repository's
+  most-recent-first history by `mangaId`: a group with a single read renders exactly as before
+  (a plain row), and a group with several renders its latest read with an expander
+  ("N more chapters read") that reveals the older reads in place — repository order is
+  most-recent-first, so a group's first member is its latest read and groups are ordered by
+  most recent activity. Day headers are derived from each top-level entry's representative read
+  (a group's latest read), so a series read across several days is filed under the day of its
+  most recent read. Expansion state lives in `State.expandedSeriesIds` (a `PersistentSet`) and
+  toggling re-derives the grouped list from the already-collected entries — no repository
+  refetch per toggle. Gated by four additive `HistoryViewModelTest` tests (stacking with
+  latest first, toggle reveal/collapse, most-recent-activity ordering across interleaved
+  series, single-read series stay plain items).
+
 ### 🧪 Page-Selection Test Race (owner follow-up 2026-11-10: post-merge main push flake — PR #344)
 
 - **The defect:** PR #343's suite passed all four checks twice on the branch, then main's post-merge push run went red at its Run unit tests step — `compare 57a25a2c...03f0ca5b` reports zero changed files, so the merge tree is byte-identical to the head that passed: a flake, not a merge defect. The racing assertion was `ReaderViewModelTest`'s "page selection records the rendered page identity in state": it read `state.value` immediately after `onEvent(PageSelected)`, while the write it awaited runs in `launchNonCancellable` = `launch(Dispatchers.IO)`. PR runners skip the Build-app step; push runners run `assembleRelease` immediately before the suite, and the extra load flips the race. The nightly workflow correctly refused at its Require-green-checks gate — no artifact was published from a red commit (disclosed on #343: issuecomment-6758335642; root cause and fix: this PR).
