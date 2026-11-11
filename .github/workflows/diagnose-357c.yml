@@ -1,0 +1,51 @@
+name: Diagnose 357c
+
+# Throwaway triage workflow (round 3, head 97c6674): job logs sit behind an
+# admin-only API wall, so this runs the unit-test suite with --continue and
+# posts the tail of the output to PR #357 as a comment. Deleted in the fix
+# commit, same as diagnose-357.yml / diagnose-357b.yml.
+
+on:
+  push:
+    branches:
+      - fix/retry-forces-past-cache
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  diagnose:
+    name: Diagnose unit test failures (throwaway)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run unit tests, capture output
+        run: |
+          ./gradlew --continue testDebug"UnitTest" --stacktrace > /tmp/diag.txt 2>&1 || true
+          tail -c 55000 /tmp/diag.txt > /tmp/diag-trim.txt
+
+      - name: Post output to PR 357
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Diagnose 357c (throwaway, deleted with the fix commit) - tail of ./gradlew --continue testDebugUnitTest --stacktrace on ${GITHUB_SHA}:"
+            echo
+            echo "```text"
+            cat /tmp/diag-trim.txt
+            echo "```"
+          } > /tmp/body.md
+          gh pr comment 357 --repo Gameaday/Ephyra --body-file /tmp/body.md
