@@ -253,8 +253,9 @@ class HttpPageLoaderForcedRetryTest {
 
     /**
      * A cache that already holds a (deliberately undecodable) entry for every image — the state a
-     * chapter is in when its bytes were stored by a bad pass. The fetch boundary counts calls and
-     * replaces the entry with fresh bytes, so a forced retry both re-downloads and recovers.
+     * chapter is in when its bytes were stored by a bad pass. The fetch boundary counts calls,
+     * invokes the fetch lambda the way the real cache does, and replaces the entry with fresh
+     * bytes, so a forced retry both re-downloads and recovers.
      */
     private class PreloadedImageCache(tempDir: Path, pageCount: Int) : ChapterCache {
         private val files = (0 until pageCount).map { index ->
@@ -275,6 +276,10 @@ class HttpPageLoaderForcedRetryTest {
 
         override suspend fun fetchAndCacheImage(imageUrl: String, fetchImage: suspend () -> Response) {
             fetchCalls++
+            // The real cache invokes the fetch lambda to obtain the bytes it stores; the
+            // fake must too, or the source behind the lambda is never exercised and the
+            // forced-retry wiring goes unproven.
+            fetchImage()
             // Serve the new bytes the way a real fetch would have written them.
             val index = fetchCalls - 1
             files[index.coerceAtMost(files.lastIndex)].writeBytes(GOOD_BYTES)
