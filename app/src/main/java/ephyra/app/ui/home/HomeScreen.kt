@@ -36,7 +36,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -165,6 +164,18 @@ fun HomeScreen(
     // path looked inconsistent with every other back in the app. No history is kept and no
     // `BackHandler` is installed; the structural test pins both absences so the walk does not
     // quietly return.
+    //
+    // **Amended on the owner's second defect report (2026-11-11): the exit only worked at the
+    // start tab.** Tab switching kept `Library` — the graph's start destination — beneath every
+    // other tab, so back from History or Updates still popped the tab stack and dropped the
+    // user into Library instead of leaving. Worse, that hop ran through the pop slots, which
+    // swapped the index order before asking for a slide direction, so the move animated
+    // backwards: the gesture previewed Library arriving from the far side, the opposite of
+    // every push between tabs. A tab switch now clears the stack (`popUpTo(0)` with
+    // `inclusive = true`, state still saved and restored), so no tab is ever beneath another:
+    // back at *every* tab root finds nothing to pop and hands the gesture to the system, and
+    // the pop slots ask for direction in bar order like every other slot — whichever slots
+    // fire, the slide follows the bar.
 
     LaunchedEffect(Unit) {
         HomeScreen.openTabEvent.collect { tab ->
@@ -176,7 +187,8 @@ fun HomeScreen(
                 is HomeScreen.Tab.More -> HomeTab.More
             }
             bottomNavController.navigate(homeTab.route) {
-                popUpTo(bottomNavController.graph.findStartDestination().id) {
+                popUpTo(0) {
+                    inclusive = true
                     saveState = true
                 }
                 launchSingleTop = true
@@ -301,8 +313,8 @@ fun HomeScreen(
                             reducedMotion -> EnterTransition.None
                             tabPair -> MotionTokens.m3TabSlideEnter(
                                 MotionPolicy.tabSlideDirection(
-                                    tabIndexOf(targetState.destination.route),
                                     tabIndexOf(initialState.destination.route),
+                                    tabIndexOf(targetState.destination.route),
                                 ),
                             )
                             else -> MotionTokens.m3FadeThroughEnter()
@@ -317,8 +329,8 @@ fun HomeScreen(
                             reducedMotion -> ExitTransition.None
                             tabPair -> MotionTokens.m3TabSlideExit(
                                 MotionPolicy.tabSlideDirection(
-                                    tabIndexOf(targetState.destination.route),
                                     tabIndexOf(initialState.destination.route),
+                                    tabIndexOf(targetState.destination.route),
                                 ),
                             )
                             else -> MotionTokens.m3FadeThroughExit()
@@ -366,7 +378,8 @@ private fun RowScope.HomeNavigationBarItem(
                 navigationCoordinator.triggerReselect(tab.route)
             } else {
                 navController.navigate(tab.route) {
-                    popUpTo(navController.graph.findStartDestination().id) {
+                    popUpTo(0) {
+                        inclusive = true
                         saveState = true
                     }
                     launchSingleTop = true
@@ -406,7 +419,8 @@ private fun HomeNavigationRailItem(
                 navigationCoordinator.triggerReselect(tab.route)
             } else {
                 navController.navigate(tab.route) {
-                    popUpTo(navController.graph.findStartDestination().id) {
+                    popUpTo(0) {
+                        inclusive = true
                         saveState = true
                     }
                     launchSingleTop = true

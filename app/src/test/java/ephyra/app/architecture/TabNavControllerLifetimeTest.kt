@@ -99,7 +99,7 @@ class TabNavControllerLifetimeTest {
         // a tab-slide animation the predictive-back hand-off never previews. The earlier rule
         // asserted the walk existed; it encoded the defect as a contract. Back at a peer
         // destination now exits to the system, per Android's top-level guidance; each tab's
-        // state survives through the tab strip's popUpTo/saveState/restoreState, not a history.
+        // state survives through the tab strip's saveState/restoreState, not a history.
         assertTrue(
             !text.contains("BackHandler"),
             "HomeScreen must not intercept back at the tab shell: the tab-history walk hopped " +
@@ -112,6 +112,24 @@ class TabNavControllerLifetimeTest {
                 "the $token machinery of the removed back walk must not come back with it",
             )
         }
+
+        // **Amended on the owner's second defect report (2026-11-11).** The exit above only held
+        // at the start tab: tab switching left `Library` - the graph's start destination -
+        // beneath every other tab, so back from History or Updates popped the tab stack and
+        // dropped the user into Library - the very hop this test is named after - through pop
+        // slots that also inverted the slide. Every tab-switch site must clear the stack, so no
+        // tab is ever beneath another and the gesture reaches the system from every tab root.
+        assertTrue(
+            Regex("popUpTo\\(0\\)").containsMatchIn(text),
+            "Tab switching must clear the tab stack (popUpTo(0)): with the start destination left " +
+                "beneath every other tab, back from a non-start tab popped the stack and dropped " +
+                "the user into Library instead of leaving through the system hand-off.",
+        )
+        assertTrue(
+            Regex("inclusive = true").findAll(text).count() >= 3,
+            "All three tab-switch sites - the openTab event, the bar item and the rail item - must " +
+                "clear the stack inclusively; one site left behind reintroduces the hop from that tab.",
+        )
     }
 
     @Test
