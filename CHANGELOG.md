@@ -43,6 +43,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   registration, and the registration loop never swallows a failure. Honesty note: if the crash reproduced on a current nightly, a stale
   install is the remaining suspect — a clean reinstall of the next nightly is recommended.
 
+### 📚 Reader — user Retry forces a re-download past the cached entry (page-retrieval error reduction vs Mihon, 2026-11-11)
+- **Retry after a decode failure now recovers instead of repeating the failure verbatim.** A page can
+  fail *after* its bytes were cached — a source that answered 200 with an HTML error page, or a
+  truncated entry written by an older build — and the viewer showed its error view with a Retry
+  button. Before this change the retry re-queued the page, the reload found the bad entry still in
+  the cache, skipped the download, handed out the identical bytes, and the page failed identically —
+  forever, because the recovery ladder only runs for a page that is not `Ready`. The user's Retry was
+  a verbatim repeat of a failure they cannot get out of — the reader-side twin of `DEF-023`'s
+  "even after retry".
+- **Mihon parity, with the counterweight kept:** upstream's `retryPage` passes `force = true` to
+  `internalLoadPage`, so a user retry re-downloads past the cache. Ephyra's `retryPage` now enqueues
+  `PriorityPage(forceDownload = true)`, the worker carries it into `internalLoadPage`, and the cache
+  check becomes `forceDownload || !isImageInCache(...)`. The automatic paths — the preload enqueues
+  and the eviction reload — stay unforced: nobody asked them to spend the user's bandwidth
+  re-fetching bytes that were never implicated.
+- **Gated by `HttpPageLoaderForcedRetryTest`:** the forced retry re-fetches at the source seam (the
+  source is counted at the `client` interceptor — the repo's `HttpSource.getImage` is concrete/final,
+  so the seam is the open `client` it pipes through) with the URL preserved (a forced retry re-fetches
+  bytes, not a new address), and an automatic load of a fully-cached chapter never touches the
+  network — without that second assertion, a fix that forced *every* load would pass the first and
+  silently double the app's traffic. Honesty: no JDK locally; remote CI is the verification channel;
+  no device evidence claimed (A5/B-050).
 ### 🧭 Upstream alignment (plan)
 - **Adoption plan for Mihon v0.21.1** added at
   [`doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`](doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md). It maps
