@@ -5,6 +5,7 @@ import ephyra.domain.manga.model.MangaCover
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 import java.util.Date
 
 /**
@@ -35,6 +36,9 @@ class HistoryExpandedChildrenTest {
 
     private fun day(offsetDays: Long) = Date(1_700_000_000_000L + offsetDays * 86_400_000L)
 
+    /** [HistoryUiModel.Header] carries a [LocalDate], not the reads' [Date] timestamp. */
+    private fun headerDay(offsetDays: Long) = LocalDate.ofEpochDay(19_000L + offsetDays)
+
     /** A stacked group: [ids]' first entry is the latest read, the rest are older. */
     private fun stacked(mangaId: Long, vararg ids: Long) = HistoryUiModel.Series(
         latest = entry(ids.first(), mangaId, day(3)),
@@ -44,7 +48,7 @@ class HistoryExpandedChildrenTest {
     @Test
     fun `collapsed series pass through unchanged`() {
         val list = listOf(
-            HistoryUiModel.Header(day(3)),
+            HistoryUiModel.Header(headerDay(3)),
             stacked(mangaId = 7L, 3L, 2L, 1L),
         )
         assertEquals(list, list.withExpandedSeriesChildren(emptySet()))
@@ -85,9 +89,9 @@ class HistoryExpandedChildrenTest {
     @Test
     fun `headers keep their position and expanded children file under their series`() {
         val list = listOf(
-            HistoryUiModel.Header(day(3)),
+            HistoryUiModel.Header(headerDay(3)),
             stacked(mangaId = 7L, 3L, 2L),
-            HistoryUiModel.Header(day(1)),
+            HistoryUiModel.Header(headerDay(1)),
             HistoryUiModel.Item(entry(9L, mangaId = 9L, readAt = day(1))),
         )
 
