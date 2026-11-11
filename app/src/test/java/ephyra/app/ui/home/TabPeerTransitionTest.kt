@@ -1,7 +1,9 @@
 package ephyra.app.ui.home
 
+import ephyra.app.security.TrackedFileNames
 import ephyra.domain.navigation.motion.MotionPolicy
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -61,4 +63,31 @@ class TabPeerTransitionTest {
         assertEquals(1, MotionPolicy.tabSlideDirection(tabIndexOf(updates), tabIndexOf(browse)))
         assertEquals(-1, MotionPolicy.tabSlideDirection(tabIndexOf(browse), tabIndexOf(updates)))
     }
+
+    @Test
+    fun `a pop between tab peers does not reverse the slide`() {
+        // The pop slots once swapped the index order before asking for a direction, which
+        // inverted exactly one family of moves: into Library, the start destination, whose
+        // transitions fired as pops. The owner's defect report (2026-11-11) described it
+        // precisely - the slide to Library ran the wrong way while every other tab pair read
+        // correctly. Peers have no hierarchy to reverse: whichever slots fire, the direction
+        // is bar order.
+        val home = sourceFile("app/src/main/java/ephyra/app/ui/home/HomeScreen.kt")
+        val code = codeOf(home)
+        val swapped = Regex(
+            "tabIndexOf\\(targetState\\.destination\\.route\\),\\s*\\n\\s*tabIndexOf\\(initialState\\.destination\\.route\\),",
+        )
+        assertFalse(
+            swapped.containsMatchIn(code),
+            "A tab NavHost slot must not re-derive the slide direction from swapped indices: " +
+                "peers slide in bar order whether the transition is a push or a pop.",
+        )
+    }
+
+    private fun sourceFile(relative: String): File = File(TrackedFileNames.repositoryRoot(), relative)
+
+    /** Source with comments removed, so prose describing a rule cannot satisfy or trip it. */
+    private fun codeOf(file: File): String = file.readText()
+        .replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
+        .replace(Regex("//.*"), "")
 }
