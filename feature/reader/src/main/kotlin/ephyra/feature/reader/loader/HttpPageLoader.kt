@@ -676,8 +676,10 @@ internal class HttpPageLoader(
         val recovery = PageLoadRecovery()
         while (true) {
             try {
-                // Yield to a higher-priority page before starting the URL fetch.
-                if (requeueAndYield(page, priority)) return
+                // Yield to a higher-priority page before starting the URL fetch. The force flag
+                // rides along: a forced retry that yields must come back forced, or the yield
+                // reintroduces the identical-bytes failure it was queued to escape.
+                if (requeueAndYield(page, priority, forceDownload)) return
 
                 // Clear the previous attempt's progress. `Page.progress` is written by
                 // `ProgressListener` as bytes arrive and is not reset anywhere on this path, so a
