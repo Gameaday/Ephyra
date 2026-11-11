@@ -223,7 +223,7 @@ class HistoryViewModelTest {
         }
     }
 
-    // ── Stacked-by-series grouping (PR #345) ─────────────────────────────────
+    // ── Stacked-by-series grouping (PR #353) ─────────────────────────────────
 
     /**
      * Separate builder from [historyEntry] (which pins `mangaId = 1L`) so multi-series tests
