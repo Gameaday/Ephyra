@@ -8,7 +8,7 @@
 |---|---|---|---|
 | Library ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
 | Any cover list ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
-| Tab peer | None | Slide in bar order (300ms, pure translation) | Back at a tab root exits to the system predictive back (no tab walk) |
+| Tab peer | None | Slide in bar order (300ms, pure translation) | Back at a tab root exits to the system predictive back (no tab walk) — at every tab root, not just the start destination (#355) |
 | Hierarchical destination | Optional shared element | Policy crossfade (200ms), both directions | Same crossfade — no asymmetry without movement |
 | Activity destination (reader, WebView) | None | Pure-alpha window crossfade (theme fades, 200ms) | Same crossfade; gesture commits through finish() with a drag dim |
 | Compact pane → expanded pane | Optional item identity | Crossfade, both directions | Back gesture previews a drag dim, then commits to the same crossfade |
@@ -38,6 +38,16 @@ again asserts that direction follows bar order. Back at a tab root hands the ges
 system's predictive back and exits — the tab-history walk was removed by the owner's
 2026-11-08 defect report, and no `BackHandler` is installed. Under reduced motion the slide
 collapses to an instant state change, like every other transition.
+
+**Amended on the owner's second defect report (2026-11-11, PR #355).** The exit only held at the
+start destination: tab switches used `popUpTo(start)` non-inclusive, so Library sat beneath
+every other tab, and back from History, Updates, Browse or More walked the stack into Library
+under the system's predictive-back preview — while the pop slots swapped their index
+arguments, so the slide ran backwards on arrival. Every tab-switch site now pops to an empty
+stack (`popUpTo(0) { inclusive = true; saveState = true }`) and the pop slots read in bar
+order, so back at any tab root exits to the system and a pop between peers slides in bar
+order, like the forward move reversed. This is a deliberate divergence from Mihon, which keeps
+a back-to-previous-tab walk at non-start tabs.
 
 ## A series is reachable from every list that shows its cover
 

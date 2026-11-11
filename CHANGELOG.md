@@ -15,6 +15,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   pair keeps the crossfade. `MotionConsistencyTest`'s slide ban is replaced by a scoped
   crossfade-purity assertion plus a directional policy test, and `TabPeerTransitionTest` regains
   its direction tests.
+- **Back exits from every tab root; pop transitions slide in bar order.** The owner's
+  2026-11-11 second defect report: back from a non-start tab (History, Updates, Browse, More)
+  still played the system predictive-back preview and dropped into Library, with the slide
+  running backwards on arrival. Root cause: tab switches used
+  `popUpTo(start destination)` non-inclusive, so Library sat beneath every other tab and every
+  move into it fired as a pop, while the pop slots swapped their `tabIndexOf` arguments before
+  asking `MotionPolicy.tabSlideDirection`. All three tab-switch sites now use
+  `popUpTo(0) { inclusive = true; saveState = true }` and the pop slots read in bar order.
+  Deliberate divergence from Mihon, which keeps a back-to-previous-tab walk at non-start tabs.
+  Gated by the amended `TabNavControllerLifetimeTest` and a new `TabPeerTransitionTest` rule
+  that forbids the swapped pop-slot adjacency.
 - **The reader→manga open path plays the boundary fade** (#341 residue):
   `NavigatorImpl.openMangaScreen` applies the activity boundary fade pair after `startActivity`;
   non-activity callers keep the platform default. On-device feel remains the owner's call

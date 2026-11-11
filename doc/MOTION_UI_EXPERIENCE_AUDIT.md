@@ -546,6 +546,14 @@ app feel like it is loading slower rather than faster. The residue is resolved r
   reversal is recorded in `MOTION_NAVIGATION_CONTRACT.md`; peer-ness survives as a unit-tested
   boolean (`isTabPeerTransition`, `TabPeerTransitionTest`, direction tests restored). The
   2026-11-09 verdict stands everywhere else.
+- **Back exits from every tab root; pops slide in bar order (2026-11-11, PR #355).** The
+  owner's second report on the shipped slide: back from a non-start tab still triggered the
+  system predictive-back preview and dropped into Library, with the slide running backwards on
+  arrival — the same confusing behaviour at History, Updates, Browse and More alike. Cause and
+  fix are recorded in the contract: Library sat beneath the stack (`popUpTo(start)`
+  non-inclusive) and the pop slots swapped their direction arguments; all three switch sites
+  now pop to an empty stack with saved state and the pop slots read in bar order. Back at the
+  Library root still exits the app through the system predictive back, unchanged and accepted.
 - **The hierarchical fallback is the policy crossfade in both directions.** The shared-axis X
   renderings, the pop variants, the `SHARED_AXIS` container member and the asymmetric
   `HIERARCHICAL_*` durations are deleted; `MotionConsistencyTest`'s new rule
