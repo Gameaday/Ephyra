@@ -1,0 +1,46 @@
+# Throwaway artifact-triage workflow (temp branch, deleted after use).
+# Downloads the test-report artifact from the failed round-2 run and comments
+# the failing test names on PR #359. Runs NO tests and NO gradle build.
+name: Triage 359 round 2
+on:
+  push:
+    branches: [triage/359-r2]
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: write
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract failing tests from round-2 test report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd "$(mktemp -d)"
+          gh api repos/Gameaday/Ephyra/actions/artifacts/13904992018/zip > artifact.zip
+          unzip -q artifact.zip
+          {
+            echo "### Round-2 failing tests (from run 43130134829 test-report artifact)"
+            echo
+            found=0
+            for f in $(find . -name '*.xml' | sort); do
+              if grep -q '<failure' "$f"; then
+                found=1
+                echo "FILE: $f"
+                python3 - "$f" <<'EOF'
+import sys, xml.etree.ElementTree as ET
+t = ET.parse(sys.argv[1])
+for tc in t.iter('testcase'):
+    for fail in tc.findall('failure'):
+        msg = (fail.get('message') or '')[:400]
+        print(f"- {tc.get('classname')}.{tc.get('name')}")
+        print(f"  {msg}")
+EOF
+              fi
+            done
+            if [ "$found" -eq 0 ]; then echo "No <failure> elements found in any XML."; fi
+          } > diag.md
+          gh pr comment 359 --repo Gameaday/Ephyra --body-file diag.md
