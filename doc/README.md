@@ -34,6 +34,7 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
 | [`READER_ARCHITECTURE.md`](READER_ARCHITECTURE.md) | Reader session/state/resource contract. | Update with reader architecture changes. |
 | [`READER_GESTURE_CONTRACT.md`](READER_GESTURE_CONTRACT.md) | Pointer state machine and gesture ownership. | Update with gesture changes. |
 | [`READER_MODULAR_REDESIGN_AUDIT.md`](READER_MODULAR_REDESIGN_AUDIT.md) | E1 audit + staged redesign decision record for the reader. | Update on reader architecture changes; superseded per stage. |
+| [`APP_HEALTH_DESIGN_AUDIT.md`](APP_HEALTH_DESIGN_AUDIT.md) | Whole-app health & design audit (function/performance/design/safety) with a staged remediation plan. | Update as remediation stages land; supersede findings when fixed. |
 | [`DOCUMENT_VIEWPORT_CONTRACT.md`](DOCUMENT_VIEWPORT_CONTRACT.md) | Document coordinates and zoom ownership. | Zoom-ownership current; tile half superseded by ADR-0010. |
 | [`MEDIA_PIPELINE_CONTRACT.md`](MEDIA_PIPELINE_CONTRACT.md) | Source identity, decode plans, render caches. | Update with media-pipeline changes. |
 | [`DOWNLOAD_ARTIFACT_CONTRACT.md`](DOWNLOAD_ARTIFACT_CONTRACT.md) | Download artifact identity and verification. | Update with download changes. |
