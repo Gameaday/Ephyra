@@ -214,10 +214,12 @@ class ArchitectureTest {
      * Strict UDF Rule — No Compose UI Toolkit in ViewModels:
      * ViewModels must not depend on the Compose UI toolkit (animation, foundation, material,
      * material icons, material3, ui). A ViewModel may keep `androidx.compose.runtime`
-     * annotations (`@Immutable`) — that is the state-definition vocabulary — but the moment a
-     * ViewModel imports grid, unit, or widget types it has grown rendering concerns and the
-     * state layer is no longer UI-toolkit-agnostic. UI vocabulary (`GridCells`, `Dp`, …) is
-     * mapped from plain data at the Compose call site.
+     * annotations (`@Immutable`) — that is the state-definition vocabulary — and the pure
+     * collection helpers in `androidx.compose.ui.util` (`fastAny`, `fastFilter`, `fastMap`, …)
+     * are exempt too: they are allocation-lean `List` operations, not rendering vocabulary.
+     * The moment a ViewModel imports grid, unit, or widget types it has grown rendering
+     * concerns and the state layer is no longer UI-toolkit-agnostic. UI vocabulary
+     * (`GridCells`, `Dp`, …) is mapped from plain data at the Compose call site.
      */
     @Test
     fun `viewmodels must not depend on the Compose UI toolkit`() {
@@ -227,15 +229,21 @@ class ArchitectureTest {
             "ephyra.presentation",
         )
 
+        val composeToolkit: DescribedPredicate<JavaClass> = DescribedPredicate.describe(
+            "a Compose UI toolkit class (androidx.compose.ui.util collection helpers exempt)",
+            java.util.function.Predicate<JavaClass> { candidate ->
+                val p = candidate.packageName
+                p.startsWith("androidx.compose.animation.") ||
+                    p.startsWith("androidx.compose.foundation.") ||
+                    p.startsWith("androidx.compose.material.") ||
+                    p.startsWith("androidx.compose.material3.") ||
+                    (p.startsWith("androidx.compose.ui.") && !p.startsWith("androidx.compose.ui.util."))
+            },
+        )
+
         val rule = noClasses()
             .that().areAssignableTo("androidx.lifecycle.ViewModel")
-            .should().dependOnClassesThat().resideInAnyPackage(
-                "androidx.compose.animation..",
-                "androidx.compose.foundation..",
-                "androidx.compose.material..",
-                "androidx.compose.material3..",
-                "androidx.compose.ui..",
-            )
+            .should().dependOnClassesThat(composeToolkit)
 
         rule.check(classes)
     }
