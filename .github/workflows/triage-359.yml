@@ -18,29 +18,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
           cd "$(mktemp -d)"
-          gh api repos/Gameaday/Ephyra/actions/artifacts/13904992018/zip > artifact.zip
-          unzip -q artifact.zip
+          gh api repos/Gameaday/Ephyra/actions/artifacts/13904992018/zip > artifact.zip || echo "artifact download failed"
+          unzip -o -q artifact.zip || echo "unzip failed"
           {
             echo "### Round-2 failing tests (from run 43130134829 test-report artifact)"
             echo
-            found=0
-            for f in $(find . -name '*.xml' | sort); do
-              if grep -q '<failure' "$f"; then
-                found=1
-                echo "FILE: $f"
-                python3 - "$f" <<'EOF'
-import sys, xml.etree.ElementTree as ET
-t = ET.parse(sys.argv[1])
-for tc in t.iter('testcase'):
-    for fail in tc.findall('failure'):
-        msg = (fail.get('message') or '')[:400]
-        print(f"- {tc.get('classname')}.{tc.get('name')}")
-        print(f"  {msg}")
-EOF
-              fi
-            done
-            if [ "$found" -eq 0 ]; then echo "No <failure> elements found in any XML."; fi
-          } > diag.md
+            echo "### Testcases with <failure> (preceding testcase line)"
+            grep -rB1 '<failure' --include='*.xml' . | grep 'testcase ' | head -60 || true
+            echo
+            echo "### Failure messages (truncated)"
+            grep -rho '<failure message="[^"]*"' --include='*.xml' . | head -40 || true
+          } > diag.md 2>&1
+          wc -c diag.md >> diag2.txt 2>&1 || true
           gh pr comment 359 --repo Gameaday/Ephyra --body-file diag.md
