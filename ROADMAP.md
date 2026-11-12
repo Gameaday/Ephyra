@@ -149,6 +149,12 @@ gives the ordered steps to close them.
   onto the effect/state contract.
 - **Improvement-session remainder.** Unified search v1 Stages B–E; `RFC-0001` identity (resolve O2
   first); Jellyfin; Discover Steps 3/5/6; cache queue; performance device work.
+- **App health & design audit remediation (2026-11-12).**
+  [`doc/APP_HEALTH_DESIGN_AUDIT.md`](doc/APP_HEALTH_DESIGN_AUDIT.md) records the whole-app audit
+  (function F1; performance P1-P3; design D1-D2; safety S1-S2) with a staged plan: Stage 1
+  next-chapter feedback (owner report: pressing next chapter sometimes does nothing with no feedback),
+  Stage 2 cover pipeline (owner report: delayed cover appearance, especially the most-recent series
+  cover), Stage 3 device measurement of the long-series memory-exhaustion report.
 - **`REL-001`/`CLEAN-001`.** Release gates and deletion of the superseded reader/navigation/media
 generation (plus the unwired `macrobenchmark` module). **Update 2026-11-07 (D2):** `CLEAN-001` is
 executed — the superseded generations were deleted at their cutovers (verified by A6's scan and
@@ -160,6 +166,16 @@ plugin and the app `benchmark` build type. `REL-001` remains open.
 **Update 2026-11-08 (E2): the accepted-debt register is recorded.** Everything the programme has consciously deferred by decision is now one consolidated list at `doc/ACCEPTED_DEBT_REGISTER.md` — each entry with its review or expiry condition, `B-017` (the keystore rotation Phase 1 is waiting on) first, the D3 target-data cluster and the B6 search-wiring deferrals next, the accepted coverage reductions (frame-budget automation, `E4-user` evidence) stated with their losses, and the not-debt classes (`B-050`, ADR-0008 contracts, `IngestEngine` greenfield, `B-055` findings, open decisions) recorded so completeness is not mistaken for debt. The ledger remains the authority; the register is the view.
 
 **Update 2026-11-08 (E3): the health numbers are re-measured at the frozen tree.** `BUILD_HEALTH.md` records the frozen-tree (`de60404`) numbers with each measurement channel named: module count 28, inter-project dependency edges 139 (down from 166 — the recorded `B-020`/`B-027`/D1/D2 retirements), and `OPS-003` green evidenced by the nightly's `require-green-checks` verdict consumption on exactly that commit. The workstation legs (clean-build re-run, warm medians, `git ls-files`-walk counts, release APK, `E4-lab` probe) are owner-side pending, recorded as such rather than approximated — the measurement procedure requires the original host, and a record may only describe a run that occurred. No health budget is breached.
+
+**Update 2026-11-12 (health & design audit): the whole-app audit is recorded at
+[`doc/APP_HEALTH_DESIGN_AUDIT.md`](doc/APP_HEALTH_DESIGN_AUDIT.md).** Findings: F1 the next-chapter press
+can act on a null window with no feedback (disabled affordance rendered identical to enabled, silent
+`loadNextChapter` return, four navigation-universe causes: skipRead, skipDupe, downloadedOnly, stale
+chapterListCache); P1 delayed cover appearance traced to memory-cache eviction (background 10% eviction,
+pressure-trim halving) plus mandatory disk decode plus the 300 ms crossfade; P2 filesystem I/O on the
+cache-key path; P3 the long-series memory-exhaustion report has no unbounded structure left in source
+(Stage 4/MED-002 bounded the page bytes) and needs device reproduction before code changes; S2 storage
+scoping verified clean. Remediation is three staged PRs.
 
 ## Current truth
 
