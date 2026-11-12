@@ -62,9 +62,14 @@ fun ChapterNavigator(
     val backgroundColor = MaterialTheme.colorScheme
         .surfaceColorAtElevation(3.dp)
         .copy(alpha = if (isSystemInDarkTheme()) 0.96f else 0.98f)
+    // App health & design audit finding F1 (2026-11-12): the disabled container colour used
+    // to be pinned to the enabled colour, so a disabled next/previous control was visually
+    // identical to an enabled one - the reader's only signal that "next chapter does nothing"
+    // was nothing. Drop the override so Material's default disabled treatment (12% onSurface
+    // container, 38% content) renders a distinct, accessible disabled state. This is gated by
+    // ReaderDisabledControlStateTest.
     val buttonColor = IconButtonDefaults.filledIconButtonColors(
         containerColor = backgroundColor,
-        disabledContainerColor = backgroundColor,
     )
 
     // We explicitly handle direction based on the reader viewer rather than the system direction
@@ -160,3 +165,4 @@ private fun ChapterNavigatorPreview() {
         )
     }
 }
+
