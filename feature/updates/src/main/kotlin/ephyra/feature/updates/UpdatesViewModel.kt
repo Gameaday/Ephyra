@@ -28,6 +28,7 @@ import ephyra.domain.updates.service.UpdatesPreferences
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.fastFilter
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
