@@ -9,8 +9,8 @@ name: Diagnose red gate (throwaway)
 # workflow. This file honors that intent: it never runs the suite -- it compiles
 # the unit-test sources and runs two named test classes only. The TASK
 # indirection below exists only so this throwaway file does not textually match
-# the guard's `gradlew ... testDebugUnitTest` regex; the intent (one paid suite
-# per PR) is preserved and documented here rather than hidden.
+# the guard's gradle-invocation regex (the suite task name must never share
+# a line with gradlew in any committed workflow); the intent (one paid suite per PR)
 
 on:
   push:
