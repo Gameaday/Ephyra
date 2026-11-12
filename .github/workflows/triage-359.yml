@@ -1,7 +1,5 @@
-# Throwaway compile-triage workflow v3 (temp branch, deleted after use).
-# Checks out the PR branch and compiles all main + unit-test sources (NO tests run)
-# to capture the real compile error that red-round-2 hid.
-name: Triage 359 round 2 v3
+# Throwaway compile-triage workflow v4 (temp branch, deleted after use).
+name: Triage 359 round 2 v4
 on:
   push:
     branches: [triage/359-r2]
@@ -31,7 +29,7 @@ jobs:
         id: compile
         continue-on-error: true
         run: |
-          ./gradlew testClasses --continue > compile.log 2>&1
+          ./gradlew compileDebugKotlin compileDebugUnitTestKotlin --continue > compile.log 2>&1
           echo "exit=$?" >> "$GITHUB_OUTPUT"
 
       - name: Report
@@ -39,15 +37,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           {
-            echo "### Round-2 triage v3 - compile reproduction (fix/strict-udf-gate @ 4cc6c55)"
+            echo "### Round-2 triage v4 - compile reproduction (fix/strict-udf-gate @ 4cc6c55)"
             echo
             echo "compile exit code: ${{ steps.compile.outputs.exit }}"
             echo
             echo '```'
-            grep -n 'FAILURE' compile.log | head -20
-            grep -nE 'error:|^e: ' compile.log | head -60
+            grep -nE 'FAILURE|error:|^e: |Task :.*FAILED' compile.log | head -80
             echo
-            tail -60 compile.log
+            tail -40 compile.log
             echo '```'
           } > diag.md 2>&1
           gh pr comment 359 --repo Gameaday/Ephyra --body-file diag.md
