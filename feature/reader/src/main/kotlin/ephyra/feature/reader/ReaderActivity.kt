@@ -229,6 +229,7 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
                     is ReaderViewModel.Event.SavedImage -> onSaveImageResult(event.result)
                     is ReaderViewModel.Event.ShareImage -> onShareImageResult(event.uri, event.page)
                     is ReaderViewModel.Event.CopyImage -> onCopyImageResult(event.uri)
+                    is ReaderViewModel.Event.NoNextChapter -> onNoNextChapter(event.reason)
                 }
             }
             .launchIn(lifecycleScope)
@@ -493,6 +494,21 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
             Success -> toast(ephyra.app.core.common.R.string.cover_updated)
             AddToLibraryFirst -> toast(ephyra.app.core.common.R.string.notification_first_add_to_library)
             Error -> toast(ephyra.app.core.common.R.string.error_saving_cover)
+        }
+    }
+
+    /**
+     * F1 (app health & design audit, 2026-11-12): feedback for a next-chapter press that has
+     * no forward chapter in the navigation window. The reader's established discrete-result
+     * channel is the toast (cover, page-block, and save results all report this way), so this
+     * follows it rather than introducing a snackbar host to the reader.
+     */
+    fun onNoNextChapter(reason: ReaderViewModel.NoNextChapterReason) {
+        when (reason) {
+            ReaderViewModel.NoNextChapterReason.END_OF_LIST ->
+                toast(ephyra.app.core.common.R.string.reader_no_next_chapter_end)
+            ReaderViewModel.NoNextChapterReason.OUTSIDE_NAVIGATION_UNIVERSE ->
+                toast(ephyra.app.core.common.R.string.reader_no_next_chapter_filtered)
         }
     }
 

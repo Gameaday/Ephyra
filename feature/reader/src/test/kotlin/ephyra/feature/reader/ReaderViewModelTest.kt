@@ -332,4 +332,58 @@ class ReaderViewModelTest {
             assertEquals(page1, updated.currentReaderPage)
         }
     }
+
+    // F1 (app health & design audit, 2026-11-12): a next-chapter press with no forward
+    // chapter in the navigation window used to return silently. The classification below is
+    // the decision the feedback toast renders; it is kept pure and tested directly because
+    // installing a full viewer window (skip-read / duplicate / downloaded-only preference
+    // stubs wired to a real window) is out of proportion for a decision table.
+
+    @Test
+    fun `no-next classification reports end of list when the current chapter is last unfiltered`() = runTest {
+        val chapters = listOf(
+            Chapter.create().copy(id = 50L, mangaId = 1L, name = "Ch 50"),
+            Chapter.create().copy(id = 51L, mangaId = 1L, name = "Ch 51"),
+        )
+        val viewModel = createViewModel()
+        assertEquals(
+            ReaderViewModel.NoNextChapterReason.END_OF_LIST,
+            viewModel.classifyNoNextChapter(chapters, currentChapterId = 51L),
+        )
+    }
+
+    @Test
+    fun `no-next classification reports outside universe when a forward chapter exists unfiltered`() = runTest {
+        val chapters = listOf(
+            Chapter.create().copy(id = 50L, mangaId = 1L, name = "Ch 50"),
+            Chapter.create().copy(id = 51L, mangaId = 1L, name = "Ch 51"),
+        )
+        val viewModel = createViewModel()
+        assertEquals(
+            ReaderViewModel.NoNextChapterReason.OUTSIDE_NAVIGATION_UNIVERSE,
+            viewModel.classifyNoNextChapter(chapters, currentChapterId = 50L),
+        )
+    }
+
+    @Test
+    fun `no-next classification falls back to end of list when the current chapter is missing unfiltered`() = runTest {
+        val chapters = listOf(
+            Chapter.create().copy(id = 50L, mangaId = 1L, name = "Ch 50"),
+            Chapter.create().copy(id = 51L, mangaId = 1L, name = "Ch 51"),
+        )
+        val viewModel = createViewModel()
+        assertEquals(
+            ReaderViewModel.NoNextChapterReason.END_OF_LIST,
+            viewModel.classifyNoNextChapter(chapters, currentChapterId = 99L),
+        )
+    }
+
+    @Test
+    fun `loadNextChapter with no viewer chapters emits nothing and does not throw`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.eventFlow.test {
+            viewModel.loadNextChapter()
+            expectNoEvents()
+        }
+    }
 }

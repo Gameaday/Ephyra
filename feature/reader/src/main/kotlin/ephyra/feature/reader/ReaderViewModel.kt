@@ -1140,8 +1140,48 @@ class ReaderViewModel @Inject constructor(
      * Called from the activity to load and set the next chapter as active.
      */
     suspend fun loadNextChapter() {
-        val nextChapter = state.value.viewerChapters?.nextChapter ?: return
+        val nextChapter = state.value.viewerChapters?.nextChapter
+        if (nextChapter == null) {
+            emitNoNextChapterFeedback()
+            return
+        }
         loadAdjacent(nextChapter, startFromEnd = false)
+    }
+
+    /**
+     * App health & design audit finding F1 (2026-11-12): a next-chapter press on a chapter
+     * whose navigation window has no forward neighbour used to return silently - the press
+     * did nothing with no feedback, and the only way onward was leaving the reader. Classify
+     * why the window lacks a forward neighbour by re-reading the unfiltered chapter list at
+     * event time: a forward chapter that exists unfiltered but is absent from the window was
+     * excluded by the reader's navigation filters (skip-read, duplicate collapse,
+     * downloaded-only); no unfiltered forward chapter at all is the true end of the series.
+     * RDR-002 window semantics are unchanged: this reports, it never falls back to the
+     * unfiltered list.
+     */
+    private suspend fun emitNoNextChapterFeedback() {
+        val current = state.value.currentChapter ?: return
+        val sorted = getUnfilteredChapterList()
+            .sortedWith(getChapterSort(manga!!, sortDescending = false))
+        val reason = classifyNoNextChapter(sorted, currentChapterId = current.chapter.id)
+        emitEffect(Event.NoNextChapter(reason))
+    }
+
+    /**
+     * Pure decision table for [Event.NoNextChapter], side-effect free so it can be unit-tested
+     * without installing a viewer. [sortedUnfiltered] must be ascending by the series' chapter
+     * sort.
+     */
+    internal fun classifyNoNextChapter(
+        sortedUnfiltered: List<Chapter>,
+        currentChapterId: Long,
+    ): NoNextChapterReason {
+        val currentIndex = sortedUnfiltered.indexOfFirst { it.id == currentChapterId }
+        return if (currentIndex in 0 until sortedUnfiltered.lastIndex) {
+            NoNextChapterReason.OUTSIDE_NAVIGATION_UNIVERSE
+        } else {
+            NoNextChapterReason.END_OF_LIST
+        }
     }
 
     /**
@@ -1639,5 +1679,23 @@ class ReaderViewModel @Inject constructor(
         data class SavedImage(val result: SaveImageResult) : Event
         data class ShareImage(val uri: Uri, val page: ReaderPage) : Event
         data class CopyImage(val uri: Uri) : Event
+
+        /**
+         * F1 (app health & design audit, 2026-11-12): the next-chapter control reached a
+         * navigation window with no forward chapter. Emitted instead of the old silent
+         * return so the UI can explain what happened and why.
+         */
+        data class NoNextChapter(val reason: NoNextChapterReason) : Event
+    }
+
+    /**
+     * Why the reader's navigation window has no forward chapter (see [Event.NoNextChapter]).
+     */
+    enum class NoNextChapterReason {
+        /** The unfiltered chapter list has no chapter after the current one. */
+        END_OF_LIST,
+
+        /** A forward chapter exists unfiltered but the navigation window excludes it. */
+        OUTSIDE_NAVIGATION_UNIVERSE,
     }
 }
