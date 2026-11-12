@@ -1,49 +1,53 @@
-# Throwaway artifact-triage workflow v2 (temp branch, deleted after use).
-# Downloads the test-report artifact from the failed round-2 run and comments
-# diagnostics on PR #359. Runs NO tests and NO gradle build.
-name: Triage 359 round 2 v2
+# Throwaway compile-triage workflow v3 (temp branch, deleted after use).
+# Checks out the PR branch and compiles all main + unit-test sources (NO tests run)
+# to capture the real compile error that red-round-2 hid.
+name: Triage 359 round 2 v3
 on:
   push:
     branches: [triage/359-r2]
 permissions:
-  actions: read
   contents: read
   issues: write
   pull-requests: write
 jobs:
   triage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - name: Extract diagnostics from round-2 test report
+      - name: Checkout PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: fix/strict-udf-gate
+
+      - name: Set up JDK
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
+
+      - name: Compile main + unit-test sources (no test execution)
+        id: compile
+        continue-on-error: true
+        run: |
+          ./gradlew testClasses --continue > compile.log 2>&1
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Report
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cd "$(mktemp -d)"
           {
-            echo "### Round-2 triage v2 (run 43130134829 artifact 13904992018)"
+            echo "### Round-2 triage v3 - compile reproduction (fix/strict-udf-gate @ 4cc6c55)"
             echo
-            echo "### Download + inventory"
-            gh api repos/Gameaday/Ephyra/actions/artifacts/13904992018/zip > artifact.zip
-            echo "artifact.zip bytes: $(wc -c < artifact.zip)"
-            unzip -o -q artifact.zip
-            echo "xml files: $(find . -name '*.xml' | wc -l)"
-            echo "html files: $(find . -name '*.html' | wc -l)"
-            echo "top-level dirs:"
-            find . -maxdepth 3 -type d | head -40
+            echo "compile exit code: ${{ steps.compile.outputs.exit }}"
             echo
-            echo "### Testsuites with failures>0 or errors>0"
-            grep -rho '<testsuite[^>]*' --include='*.xml' . | grep -E 'failures="[1-9]|errors="[1-9]' | head -40
+            echo '```'
+            grep -n 'FAILURE' compile.log | head -20
+            grep -nE 'error:|^e: ' compile.log | head -60
             echo
-            echo "### Testcases with <failure> (preceding testcase line)"
-            grep -rB1 '<failure' --include='*.xml' . | grep 'testcase ' | head -60
-            echo
-            echo "### Testcases with <error> (preceding testcase line)"
-            grep -rB1 '<error' --include='*.xml' . | grep 'testcase ' | head -60
-            echo
-            echo "### Failure/error messages (truncated)"
-            grep -rhoE '<(failure|error) message="[^"]*"' --include='*.xml' . | head -40
-            echo
-            echo "### Failure/error type attributes"
-            grep -rhoE '<(failure|error)[^>]*type="[^"]*"' --include='*.xml' . | head -40
+            tail -60 compile.log
+            echo '```'
           } > diag.md 2>&1
           gh pr comment 359 --repo Gameaday/Ephyra --body-file diag.md
