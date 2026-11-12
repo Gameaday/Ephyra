@@ -1,5 +1,6 @@
 package ephyra.feature.browse.migration.search
 
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -17,6 +18,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -113,7 +115,7 @@ fun MigrateSourceSearchScreen(
         BrowseSourceContent(
             source = source,
             mangaList = viewModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
-            columns = viewModel.getColumnsPreference(LocalConfiguration.current.orientation),
+            columns = browseGridColumns(viewModel.getColumnsPreference(LocalConfiguration.current.orientation)),
             displayMode = viewModel.displayMode,
             snackbarHostState = snackbarHostState,
             contentPadding = paddingValues,
@@ -165,3 +167,11 @@ fun MigrateSourceSearchScreen(
         else -> {}
     }
 }
+
+/**
+ * Maps the ViewModel's raw column-count preference onto the browse grid: `0` means the user
+ * chose adaptive columns. The mapping lives in the UI because `GridCells` is Compose
+ * vocabulary — the ViewModel publishes plain data only (strict UDF gate).
+ */
+private fun browseGridColumns(columnsPreference: Int): GridCells =
+    if (columnsPreference == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columnsPreference)

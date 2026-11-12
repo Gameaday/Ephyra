@@ -1,9 +1,7 @@
 package ephyra.feature.browse.source.browse
 
 import android.content.res.Configuration
-import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,6 +18,7 @@ import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
 import ephyra.domain.category.model.Category
 import ephyra.domain.chapter.interactor.SetMangaDefaultChapterFlags
+import ephyra.domain.library.model.LibraryDisplayMode
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.manga.interactor.GetManga
@@ -78,7 +77,9 @@ class BrowseSourceViewModel @Inject constructor(
 
     fun getSource(id: Long): eu.kanade.tachiyomi.source.Source = sourceManager.getOrStub(id)
 
-    var displayMode by sourcePreferences.sourceDisplayMode().asState(viewModelScope)
+    // Read-only: display-mode changes enter through BrowseSourceScreenEvent.SetDisplayMode
+    // like every other mutation (strict UDF — the UI never writes ViewModel state directly).
+    val displayMode by sourcePreferences.sourceDisplayMode().asState(viewModelScope)
 
     var sourceId: Long = -1L
         private set
@@ -182,16 +183,21 @@ class BrowseSourceViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyFlow())
 
-    fun getColumnsPreference(orientation: Int): GridCells {
+    /**
+     * Column-count preference for the browse grid, for the given orientation. Returns `0` when
+     * the user chose adaptive columns; the UI maps that to `GridCells.Adaptive`. This ViewModel
+     * publishes plain data only — `GridCells` is Compose UI vocabulary and stays out of the
+     * state layer (strict UDF gate: no Compose toolkit dependencies in ViewModels).
+     */
+    fun getColumnsPreference(orientation: Int): Int {
         val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
         // Use a coroutine-free synchronous snapshot; DataStore `get()` is a suspend function,
         // but we run it in init to cache the value and update it reactively.
-        val columns = if (isLandscape) {
+        return if (isLandscape) {
             libraryPreferences.landscapeColumns().getSync()
         } else {
             libraryPreferences.portraitColumns().getSync()
         }
-        return if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns)
     }
 
     override fun onEvent(event: BrowseSourceScreenEvent) {
@@ -207,6 +213,7 @@ class BrowseSourceViewModel @Inject constructor(
             is BrowseSourceScreenEvent.OpenFilterSheet -> openFilterSheet()
             is BrowseSourceScreenEvent.SetDialog -> setDialog(event.dialog)
             is BrowseSourceScreenEvent.SetToolbarQuery -> setToolbarQuery(event.query)
+            is BrowseSourceScreenEvent.SetDisplayMode -> setDisplayMode(event.mode)
         }
     }
 
@@ -373,6 +380,10 @@ class BrowseSourceViewModel @Inject constructor(
 
     private fun setToolbarQuery(query: String?) {
         updateState { it.copy(toolbarQuery = query) }
+    }
+
+    private fun setDisplayMode(mode: LibraryDisplayMode) {
+        sourcePreferences.sourceDisplayMode().set(mode)
     }
 
     sealed class Listing(open val query: String?, open val filters: FilterList) {

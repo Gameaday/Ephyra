@@ -1,7 +1,6 @@
 package ephyra.feature.updates
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.preference.TriState

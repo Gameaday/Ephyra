@@ -1,5 +1,7 @@
 package ephyra.app.architecture
 
+import com.tngtech.archunit.base.DescribedPredicate
+import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.domain.JavaModifier
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
@@ -168,6 +170,124 @@ class ArchitectureTest {
             .and().haveModifier(JavaModifier.PUBLIC)
             .should().haveRawType("kotlinx.coroutines.flow.MutableStateFlow")
             .orShould().haveRawType("kotlinx.coroutines.flow.MutableSharedFlow")
+
+        methodsRule.check(classes)
+        fieldsRule.check(classes)
+    }
+
+    /**
+     * Strict UDF Rule — No Cross-ViewModel Dependencies:
+     * A ViewModel must never depend on another concrete ViewModel. Cross-ViewModel writes bypass
+     * the owning ViewModel's single event entry-point and create hidden bidirectional state
+     * coupling; shared state belongs in the domain layer, and cross-screen commands belong in
+     * effects or navigation. Abstract shared base ViewModels (e.g. SearchViewModel) are exempt:
+     * extending one is inheritance, not peer coupling.
+     */
+    @Test
+    fun `viewmodels must not depend on other concrete viewmodels`() {
+        val classes = ClassFileImporter().importPackages(
+            "ephyra.app",
+            "ephyra.feature",
+            "ephyra.presentation",
+        )
+
+        val concreteViewModel: DescribedPredicate<JavaClass> = DescribedPredicate.describe(
+            "a concrete ViewModel in app or feature code",
+            java.util.function.Predicate<JavaClass> { candidate ->
+                candidate.isAssignableTo("androidx.lifecycle.ViewModel") &&
+                    !candidate.modifiers.contains(JavaModifier.ABSTRACT) &&
+                    (
+                        candidate.packageName.startsWith("ephyra.app.") ||
+                            candidate.packageName.startsWith("ephyra.feature.")
+                        )
+            },
+        )
+
+        val rule = noClasses()
+            .that().areAssignableTo("androidx.lifecycle.ViewModel")
+            .should().dependOnClassesThat(concreteViewModel)
+
+        rule.check(classes)
+    }
+
+    /**
+     * Strict UDF Rule — No Compose UI Toolkit in ViewModels:
+     * ViewModels must not depend on the Compose UI toolkit (animation, foundation, material,
+     * material icons, material3, ui). A ViewModel may keep `androidx.compose.runtime`
+     * annotations (`@Immutable`) — that is the state-definition vocabulary — but the moment a
+     * ViewModel imports grid, unit, or widget types it has grown rendering concerns and the
+     * state layer is no longer UI-toolkit-agnostic. UI vocabulary (`GridCells`, `Dp`, …) is
+     * mapped from plain data at the Compose call site.
+     */
+    @Test
+    fun `viewmodels must not depend on the Compose UI toolkit`() {
+        val classes = ClassFileImporter().importPackages(
+            "ephyra.app",
+            "ephyra.feature",
+            "ephyra.presentation",
+        )
+
+        val rule = noClasses()
+            .that().areAssignableTo("androidx.lifecycle.ViewModel")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                "androidx.compose.animation..",
+                "androidx.compose.foundation..",
+                "androidx.compose.material..",
+                "androidx.compose.material3..",
+                "androidx.compose.ui..",
+            )
+
+        rule.check(classes)
+    }
+
+    /**
+     * Strict UDF Rule — No Public Setters on ViewModels:
+     * A public `set…` method on a ViewModel is a UI-writable mutation channel that bypasses
+     * `onEvent` — including the compiler-generated setter of a public `var` property. All
+     * mutations enter through the event entry-point; read-only exposure uses `val` or
+     * `var … private set`.
+     */
+    @Test
+    fun `viewmodels must not expose public setters`() {
+        val classes = ClassFileImporter().importPackages(
+            "ephyra.app",
+            "ephyra.feature",
+            "ephyra.presentation",
+        )
+
+        val rule = noMethods()
+            .that().areDeclaredInClassesThat().areAssignableTo("androidx.lifecycle.ViewModel")
+            .and().haveModifier(JavaModifier.PUBLIC)
+            .and().doNotHaveModifier(JavaModifier.SYNTHETIC)
+            .should().haveNameMatching("^set[A-Z].*$")
+
+        rule.check(classes)
+    }
+
+    /**
+     * Strict UDF Rule — Effects Are Flows, Not Exposed Channels:
+     * One-shot effects must be surfaced as a Flow (the UDF base already exposes
+     * `receiveAsFlow()`); a publicly reachable `Channel` hands the UI a hot mutable handle it
+     * can consume competitively or close, breaking single-consumer delivery.
+     */
+    @Test
+    fun `viewmodels must not expose channels publicly`() {
+        val classes = ClassFileImporter().importPackages(
+            "ephyra.app",
+            "ephyra.feature",
+            "ephyra.presentation",
+        )
+
+        val methodsRule = noMethods()
+            .that().areDeclaredInClassesThat().areAssignableTo("androidx.lifecycle.ViewModel")
+            .and().haveModifier(JavaModifier.PUBLIC)
+            .and().doNotHaveModifier(JavaModifier.SYNTHETIC)
+            .should().haveRawReturnType("kotlinx.coroutines.channels.Channel")
+
+        val fieldsRule = noFields()
+            .that().areDeclaredInClassesThat().areAssignableTo("androidx.lifecycle.ViewModel")
+            .and().haveModifier(JavaModifier.PUBLIC)
+            .should().haveRawType("kotlinx.coroutines.channels.Channel")
 
         methodsRule.check(classes)
         fieldsRule.check(classes)

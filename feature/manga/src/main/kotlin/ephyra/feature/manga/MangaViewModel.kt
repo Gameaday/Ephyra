@@ -1,7 +1,6 @@
 package ephyra.feature.manga
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.util.fastAny
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
