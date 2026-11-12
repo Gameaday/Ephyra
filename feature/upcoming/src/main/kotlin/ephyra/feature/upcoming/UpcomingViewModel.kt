@@ -1,7 +1,5 @@
 package ephyra.feature.upcoming
 
-import androidx.compose.ui.util.fastMap
-import androidx.compose.ui.util.fastMapIndexedNotNull
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.insertSeparatorsReversed
@@ -43,7 +41,7 @@ class UpcomingViewModel @Inject constructor(
 
     private fun List<Manga>.toUpcomingUIModels(): ImmutableList<UpcomingUIModel> {
         var mangaCount = 0
-        return fastMap { UpcomingUIModel.Item(it) }
+        return map { UpcomingUIModel.Item(it) }
             .insertSeparatorsReversed { before, after ->
                 if (after != null) mangaCount++
 
@@ -66,7 +64,7 @@ class UpcomingViewModel @Inject constructor(
     }
 
     private fun List<UpcomingUIModel>.getHeaderIndexes(): ImmutableMap<LocalDate, Int> {
-        return fastMapIndexedNotNull { index, upcomingUIModel ->
+        return mapIndexedNotNull { index, upcomingUIModel ->
             if (upcomingUIModel is UpcomingUIModel.Header) {
                 upcomingUIModel.date to index
             } else {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Favorite
@@ -32,6 +33,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -157,7 +159,7 @@ fun BrowseSourceScreen(
                     onSearchQueryChange = { viewModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
                     source = source,
                     displayMode = viewModel.displayMode,
-                    onDisplayModeChange = { viewModel.displayMode = it },
+                    onDisplayModeChange = { viewModel.onEvent(BrowseSourceScreenEvent.SetDisplayMode(it)) },
                     navigateUp = navigateUp,
                     onWebViewClick = { onWebViewClick(null) },
                     onHelpClick = onHelpClick,
@@ -240,7 +242,7 @@ fun BrowseSourceScreen(
         BrowseSourceContent(
             source = source,
             mangaList = mangaList,
-            columns = viewModel.getColumnsPreference(LocalConfiguration.current.orientation),
+            columns = browseGridColumns(viewModel.getColumnsPreference(LocalConfiguration.current.orientation)),
             displayMode = viewModel.displayMode,
             snackbarHostState = snackbarHostState,
             contentPadding = paddingValues,
@@ -365,3 +367,11 @@ sealed class SearchType(val txt: String) {
     class Text(txt: String) : SearchType(txt)
     class Genre(txt: String) : SearchType(txt)
 }
+
+/**
+ * Maps the ViewModel's raw column-count preference onto the browse grid: `0` means the user
+ * chose adaptive columns. The mapping lives in the UI because `GridCells` is Compose
+ * vocabulary — the ViewModel publishes plain data only (strict UDF gate).
+ */
+private fun browseGridColumns(columnsPreference: Int): GridCells =
+    if (columnsPreference == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columnsPreference)
