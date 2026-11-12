@@ -7,6 +7,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Unreleased]
+### 📚 Reader — next-chapter press feedback (app health audit F1, 2026-11-12)
+- **A next-chapter press with no forward chapter now explains itself.** `loadNextChapter()`'s
+  silent `?: return` is replaced by a classified event: the view model re-reads the unfiltered
+  chapter list at event time and distinguishes the true end of the series ("No further chapters
+  in this series") from a chapter hidden by the reader's navigation filters — skip-read,
+  duplicate collapse, or downloaded-only ("Next chapter is hidden by reader filters (skip read,
+  duplicates, or downloaded-only)"). RDR-002 window semantics are unchanged: the reader stays in
+  its navigation universe and explains; it never falls back to the unfiltered list. Feedback
+  renders as a toast, the reader's established discrete-result channel (a disclosed deviation
+  from the audit's "snackbar" wording).
+- **The disabled next/previous controls are visibly disabled.** `ChapterNavigator` no longer pins
+  `disabledContainerColor` to the enabled container colour, so Material's default disabled
+  treatment (12% onSurface container, 38% content) renders a distinct state; a new source gate
+  (`ReaderDisabledControlStateTest`, per the `MotionConsistencyTest` pattern) keeps the pin from
+  returning. Covered by four new `ReaderViewModelTest` cases (classification table + no-crash
+  wiring).
 ### 🏛️ Architecture — strict UDF gate (11 ArchUnit rules, 2026-11-11)
 - **ViewModels can no longer leak mutability, cross-depend, or touch Compose.** Four new ArchUnit rules in
   `ArchitectureTest.kt` join the seven existing ones: no ViewModel may depend on another concrete ViewModel
@@ -1008,6 +1024,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`ROADMAP.md`**: Updated to reflect completed Phase 1 (Pure DI), in-progress Phase 3
   (Content-Agnostic UI) and Phase 4 (Build Config), and planned Phase 2 (Sandboxed Scripting).
 - **`CHANGELOG.md`**: This file — initialized.
+
 
 
 
