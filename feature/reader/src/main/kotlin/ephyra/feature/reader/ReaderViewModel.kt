@@ -1699,4 +1699,3 @@ class ReaderViewModel @Inject constructor(
         OUTSIDE_NAVIGATION_UNIVERSE,
     }
 }
-

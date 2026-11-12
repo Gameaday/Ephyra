@@ -643,4 +643,3 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
         }
     }
 }
-
