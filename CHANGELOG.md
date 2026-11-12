@@ -7,6 +7,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Unreleased]
+### 🏛️ Architecture — strict UDF gate (11 ArchUnit rules, 2026-11-11)
+- **ViewModels can no longer leak mutability, cross-depend, or touch Compose.** Four new ArchUnit rules in
+  `ArchitectureTest.kt` join the seven existing ones: no ViewModel may depend on another concrete ViewModel
+  (abstract base classes excluded); no ViewModel may reference the Compose toolkit
+  (`androidx.compose.animation`/`foundation`/`material`/`material3` and `androidx.compose.ui` — with a
+  documented exemption for `androidx.compose.ui.util`'s allocation-lean `fastAny`/`fastFilter`/`fastMap`
+  collection helpers, which are collection utilities, not rendering vocabulary); no public `setX` mutators;
+  and no exposed `kotlinx.coroutines.channels.Channel` fields (events cross the boundary as shared flows or
+  one-shot functions, never as a mutable pipe anyone can `trySend` into).
+- **Browse source display mode is now event-driven UDF.** `BrowseSourceViewModel.displayMode` was a public
+  `var` written directly by two screens; it is now a `val` with a private `setDisplayMode` that persists
+  through `sourcePreferences.sourceDisplayMode()`, and screens route changes through a new
+  `BrowseSourceScreenEvent.SetDisplayMode` event (`getColumnsPreference` returns `Int` instead of
+  `GridCells`, keeping the event payload free of Compose types; `0` = `Adaptive(128.dp)` via a file-private
+  `browseGridColumns` helper). Covered by a new `SetDisplayMode` event test in `BrowseSourceViewModelTest`.
+- **Import hygiene.** `UpcomingViewModel`/`StatsViewModel` switched from Compose `fast*` helpers to stdlib
+  equivalents; an unused `fastAny` import removed from `MangaViewModel`.
+- **Known remaining UDF debt, documented in the PR body:** `SearchViewModel`'s `@Composable getManga`
+  helper (`compose.runtime` is allowed by the gate today — the next step) and settings ViewModels exposing
+  `*Preferences` objects read-only.
 ### 🎞️ Motion — sibling tabs slide again (owner reversal, 2026-11-11)
 - **Tab peers slide in bar order.** The 2026-11-09 no-movement lock is reversed for exactly this
   surface by owner decision: sibling bottom-bar tabs slide in bar order — pure translation at the
