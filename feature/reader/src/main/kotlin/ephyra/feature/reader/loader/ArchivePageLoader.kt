@@ -8,6 +8,15 @@ import eu.kanade.tachiyomi.source.model.Page
 
 /**
  * Loader used to load a chapter from an archive file.
+ *
+ * This implementation is optimized to avoid the O(n²) archive rescanning issue
+ * (B-055 finding v). The original implementation called [ArchiveReader.getInputStream]
+ * for each entry during filtering, which performs a linear O(n) scan per call,
+ * resulting in O(n²) total work for n entries.
+ *
+ * The fix: only use extension-based image detection via [ImageUtil.isImage] without
+ * the stream fallback, which avoids opening streams during the filter phase.
+ * Stream access is deferred to the actual page loading when needed.
  */
 internal class ArchivePageLoader(private val reader: ArchiveReader) : PageLoader() {
     override var isLocal: Boolean = true
@@ -16,23 +25,15 @@ internal class ArchivePageLoader(private val reader: ArchiveReader) : PageLoader
         check(!isRecycled)
         return reader.useEntries { entries ->
             entries
-                .filter {
-                    it.isFile &&
-                        ImageUtil.isImage(it.name) {
-                            requireNotNull(reader.getInputStream(it.name)) {
-                                "Entry '${it.name}' not found in archive during image check"
-                            }
-                        }
-                }
+                .filter { it.isFile && ImageUtil.isImage(it.name) }
                 .sortedWith { f1, f2 -> f1.name.compareToCaseInsensitiveNaturalOrder(f2.name) }
                 .mapIndexed { i, entry ->
                     ReaderPage(i).apply {
-                        resource.stream =
-                            {
-                                requireNotNull(reader.getInputStream(entry.name)) {
-                                    "Entry '${entry.name}' not found in archive"
-                                }
+                        resource.stream = {
+                            requireNotNull(reader.getInputStream(entry.name)) {
+                                "Entry '${entry.name}' not found in archive"
                             }
+                        }
                         status = Page.State.Ready
                     }
                 }
