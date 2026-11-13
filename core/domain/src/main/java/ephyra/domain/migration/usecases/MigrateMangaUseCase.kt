@@ -139,6 +139,13 @@ class MigrateMangaUseCase(
                 coverCache.getCustomCoverFile(current)?.inputStream()?.use { input ->
                     coverCache.setCustomCoverToCache(target, input)
                 }
+                // The cache key is (identity; coverLastModified) with no filesystem probe
+                // (audit P2), so the revision must move whenever the bytes move — the
+                // invariant every other custom-cover mutation upholds (`editCover`,
+                // `deleteCustomCover`). Previously the keyer's per-request `exists()` probe
+                // masked the missing bump; without it, a migrated custom cover would keep
+                // serving the target's previous cover bytes from memory cache.
+                updateManga.awaitUpdateCoverLastModified(target.id)
             }
 
             val currentMangaUpdate = MangaUpdate(
