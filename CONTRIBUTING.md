@@ -41,6 +41,50 @@ that existing contributors will not actively teach them to you.
 - [Android Studio](https://developer.android.com/studio)
 - Emulator or phone with developer options enabled to test changes.
 
+## Development workflow
+
+To ensure your changes pass CI on the first push, follow this workflow:
+
+### Before committing
+
+Run the pre-commit script to apply formatting:
+```bash
+./scripts/pre-commit.sh
+```
+
+This script:
+- Applies spotless formatting
+- Adds any formatted files to staging
+- Checks formatting passes
+
+### Before pushing
+
+Run the full local CI to match remote checks:
+```bash
+./scripts/local-ci.sh
+```
+
+This script runs the exact same checks as GitHub Actions:
+1. Applies and checks code formatting (spotless)
+2. Runs architecture checks
+3. Runs unit tests
+
+**Tip:** If `local-ci.sh` passes, your changes will almost certainly pass remote CI.
+
+### Why this matters
+
+The project uses consistent checks across all environments:
+- Local development: `./scripts/local-ci.sh`
+- Pre-commit hook: `./scripts/pre-commit.sh`
+- GitHub Actions CI: `.github/workflows/build.yml`
+
+By running these scripts locally, you ensure:
+- ✅ Same Java version (Temurin 21)
+- ✅ Same Gradle version (wrapper)
+- ✅ Same spotless configuration
+- ✅ Same test suite
+- ✅ Same architecture checks
+
 ## Getting help
 
 - Open an issue on [Gameaday/Ephyra](https://github.com/Gameaday/Ephyra/issues) for help while
@@ -55,4 +99,3 @@ Translations follow the upstream Ephyra project via Weblate.
 This fork is based on [ephyraapp/ephyra](https://github.com/mihonapp/mihon). Forks of this project
 are allowed so long as they abide
 by [the project's LICENSE](https://github.com/mihonapp/mihon/blob/main/LICENSE).
-
