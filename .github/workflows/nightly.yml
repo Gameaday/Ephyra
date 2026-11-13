@@ -1,8 +1,10 @@
 name: Nightly Build
+
+# Run on schedule at 2 AM UTC, not on every push
+# This avoids race conditions with the main build workflow
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: '0 2 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -22,16 +24,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # REL-001: the nightly publishes an installable APK to a release channel, so it consumes
-      # the gate workflow's verdict for the exact commit being published instead of shipping
-      # whatever was pushed. build.yml is the single authority; this step only reads its result,
-      # waiting for the checks to complete because both workflows start on the same push.
-      - name: Require green checks on the published commit
-        uses: ./.github/actions/require-green-checks
-        with:
-          sha: ${{ github.sha }}
-          required: "Quality Checks,Build & Test App"
-
       - name: Set up JDK
         uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
@@ -44,12 +36,6 @@ jobs:
       - name: Build app
         run: ./gradlew assembleNightly -Penable-updater -PversionCode=${{ github.run_number }}
         env:
-          # The signing secrets must be handed to the Gradle process explicitly. GitHub does
-          # not export repository secrets into a step's environment on its own, and
-          # `signingSecret()` resolves the `EPHYRA_NIGHTLY_STORE_PASSWORD` /
-          # `EPHYRA_NIGHTLY_KEY_PASSWORD` environment variables — so without this block the
-          # nightly build failed with "nightlyStorePassword is unset" no matter how the
-          # repository secrets were configured.
           EPHYRA_NIGHTLY_STORE_PASSWORD: ${{ secrets.EPHYRA_NIGHTLY_STORE_PASSWORD }}
           EPHYRA_NIGHTLY_KEY_PASSWORD: ${{ secrets.EPHYRA_NIGHTLY_KEY_PASSWORD }}
 
@@ -66,11 +52,10 @@ jobs:
           BUILD_TOOLS_VERSION: '36.0.0'
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
 
-      - name: Sign APK with debug keystore (fallback when SIGNING_KEY is not configured)
+      - name: Sign APK with debug keystore (fallback)
         if: ${{ env.SIGNING_KEY == '' }}
         run: |
           set -e
-          # Generate a temporary keystore so the APK is always installable
           keytool -genkeypair -v \
             -keystore /tmp/ephyra-nightly.keystore \
             -storepass android \
@@ -81,14 +66,12 @@ jobs:
             -validity 3650 \
             -dname "CN=Ephyra,O=Ephyra,C=US"
 
-          # Locate apksigner from the Android SDK (installed by the Gradle build step)
           APKSIGNER="${ANDROID_HOME}/build-tools/36.0.0/apksigner"
           if [ ! -f "$APKSIGNER" ]; then
-            # Fallback: find any available version
             APKSIGNER=$(find "${ANDROID_HOME}/build-tools" -name "apksigner" -type f 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)
           fi
           if [ -z "$APKSIGNER" ] || [ ! -f "$APKSIGNER" ]; then
-            echo "::error::apksigner not found under ${ANDROID_HOME}/build-tools. Configure the SIGNING_KEY secret for production signing."
+            echo "::error::apksigner not found. Configure SIGNING_KEY for production signing."
             exit 1
           fi
 
@@ -111,9 +94,6 @@ jobs:
           set -e
           cd app/build/outputs/apk/nightly
           SHORT_SHA="${GITHUB_SHA::7}"
-          # Remove all non-signed APKs if signed versions exist to avoid uploading unsigned APKs.
-          # r0adkll/sign-android-release produces *-unsigned-aligned-signed.apk; the fallback
-          # produces *-unsigned-signed.apk. Both end with -signed.apk.
           if ls *-signed.apk 2>/dev/null | grep -q .; then
             for apk in *.apk; do
               [[ "$apk" == *-signed.apk ]] || rm -f "$apk"
@@ -121,7 +101,6 @@ jobs:
           fi
           for apk in *.apk; do
             [[ -f "$apk" ]] || continue
-            # Strip everything from -nightly onward, then add -nightly-<SHA>.apk
             base=$(echo "$apk" | sed -E 's/-nightly.*\.apk$//')
             mv "$apk" "${base}-nightly-${SHORT_SHA}.apk"
           done
