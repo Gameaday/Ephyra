@@ -40,7 +40,7 @@ class WebtoonWholeImagePathTest {
 
     private fun functionBody(source: String, signature: String): String {
         val start = source.indexOf(signature)
-        assertTrue("no declaration of \`$signature\`", start >= 0)
+        assertTrue("no declaration of `$signature`", start >= 0)
         val open = source.indexOf('{', start)
         assertTrue("`$signature` has no body", open >= 0)
         var depth = 0
