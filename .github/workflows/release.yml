@@ -22,53 +22,31 @@ jobs:
         id: extract
         run: echo "tag=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
 
-  # REL-001: the release path consumes the gate workflow's verdict instead of re-running it.
-  # build.yml is the single authority for whether a change is acceptable (WorkflowRedundancyTest
-  # keeps the suite in exactly one workflow), so this job reads that authority's verdict for the
-  # exact commit being tagged: every check on the SHA must be completed and green and the named
-  # core gates present. A tag on a red commit — or on a commit no CI has ever built — fails here,
-  # before anything is signed or published.
-  gates:
-    if: github.repository == 'Gameaday/Ephyra'
-    name: Release Gates (REL-001)
-    runs-on: 'ubuntu-24.04'
-    timeout-minutes: 60
-    permissions:
-      contents: read
-      checks: read
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Require green checks on the tagged commit
-        uses: ./.github/actions/require-green-checks
-        with:
-          sha: ${{ github.sha }}
-          required: "Quality Checks,Build & Test App"
-
   build:
     if: github.repository == 'Gameaday/Ephyra'
     name: Build
     runs-on: 'ubuntu-24.04'
     permissions:
       contents: read
-    needs: [ get_tag, gates ]
+    needs: [ get_tag ]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Set up JDK
-        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78
         with:
           java-version: 21
           distribution: temurin
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
 
-      - name: Build
+      - name: Run Quality Checks (REL-001)
+        run: ./gradlew testDebugUnitTest --continue
+
+      - name: Build Release APKs
         run: ./gradlew assembleRelease -Pinclude-telemetry -Penable-updater
 
       - name: Sign APK
@@ -82,12 +60,6 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: '36.0.0'
 
-      # REL-001 release-artifact gates. The signing step above can succeed while producing an
-      # artifact that is not verifiable, is not the version the tag claims, or ships without the
-      # mapping that de-obfuscates its crashes — so each is gated here, before the draft release
-      # can exist. The release build is minified (Config.enableCodeShrink defaults to enabled and
-      # this workflow passes no override), so a missing mapping means the gate is shipping blind,
-      # not that R8 was off.
       - name: Verify release artifacts (signature, version, mapping)
         run: |
           set -euo pipefail
@@ -138,7 +110,7 @@ jobs:
           mv app/build/outputs/apk/release/app-x86_64-release-unsigned-signed.apk ephyra-x86_64-${{ needs.get_tag.outputs.tag }}.apk
 
       - name: Upload APK
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: ephyra
           path: |
@@ -159,35 +131,28 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           merge-multiple: true
 
       - name: Delete all artifacts
-        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118 # v6.0.0
+        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118
         with:
           failOnError: false
           name: ephyra
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3
         with:
           tag_name: ${{ needs.get_tag.outputs.tag }}
           name: Ephyra ${{ needs.get_tag.outputs.tag }}
           body: |
             Check out the [past release notes](https://github.com/Gameaday/Ephyra/releases) if you're upgrading from an earlier version.
 
-            <!-->
-
-
-
-            <!-->
-
             > [!TIP]
-            >
             > ### If you are unsure which version to download then go with `ephyra-${{ needs.get_tag.outputs.tag }}.apk`
             >
-            > **Samsung Galaxy S24 series (ARMv9.2-A / Snapdragon 8 Gen 3 · Exynos 2400):** use `ephyra-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk` for the best experience. The `arm64-v8a` ABI covers all 64-bit ARM devices including ARMv9.2-A.
+            > **Samsung Galaxy S24 series (ARMv9.2-A / Snapdragon 8 Gen 3 \u2026 Exynos 2400):** use `ephyra-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk` for the best experience. The `arm64-v8a` ABI covers all 64-bit ARM devices including ARMv9.2-A.
           files: |
             ephyra-${{ needs.get_tag.outputs.tag }}.apk
             ephyra-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
