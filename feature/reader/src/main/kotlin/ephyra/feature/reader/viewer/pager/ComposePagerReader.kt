@@ -131,7 +131,8 @@ fun ComposePagerReader(
                 if (newIdx != -1 && newIdx != pagerState.currentPage) {
                     try {
                         pagerState.scrollToPage(newIdx)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        logcat(LogPriority.WARN, e) { "Failed to scroll to page $newIdx" }
                     }
                 }
             }

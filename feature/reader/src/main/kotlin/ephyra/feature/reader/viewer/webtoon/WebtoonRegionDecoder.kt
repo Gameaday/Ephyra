@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
 import android.graphics.Rect
+import ephyra.core.common.util.system.logcat
 import ephyra.domain.reader.media.PixelRect
 import ephyra.domain.reader.media.SampleSize
 import java.io.ByteArrayInputStream
@@ -52,7 +53,8 @@ object WebtoonRegionDecoder {
                 inPreferredConfig = Bitmap.Config.ARGB_8888
             }
             runCatching { decoder.decodeRegion(rect, options) }.getOrNull()
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            logcat(LogPriority.DEBUG, e) { "Failed to decode region" }
             null
         } finally {
             runCatching { decoder?.recycle() }
@@ -107,7 +109,8 @@ object WebtoonRegionDecoder {
                     runCatching { activeDecoder.decodeRegion(rect, options) }.getOrNull()
                 }
             }
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            logcat(LogPriority.DEBUG, e) { "Failed to decode region" }
             null
         } finally {
             runCatching { decoder?.recycle() }

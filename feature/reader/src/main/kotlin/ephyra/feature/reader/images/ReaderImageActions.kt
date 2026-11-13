@@ -134,6 +134,7 @@ class ReaderImageActions(
             effects.applyCover(target.manga, stream)
             coverResult(target.manga)
         } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e) { "Failed to set page as cover" }
             ReaderViewModel.SetAsCoverResult.Error
         }
         effects.reportSetCoverResult(result)

@@ -51,6 +51,7 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.logcat
 import ephyra.domain.reader.gesture.ReaderGestureEffect
 import ephyra.domain.reader.viewport.PagerViewport
 import ephyra.domain.reader.viewport.PagerViewportState
@@ -357,7 +358,8 @@ fun ZoomableMangaPage(
                                 page.resource.stream?.invoke()?.use { it.readBytes() }?.also {
                                     page.chapter.cacheBytes(page, it)
                                 }
-                            } catch (_: Exception) {
+                            } catch (e: Exception) {
+                                logcat(LogPriority.DEBUG, e) { "Failed to cache page bytes" }
                                 null
                             }
                         }

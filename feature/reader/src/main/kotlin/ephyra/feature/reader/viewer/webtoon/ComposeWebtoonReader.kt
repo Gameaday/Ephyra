@@ -73,6 +73,7 @@ import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.logcat
 import ephyra.domain.reader.media.AnimationKind
 import ephyra.domain.reader.media.AnimationPolicy
 import ephyra.domain.reader.media.AnimationVerdict
@@ -685,6 +686,7 @@ private fun WebtoonPageItem(
                                     page.chapter.cacheBytes(page, it)
                                 }
                             } catch (e: Exception) {
+                                logcat(LogPriority.DEBUG, e) { "Failed to cache page bytes" }
                                 null
                             }
                         }
