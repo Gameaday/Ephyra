@@ -831,6 +831,26 @@ private fun WebtoonPageItem(
                             )
                         },
                     )
+                } else if (renderPath == PageRenderPath.WHOLE_IMAGE && readyBytes != null) {
+                    // The whole-image path must have a consumer in this chain. With crop borders
+                    // on, production never measures a crop rect, so `RenderPathPolicy` always
+                    // reports CROP_UNDECIDED and *every* crop-mode page takes WHOLE_IMAGE — and
+                    // with crop off, animated pages and non-region-decodable formats (JXL) take
+                    // it too. The chain used to fall straight from the SLICED branch into the
+                    // still-reading spinner below, so all of those pages spun forever: crop
+                    // borders broke webtoons with an infinite load (owner report, 2026-11-13).
+                    // `SingleWebtoonImage` is that consumer — the same whole-image decode the
+                    // slice fallback uses — and its `onTransformedSize` feeds the cropped
+                    // aspect back into the reserved item box.
+                    SingleWebtoonImage(
+                        page = page,
+                        imageModel = readyBytes!!,
+                        cropBorders = cropBorders,
+                        targetWidthPx = targetWidthPx,
+                        densityScale = density.density,
+                        bytesSize = readyBytes!!.size,
+                        onTransformedSize = { transformedDimensions = it },
+                    )
                 } else if (readyBytesReadFailed) {
                     ReaderPageErrorView(
                         error = IllegalStateException("Page image is unavailable"),
