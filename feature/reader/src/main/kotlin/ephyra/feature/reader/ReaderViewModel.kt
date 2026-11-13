@@ -275,10 +275,10 @@ class ReaderViewModel @Inject constructor(
     private var unfilteredChapterListCache: List<Chapter>? = null
     private suspend fun getUnfilteredChapterList(): List<Chapter> {
         if (unfilteredChapterListCache == null) {
-            val manga = manga!!
+            val manga = manga ?: return emptyList()
             unfilteredChapterListCache = getChaptersByMangaId.await(manga.id, applyScanlatorFilter = false)
         }
-        return unfilteredChapterListCache!!
+        return unfilteredChapterListCache ?: emptyList()
     }
 
     /**
@@ -295,7 +295,7 @@ class ReaderViewModel @Inject constructor(
         // with no suspension. On a cold start it waits for the brief disk-cache read.
         downloadManager.awaitCacheReady()
 
-        val manga = manga!!
+        val manga = manga ?: return emptyList()
         val chapters = getChaptersByMangaId.await(manga.id, applyScanlatorFilter = true)
 
         val selectedChapter = chapters.find { it.id == chapterId }
@@ -1168,8 +1168,9 @@ class ReaderViewModel @Inject constructor(
      */
     private suspend fun emitNoNextChapterFeedback() {
         val current = state.value.currentChapter ?: return
+        val manga = manga ?: return
         val sorted = getUnfilteredChapterList()
-            .sortedWith(getChapterSort(manga!!, sortDescending = false))
+            .sortedWith(getChapterSort(manga, sortDescending = false))
         val reason = classifyNoNextChapter(sorted, currentChapterId = current.chapter.id)
         emitEffect(Event.NoNextChapter(reason))
     }
@@ -1222,7 +1223,9 @@ class ReaderViewModel @Inject constructor(
      * Symmetric with [classifyNoNextChapter].
      */
     private suspend fun classifyNoPreviousChapter(current: ReaderChapter): NoPreviousChapterReason {
-        val allChapters = readerChapterProvider.getChapterListFlow(manga!!, source!!).first()
+        val manga = manga ?: return NoPreviousChapterReason.START_OF_LIST
+        val source = source ?: return NoPreviousChapterReason.START_OF_LIST
+        val allChapters = readerChapterProvider.getChapterListFlow(manga, source).first()
         val currentIndex = allChapters.indexOfFirst { it.chapter.id == current.chapter.id }
         return if (currentIndex <= 0) {
             NoPreviousChapterReason.START_OF_LIST
