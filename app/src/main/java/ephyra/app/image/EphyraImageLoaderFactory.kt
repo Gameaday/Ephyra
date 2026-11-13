@@ -77,8 +77,8 @@ class EphyraImageLoaderFactory(
                 add(MangaCoverFetcher.MangaCoverFactory(callFactoryLazy, coverCache, sourceMgr))
                 add(MangaCoverFetcher.MangaFactory(callFactoryLazy, coverCache, sourceMgr))
                 // Keyer
-                add(MangaCoverKeyer(coverCache))
-                add(MangaKeyer(coverCache))
+                add(MangaCoverKeyer())
+                add(MangaKeyer())
             }
 
             memoryCache(
@@ -99,13 +99,15 @@ class EphyraImageLoaderFactory(
                     .build(),
             )
             // Coil 3 lifecycle-aware background trimming: when the app moves to the
-            // background, the memory cache is evicted down to 10% of its capacity and
-            // grown back on demand once resumed. Dropping the working set this aggressively
-            // yields graphics memory to the rest of the system; the entries that are
-            // discarded are re-decoded cheaply on return, which is the right trade while the
-            // reader is not on screen. This replaces the old manual onTrimMemory
+            // background, the memory cache is evicted down to this fraction of its capacity
+            // and grown back on demand once resumed. The previous 10% dropped nearly the
+            // whole working set, so every return from a background trip re-decoded every
+            // visible cover from disk and faded each in — the delayed-cover report (audit
+            // P1). 25% keeps roughly the last screenfuls warm while still yielding most of
+            // the cache to the system; the hard cap in ImageCacheMemoryPolicy bounds the
+            // retained floor in absolute terms. This replaces the old manual onTrimMemory
             // "clear everything on UI hidden" behaviour.
-            memoryCacheMaxSizePercentWhileInBackground(0.1)
+            memoryCacheMaxSizePercentWhileInBackground(0.25)
 
             diskCache {
                 DiskCache.Builder()
