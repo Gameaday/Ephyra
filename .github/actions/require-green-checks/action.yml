@@ -104,9 +104,10 @@ runs:
               fi
             done
             if [ -n "${missing}" ]; then
-              echo "::error::Required check(s) not reported for ${sha}; this commit was never run through the gate workflow:"
+              echo "Waiting for required checks to appear on ${sha} (polling every ${poll_seconds}s):"
               printf '%b' "${missing}"
-              exit 1
+              sleep "${poll_seconds}"
+              continue
             fi
 
             echo "All ${total} check(s) on ${sha} are green (required: ${INPUT_REQUIRED}):"
