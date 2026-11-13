@@ -106,6 +106,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import logcat.LogPriority
 import okio.Buffer
 import java.io.ByteArrayInputStream
 import kotlin.math.abs

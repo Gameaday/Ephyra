@@ -7,6 +7,7 @@ import android.graphics.Rect
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.reader.media.PixelRect
 import ephyra.domain.reader.media.SampleSize
+import logcat.LogPriority
 import java.io.ByteArrayInputStream
 import kotlin.math.max
 
