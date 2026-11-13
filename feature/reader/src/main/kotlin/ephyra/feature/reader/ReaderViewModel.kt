@@ -1224,8 +1224,7 @@ class ReaderViewModel @Inject constructor(
      */
     private suspend fun classifyNoPreviousChapter(current: ReaderChapter): NoPreviousChapterReason {
         val manga = manga ?: return NoPreviousChapterReason.START_OF_LIST
-        val source = manga.source ?: return NoPreviousChapterReason.START_OF_LIST
-        val allChapters = readerChapterProvider.getChapterListFlow(manga, source).first()
+        val allChapters = getChapterList()
         val currentIndex = allChapters.indexOfFirst { it.chapter.id == current.chapter.id }
         return if (currentIndex <= 0) {
             NoPreviousChapterReason.START_OF_LIST
