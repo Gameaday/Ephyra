@@ -35,7 +35,13 @@ the rare backward jump. Retention follows revisit probability, not arrival order
 4. **Explicit lifecycle events still win.** Unfavorite/delete → cover delete (exists);
    per-manga chapter eviction on removal stays on the queue (needs chapter list at
    removal time); manual clear stays in Settings.
-5. **Budgets stay tier-sized by device RAM** (existing DeviceUtil tiers).
+5. **Budgets stay tier-sized by device RAM** (existing DeviceUtil tiers). The
+   decoded-image memory cache is percent-sized by tier under a hard 96 MiB cap
+   (`ImageCacheMemoryPolicy.MEMORY_CACHE_HARD_CAP_BYTES`), keeps 25% of itself while
+   the app is backgrounded, and pressure-trims to half its baseline with a 16 MiB
+   floor that never grows the cache (app health audit P1, 2026-11-13). Memory-tier
+   cover prefetch on resume was investigated and recorded as infeasible under Coil 3's
+   EXACT-precision size validation — see the audit's P1 remediation note.
 
 ## Validation plan (objective check)
 

@@ -7,6 +7,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Unreleased]
+### 🖼️ Image pipeline — cache-key I/O removal & memory bounds (app health audit P1/P2, 2026-11-13)
+- **Cache-key computation no longer touches the filesystem.** `MangaKeyer`/
+  `MangaCoverKeyer` ran a synchronous `File.exists()` stat on every key computation —
+  including memory-cache lookups served hundreds of times per grid scroll. Keys now
+  branch on favorite status (library content by manga identity, browse by URL so
+  duplicates share one entry); the custom-cover signal the probe carried is carried by
+  `coverLastModified`, which every cover mutation bumps. That closed a latent bug the
+  probe had been masking: `MigrateMangaUseCase` copied a custom cover to the migration
+  target without bumping the revision, so the stale previous cover kept serving from
+  memory cache; migration now bumps it. Disclosed consequence: a favorite series
+  without a custom cover re-keys once on upgrade — a one-time re-decode from the
+  durable store, never a re-download.
+- **The decoded-image memory cache keeps more across a background trip and runs under
+  a hard cap.** Background retention rises from 10% to 25% of the cache (the old value
+  re-decoded every visible cover on return — the delayed-cover report), and the cache
+  is clamped to a 96 MiB hard cap at baseline capture: percent-of-heap sizing under
+  `largeHeap` otherwise reaches ~150 MiB on big-heap devices. Both bounds are pinned
+  by cap tests (`ImageCacheMemoryPolicyTest`) and a source gate
+  (`ImageCacheBoundsGateTest`).
+- **Pressure trims can no longer grow the cache.** Below a 32 MiB baseline, the old
+  half-with-16-MiB-floor formula *raised* `maxSize` under memory pressure; the trim
+  target is now clamped to the baseline. The 16 MiB floor itself is reviewed and kept
+  — raising it would neuter the trim on LOW-tier devices whose baseline already sits
+  near it.
+- **The planned resume-time cover prefetch is recorded, not shipped.** Coil 3.6.3
+  validates a cached decode against the request's layout-resolved size at
+  `Precision.EXACT` (±1 px), so a data-layer prefetch cannot warm the entries a grid
+  will actually read — dead code by construction. Recorded in the audit (P1) with the
+  two conditions that would revive it.
 ### 📚 Reader — next-chapter press feedback (app health audit F1, 2026-11-12)
 - **A next-chapter press with no forward chapter now explains itself.** `loadNextChapter()`'s
   silent `?: return` is replaced by a classified event: the view model re-reads the unfiltered
@@ -1024,7 +1053,3 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`ROADMAP.md`**: Updated to reflect completed Phase 1 (Pure DI), in-progress Phase 3
   (Content-Agnostic UI) and Phase 4 (Build Config), and planned Phase 2 (Sandboxed Scripting).
 - **`CHANGELOG.md`**: This file — initialized.
-
-
-
-

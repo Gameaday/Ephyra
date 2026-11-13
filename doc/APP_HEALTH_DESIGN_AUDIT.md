@@ -92,12 +92,43 @@ for — the series just read, the top of the stacked History — is the one whos
 was most likely evicted mid-session by the pressure trims, so the report's "especially
 the most recent series cover" is the expected shape of this defect, not a separate bug.
 
+**Stage 2 remediation (2026-11-13):**
+- Background retention raised 10% → 25% (`EphyraImageLoaderFactory.kt`): a background
+  trip no longer drops nearly the whole working set, so returning to History/Library
+  keeps roughly the last screenfuls decoded.
+- Hard cap: the memory cache is clamped to 96 MiB at baseline capture
+  (`ImageCacheMemoryPolicy.cappedBaseline`) — percent-of-heap sizing under `largeHeap`
+  otherwise reaches ~150 MiB on big-heap devices.
+- Trim floor reviewed and kept at 16 MiB: on LOW-tier devices the baseline (20% of a
+  small heap) already sits near the floor, so raising it would neuter the pressure
+  trim; the no-grow correction (`trimTarget` never exceeds the baseline) fixes the
+  small-baseline case where the old formula *raised* `maxSize` under pressure.
+- Resume-time memory-tier cover prefetch: **investigated, not shipped.** Coil 3.6.3's
+  memory key excludes the request size when there are no transformations, but
+  `MemoryCacheService.isCacheValueValidForSize` validates the cached decode against
+  the request's layout-resolved size at the default `Precision.EXACT` (±1 px). A
+  data-layer prefetch cannot know the size a grid cell will resolve, so its entries
+  could never satisfy a grid request — dead code by construction. Revisit only as a
+  UI-owned prefetch (composition knows its constraints) or a reviewed
+  `Precision.INEXACT` decision, which would trade full-resolution decodes for hit
+  flexibility.
+
 **P2 — Cache-key computation performs filesystem I/O.**
 `MangaCoverKeyer.kt` (`MangaKeyer.key`, `MangaCoverKeyer.key`) call
 `coverCache.getCustomCoverFile(...).exists()` / `hasCustomCover(coverCache)` — a
 synchronous `stat` per key computation, including memory-cache lookups. Per call it is
 cheap; on grids of hundreds of covers re-keying on every recomposition-driven request
 it is measurable, and it is I/O on a path that is otherwise pure string work.
+
+**Fixed (Stage 2, 2026-11-13):** the keyers now branch on `favorite` /
+`isMangaFavorite` — library content keys by manga identity, browse by URL — and never
+probe the filesystem. The custom-cover signal the `exists()` probe carried is carried
+by `coverLastModified`, which every cover-bytes mutation bumps; the one path that did
+not (`MigrateMangaUseCase`, copying a custom cover to a migration target) now bumps it
+too, closing a latent stale-custom-cover-after-migration bug the probe had been
+masking. Disclosed consequence: a favorite series without a custom cover re-keys once
+from `url;lm` to `id;lm` on upgrade — a one-time re-decode from the durable store,
+never a re-download.
 
 **P3 — Cache & memory exhaustion when reading a very long series or many series
 (user report; requires closing and reopening to clear).**
@@ -155,6 +186,32 @@ the exemplar.
 (system-clearable), and the persisted-cover cap is 8 MiB
 (`MangaCoverFetcher.MAX_PERSISTED_COVER_BYTES`). No public-storage writes. No action.
 
+## Resource bounds (analytic, source-cited)
+
+Every long-session memory consumer and its bound, as of the Stage 2 merge. This is the
+"no unbounded structure" table for P3: each row is checkable in source, and the
+cap-pinning tests (`ImageCacheMemoryPolicyTest`, `ImageCacheBoundsGateTest`) keep the
+memory-tier rows honest.
+
+| Resource | Bound | Owner |
+|---|---|---|
+| Chapter page disk cache | LRU, tiered 100 / 256 / 512 MiB | `core/data/.../cache/ChapterCache.kt` |
+| Image disk cache | LRU, tiered 50 / 150 / 300 MiB | `EphyraImageLoaderFactory.kt` |
+| Durable cover store | 256 MiB, 30-day LRU prune | `core/data/.../cache/CoverCache.kt` |
+| Single persisted cover write | 8 MiB cap, oversized served uncached | `MangaCoverFetcher.kt` |
+| Reader encoded-page bytes | `PageByteBudget` via `BoundedPageByteStore`; viewport pins; series-switch eviction | `PageByteStoreOwner.kt` |
+| Decoded-image memory cache | 20 / 25 / 30% of heap by tier, hard cap 96 MiB | `EphyraImageLoaderFactory.kt`, `ImageCacheMemoryPolicy.kt` |
+| Memory cache while backgrounded | 25% of the capped cache | `EphyraImageLoaderFactory.kt` |
+| Foreground pressure trim | half the baseline, floor 16 MiB, never grows | `ImageCacheMemoryPolicy.kt` |
+| Cover fetch / decode parallelism | 8 / 3 concurrent | `EphyraImageLoaderFactory.kt` |
+| Library durable cover prefetch | 24 covers per library change | `LibraryScreen.kt` |
+
+Binge and sampling both resolve against the same rows: a 200+-chapter binge is bounded
+by the page byte budget plus the capped decoded cache (LRU evicts scrolled-out strips),
+and a ~30-series sampling hop is bounded by the same capped cache plus the 256 MiB
+durable cover store. Nothing in the table grows with session length without hitting a
+named ceiling.
+
 ## Remediation plan
 
 Sequenced PRs, smallest user-facing first:
@@ -166,10 +223,14 @@ Sequenced PRs, smallest user-facing first:
   filter)". Keep RDR-002's window semantics; whether the reader should fall back to
   the unfiltered next chapter is an owner decision, recorded as a question, not
   decided here. Regression tests + CHANGELOG.
-- **Stage 2 (P1 + P2 + D2): cover pipeline.** Remove I/O from the keyer path; tune the
-  thumbnail crossfade; review the trim floor's interaction with cover retention
-  (whether a pressure trim should exempt a small pinned working set of visible
-  covers). Device before/after evidence on the delayed-appearance report.
+- **Stage 2 (P1 + P2 + D2): cover pipeline.** SHIPPED 2026-11-13, minus the motion
+  half: keyer I/O removed (P2); background retention raised to 25% under a 96 MiB hard
+  cap; trim floor reviewed and kept at 16 MiB with a no-grow correction; the
+  resume-time memory-tier prefetch investigated and recorded as infeasible under Coil
+  3's EXACT-precision size validation (see P1). The thumbnail crossfade (D2) stays
+  deferred per the owner's motion policy — motion/crossfade tuning waits until after
+  the memory/caching work and is a whole-page decision. Device before/after evidence
+  on the delayed-appearance report remains owner-side (Stage 3).
 - **Stage 3 (P3): device measurement.** Long-series reading session on the current
   nightly with memory + graphics counters; only a reproduced exhaustion produces code
   changes. Owner-side (A5/B-050).
