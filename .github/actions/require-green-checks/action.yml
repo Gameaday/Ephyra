@@ -87,32 +87,44 @@ runs:
               exit 1
             fi
           elif [ -z "${pending}" ]; then
-            bad="$(printf '%s\n' "${rows}" | awk -F '\t' '$3 != "success" && $3 != "skipped" && $3 != "neutral"')"
-            if [ -n "${bad}" ]; then
-              echo "::error::This publish is gated: ${sha} is not a verified commit."
-              echo "::error::Failing check(s):"
-              printf '%s\n' "${bad}" | sed 's/^/  /'
-              exit 1
-            fi
-
+            # Check if all required checks are present
             missing=""
             IFS=',' read -r -a required_names <<< "${INPUT_REQUIRED}"
             for name in "${required_names[@]}"; do
               trimmed="$(printf '%s' "${name}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-              if ! printf '%s\n' "${rows}" | grep -qF "$(printf '%s\t' "${trimmed}")"; then
-                missing="${missing}  ${trimmed}\n"
+              if ! printf '%s
+' "${rows}" | grep -qF "$(printf '%s	' "${trimmed}")"; then
+                missing="${missing}  ${trimmed}
+"
               fi
             done
+            
+            # If required checks are missing, treat as pending and continue waiting
             if [ -n "${missing}" ]; then
-              echo "::error::Required check(s) not reported for ${sha}; this commit was never run through the gate workflow:"
+              # There are missing required checks, but we saw other checks completed.
+              # This likely means the gate workflow hasn't started yet.
+              # Continue waiting instead of failing immediately.
+              echo "Waiting for required checks to appear on ${sha} (polling every ${poll_seconds}s):"
               printf '%b' "${missing}"
+              sleep "${poll_seconds}"
+              continue
+            fi
+
+            # All required checks are present, check their status
+            bad="$(printf '%s
+' "${rows}" | awk -F '	' '$3 != "success" && $3 != "skipped" && $3 != "neutral"')"
+            if [ -n "${bad}" ]; then
+              echo "::error::This publish is gated: ${sha} is not a verified commit."
+              echo "::error::Failing check(s):"
+              printf '%s
+' "${bad}" | sed 's/^/  /'
               exit 1
             fi
 
             echo "All ${total} check(s) on ${sha} are green (required: ${INPUT_REQUIRED}):"
-            printf '%s\n' "${rows}" | sed 's/^/  /'
+            printf '%s
+' "${rows}" | sed 's/^/  /'
             exit 0
-          fi
 
           if [ "${now}" -ge "${deadline}" ]; then
             echo "::error::Timed out after ${timeout_minutes}m waiting for checks on ${sha}. Still not completed:"
