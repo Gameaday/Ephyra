@@ -230,6 +230,7 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
                     is ReaderViewModel.Event.ShareImage -> onShareImageResult(event.uri, event.page)
                     is ReaderViewModel.Event.CopyImage -> onCopyImageResult(event.uri)
                     is ReaderViewModel.Event.NoNextChapter -> onNoNextChapter(event.reason)
+                    is ReaderViewModel.Event.NoPreviousChapter -> onNoPreviousChapter(event.reason)
                 }
             }
             .launchIn(lifecycleScope)
@@ -509,6 +510,15 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
                 toast(ephyra.app.core.common.R.string.reader_no_next_chapter_end)
             ReaderViewModel.NoNextChapterReason.OUTSIDE_NAVIGATION_UNIVERSE ->
                 toast(ephyra.app.core.common.R.string.reader_no_next_chapter_filtered)
+        }
+    }
+
+    fun onNoPreviousChapter(reason: ReaderViewModel.NoPreviousChapterReason) {
+        when (reason) {
+            ReaderViewModel.NoPreviousChapterReason.START_OF_LIST ->
+                toast(ephyra.app.core.common.R.string.reader_no_previous_chapter_start)
+            ReaderViewModel.NoPreviousChapterReason.OUTSIDE_NAVIGATION_UNIVERSE ->
+                toast(ephyra.app.core.common.R.string.reader_no_previous_chapter_filtered)
         }
     }
 

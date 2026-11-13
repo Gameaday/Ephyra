@@ -1195,13 +1195,40 @@ class ReaderViewModel @Inject constructor(
      * Called from the activity to load and set the previous chapter as active.
      */
     suspend fun loadPreviousChapter(): Int? {
-        val prevChapter = state.value.viewerChapters?.prevChapter ?: return null
+        val prevChapter = state.value.viewerChapters?.prevChapter
+        if (prevChapter == null) {
+            emitNoPreviousChapterFeedback()
+            return null
+        }
         loadAdjacent(prevChapter, startFromEnd = true)
         // loadAdjacent() completes after loadChapter() returns, so the target chapter's page
         // list has been initialized (or load failed). Return null when a visible index can't be
         // derived (null/empty/all-hidden pages; indexOfLast returns -1 for empty/all-hidden)
         // so the caller can choose an explicit fallback.
         return prevChapter.lastVisiblePageIndex()
+    }
+
+    /**
+     * Symmetric with [emitNoNextChapterFeedback]: emit feedback when there's no previous chapter.
+     */
+    private suspend fun emitNoPreviousChapterFeedback() {
+        val current = state.value.currentChapter ?: return
+        val reason = classifyNoPreviousChapter(current)
+        emitEffect(Event.NoPreviousChapter(reason))
+    }
+
+    /**
+     * Classify why the reader's navigation window has no previous chapter.
+     * Symmetric with [classifyNoNextChapter].
+     */
+    private suspend fun classifyNoPreviousChapter(current: ReaderChapter): NoPreviousChapterReason {
+        val allChapters = readerChapterProvider.getChapterListFlow(manga!!, source!!).first()
+        val currentIndex = allChapters.indexOfFirst { it.chapter.id == current.chapter.id }
+        return if (currentIndex <= 0) {
+            NoPreviousChapterReason.START_OF_LIST
+        } else {
+            NoPreviousChapterReason.OUTSIDE_NAVIGATION_UNIVERSE
+        }
     }
 
     /**
@@ -1693,6 +1720,13 @@ class ReaderViewModel @Inject constructor(
          * return so the UI can explain what happened and why.
          */
         data class NoNextChapter(val reason: NoNextChapterReason) : Event
+
+        /**
+         * Symmetric with [NoNextChapter]: the previous-chapter control reached a
+         * navigation window with no backward chapter. Emitted instead of the old silent
+         * return so the UI can explain what happened and why.
+         */
+        data class NoPreviousChapter(val reason: NoPreviousChapterReason) : Event
     }
 
     /**
@@ -1703,6 +1737,17 @@ class ReaderViewModel @Inject constructor(
         END_OF_LIST,
 
         /** A forward chapter exists unfiltered but the navigation window excludes it. */
+        OUTSIDE_NAVIGATION_UNIVERSE,
+    }
+
+    /**
+     * Why the reader's navigation window has no backward chapter (see [Event.NoPreviousChapter]).
+     */
+    enum class NoPreviousChapterReason {
+        /** The unfiltered chapter list has no chapter before the current one. */
+        START_OF_LIST,
+
+        /** A backward chapter exists unfiltered but the navigation window excludes it. */
         OUTSIDE_NAVIGATION_UNIVERSE,
     }
 }

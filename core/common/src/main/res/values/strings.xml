@@ -1052,6 +1052,8 @@
     <string name="no_next_chapter">Next chapter not found</string>
     <string name="reader_no_next_chapter_end">No further chapters in this series</string>
     <string name="reader_no_next_chapter_filtered">Next chapter is hidden by reader filters (skip read, duplicates, or downloaded-only)</string>
+    <string name="reader_no_previous_chapter_start">No previous chapters in this series</string>
+    <string name="reader_no_previous_chapter_filtered">Previous chapter is hidden by reader filters (skip read, duplicates, or downloaded-only)</string>
     <string name="decode_image_error">The image couldn\'t be loaded</string>
     <string name="confirm_set_image_as_cover">Use this image as cover art?</string>
     <string name="pref_category_for_this_series">For this series</string>
