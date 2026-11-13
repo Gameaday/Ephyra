@@ -23,6 +23,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -281,5 +282,18 @@ class BrowseSourceViewModelTest {
             val updated = awaitItem()
             assertEquals(0, updated.filters.size)
         }
+    }
+
+    @Test
+    fun `SetDisplayMode event writes the display mode preference`() = runTest {
+        // The UI can no longer assign `displayMode` directly (it is read-only now); the event is
+        // the only write path, and it must land in the persisted preference.
+        every { displayModePref.set(any()) } returns Unit
+        val viewModel = createViewModel()
+
+        viewModel.onEvent(BrowseSourceScreenEvent.SetDisplayMode(LibraryDisplayMode.default))
+        advanceUntilIdle()
+
+        verify(exactly = 1) { displayModePref.set(LibraryDisplayMode.default) }
     }
 }

@@ -142,7 +142,7 @@ private fun HistoryScreenContent(
         contentPadding = contentPadding,
     ) {
         items(
-            items = history,
+            items = history.withExpandedSeriesChildren(expandedSeriesIds),
             key = {
                 when (it) {
                     is HistoryUiModel.Header -> "history-header-${it.date}"
@@ -178,9 +178,10 @@ private fun HistoryScreenContent(
                 }
 
                 is HistoryUiModel.Series -> {
-                    // The whole stack is one lazy item: the expanded children deliberately get
-                    // no keys of their own and no animateItemFastScroll (that modifier only
-                    // exists on the direct LazyItemScope receiver of the top-level item).
+                    // Only the latest read and the expand toggle render here. When the series
+                    // is expanded, its older reads are top-level keyed lazy items (see
+                    // [withExpandedSeriesChildren]), so only the visible ones compose and each
+                    // keeps its own key and animateItemFastScroll.
                     Column(Modifier.animateItemFastScroll()) {
                         HistoryItem(
                             history = item.latest,
@@ -216,21 +217,35 @@ private fun HistoryScreenContent(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        if (item.latest.mangaId in expandedSeriesIds) {
-                            item.older.forEach { older ->
-                                HistoryItem(
-                                    history = older,
-                                    onClickCover = { onClickCover(older) },
-                                    onClickResume = { onClickResume(older) },
-                                    onClickDelete = { onClickDelete(older) },
-                                    onClickFavorite = { onClickFavorite(older) },
-                                )
-                            }
-                        }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * Flattens expanded series groups into top-level lazy items.
+ *
+ * PR #353 stacked a series' reads behind one row, but the expanded children rendered
+ * inside the series' single lazy item: every child composed whenever the stack composed,
+ * none had a key of its own, and none could animate with [animateItemFastScroll] (that
+ * modifier only exists on the direct `LazyItemScope` receiver of a top-level item). This
+ * pass lifts the expanded children into [HistoryUiModel.Item]s of their own, filed
+ * directly after their series row, so the lazy list only composes the visible ones, item
+ * identity survives list changes, and the children animate like every other row.
+ * Collapsed series pass through untouched; the ViewModel is untouched, so #353's tests
+ * stay green. The children reuse the plain-item key (`history-<id>`) and content type,
+ * which is unambiguous because grouping is by `mangaId`: a read is either its group's
+ * latest (the [HistoryUiModel.Series] row) or one of its older children — never both.
+ */
+internal fun List<HistoryUiModel>.withExpandedSeriesChildren(
+    expandedSeriesIds: Set<Long>,
+): List<HistoryUiModel> = flatMap { entry ->
+    if (entry is HistoryUiModel.Series && entry.latest.mangaId in expandedSeriesIds) {
+        listOf(entry) + entry.older.map { HistoryUiModel.Item(it) }
+    } else {
+        listOf(entry)
     }
 }
 

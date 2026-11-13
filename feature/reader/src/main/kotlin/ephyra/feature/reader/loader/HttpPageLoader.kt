@@ -252,7 +252,7 @@ internal class HttpPageLoader(
                 }
             }
                 .filter { it.page.status == Page.State.Queue }
-                .collect { internalLoadPage(it.page, it.priority) }
+                .collect { internalLoadPage(it.page, it.priority, it.forceDownload) }
         }
     }
 
@@ -429,12 +429,24 @@ internal class HttpPageLoader(
      * difference between a Retry that can work and one that re-sends a request known to fail: an
      * unresolvable image host is not reachable by asking for the same host again, and the source
      * will hand back a different one.
+     *
+     * **The retry is also forced past the cache (Mihon-parity `force = true`).** A page can fail
+     * *after* its bytes were cached: the loader served a cache hit, the viewer's decode of those
+     * bytes failed (a source that answered `200` with an HTML error page, a truncated entry a
+     * previous build wrote non-transactionally), and the viewer surfaced its own error view with
+     * this retry button. Without forcing, the reload finds the bad entry still in the cache,
+     * skips the download, hands out the identical bytes, and the page fails identically —
+     * forever, because the only writer of `Page.State.Error` is the ladder, which never runs
+     * again for a page that is already `Ready`. Upstream Mihon's `retryPage` passes
+     * `force = true` to `internalLoadPage` for exactly this reason. The user asked for a new
+     * attempt; one re-download is the honest cost of it. The automatic paths (the visibility
+     * auto-retry and the eviction reload) stay unforced: they did not have a user behind them.
      */
     override fun retryPage(page: ReaderPage) {
         check(!isRecycled)
         val failedWith = (page.status as? Page.State.Error)?.error
         prepareForReload(page, dropImageUrl = failedWith != null && TransientErrors.shouldReResolveUrl(failedWith))
-        queue.offer(PriorityPage(page, 2))
+        queue.offer(PriorityPage(page, 2, forceDownload = true))
     }
 
     override fun recycle() {
@@ -646,8 +658,17 @@ internal class HttpPageLoader(
      *
      * @param page the page whose source image has to be downloaded.
      * @param priority the queue priority at which this page was dequeued.
+     * @param forceDownload when `true`, a cache hit for [page.imageUrl] is *ignored* and the
+     *   image is re-downloaded over the existing entry. Set only by the user's explicit retry
+     *   ([retryPage], Mihon-parity `force = true`): a page that failed on already-cached bytes
+     *   (an HTML error page stored as an image, a truncated entry) fails identically forever
+     *   unless the reload goes past the cache, because the skip-and-serve arm below hands out
+     *   the same bytes and the ladder never runs again for a page that reaches `Ready`. The
+     *   flag rides [PriorityPage] so it survives a yield: [requeueAndYield] re-enqueues at the
+     *   same priority, and a forced retry that yields must not come back unforced — that would
+     *   reintroduce the identical-bytes failure it was queued to escape.
      */
-    private suspend fun internalLoadPage(page: ReaderPage, priority: Int) {
+    private suspend fun internalLoadPage(page: ReaderPage, priority: Int, forceDownload: Boolean = false) {
         // One owner for the decision, so the downloader cannot drift from the reader on what to do
         // about a failure. It used to: the reader dropped a URL the classifier indicted and asked
         // the source again, while the downloader retried the identical string against the same
@@ -655,8 +676,10 @@ internal class HttpPageLoader(
         val recovery = PageLoadRecovery()
         while (true) {
             try {
-                // Yield to a higher-priority page before starting the URL fetch.
-                if (requeueAndYield(page, priority)) return
+                // Yield to a higher-priority page before starting the URL fetch. The force flag
+                // rides along: a forced retry that yields must come back forced, or the yield
+                // reintroduces the identical-bytes failure it was queued to escape.
+                if (requeueAndYield(page, priority, forceDownload)) return
 
                 // Clear the previous attempt's progress. `Page.progress` is written by
                 // `ProgressListener` as bytes arrive and is not reset anywhere on this path, so a
@@ -727,9 +750,17 @@ internal class HttpPageLoader(
 
                 // Yield again after the URL fetch (which can be slow) and before the potentially
                 // large image download, giving the urgent page a chance to start promptly.
-                if (requeueAndYield(page, priority)) return
+                if (requeueAndYield(page, priority, forceDownload)) return
 
-                if (!chapterCache.isImageInCache(imageUrl)) {
+                // A cache hit normally ends the download: the entry is on disk, so the bytes are
+                // served from there and the network is never touched. A *forced* load inverts
+                // that — the user's retry has to produce new bytes, because the cached ones are
+                // precisely what failed (a decode failure on an HTML error page cached as an
+                // image, a truncated entry). Mihon spells this `takeUnless { force }` on the
+                // cache check; the condition below is the same rule. `fetchAndCacheImage`'s
+                // editor is aborted by a new fetch for the same key (see ChapterCache), so the
+                // re-download replaces the bad entry rather than racing it.
+                if (forceDownload || !chapterCache.isImageInCache(imageUrl)) {
                     page.status = Page.State.DownloadImage
                     chapterCache.fetchAndCacheImage(imageUrl) { source.getImage(page) }
                 }
@@ -844,10 +875,10 @@ internal class HttpPageLoader(
      * Uses [PriorityBlockingQueue.peek] which is non-blocking and O(1), so calling this at
      * natural suspension points adds no measurable overhead on the common path.
      */
-    private fun requeueAndYield(page: ReaderPage, currentPriority: Int): Boolean {
+    private fun requeueAndYield(page: ReaderPage, currentPriority: Int, forceDownload: Boolean = false): Boolean {
         if (!shouldYield(currentPriority)) return false
         page.status = Page.State.Queue
-        queue.offer(PriorityPage(page, currentPriority))
+        queue.offer(PriorityPage(page, currentPriority, forceDownload))
         return true
     }
 
@@ -956,6 +987,13 @@ internal class HttpPageLoader(
 private class PriorityPage(
     val page: ReaderPage,
     val priority: Int,
+    /**
+     * Carries the retry button's force-past-cache intent (Mihon-parity `force = true`) through
+     * the queue to [HttpPageLoader.internalLoadPage]. Only the user's explicit retry sets this;
+     * every automatic enqueue (preload, auto-retry on visibility, eviction reload) leaves it
+     * `false` so a cached entry keeps serving bytes the user never asked to re-download.
+     */
+    val forceDownload: Boolean = false,
 ) : Comparable<PriorityPage> {
     companion object {
         private val idGenerator = AtomicInt(0)

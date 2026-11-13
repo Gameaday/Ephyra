@@ -7,6 +7,71 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Unreleased]
+### 🖼️ Image pipeline — cache-key I/O removal & memory bounds (app health audit P1/P2, 2026-11-13)
+- **Cache-key computation no longer touches the filesystem.** `MangaKeyer`/
+  `MangaCoverKeyer` ran a synchronous `File.exists()` stat on every key computation —
+  including memory-cache lookups served hundreds of times per grid scroll. Keys now
+  branch on favorite status (library content by manga identity, browse by URL so
+  duplicates share one entry); the custom-cover signal the probe carried is carried by
+  `coverLastModified`, which every cover mutation bumps. That closed a latent bug the
+  probe had been masking: `MigrateMangaUseCase` copied a custom cover to the migration
+  target without bumping the revision, so the stale previous cover kept serving from
+  memory cache; migration now bumps it. Disclosed consequence: a favorite series
+  without a custom cover re-keys once on upgrade — a one-time re-decode from the
+  durable store, never a re-download.
+- **The decoded-image memory cache keeps more across a background trip and runs under
+  a hard cap.** Background retention rises from 10% to 25% of the cache (the old value
+  re-decoded every visible cover on return — the delayed-cover report), and the cache
+  is clamped to a 96 MiB hard cap at baseline capture: percent-of-heap sizing under
+  `largeHeap` otherwise reaches ~150 MiB on big-heap devices. Both bounds are pinned
+  by cap tests (`ImageCacheMemoryPolicyTest`) and a source gate
+  (`ImageCacheBoundsGateTest`).
+- **Pressure trims can no longer grow the cache.** Below a 32 MiB baseline, the old
+  half-with-16-MiB-floor formula *raised* `maxSize` under memory pressure; the trim
+  target is now clamped to the baseline. The 16 MiB floor itself is reviewed and kept
+  — raising it would neuter the trim on LOW-tier devices whose baseline already sits
+  near it.
+- **The planned resume-time cover prefetch is recorded, not shipped.** Coil 3.6.3
+  validates a cached decode against the request's layout-resolved size at
+  `Precision.EXACT` (±1 px), so a data-layer prefetch cannot warm the entries a grid
+  will actually read — dead code by construction. Recorded in the audit (P1) with the
+  two conditions that would revive it.
+### 📚 Reader — next-chapter press feedback (app health audit F1, 2026-11-12)
+- **A next-chapter press with no forward chapter now explains itself.** `loadNextChapter()`'s
+  silent `?: return` is replaced by a classified event: the view model re-reads the unfiltered
+  chapter list at event time and distinguishes the true end of the series ("No further chapters
+  in this series") from a chapter hidden by the reader's navigation filters — skip-read,
+  duplicate collapse, or downloaded-only ("Next chapter is hidden by reader filters (skip read,
+  duplicates, or downloaded-only)"). RDR-002 window semantics are unchanged: the reader stays in
+  its navigation universe and explains; it never falls back to the unfiltered list. Feedback
+  renders as a toast, the reader's established discrete-result channel (a disclosed deviation
+  from the audit's "snackbar" wording).
+- **The disabled next/previous controls are visibly disabled.** `ChapterNavigator` no longer pins
+  `disabledContainerColor` to the enabled container colour, so Material's default disabled
+  treatment (12% onSurface container, 38% content) renders a distinct state; a new source gate
+  (`ReaderDisabledControlStateTest`, per the `MotionConsistencyTest` pattern) keeps the pin from
+  returning. Covered by four new `ReaderViewModelTest` cases (classification table + no-crash
+  wiring).
+### 🏛️ Architecture — strict UDF gate (11 ArchUnit rules, 2026-11-11)
+- **ViewModels can no longer leak mutability, cross-depend, or touch Compose.** Four new ArchUnit rules in
+  `ArchitectureTest.kt` join the seven existing ones: no ViewModel may depend on another concrete ViewModel
+  (abstract base classes excluded); no ViewModel may reference the Compose toolkit
+  (`androidx.compose.animation`/`foundation`/`material`/`material3` and `androidx.compose.ui` — with a
+  documented exemption for `androidx.compose.ui.util`'s allocation-lean `fastAny`/`fastFilter`/`fastMap`
+  collection helpers, which are collection utilities, not rendering vocabulary); no public `setX` mutators;
+  and no exposed `kotlinx.coroutines.channels.Channel` fields (events cross the boundary as shared flows or
+  one-shot functions, never as a mutable pipe anyone can `trySend` into).
+- **Browse source display mode is now event-driven UDF.** `BrowseSourceViewModel.displayMode` was a public
+  `var` written directly by two screens; it is now a `val` with a private `setDisplayMode` that persists
+  through `sourcePreferences.sourceDisplayMode()`, and screens route changes through a new
+  `BrowseSourceScreenEvent.SetDisplayMode` event (`getColumnsPreference` returns `Int` instead of
+  `GridCells`, keeping the event payload free of Compose types; `0` = `Adaptive(128.dp)` via a file-private
+  `browseGridColumns` helper). Covered by a new `SetDisplayMode` event test in `BrowseSourceViewModelTest`.
+- **Import hygiene.** `UpcomingViewModel`/`StatsViewModel` switched from Compose `fast*` helpers to stdlib
+  equivalents; an unused `fastAny` import removed from `MangaViewModel`.
+- **Known remaining UDF debt, documented in the PR body:** `SearchViewModel`'s `@Composable getManga`
+  helper (`compose.runtime` is allowed by the gate today — the next step) and settings ViewModels exposing
+  `*Preferences` objects read-only.
 ### 🎞️ Motion — sibling tabs slide again (owner reversal, 2026-11-11)
 - **Tab peers slide in bar order.** The 2026-11-09 no-movement lock is reversed for exactly this
   surface by owner decision: sibling bottom-bar tabs slide in bar order — pure translation at the
@@ -31,6 +96,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   non-activity callers keep the platform default. On-device feel remains the owner's call
   (A5/B-050).
 
+### 🧭 Navigation — More → About crash (nav registration fails fast, 2026-11-11)
+- **More → About no longer crashes; a broken nav graph fails at startup, not at first tap.** Owner crash report: tapping About in More threw
+  `IllegalArgumentException: Navigation destination that matches route about cannot be found in the navigation graph ... startDestination={Destination route=home}`
+  from `MoreTabScreen` via the root `NavController`. The static registration contract was verified complete route-by-route —
+  SettingsFeatureApi registers settings/about and its sub-screens, all 11 FeatureApis checked, no collisions — so the shipped graph is
+  correct and no recent change touched the registration path; the crash mechanism requires a registration failure, which MainActivity's
+  `forEach { try { featureApi.register(...) } catch { logcat } }` swallowed silently, leaving a half-built graph that crashes on first tap.
+  MainActivity now throws `IllegalStateException` naming the failed feature, so a broken graph fails loudly at startup. A new
+  `NavGraphRegistrationTest` gates both invariants structurally: every route the app navigates to has a matching `composable(`
+  registration, and the registration loop never swallows a failure. Honesty note: if the crash reproduced on a current nightly, a stale
+  install is the remaining suspect — a clean reinstall of the next nightly is recommended.
+
+### 📚 Reader — user Retry forces a re-download past the cached entry (page-retrieval error reduction vs Mihon, 2026-11-11)
+- **Retry after a decode failure now recovers instead of repeating the failure verbatim.** A page can
+  fail *after* its bytes were cached — a source that answered 200 with an HTML error page, or a
+  truncated entry written by an older build — and the viewer showed its error view with a Retry
+  button. Before this change the retry re-queued the page, the reload found the bad entry still in
+  the cache, skipped the download, handed out the identical bytes, and the page failed identically —
+  forever, because the recovery ladder only runs for a page that is not `Ready`. The user's Retry was
+  a verbatim repeat of a failure they cannot get out of — the reader-side twin of `DEF-023`'s
+  "even after retry".
+- **Mihon parity, with the counterweight kept:** upstream's `retryPage` passes `force = true` to
+  `internalLoadPage`, so a user retry re-downloads past the cache. Ephyra's `retryPage` now enqueues
+  `PriorityPage(forceDownload = true)`, the worker carries it into `internalLoadPage`, and the cache
+  check becomes `forceDownload || !isImageInCache(...)`. The automatic paths — the preload enqueues
+  and the eviction reload — stay unforced: nobody asked them to spend the user's bandwidth
+  re-fetching bytes that were never implicated.
+- **Gated by `HttpPageLoaderForcedRetryTest`:** the forced retry re-fetches at the source seam (the
+  source is counted at the `client` interceptor — the repo's `HttpSource.getImage` is concrete/final,
+  so the seam is the open `client` it pipes through) with the URL preserved (a forced retry re-fetches
+  bytes, not a new address), and an automatic load of a fully-cached chapter never touches the
+  network — without that second assertion, a fix that forced *every* load would pass the first and
+  silently double the app's traffic. Honesty: no JDK locally; remote CI is the verification channel;
+  no device evidence claimed (A5/B-050).
+### 📚 History — expanded series children become keyed top-level lazy items (2026-11-11, PR #358)
+- **Expanding a series now lifts its older reads into keyed top-level lazy items instead of nesting them inside the series row.** Follow-up to the #353 stacking pass: with the older reads composed inside the series row's subtree, every expansion re-composed the whole nested column and the expanded children carried no stable identity for lazy-list reuse. `HistoryScreen` now derives the rendered list through a single `withExpandedSeriesChildren` transform — an expanded series contributes its series row followed by its older reads as ordinary `HistoryUiModel.Item`s filed directly after it, never crossing a day header — and the lazy column flattens that list, keying children `history-<id>` with contentType `item`. The Series branch renders only the latest read plus the toggle. `HistoryViewModel` is untouched: expansion state and grouping are unchanged — this is a render-shape change only. Composition and retention drop because an unexpanded series no longer hosts nested item state and each keyed child is reused across recompositions and participates in `animateItemFastScroll` like any other row. Gated by five new `HistoryExpandedChildrenTest` tests (flattening shape, day-header containment, keying, contentType, collapse). Honesty: no JDK locally; remote CI is the verification channel; no device evidence claimed (A5/B-050).
 ### 🧭 Upstream alignment (plan)
 - **Adoption plan for Mihon v0.21.1** added at
   [`doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`](doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md). It maps
@@ -952,6 +1053,3 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`ROADMAP.md`**: Updated to reflect completed Phase 1 (Pure DI), in-progress Phase 3
   (Content-Agnostic UI) and Phase 4 (Build Config), and planned Phase 2 (Sandboxed Scripting).
 - **`CHANGELOG.md`**: This file — initialized.
-
-
-

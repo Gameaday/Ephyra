@@ -1,7 +1,5 @@
 package ephyra.feature.stats
 
-import androidx.compose.ui.util.fastDistinctBy
-import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,7 +39,7 @@ class StatsViewModel @Inject constructor(
             val loggedInTrackers = trackerManager.loggedInTrackers()
             val libraryManga = getLibraryManga.await()
 
-            val distinctLibraryManga = libraryManga.fastDistinctBy { it.id }
+            val distinctLibraryManga = libraryManga.distinctBy { it.id }
 
             val mangaTrackMap = getMangaTrackMap(distinctLibraryManga, loggedInTrackers)
             val scoredMangaTrackerMap = getScoredMangaTrackMap(mangaTrackMap)
@@ -111,7 +109,7 @@ class StatsViewModel @Inject constructor(
         val loggedInTrackerIds = loggedInTrackers.mapTo(HashSet()) { it.id }
         return libraryManga.associate { manga ->
             val tracks = getTracks.await(manga.id)
-                .fastFilter { it.trackerId in loggedInTrackerIds }
+                .filter { it.trackerId in loggedInTrackerIds }
 
             manga.id to tracks
         }

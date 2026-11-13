@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import ephyra.presentation.core.feature.FeatureApi
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.ui.viewer.MediaViewerRegistry
 import javax.inject.Inject
@@ -16,8 +17,8 @@ class MangaFeatureApi @Inject constructor(
         navGraphBuilder: NavGraphBuilder,
         navController: NavHostController,
     ) {
-        navGraphBuilder.composable<ephyra.presentation.core.ui.navigation.Screen.MangaDetails> { backStackEntry ->
-            val route = backStackEntry.toRoute<ephyra.presentation.core.ui.navigation.Screen.MangaDetails>()
+        navGraphBuilder.composable<Screen.MangaDetails> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.MangaDetails>()
             androidx.compose.runtime.CompositionLocalProvider(
                 ephyra.presentation.core.ui.navigation.LocalNavAnimatedVisibilityScope provides this@composable,
             ) {
