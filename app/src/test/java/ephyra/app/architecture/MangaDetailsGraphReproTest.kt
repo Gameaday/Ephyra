@@ -1,11 +1,11 @@
 package ephyra.app.architecture
 
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.EntryPoint
@@ -29,10 +29,10 @@ import org.robolectric.annotation.Config
  * "Destination with route MangaDetails cannot be found in navigation graph ... startDestination
  * route=home" (nightly cdd5a72, every entry path to the series page, persists across restart).
  *
- * The structural gate (`NavGraphRegistrationTest`) reads source text only and cannot see runtime
+ * The structural gate (NavGraphRegistrationTest) reads source text only and cannot see runtime
  * state. These tests build the real root graph on the JVM — test 1 from the real Hilt-injected
- * `Set<FeatureApi>`, exactly as `MainActivity` does; test 2 as a bare typed-route graph — and then
- * actually navigate to `Screen.MangaDetails`. On failure the assertion message carries the full
+ * Set<FeatureApi>, exactly as MainActivity does; test 2 as a bare typed-route graph — and then
+ * actually navigate to Screen.MangaDetails. On failure the assertion message carries the full
  * injected-feature list and the runtime graph's destination dump, which is the observation the
  * static analysis could not make.
  */

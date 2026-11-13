@@ -1,11 +1,11 @@
 package ephyra.app.architecture
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.EntryPoint
@@ -90,9 +90,24 @@ class RootGraphDestinationGateTest {
         "SettingsFeatureApi",
     )
 
-    /** Typed routes owned by features, matched by kotlinx-serialization serial name. */
+    /** A typed route a feature owns, and the feature that must contribute it. */
+    private data class ExpectedTypedRoute(
+        val owningFeature: String,
+        val serialName: String,
+    )
+
+    /**
+     * The typed routes registered by features, resolved through each route's own generated
+     * `serializer()` — the same serial name `NavController.navigate(route)` hashes when it looks
+     * the destination up. If a feature gains a navigable typed route, add it here.
+     */
     private val expectedTypedRoutes = listOf(
         ExpectedTypedRoute("MangaFeatureApi", Screen.MangaDetails.serializer().descriptor.serialName),
+        ExpectedTypedRoute("BrowseFeatureApi", Screen.Browse.serializer().descriptor.serialName),
+        ExpectedTypedRoute("BrowseFeatureApi", Screen.GlobalSearch.serializer().descriptor.serialName),
+        ExpectedTypedRoute("BrowseFeatureApi", Screen.BrowseSource.serializer().descriptor.serialName),
+        ExpectedTypedRoute("BrowseFeatureApi", Screen.ExtensionDetails.serializer().descriptor.serialName),
+        ExpectedTypedRoute("PlayerFeatureApi", Screen.VideoPlayer.serializer().descriptor.serialName),
         ExpectedTypedRoute("ReaderFeatureApi", Screen.BookReader.serializer().descriptor.serialName),
         ExpectedTypedRoute("WebViewFeatureApi", Screen.WebView.serializer().descriptor.serialName),
     )
@@ -100,11 +115,6 @@ class RootGraphDestinationGateTest {
     /** String routes registered by features (pattern form, as registered). */
     private val expectedStringRoutes = listOf(
         "manga_notes/{mangaId}",
-    )
-
-    private data class ExpectedTypedRoute(
-        val owningFeature: String,
-        val serialName: String,
     )
 
     private fun dumpGraph(navController: NavHostController): String = buildString {
