@@ -122,7 +122,7 @@ class ChapterLoader(
                 chapter.state = ReaderChapter.State.Loaded(pages)
             } catch (e: Throwable) {
                 chapter.state = ReaderChapter.State.Error(e)
-                throw e
+                // Don't re-throw: error is captured in state; callers check state, not exceptions
             }
         }
     }

@@ -550,8 +550,15 @@ class ReaderViewModel @Inject constructor(
 
     override suspend fun loadChapterPages(chapter: ReaderChapter, isPreloadOnly: Boolean): Boolean {
         val loader = loader ?: return false
-        loader.loadChapter(chapter, isPreloadOnly = isPreloadOnly)
-        return true
+        return try {
+            loader.loadChapter(chapter, isPreloadOnly = isPreloadOnly)
+            true
+        } catch (e: Throwable) {
+            if (e is CancellationException) throw e
+            // Let callers check chapter.state for error details; non-cancellation errors are
+            // already captured there by ChapterLoader.
+            false
+        }
     }
 
     override fun wireFilteredPageReload(chapter: ReaderChapter) {
