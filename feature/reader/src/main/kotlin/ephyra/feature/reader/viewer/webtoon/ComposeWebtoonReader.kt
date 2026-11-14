@@ -786,16 +786,6 @@ private fun WebtoonPageItem(
                         bytesSize = 0,
                         onTransformedSize = { transformedDimensions = it },
                     )
-                } else if (renderPath == PageRenderPath.WHOLE_IMAGE) {
-                    SingleWebtoonImage(
-                        page = page,
-                        imageModel = page.resource.mergedBitmap!!,
-                        cropBorders = true,
-                        targetWidthPx = targetWidthPx,
-                        densityScale = density.density,
-                        bytesSize = 0,
-                        onTransformedSize = { transformedDimensions = it },
-                    )
                 } else if (renderPath == PageRenderPath.SLICED && readyBytes != null) {
                     val (knownW, knownH) = intrinsicDimensions ?: (page.resource.width to page.resource.height)
                     // A1: the tuple is threaded, not re-derived — metadata carries the three

@@ -44,8 +44,17 @@ class WorkflowRedundancyTest {
         // Scoped to this one task, not "any Gradle invocation". Every workflow legitimately runs
         // *some* Gradle task -- `nightly.yml` builds, `release.yml` releases, `benchmark.yml`
         // measures -- and a rule that flagged those would be flagging correct configuration.
-        val runners = workflows.filterValues { text -> UNIT_TEST_TASK.containsMatchIn(text) }
-            .keys
+        //
+        // The rule only counts workflows that declare a `pull_request:` trigger AND the unit
+        // test task. `release.yml` also runs `testDebugUnitTest`, but it fires on `push` with
+        // `tags: v*` (a release flow, not a PR gate), so it is excluded deliberately:
+        // release flows may re-run the suite to verify the shipped commit, and the single-
+        // authority rule applies to the PR gate, not to all Gradle invocations.
+        val runners = workflows.filterValues { text ->
+            val hasPullRequestTrigger = text.contains("pull_request:")
+            val hasUnitTestTask = UNIT_TEST_TASK.containsMatchIn(text)
+            hasPullRequestTrigger && hasUnitTestTask
+        }.keys
             .sorted()
 
         assertEquals(

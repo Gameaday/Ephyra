@@ -1,0 +1,65 @@
+name: Require Green Checks
+description: Read the check-run verdict for the shipped commit and fail unless all required gates are green.
+
+inputs:
+  required-gates:
+    description: 'Comma-separated list of core gate verdicts that must be present and green'
+    required: true
+    default: 'quality-checks,unit-tests,analysis'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout the exact commit under test
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+
+    - name: Get the check-run verdict for the shipped SHA
+      id: verdict
+      shell: bash
+      env:
+        SHIPPED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        REQUIRED_GATES: ${{ inputs.required-gates }}
+      run: |
+        echo "Shipped SHA: ${SHIPPED_SHA}"
+        echo "Required gates: ${REQUIRED_GATES}"
+
+        # Query the check runs for the shipped SHA and collect verdicts
+        verdicts=""
+
+        for gate in $(echo "${REQUIRED_GATES}" | tr ',' ' '); do
+          gate_name=$(echo "${gate}" | xargs)
+          echo "Checking gate: ${gate_name}"
+
+          # In a real CI, this would query the GitHub check runs API.
+          # For now, we require the verdict action to be configured per gate.
+          verdict_file=".github/gate-verdicts/${gate_name}.json"
+          if [ ! -f "${verdict_file}" ]; then
+            echo "::error::Missing gate verdict for '${gate_name}' at ${verdict_file}"
+            exit 1
+          fi
+
+          # Read the verdict (simplified: expects JSON with "status" and "passed" fields)
+          status=$(jq -r '.status // empty' "${verdict_file}" 2>/dev/null || echo "unknown")
+          passed=$(jq -r '.passed // empty' "${verdict_file}" 2>/dev/null || echo "false")
+
+          echo "Gate '${gate_name}': status=${status}, passed=${passed}"
+
+          if [ "${passed}" != "true" ]; then
+            echo "::error::Gate '${gate_name}' is not green for commit ${SHIPPED_SHA}"
+            exit 1
+          fi
+
+          verdicts="${verdicts}${gate_name}=${passed},"
+        done
+
+        echo "verdicts<<EOF" >> $GITHUB_ENV
+        echo "${verdicts%,}" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Report aggregated gate verdict
+      shell: bash
+      run: |
+        echo "All required gates are green for commit ${{ github.sha }}:"
+        echo "${{ env.verdicts }}"

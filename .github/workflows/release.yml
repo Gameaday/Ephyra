@@ -22,13 +22,33 @@ jobs:
         id: extract
         run: echo "tag=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
 
+  gates:
+    if: github.repository == 'Gameaday/Ephyra'
+    name: Gate Verdict
+    runs-on: 'ubuntu-24.04'
+    permissions:
+      checks: read
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Read gate verdict from composite action
+        uses: ./.github/actions/require-green-checks
+        with:
+          required-gates: quality-checks,unit-tests,analysis
+
   build:
     if: github.repository == 'Gameaday/Ephyra'
     name: Build
     runs-on: 'ubuntu-24.04'
     permissions:
       contents: read
-    needs: [ get_tag ]
+    needs: [ get_tag, gates ]
 
     steps:
       - name: Checkout
