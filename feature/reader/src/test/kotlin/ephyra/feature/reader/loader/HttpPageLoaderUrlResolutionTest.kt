@@ -490,6 +490,7 @@ class HttpPageLoaderUrlResolutionTest {
      * `network.defaultUserAgentProvider()`, and `network` comes from the Injekt service locator — a
      * test that had to stand one up to assert a string join could fail for unrelated reasons.
      */
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     private open class PlainImageUrlSource(
         /**
          * `protected`, not `private`: the base class never reads it, but the subclass's `getImageUrl`

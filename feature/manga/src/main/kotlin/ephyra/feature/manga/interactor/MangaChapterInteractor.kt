@@ -94,6 +94,7 @@ class MangaChapterInteractor @Inject constructor(
         return filterChaptersForDownload.await(manga, chapters)
     }
 
+    @Suppress("DEPRECATION")
     suspend fun syncChaptersWithSource(
         chapters: List<Chapter>,
         manga: Manga,

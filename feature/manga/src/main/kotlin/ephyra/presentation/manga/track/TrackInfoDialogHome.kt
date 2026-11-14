@@ -134,10 +134,10 @@ fun TrackInfoDialogHome(
                         .takeIf { supportsReadingDates && item.track.finishDate != 0L },
                     onEndDateClick = { onEndDateEdit(item) }
                         .takeIf { supportsReadingDates },
-                    onNewSearch = { onNewSearch(item) } as () -> Unit,
-                    onOpenInBrowser = { onOpenInBrowser(item) } as () -> Unit,
-                    onRemoved = { onRemoved(item) } as () -> Unit,
-                    onCopyLink = { onCopyLink(item) } as () -> Unit,
+                    onNewSearch = { onNewSearch(item) },
+                    onOpenInBrowser = { onOpenInBrowser(item) },
+                    onRemoved = { onRemoved(item) },
+                    onCopyLink = { onCopyLink(item) },
                     isPrivate = item.track.isPrivate,
                     onTogglePrivate = { onTogglePrivate(item) }
                         .takeIf { supportsPrivate },

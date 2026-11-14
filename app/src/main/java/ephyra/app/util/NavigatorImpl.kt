@@ -31,10 +31,22 @@ class NavigatorImpl : AppNavigator {
         // renders it, and the predictive gesture is the host's. Non-activity callers (app
         // shortcuts, widgets) skip the override — the platform default is correct for a cold
         // start into the app.
-        (context as? Activity)?.overridePendingTransition(
-            ephyra.presentation.core.R.anim.activity_boundary_fade_in,
-            ephyra.presentation.core.R.anim.activity_boundary_fade_out,
-        )
+        val activity = context as? Activity
+        if (activity != null) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                activity.overrideActivityTransition(
+                    Activity.OVERRIDE_TRANSITION_OPEN,
+                    ephyra.presentation.core.R.anim.activity_boundary_fade_in,
+                    ephyra.presentation.core.R.anim.activity_boundary_fade_out,
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                activity.overridePendingTransition(
+                    ephyra.presentation.core.R.anim.activity_boundary_fade_in,
+                    ephyra.presentation.core.R.anim.activity_boundary_fade_out,
+                )
+            }
+        }
     }
 
     override fun openWebView(context: Context, url: String, sourceId: Long, title: String) {

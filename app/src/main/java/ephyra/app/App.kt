@@ -163,6 +163,7 @@ class App :
         startupWorkflow.settled(StartupStep.CRASH_HANDLER, ok = true)
     }
 
+    @Suppress("DEPRECATION")
     override fun onCreate() {
         // Phase 3: Extension bridge initialization — must happen BEFORE super.onCreate()
         // so Injekt is primed before Hilt injects members or starts background tasks
