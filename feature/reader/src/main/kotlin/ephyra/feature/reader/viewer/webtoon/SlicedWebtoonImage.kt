@@ -219,9 +219,6 @@ private fun SliceColumn(
     slices: List<WebtoonSlicer.SliceRect>,
     bitmaps: List<android.graphics.Bitmap?>,
 ) {
-    val placements = remember(bitmaps) {
-        WebtoonSeamLayout.place(bitmaps.map { it!!.height })
-    }
     Canvas(
         modifier = Modifier
             .fillMaxSize()
@@ -229,6 +226,13 @@ private fun SliceColumn(
                 contentDescription = "Page $pageNumber, rendered in ${slices.size} parts"
             },
     ) {
+        // displayHeight is only known inside the draw scope, so placement is computed here,
+        // per draw: O(slices) arithmetic, deterministic for a given (bitmaps, size) pair, so
+        // the seams stay put across redraws and zoom never re-rounds a boundary.
+        val placements = WebtoonSeamLayout.place(
+            bitmaps.map { it!!.height },
+            size.height.toDouble(),
+        )
         val bitmapWidth = bitmaps.first()!!.width
         val totalBitmapHeight = placements.sumOf { it.bitmapHeight }
         val sx = size.width / bitmapWidth
