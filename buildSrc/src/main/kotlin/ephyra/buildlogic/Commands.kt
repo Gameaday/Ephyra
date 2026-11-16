@@ -1,4 +1,5 @@
 
+
 package ephyra.buildlogic
 
 import com.android.build.api.variant.BuildConfigField
@@ -91,8 +92,8 @@ fun quotedStringBuildConfigField(raw: Provider<String>): Provider<BuildConfigFie
  * manifest tasks, which the configuration cache serializes.
  */
 fun versionNameWithCount(base: String, count: Provider<String>): Provider<String> =
-    count.map { $base-$it }
+    count.map { "$base-$it" }
 
 /** versionName = "<base>-nightly-<sha>" (nightly). Same buildSrc-lambda rule as above. */
 fun versionNameNightly(base: String, sha: Provider<String>): Provider<String> =
-    sha.map { $base-nightly-$it }
+    sha.map { "$base-nightly-$it" }
