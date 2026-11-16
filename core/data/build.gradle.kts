@@ -1,3 +1,4 @@
+
 import com.android.build.api.variant.BuildConfigField
 import ephyra.buildlogic.buildTimeProvider
 import ephyra.buildlogic.commitCountProvider
@@ -65,17 +66,22 @@ androidComponents {
         val gitSha = gitShaProvider()
         val buildTime = buildTimeProvider(useLastCommitTime = false)
 
-        variant.buildConfigFields.put(
+        // AGP 9: `variant.buildConfigFields` is nullable and `BuildConfigField`'s value is a
+        // plain `Serializable` (not a Provider), so the lazy form is a Provider OF a
+        // BuildConfigField, registered via `MapProperty.put(key, Provider)` as a task input.
+        val buildConfigFields = variant.buildConfigFields
+            ?: error("variant.buildConfigFields is null; buildFeatures.buildConfig must be enabled")
+        buildConfigFields.put(
             "COMMIT_COUNT",
-            BuildConfigField("String", commitCount.map { "\"$it\"" }, null),
+            commitCount.map { BuildConfigField<Serializable>("String", "\$it\"", null) },
         )
-        variant.buildConfigFields.put(
+        buildConfigFields.put(
             "COMMIT_SHA",
-            BuildConfigField("String", gitSha.map { "\"$it\"" }, null),
+            gitSha.map { BuildConfigField<Serializable>("String", "\$it\"", null) },
         )
-        variant.buildConfigFields.put(
+        buildConfigFields.put(
             "BUILD_TIME",
-            BuildConfigField("String", buildTime.map { "\"$it\"" }, null),
+            buildTime.map { BuildConfigField<Serializable>("String", "\$it\"", null) },
         )
     }
 }

@@ -1,3 +1,4 @@
+
 import com.android.build.api.variant.BuildConfigField
 import ephyra.buildlogic.Config
 import ephyra.buildlogic.buildTimeProvider
@@ -109,8 +110,6 @@ android {
             signingConfig = debug.signingConfig
 
             matchingFallbacks.addAll(commonMatchingFallbacks)
-
-            buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = true)}\"")
         }
     }
 
@@ -398,17 +397,25 @@ androidComponents {
         val gitSha = gitShaProvider()
         val buildTime = buildTimeProvider(useLastCommitTime = true)
 
-        variant.buildConfigFields.put(
+        // AGP 9 API notes (the signatures changed versus AGP 8, which is why the first push
+        // did not compile): `variant.buildConfigFields` is a nullable property, and
+        // `BuildConfigField`'s `value` parameter is a plain `Serializable`, not a `Provider`.
+        // The lazy form is therefore a Provider OF a BuildConfigField, registered through
+        // `MapProperty.put(key, Provider)`: Gradle wires the provider as a task input, so the
+        // git commands and the clock still run only when GenerateBuildConfig executes.
+        val buildConfigFields = variant.buildConfigFields
+            ?: error("variant.buildConfigFields is null; buildFeatures.buildConfig must be enabled")
+        buildConfigFields.put(
             "COMMIT_COUNT",
-            BuildConfigField("String", commitCount.map { "\"$it\"" }, null),
+            commitCount.map { BuildConfigField<Serializable>("String", "\$it\"", null) },
         )
-        variant.buildConfigFields.put(
+        buildConfigFields.put(
             "COMMIT_SHA",
-            BuildConfigField("String", gitSha.map { "\"$it\"" }, null),
+            gitSha.map { BuildConfigField<Serializable>("String", "\$it\"", null) },
         )
-        variant.buildConfigFields.put(
+        buildConfigFields.put(
             "BUILD_TIME",
-            BuildConfigField("String", buildTime.map { "\"$it\"" }, null),
+            buildTime.map { BuildConfigField<Serializable>("String", "\$it\"", null) },
         )
 
         // Same values the removed DSL `versionNameSuffix` lines produced; release keeps the
