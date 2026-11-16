@@ -1,5 +1,7 @@
+
 package ephyra.buildlogic
 
+import com.android.build.api.variant.BuildConfigField
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ValueSource
@@ -68,3 +70,29 @@ private fun Project.commandProvider(command: String): Provider<String> {
         parameters.command.set(command.split(" "))
     }
 }
+/**
+ * AGP 9 accepts only a plain `Serializable` value in [BuildConfigField] (the Provider-based
+ * constructor is gone), so the lazy form is a Provider OF a `BuildConfigField`, registered
+ * through `MapProperty.put(key, Provider)`.
+ *
+ * The `.map` lambda deliberately lives here in buildSrc rather than at the call sites in the
+ * build scripts: Gradle's configuration cache cannot serialize script-defined lambdas
+ * ("cannot serialize Gradle script object references"), and the resulting provider is wired
+ * as a task input of `GenerateBuildConfig`. A buildSrc lambda captures nothing script-owned,
+ * so the chain (ValueSource -> map -> `BuildConfigField`, itself `Serializable`) serializes
+ * cleanly and the git/clock reads stay at execution time.
+ */
+fun quotedStringBuildConfigField(raw: Provider<String>): Provider<BuildConfigField<java.io.Serializable>> =
+    raw.map { BuildConfigField<java.io.Serializable>("String", "\"$it\"", null) }
+
+/**
+ * versionName = "<base>-<count>" (debug/preview; replaces the eager DSL `versionNameSuffix`).
+ * Same buildSrc-lambda rule as [quotedStringBuildConfigField]: these providers feed the
+ * manifest tasks, which the configuration cache serializes.
+ */
+fun versionNameWithCount(base: String, count: Provider<String>): Provider<String> =
+    count.map { $base-$it }
+
+/** versionName = "<base>-nightly-<sha>" (nightly). Same buildSrc-lambda rule as above. */
+fun versionNameNightly(base: String, sha: Provider<String>): Provider<String> =
+    sha.map { $base-nightly-$it }
