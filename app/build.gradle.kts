@@ -1,6 +1,5 @@
 
 
-
 import ephyra.buildlogic.Config
 import ephyra.buildlogic.buildTimeProvider
 import ephyra.buildlogic.commitCountProvider
