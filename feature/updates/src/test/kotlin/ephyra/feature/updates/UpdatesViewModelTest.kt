@@ -8,7 +8,6 @@ import ephyra.domain.chapter.interactor.GetChapter
 import ephyra.domain.chapter.interactor.SetReadStatus
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.download.model.Download
-import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.interactor.GetManga
@@ -165,6 +164,19 @@ class UpdatesViewModelTest {
             viewModel.onEvent(UpdatesScreenEvent.UpdateLibrary)
             val effect = awaitItem()
             assertEquals(UpdatesViewModel.Effect.LibraryUpdateTriggered(true), effect)
+        }
+    }
+
+    @Test
+    fun `toggling a stacked series expands then collapses it`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            awaitItem() // initial
+            viewModel.onEvent(UpdatesScreenEvent.ToggleSeriesExpanded(7L))
+            assertEquals(setOf(7L), awaitItem().expandedSeriesIds)
+            viewModel.onEvent(UpdatesScreenEvent.ToggleSeriesExpanded(7L))
+            assertEquals(emptySet<Long>(), awaitItem().expandedSeriesIds)
         }
     }
 }

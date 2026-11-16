@@ -29,8 +29,10 @@ import ephyra.domain.updates.service.UpdatesPreferences
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -203,6 +205,7 @@ class UpdatesViewModel @Inject constructor(
             is UpdatesScreenEvent.SetDialog -> setDialog(event.dialog)
             is UpdatesScreenEvent.ResetNewUpdatesCount -> resetNewUpdatesCount()
             is UpdatesScreenEvent.ShowFilterDialog -> showFilterDialog()
+            is UpdatesScreenEvent.ToggleSeriesExpanded -> toggleSeriesExpanded(event.mangaId)
         }
     }
 
@@ -452,6 +455,16 @@ class UpdatesViewModel @Inject constructor(
         libraryPreferences.newUpdatesCount().set(0)
     }
 
+    /** Toggles a stacked series group. Presentational only — no repository call. */
+    private fun toggleSeriesExpanded(mangaId: Long) {
+        updateState { current ->
+            val ids = current.expandedSeriesIds
+            current.copy(
+                expandedSeriesIds = if (mangaId in ids) ids.remove(mangaId) else ids.add(mangaId),
+            )
+        }
+    }
+
     private fun getUpdatesItemPreferenceFlow(): Flow<ItemPreferences> {
         return combine(
             updatesPreferences.filterDownloaded().changes(),
@@ -491,22 +504,46 @@ class UpdatesViewModel @Inject constructor(
         val items: PersistentList<UpdatesItem> = persistentListOf(),
         val dialog: Dialog? = null,
         val lastUpdated: Long = 0L,
+        val expandedSeriesIds: PersistentSet<Long> = persistentSetOf(),
     ) {
         val selected = items.filter { it.selected }
         val selectionMode = selected.isNotEmpty()
 
         fun getUiModel(): List<UpdatesUiModel> {
-            return items
-                .map { UpdatesUiModel.Item(it) }
-                .insertSeparators { before, after ->
-                    val beforeDate = before?.item?.update?.dateFetch?.toLocalDate()
-                    val afterDate = after?.item?.update?.dateFetch?.toLocalDate()
-                    when {
-                        beforeDate != afterDate && afterDate != null -> UpdatesUiModel.Header(afterDate)
-                        // Return null to avoid adding a separator between two items.
-                        else -> null
-                    }
+            // Updates arrive most-recent-first, so each manga group's first element is its
+            // latest update and the groups themselves stay in most-recent-activity order.
+            // A series with several updates stacks behind one row (the History screen's
+            // series-stacking shape) instead of one row per chapter.
+            val topLevel = mutableListOf<UpdatesUiModel>()
+            items.groupBy { it.update.mangaId }.values.forEach { entries ->
+                val latest = entries.first()
+                topLevel += if (entries.size == 1) {
+                    UpdatesUiModel.Item(latest)
+                } else {
+                    UpdatesUiModel.Series(latest = latest, older = entries.drop(1))
                 }
+            }
+            return topLevel.insertSeparators { before, after ->
+                val beforeDate = before?.representativeDateFetch()?.toLocalDate()
+                val afterDate = after?.representativeDateFetch()?.toLocalDate()
+                when {
+                    beforeDate != afterDate && afterDate != null -> UpdatesUiModel.Header(afterDate)
+                    // Return null to avoid adding a separator between two items.
+                    else -> null
+                }
+            }
+        }
+
+        /**
+         * The fetch date a top-level entry is dated by for day headers. A stacked series is
+         * dated by its latest update; its older chapters may fall on earlier days — the same
+         * trade-off the History stack makes (the group lives where the series was last
+         * updated).
+         */
+        private fun UpdatesUiModel.representativeDateFetch(): Long? = when (this) {
+            is UpdatesUiModel.Series -> latest.update.dateFetch
+            is UpdatesUiModel.Item -> item.update.dateFetch
+            is UpdatesUiModel.Header -> null
         }
     }
 
