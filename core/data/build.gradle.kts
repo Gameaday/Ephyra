@@ -1,6 +1,7 @@
-import ephyra.buildlogic.getBuildTime
-import ephyra.buildlogic.getCommitCount
-import ephyra.buildlogic.getGitSha
+import com.android.build.api.variant.BuildConfigField
+import ephyra.buildlogic.buildTimeProvider
+import ephyra.buildlogic.commitCountProvider
+import ephyra.buildlogic.gitShaProvider
 
 plugins {
     id("ephyra.library")
@@ -12,9 +13,6 @@ android {
     namespace = "ephyra.core.data"
 
     defaultConfig {
-        buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
-        buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
-        buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = false)}\"")
         buildConfigField("String", "APPLICATION_ID", "\"app.ephyra\"")
         buildConfigField("String", "VERSION_NAME", "\"0.21.0\"")
 
@@ -54,6 +52,31 @@ android {
                 it.maxHeapSize = "2g"
             }
         }
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        // Lazy build metadata: git and the clock are read when GenerateBuildConfig consumes
+        // the providers at execution time, not during configuration (the eager form executed
+        // git on every configuration, and the wall-clock BUILD_TIME made the configuration
+        // non-deterministic).
+        val commitCount = commitCountProvider()
+        val gitSha = gitShaProvider()
+        val buildTime = buildTimeProvider(useLastCommitTime = false)
+
+        variant.buildConfigFields.put(
+            "COMMIT_COUNT",
+            BuildConfigField("String", commitCount.map { "\"$it\"" }, null),
+        )
+        variant.buildConfigFields.put(
+            "COMMIT_SHA",
+            BuildConfigField("String", gitSha.map { "\"$it\"" }, null),
+        )
+        variant.buildConfigFields.put(
+            "BUILD_TIME",
+            BuildConfigField("String", buildTime.map { "\"$it\"" }, null),
+        )
     }
 }
 

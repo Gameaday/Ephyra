@@ -1,7 +1,8 @@
+import com.android.build.api.variant.BuildConfigField
 import ephyra.buildlogic.Config
-import ephyra.buildlogic.getBuildTime
-import ephyra.buildlogic.getCommitCount
-import ephyra.buildlogic.getGitSha
+import ephyra.buildlogic.buildTimeProvider
+import ephyra.buildlogic.commitCountProvider
+import ephyra.buildlogic.gitShaProvider
 
 plugins {
     id("ephyra.android.application")
@@ -19,6 +20,10 @@ if (Config.includeTelemetry) {
     }
 }
 
+// Single source for the base version name; per-build-type suffixes are appended lazily in
+// androidComponents below.
+val defaultVersionName = "0.21.0"
+
 android {
     namespace = "ephyra.app"
 
@@ -30,11 +35,8 @@ android {
         applicationId = "app.ephyra"
 
         versionCode = 21
-        versionName = "0.21.0"
+        versionName = defaultVersionName
 
-        buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
-        buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
-        buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = true)}\"")
         buildConfigField("boolean", "TELEMETRY_INCLUDED", "${Config.includeTelemetry}")
         buildConfigField("boolean", "UPDATER_ENABLED", "${Config.enableUpdater}")
         buildConfigField("boolean", "INCLUDE_CATALOG_SHORTCUTS", "${Config.includeCatalogShortcuts}")
@@ -77,7 +79,6 @@ android {
     buildTypes {
         val debug = getByName("debug") {
             applicationIdSuffix = ".dev"
-            versionNameSuffix = "-${getCommitCount()}"
             isPseudoLocalesEnabled = true
         }
         val release = getByName("release") {
@@ -85,8 +86,6 @@ android {
             isShrinkResources = Config.enableCodeShrink
 
             proguardFiles("proguard-android-optimize.txt", "proguard-rules.pro")
-
-            buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = true)}\"")
         }
 
         val commonMatchingFallbacks = listOf(release.name)
@@ -98,7 +97,6 @@ android {
             signingConfig = signingConfigs.getByName("nightly")
 
             applicationIdSuffix = ".nightly"
-            versionNameSuffix = "-nightly-${getGitSha()}"
 
             matchingFallbacks.addAll(commonMatchingFallbacks)
         }
@@ -108,7 +106,6 @@ android {
 
             applicationIdSuffix = ".debug"
 
-            versionNameSuffix = debug.versionNameSuffix
             signingConfig = debug.signingConfig
 
             matchingFallbacks.addAll(commonMatchingFallbacks)
@@ -391,6 +388,41 @@ dependencies {
 }
 
 androidComponents {
+    onVariants { variant ->
+        // Build metadata and per-build-type version-name suffixes resolve LAZILY: the git
+        // commands (CommandValueSource) run when GenerateBuildConfig consumes the providers
+        // at execution time, not on every configuration. The eager form shelled out to git
+        // during configuration on every build and forced the configuration cache to
+        // re-validate those ValueSources on every commit.
+        val commitCount = commitCountProvider()
+        val gitSha = gitShaProvider()
+        val buildTime = buildTimeProvider(useLastCommitTime = true)
+
+        variant.buildConfigFields.put(
+            "COMMIT_COUNT",
+            BuildConfigField("String", commitCount.map { "\"$it\"" }, null),
+        )
+        variant.buildConfigFields.put(
+            "COMMIT_SHA",
+            BuildConfigField("String", gitSha.map { "\"$it\"" }, null),
+        )
+        variant.buildConfigFields.put(
+            "BUILD_TIME",
+            BuildConfigField("String", buildTime.map { "\"$it\"" }, null),
+        )
+
+        // Same values the removed DSL `versionNameSuffix` lines produced; release keeps the
+        // bare version name.
+        when (variant.buildType) {
+            "debug", "preview" -> variant.outputs.forEach { output ->
+                output.versionName.set(commitCount.map { count -> "$defaultVersionName-$count" })
+            }
+            "nightly" -> variant.outputs.forEach { output ->
+                output.versionName.set(gitSha.map { sha -> "$defaultVersionName-nightly-$sha" })
+            }
+        }
+    }
+
     onVariants(selector().withFlavor("default" to "standard")) {
         // Only excluding in standard flavor because this breaks
         // Layout Inspector's Compose tree
@@ -411,16 +443,10 @@ androidComponents {
     }
 }
 
-buildscript {
-    dependencies {
-        classpath(kotlinx.gradle)
-    }
-}
-
 /**
  * SEC-001 support: read a signing secret from Gradle properties or the environment.
  *
- * Order is Gradle property first, then `EPHYP_`-prefixed environment variable, so CI can inject
+ * Order is Gradle property first, then `EPHYRA_`-prefixed environment variable, so CI can inject
  * either. Returns null when unset, which lets debug builds and the local unit-test gate run
  * without a keystore while still failing loudly for a real signing task.
  */
