@@ -33,8 +33,15 @@ jobs:
     name: Quality Checks
     runs-on: 'ubuntu-24.04'
     steps:
+      # Check out the PR head branch, not the default detached merge ref: the formatting
+      # bot below commits and pushes from this working tree, and `git push` from a
+      # detached HEAD fails with "You are not currently on a branch" (exit 128) on EVERY
+      # pull request — so spotless's fixes could never land. `|| github.ref` keeps
+      # push builds (main) on the checked-out branch as before.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
 
       - name: Set up JDK
         uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
@@ -60,8 +67,12 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet || git commit -m "style: apply spotless formatting"
-          git push
+          if git diff --cached --quiet; then
+            echo "No formatting changes to apply."
+          else
+            git commit -m "style: apply spotless formatting"
+            git push
+          fi
 
       - name: Architecture fitness – no android.* imports in domain modules
         run: |
