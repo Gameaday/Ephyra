@@ -52,4 +52,10 @@ sealed interface UpdatesScreenEvent {
 
     /** User tapped the filter icon to open the filter sheet. */
     data object ShowFilterDialog : UpdatesScreenEvent
+
+    /**
+     * User tapped the expand/collapse toggle on a stacked series group identified by [mangaId].
+     * Purely presentational: the grouping is re-derived from already-loaded items (no refetch).
+     */
+    data class ToggleSeriesExpanded(val mangaId: Long) : UpdatesScreenEvent
 }

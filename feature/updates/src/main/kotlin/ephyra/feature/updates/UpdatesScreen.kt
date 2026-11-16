@@ -71,6 +71,8 @@ fun UpdateScreen(
     onOpenChapter: (UpdatesItem) -> Unit,
     onFilterClicked: () -> Unit,
     hasActiveFilters: Boolean,
+    expandedSeriesIds: Set<Long>,
+    onToggleSeries: (mangaId: Long) -> Unit,
 ) {
     BackHandler(enabled = state.selectionMode) {
         onSelectAll(false)
@@ -122,10 +124,12 @@ fun UpdateScreen(
                         updatesUiItems(
                             uiModels = state.getUiModel(),
                             selectionMode = state.selectionMode,
+                            expandedSeriesIds = expandedSeriesIds,
                             onUpdateSelected = onUpdateSelected,
                             onClickCover = onClickCover,
                             onClickUpdate = onOpenChapter,
                             onDownloadChapter = onDownloadChapter,
+                            onToggleSeries = onToggleSeries,
                         )
                     }
                 }
@@ -232,6 +236,17 @@ private fun UpdatesBottomBar(
 sealed interface UpdatesUiModel {
     data class Header(val date: LocalDate) : UpdatesUiModel
     data class Item(val item: UpdatesItem) : UpdatesUiModel
+
+    /**
+     * A series with more than one update in the loaded window, stacked so several chapter
+     * drops of one series do not produce one row each. [latest] is the most recent update
+     * (rendered as the row); [older] are the remaining updates, newest-first, revealed by
+     * the expand toggle.
+     */
+    data class Series(
+        val latest: UpdatesItem,
+        val older: List<UpdatesItem>,
+    ) : UpdatesUiModel
 }
 
 @Composable
@@ -280,6 +295,8 @@ fun UpdatesScreen(
         },
         onFilterClicked = { viewModel.onEvent(UpdatesScreenEvent.ShowFilterDialog) },
         hasActiveFilters = state.hasActiveFilters,
+        expandedSeriesIds = state.expandedSeriesIds,
+        onToggleSeries = { viewModel.onEvent(UpdatesScreenEvent.ToggleSeriesExpanded(it)) },
     )
 
     val onDismissDialog = { viewModel.onEvent(UpdatesScreenEvent.SetDialog(null)) }
