@@ -1,6 +1,5 @@
 
 
-
 import com.android.build.api.variant.BuildConfigField
 import ephyra.buildlogic.Config
 import ephyra.buildlogic.buildTimeProvider
