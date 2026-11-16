@@ -1,9 +1,7 @@
 package ephyra.feature.reader.viewer.webtoon
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,8 +10,12 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.IntOffset
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.domain.reader.media.PageMetadata
@@ -26,7 +28,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 
 /**
- * Renders a long webtoon strip as a [Column] of full-resolution slices.
+ * Renders a long webtoon strip as a pixel-exact column of full-resolution slices.
  *
  * A1 — the render decision arrives as the media tuple: [metadata] and [source] describe the
  * page, and [renderPath] is the decision RenderPathPolicy already made upstream. This composable
@@ -129,13 +131,19 @@ fun SlicedWebtoonImage(
         fallback()
         return
     }
+    // Seam-layout precondition: every slice decodes from the same rect width at the same
+    // sample, so all bitmaps share one width and one horizontal scale. A foreign width means
+    // a stale bitmap got in — single-image fallback rather than a mis-scaled strip.
+    if (bitmaps.map { it!!.width }.distinct().size != 1) {
+        fallback()
+        return
+    }
 
     // No spacing, padding, or background of our own: exact tiles must sit edge-to-edge so
     // the joints blend into whatever reader canvas sits behind (including the automatic
     // edge-sampled theme), rather than flashing a fixed surface bar if a GPU leaves a
-    // sub-pixel seam. Slices fill the reserved item box proportionally (weight by source
-    // height) so the column height always equals the item's aspect box — never wrapContent,
-    // which would resize the LazyColumn item and jump siblings when moving between sections.
+    // sub-pixel seam. The strip fills the reserved item box exactly (see [SliceColumn]) so
+    // the column height always equals the item's aspect box and siblings never jump.
     SliceColumn(pageNumber = page.number, slices = slices, bitmaps = bitmaps)
 }
 
@@ -180,27 +188,62 @@ private fun rememberDecodedSlices(
     return decoded
 }
 
-/** Dumb layout: proportional weights fill the reserved item box edge-to-edge. */
+/**
+ * Pixel-exact seam layout: one canvas, one continuous scale, slices drawn at their
+ * cumulative decoded-bitmap offsets ([WebtoonSeamLayout]).
+ *
+ * The previous renderer gave each slice a Compose `weight` share of the item box and drew
+ * its bitmap with `ContentScale.FillWidth`: the height a slice was allocated (a rounded
+ * share of the box, from SOURCE slice heights) and the height its bitmap needed at display
+ * width (from the DECODED bitmap) were two independent roundings that could disagree by a
+ * device pixel at every joint — the reported ~1px gap, worse when zoomed or on densities
+ * where the roundings diverge. Here adjacent slices share ONE exact boundary (slice i's
+ * bottom edge is slice i+1's top edge, the same number), so no rounding can open a gap,
+ * duplicate a displayed row, or drop one:
+ *
+ *  - Zoom: the owning item's zoom transform scales this canvas uniformly; boundaries stay
+ *    coincident at every zoom factor.
+ *  - Resolution/density: layout depends only on the decoded bitmap heights and the resolved
+ *    canvas size — no per-slice rounding against the box.
+ *  - Format: placement consumes the bitmaps' ACTUAL decoded heights (inSampleSize rounding
+ *    included), never the planned source heights.
+ *
+ * The vertical scale maps the decoded bitmaps' total height onto the reserved item box, so
+ * the strip still fills the box exactly — the bottom edge lands on the box edge, and sibling
+ * items never jump. Callers guarantee non-null, same-width bitmaps (checked upstream with a
+ * whole-image fallback), so the `!!` here cannot fire.
+ */
 @Composable
 private fun SliceColumn(
     pageNumber: Int,
     slices: List<WebtoonSlicer.SliceRect>,
     bitmaps: List<android.graphics.Bitmap?>,
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        slices.forEachIndexed { index, slice ->
-            val bitmap = bitmaps[index] ?: return@forEachIndexed
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Page $pageNumber part ${index + 1}/${slices.size}",
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(
-                        slice.srcHeight.coerceAtLeast(1).toFloat(),
-                        fill = true,
-                    ),
-            )
+    Canvas(
+        modifier = Modifier
+            .fillMaxSize()
+            .semantics {
+                contentDescription = "Page $pageNumber, rendered in ${slices.size} parts"
+            },
+    ) {
+        // displayHeight is only known inside the draw scope, so placement is computed here,
+        // per draw: O(slices) arithmetic, deterministic for a given (bitmaps, size) pair, so
+        // the seams stay put across redraws and zoom never re-rounds a boundary.
+        val placements = WebtoonSeamLayout.place(
+            bitmaps.map { it!!.height },
+            size.height.toDouble(),
+        )
+        val bitmapWidth = bitmaps.first()!!.width
+        val totalBitmapHeight = placements.sumOf { it.bitmapHeight }
+        val sx = size.width / bitmapWidth
+        val sy = size.height / totalBitmapHeight
+        scale(sx, sy, pivot = Offset.Zero) {
+            placements.forEach { placement ->
+                drawImage(
+                    image = bitmaps[placement.index]!!.asImageBitmap(),
+                    dstOffset = IntOffset(0, placement.bitmapTop),
+                )
+            }
         }
     }
 }
