@@ -1,7 +1,7 @@
 [versions]
-agp_version = "9.4.1"
+agp_version = "9.5.1"
 lifecycle_version = "2.10.0"
-paging_version = "3.5.1"
+paging_version = "3.5.3"
 
 [libraries]
 gradle = { module = "com.android.tools.build:gradle", version.ref = "agp_version" }

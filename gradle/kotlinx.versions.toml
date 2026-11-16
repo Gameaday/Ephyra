@@ -1,5 +1,5 @@
 [versions]
-kotlin_version = "2.4.20"
+kotlin_version = "2.4.21"
 serialization_version = "1.10.0"
 xml_serialization_version = "0.91.3"
 
@@ -34,4 +34,3 @@ serialization = [
 
 [plugins]
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin_version" }
-

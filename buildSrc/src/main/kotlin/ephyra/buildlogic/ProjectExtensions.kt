@@ -15,7 +15,6 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.io.File
 import java.time.Duration
 
 val Project.androidxCatalog get() = extensions.getByType<VersionCatalogsExtension>().named("androidx")
@@ -199,5 +198,3 @@ internal fun Project.configureTest() {
         }
     }
 }
-
-val Project.generatedBuildDir: File get() = project.layout.buildDirectory.asFile.get().resolve("generated/ephyra")
