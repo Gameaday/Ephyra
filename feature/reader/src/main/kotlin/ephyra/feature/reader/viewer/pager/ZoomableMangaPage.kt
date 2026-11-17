@@ -409,6 +409,14 @@ fun ZoomableMangaPage(
                         ContentScale.Fit
                     }
 
+                    // Animation probe for the slice guard below. Header-only (64 bytes) over the
+                    // in-memory bytes, so it is cheap during composition; a tall *animated* page must
+                    // stay on the whole-image path (region decoding would freeze on the first frame).
+                    val probeBytes = imageModel as? ByteArray
+                    val isAnimated = remember(probeBytes) {
+                        probeBytes != null && ImageUtil.isAnimatedAndSupported(ByteArrayInputStream(probeBytes))
+                    }
+
                     // The zoom transform is applied here and nowhere else. Before this, the pager
                     // computed `scaleAnim`/`offsetAnim` on every pinch and never bound them to any
                     // modifier, so a pinch changed internal state that nothing drew -- the direct
@@ -431,37 +439,35 @@ fun ZoomableMangaPage(
                                 modifier = imageItemModifier,
                             )
                         } else if (imageModel != null) {
-                            AsyncImage(
-                                model = remember(imageModel, cropBorders, isTallImage) {
-                                    ImageRequest.Builder(context)
-                                        .data(imageModel)
-                                        .memoryCacheKey(
-                                            readerPageMemoryCacheKey(page, cropBorders) +
-                                                if (isTallImage) "_tall" else "",
-                                        )
-                                        .cropBorders(cropBorders)
-                                        .precision(Precision.EXACT)
-                                        // Decode at the source's original resolution so
-                                        // zooming in preserves the full detail instead of
-                                        // showing a downsampled (blurry) version.
-                                        //
-                                        // Deliberately Coil's ORIGINAL sentinel rather than
-                                        // PageDecodeWidth: this reader's decode width *is* the
-                                        // source width, and routing it through a computed value
-                                        // would decode a not-yet-measured page (width 0) at one
-                                        // pixel. A sentinel that defers to the decoder cannot be
-                                        // wrong that way. See PageDecodeWidth for the
-                                        // display-derived case this reader does not have.
-                                        .size(CoilSize.ORIGINAL)
-                                        .crossfade(false)
-                                        .build()
-                                },
-                                placeholder = pageImagePlaceholderPainter(),
-                                error = pageImageErrorPainter(),
-                                contentDescription = "Page ${page.number}",
-                                contentScale = imageContentScale,
-                                modifier = imageItemModifier,
-                            )
+                            val pageBytes = imageModel as? ByteArray
+                            // Slice a tall page that would exceed the GPU texture ceiling as one
+                            // bitmap (the blurry-strip defect). Everything else -- short pages,
+                            // cropped pages (Coil crop transform), merged bitmaps, animated pages,
+                            // unknown size -- keeps the single-image path.
+                            val canSlice = isTallImage && !cropBorders && merged == null && !isAnimated &&
+                                page.resource.width > 0 && page.resource.height > 0
+                            val fallback = @Composable {
+                                PageAsyncImage(
+                                    page = page,
+                                    imageModel = imageModel,
+                                    cropBorders = cropBorders,
+                                    isTallImage = isTallImage,
+                                    contentScale = imageContentScale,
+                                    modifier = imageItemModifier,
+                                )
+                            }
+                            if (canSlice && pageBytes != null) {
+                                PagedSliceColumn(
+                                    bytes = pageBytes,
+                                    srcWidth = page.resource.width,
+                                    srcHeight = page.resource.height,
+                                    targetWidthPx = containerWidth.toInt().coerceAtLeast(1),
+                                    modifier = imageItemModifier,
+                                    fallback = fallback,
+                                )
+                            } else {
+                                fallback()
+                            }
                         } else if (imageReadFailed) {
                             ReaderPageErrorView(
                                 error = IllegalStateException("Page image is unavailable"),
@@ -476,4 +482,40 @@ fun ZoomableMangaPage(
             }
         }
     }
+}
+
+@Composable
+private fun PageAsyncImage(
+    page: ReaderPage,
+    imageModel: Any?,
+    cropBorders: Boolean,
+    isTallImage: Boolean,
+    contentScale: ContentScale,
+    modifier: Modifier,
+) {
+    val context = LocalContext.current
+    AsyncImage(
+        model = remember(imageModel, cropBorders, isTallImage) {
+            ImageRequest.Builder(context)
+                .data(imageModel)
+                .memoryCacheKey(
+                    readerPageMemoryCacheKey(page, cropBorders) +
+                        if (isTallImage) "_tall" else "",
+                )
+                .cropBorders(cropBorders)
+                .precision(Precision.EXACT)
+                // Decode at the source's original resolution so zooming in preserves the full
+                // detail instead of showing a downsampled (blurry) version. Deliberately Coil's
+                // ORIGINAL sentinel rather than PageDecodeWidth: this reader's decode width *is*
+                // the source width. See PageDecodeWidth for the display-derived case.
+                .size(CoilSize.ORIGINAL)
+                .crossfade(false)
+                .build()
+        },
+        placeholder = pageImagePlaceholderPainter(),
+        error = pageImageErrorPainter(),
+        contentDescription = "Page ${page.number}",
+        contentScale = contentScale,
+        modifier = modifier,
+    )
 }
