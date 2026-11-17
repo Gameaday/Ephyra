@@ -64,7 +64,9 @@ fun PagedSliceColumn(
         SampleSize.entries.lastOrNull { it.inSampleSize <= fit } ?: SampleSize.ONE
     }
 
-    val decoded by produceState<Any?>(Decoding, srcWidth, srcHeight, targetWidthPx, sample) {
+    // `bytes` is a key: a new page (new array instance) with the same dimensions must re-decode,
+    // or the previous page's slices would be shown under the new page.
+    val decoded by produceState<Any?>(Decoding, bytes, srcWidth, srcHeight, targetWidthPx, sample) {
         value = withIOContext {
             WebtoonRegionDecoder.decodeSlices(
                 bytes = bytes,
