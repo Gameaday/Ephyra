@@ -1,6 +1,9 @@
 # Unified page-rendering pipeline
 
-Status: investigation / design proposal. No rendering behaviour changed by this doc.
+Status: Phase 1–3 **implemented** (commit `feat(reader): slice tall paged pages...`). The shared
+slice renderer currently lives in `viewer/pager/PagedSliceColumn.kt`; folding `SlicedWebtoonImage`
+onto it (Phase 1's move to a neutral package) is deferred until PR #367 lands, to avoid a conflict
+on that file. Remaining gate: visual QA on a real tall page (no GPU in CI).
 
 ## The symptom
 
