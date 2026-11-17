@@ -52,17 +52,23 @@ class ImageCacheMemoryPolicy {
     }
 
     /**
-     * Applies a system trim: at foreground pressure the cache is halved *of its configured
-     * size* (never below the floor, never above the baseline); at critical pressure it is
-     * cleared. Background eviction is handled by Coil's own lifecycle-aware policy configured
-     * on the loader.
+     * Applies a system trim. At CRITICAL pressure the cache is cleared; at any lower pressure
+     * the loader is left alone and [restore] puts it back on the next foreground.
+     *
+     * The old behaviour halved the cache at `TRIM_MEMORY_RUNNING_LOW`, which the system raises
+     * for foreground memory churn and ordinary backgrounding — not just real pressure. With one
+     * or two covers on screen that trim still evicted them, and Coil then re-decoded from disk and
+     * replayed its crossfade on every back-navigation: the "covers take longer than they should,
+     * and reload on every nav back" report. `restore` only resets the cache *size*; it cannot
+     * bring back evicted bitmaps, so the only way to keep covers warm is to not evict them at
+     * benign levels. Memory pressure is still honoured — CRITICAL clears (and the background
+     * fraction + hard cap bound the normal case) — but routine level changes no longer flush the
+     * cover working set. Long webtoon sessions are still protected by the background-retention
+     * fraction and the `MEMORY_CACHE_HARD_CAP_BYTES` ceiling, which trim even without a callback.
      */
+    @Suppress("DEPRECATION")
     fun trim(context: Context, level: Int) {
         val memoryCache = SingletonImageLoader.get(context).memoryCache
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW && memoryCache != null) {
-            val baseline = baselineMaxSize ?: memoryCache.maxSize
-            memoryCache.maxSize = trimTarget(baseline)
-        }
         if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {
             memoryCache?.clear()
         }
