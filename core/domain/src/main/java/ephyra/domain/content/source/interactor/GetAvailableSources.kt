@@ -1,4 +1,4 @@
-package ephyra.domain.content.source.interactor
+﻿package ephyra.domain.content.source.interactor
 
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.extension.service.ExtensionManager
@@ -26,7 +26,7 @@ class GetAvailableSources @Inject constructor(
 ) {
     operator fun invoke(): Flow<List<UnifiedSource>> =
         combine(
-            sourceManager.catalogueSources,
+            sourceManager.catalogueSourceFlow,
             extensionManager.installedExtensionsFlow,
         ) { catalogueSources, extensions ->
             val unifiedSources = mutableListOf<UnifiedSource>()

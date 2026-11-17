@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.source
+﻿package eu.kanade.tachiyomi.source
 
 import android.content.Context
 import ephyra.app.extension.ExtensionManager
@@ -47,7 +47,7 @@ internal class AndroidSourceManager(
 
     private val stubSourcesMap = ConcurrentHashMap<Long, StubSource>()
 
-    override val catalogueSources: Flow<List<CatalogueSource>> = sourcesMapFlow.map {
+    override val catalogueSourceFlow: Flow<List<CatalogueSource>> = sourcesMapFlow.map {
         it.values.filterIsInstance<CatalogueSource>()
     }
 
@@ -107,7 +107,7 @@ internal class AndroidSourceManager(
                         "Source map build failed; continuing with the sources resolved so far"
                     }
                     // Mark initialized even on failure. Leaving it false means every `getOrStub`
-                    // call returns a nameless placeholder for the rest of the process — the app
+                    // call returns a nameless placeholder for the rest of the process â€” the app
                     // would present a valid, installed source as "source not installed" forever.
                     // Once initialized, `getOrStub` falls back to a named stub from the database.
                     _isInitialized.value = true

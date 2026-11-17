@@ -1,4 +1,4 @@
-package ephyra.core.download
+﻿package ephyra.core.download
 
 import android.app.Application
 import androidx.core.net.toUri
@@ -123,7 +123,7 @@ class DownloadCache(
 
     /**
      * Signals that the initial cache state is ready for queries. Completed once immediately
-     * after the disk-cache load attempt in [init] — before the first filesystem-renewal job
+     * after the disk-cache load attempt in [init] â€” before the first filesystem-renewal job
      * runs. Callers that need a reliable answer should call [awaitCacheReady] (via
      * [ephyra.app.data.download.DownloadManager.awaitCacheReady]) before calling
      * [isChapterDownloaded], so they see the disk-cached state rather than the transient empty
@@ -154,7 +154,7 @@ class DownloadCache(
             // full filesystem renewal overwrites rootDownloadsDir.
             cacheReady.complete(Unit)
 
-            sourceManager.catalogueSources
+            sourceManager.catalogueSourceFlow
                 .map { sources -> sources.mapTo(HashSet()) { it.id } }
                 .distinctUntilChanged()
                 .collect {
@@ -410,7 +410,7 @@ class DownloadCache(
             }
 
             // Wait until sources are loaded.
-            sourceManager.catalogueSources.first { it.isNotEmpty() }
+            sourceManager.catalogueSourceFlow.first { it.isNotEmpty() }
 
             val sources = getSources()
             val sourceMap = sources.associate { provider.getSourceDirName(it).lowercase() to it.id }
@@ -554,7 +554,7 @@ private class UniFileSerializer(private val context: Application) : KSerializer<
 
     override fun deserialize(decoder: Decoder): UniFile {
         return requireNotNull(UniFile.fromUri(context, decoder.decodeString().toUri())) {
-            "Failed to resolve a UniFile from the stored URI — the download cache will be rebuilt."
+            "Failed to resolve a UniFile from the stored URI â€” the download cache will be rebuilt."
         }
     }
 }

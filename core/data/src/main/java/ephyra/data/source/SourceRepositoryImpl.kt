@@ -1,4 +1,4 @@
-package ephyra.data.source
+﻿package ephyra.data.source
 
 import ephyra.data.room.daos.MangaDao
 import ephyra.domain.manga.interactor.NetworkToLocalManga
@@ -25,7 +25,7 @@ class SourceRepositoryImpl @Inject constructor(
 ) : SourceRepository {
 
     override fun getSources(): Flow<List<DomainSource>> {
-        return sourceManager.catalogueSources.map { sources ->
+        return sourceManager.catalogueSourceFlow.map { sources ->
             sources.map {
                 mapSourceToDomainSource(it).copy(
                     supportsLatest = it.supportsLatest,
@@ -35,7 +35,7 @@ class SourceRepositoryImpl @Inject constructor(
     }
 
     override fun getOnlineSources(): Flow<List<DomainSource>> {
-        return sourceManager.catalogueSources.map { sources ->
+        return sourceManager.catalogueSourceFlow.map { sources ->
             sources
                 .filterIsInstance<HttpSource>()
                 .map(::mapSourceToDomainSource)
@@ -45,7 +45,7 @@ class SourceRepositoryImpl @Inject constructor(
     override fun getSourcesWithFavoriteCount(): Flow<List<Pair<DomainSource, Long>>> {
         return combine(
             mangaDao.getSourceIdWithFavoriteCount(),
-            sourceManager.catalogueSources,
+            sourceManager.catalogueSourceFlow,
         ) { sourceIdWithFavoriteCount, _ -> sourceIdWithFavoriteCount }
             .map { list ->
                 list.map { (sourceId, count) ->

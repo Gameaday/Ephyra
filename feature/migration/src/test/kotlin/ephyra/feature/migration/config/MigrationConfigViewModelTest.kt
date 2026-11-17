@@ -1,4 +1,4 @@
-package ephyra.feature.migration.config
+﻿package ephyra.feature.migration.config
 
 import app.cash.turbine.test
 import ephyra.core.common.preference.Preference
@@ -50,7 +50,7 @@ class MigrationConfigViewModelTest {
         var catalogueSourcesList: List<CatalogueSource> = emptyList(),
     ) : SourceManager {
         override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
-        override val catalogueSources: Flow<List<CatalogueSource>> = flowOf(catalogueSourcesList)
+        override val catalogueSourceFlow: Flow<List<CatalogueSource>> = flowOf(catalogueSourcesList)
         override fun get(sourceKey: Long): eu.kanade.tachiyomi.source.Source? = null
         override fun getOrStub(
             sourceKey: Long,

@@ -1,4 +1,4 @@
-package ephyra.domain.source.interactor
+﻿package ephyra.domain.source.interactor
 
 import app.cash.turbine.test
 import ephyra.domain.source.model.StubSource
@@ -23,7 +23,7 @@ class GetCatalogueSourcesTest {
     @Test
     fun `subscribe delegates to sourceManager catalogueSources flow`() = runTest {
         val catalogueSource: CatalogueSource = mockk(relaxed = true)
-        fakeSourceManager.catalogueSourceFlow = flowOf(listOf(catalogueSource))
+        fakeSourceManager.backingCatalogueFlow = flowOf(listOf(catalogueSource))
 
         getCatalogueSources.subscribe().test {
             assertEquals(listOf(catalogueSource), awaitItem())
@@ -40,11 +40,11 @@ class GetCatalogueSourcesTest {
     }
 
     private class FakeSourceManager : SourceManager {
-        var catalogueSourceFlow: Flow<List<CatalogueSource>> = flowOf(emptyList())
+        var backingCatalogueFlow: Flow<List<CatalogueSource>> = flowOf(emptyList())
         var catalogueSourceList: List<CatalogueSource> = emptyList()
 
         override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
-        override val catalogueSources: Flow<List<CatalogueSource>> get() = catalogueSourceFlow
+        override val catalogueSourceFlow: Flow<List<CatalogueSource>> get() = backingCatalogueFlow
         override fun get(sourceKey: Long): Source? = null
         override fun getOrStub(sourceKey: Long): Source = mockk(relaxed = true)
         override fun getOnlineSources(): List<HttpSource> = emptyList()

@@ -1,4 +1,4 @@
-package ephyra.domain.manga.interactor
+﻿package ephyra.domain.manga.interactor
 
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
@@ -36,7 +36,7 @@ class FindContentSourceTest {
         ),
     )
 
-    // ── deduplicateByUrl ───────────────────────────────────────────────
+    // â”€â”€ deduplicateByUrl â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     fun `deduplicateByUrl removes duplicate URLs keeping highest confidence`() {
@@ -71,7 +71,7 @@ class FindContentSourceTest {
         interactor.deduplicateByUrl(emptyList()) shouldHaveSize 0
     }
 
-    // ── diversifyByProvider ──────────────────────────────────────────────
+    // â”€â”€ diversifyByProvider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     fun `diversifyByProvider picks one per provider then fills remaining`() {
@@ -118,7 +118,7 @@ class FindContentSourceTest {
         result.map { it.sourceName }.toSet() shouldBe setOf("MangaDex", "OtherSource")
     }
 
-    // ── rankResults ─────────────────────────────────────────────────────
+    // â”€â”€ rankResults â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     fun `rankResults prioritizes sources with chapters over empty sources`() {
@@ -143,7 +143,7 @@ class FindContentSourceTest {
 
         val result = interactor.rankResults(matches, maxResults = 5)
 
-        // B and C tie on confidence (0.90), C has more chapters → C first
+        // B and C tie on confidence (0.90), C has more chapters â†’ C first
         result[0].sourceName shouldBe "C"
         result[1].sourceName shouldBe "B"
         result[2].sourceName shouldBe "A"
@@ -185,7 +185,7 @@ class FindContentSourceTest {
         result[0].sourceName shouldBe "Alive"
     }
 
-    // ── Full pipeline (dedup + diversity + rank) ────────────────────────
+    // â”€â”€ Full pipeline (dedup + diversity + rank) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     fun `full pipeline deduplicates then diversifies identical MangaDex results`() {
@@ -236,7 +236,7 @@ class FindContentSourceTest {
         ranked[0].chapterCount shouldBe 42
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun sourceMatch(
         url: String = "/manga/test",
@@ -260,7 +260,7 @@ class FindContentSourceTest {
     }
 }
 
-// ── Fakes ────────────────────────────────────────────────────────────────
+// â”€â”€ Fakes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 private class FakeCatalogueSource(
     override val id: Long,
@@ -280,7 +280,7 @@ private class FakeCatalogueSource(
 
 private class FakeSourceManager : SourceManager {
     override val isInitialized = MutableStateFlow(true)
-    override val catalogueSources: Flow<List<CatalogueSource>> = flowOf(emptyList())
+    override val catalogueSourceFlow: Flow<List<CatalogueSource>> = flowOf(emptyList())
     override fun get(sourceKey: Long) = null
     override fun getOrStub(sourceKey: Long) = StubSource(sourceKey, "en", "Stub")
     override fun getOnlineSources() = emptyList<eu.kanade.tachiyomi.source.online.HttpSource>()

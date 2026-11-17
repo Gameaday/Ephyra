@@ -1,4 +1,4 @@
-package ephyra.app.ui.deeplink
+﻿package ephyra.app.ui.deeplink
 
 import app.cash.turbine.test
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
@@ -41,7 +41,7 @@ class DeepLinkViewModelTest {
 
     private val fakeSourceManager = object : SourceManager {
         override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
-        override val catalogueSources: Flow<List<CatalogueSource>> = flowOf(emptyList())
+        override val catalogueSourceFlow: Flow<List<CatalogueSource>> = flowOf(emptyList())
         override fun get(sourceKey: Long): Source? = null
         override fun getOrStub(sourceKey: Long): Source = mockk(relaxed = true)
         override fun getOnlineSources(): List<HttpSource> = emptyList()

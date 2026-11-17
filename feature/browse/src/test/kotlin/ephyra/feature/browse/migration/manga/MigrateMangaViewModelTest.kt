@@ -1,4 +1,4 @@
-package ephyra.feature.browse.migration.manga
+﻿package ephyra.feature.browse.migration.manga
 
 import app.cash.turbine.test
 import ephyra.domain.manga.interactor.GetFavorites
@@ -144,7 +144,7 @@ class MigrateMangaViewModelTest {
 
     private class FakeSourceManager(private val stubSource: Source) : SourceManager {
         override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
-        override val catalogueSources: Flow<List<CatalogueSource>> = flowOf(emptyList())
+        override val catalogueSourceFlow: Flow<List<CatalogueSource>> = flowOf(emptyList())
         override fun get(sourceKey: Long): Source? = stubSource.takeIf { it.id == sourceKey }
         override fun getOrStub(sourceKey: Long): Source = stubSource
         override fun getOnlineSources(): List<HttpSource> = emptyList()
