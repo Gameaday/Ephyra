@@ -452,11 +452,27 @@ object ImageUtil {
     /**
      * Check whether the image is considered a tall image.
      *
+     * The ratio is compared as floating point on purpose. The previous `outHeight / outWidth > 3`
+     * used integer division, which truncated a 3.x ratio to 3 -- so the effective threshold was
+     * "4x or taller" while this doc (and every caller's mental model) said "3x". A 1080x3500 page
+     * (ratio 3.24) was silently treated as *not* tall.
+     *
      * @return true if the height:width ratio is greater than 3.
      */
     private fun isTallImage(imageSource: BufferedSource): Boolean {
         val options = extractImageOptions(imageSource)
-        return (options.outHeight / options.outWidth) > 3
+        return isTallRatio(options.outHeight, options.outWidth)
+    }
+
+    /**
+     * Whether a [height]×[width] image is "tall" (height:width ratio greater than [TALL_IMAGE_RATIO]).
+     *
+     * Extracted from [isTallImage] so the threshold is testable without decoding a real image.
+     * Non-positive dimensions are never tall (and never divide by zero).
+     */
+    internal fun isTallRatio(height: Int, width: Int): Boolean {
+        if (height <= 0 || width <= 0) return false
+        return height.toDouble() / width > TALL_IMAGE_RATIO
     }
 
     /**
@@ -719,6 +735,9 @@ object ImageUtil {
      * smart-merge scans header-only in the non-merge case.
      */
     private const val ANIMATION_PREFIX_BYTES = 64L
+
+    /** Height:width ratio above which [isTallImage] treats a page as tall (see that function). */
+    private const val TALL_IMAGE_RATIO = 3.0
 }
 
 val getDisplayMaxHeightInPx: Int
