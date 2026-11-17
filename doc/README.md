@@ -34,9 +34,10 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
   `rfcs/RFC-0001-content-identity-unification.md`.
 - **Historical — do not follow:** `historical/` (archaeology only; each carries a `HISTORICAL` banner).
 
-> **Cruft note (owner 2026‑11‑16):** `REBUILD_STATUS.md` has grown to ~424 KB of append‑only
-> history. Per `DOCUMENTATION_GOVERNANCE.md` ("a long‑lived old plan is not an archive"), the
-> forward‑looking summary should be split out and the bulk archived; tracked as a cleanup task.
+> **Ledger note:** `REBUILD_STATUS.md` is large (~424 KB) because it is append‑only evidence
+> history. Read its **As‑is summary** section first — that is the current state; the rows below it
+> are the detailed history. Completed reconciliation docs are moved to `historical/` rather than
+> left in the current set (see `2_0_CLEANUP_AUDIT.md` as the example).
 
 ## Current documents
 
