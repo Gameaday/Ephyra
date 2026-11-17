@@ -230,7 +230,14 @@ jobs:
 
       - name: Run unit tests
         id: unit_tests
-        run: ./gradlew testDebugUnitTest
+        # --max-workers=2: on the 16 GB runner four concurrent test workers (two of them the 2 GB
+        # Robolectric/Compose workers in :app and :feature:reader) exhaust memory, and the OOM
+        # killer kills a worker mid-discovery -- Gradle then reports the opaque "TestEngine with ID
+        # 'junit-vintage' failed to discover tests". Halving concurrency keeps peak worker memory
+        # within the runner. This is aggregate pressure, not a per-worker limit: locally the whole
+        # :feature:reader suite (all Robolectric/Compose tests) passes at a 512m heap, so the fix is
+        # to stop workers from overlapping, not to grow any one heap.
+        run: ./gradlew testDebugUnitTest --max-workers=2
 
       # A red gate that names nothing is worse than no gate: it cannot be triaged without
       # authentication, so the failure gets re-run and re-guessed. This writes the failing tests
