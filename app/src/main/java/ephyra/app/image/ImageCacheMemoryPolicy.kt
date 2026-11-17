@@ -9,17 +9,17 @@ import coil3.SingletonImageLoader
  * The image-cache memory trim policy, split out of `App` by B5 (`OPS-001`).
  *
  * The policy's core is the baseline: the loader's configured memory-cache size, captured —
- * and clamped to the hard cap — when the loader is built. Trimming used to halve whatever
- * the cache currently held, so each trim halved the previous trim: a long session that hit
- * memory pressure a few times ratcheted the cache down towards nothing and never put it
- * back, even after the pressure cleared. Remembering the configured size makes the trim
- * idempotent and lets [restore] put it back when the app is foregrounded again.
+ * and clamped to the hard cap — when the loader is built. Remembering the configured size lets
+ * [restore] put the cache back to that size when the app is foregrounded again, so a trim is
+ * never permanent for the life of the process.
  *
- * Why trim at [ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW] rather than waiting for CRITICAL:
- * long webtoon sessions pin chapter bytes + decoded strips in RAM, and waiting for CRITICAL
- * meant the reader appeared "full" (stalled loads) until the app was restarted. Trimming early
- * drops only decoded bitmaps; chapter bytes stay in the Coil/chapter disk caches, so
- * back-scroll re-decodes instead of re-downloading.
+ * Trimming only happens at [ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL]. Earlier levels
+ * (`RUNNING_LOW` and friends) are raised by the system for ordinary foreground churn and routine
+ * backgrounding, not just real pressure — and halving the cache at those levels evicted the
+ * covers a user was about to see, so Coil re-decoded from disk and replayed its crossfade on
+ * every back-navigation ("covers take longer than they should, and reload on every nav back").
+ * The background-retention fraction and the [MEMORY_CACHE_HARD_CAP_BYTES] ceiling bound normal
+ * growth without a callback, so the remaining work for a trim is only the critical case.
  */
 class ImageCacheMemoryPolicy {
 
@@ -87,27 +87,10 @@ class ImageCacheMemoryPolicy {
         const val MEMORY_CACHE_HARD_CAP_BYTES = 96L * 1024 * 1024
 
         /**
-         * Pressure-trim floor: 16 MiB (reviewed for audit P1, 2026-11-13 — kept).
-         *
-         * Pins roughly a screenful of decoded covers so a foreground pressure trim cannot
-         * evict the covers the user is about to see. Raising it would neuter the trim on
-         * LOW-tier devices, whose baseline (20% of a small heap) already sits near the floor:
-         * on a 128 MiB heap the baseline is ~26 MiB and half of it is below this floor. The
-         * background-retention raise, not this floor, is P1's lever.
+         * The configured size clamped to the hard cap — the baseline [restore] returns the cache
+         * to after a trim.
          */
-        const val TRIM_FLOOR_BYTES = 16L * 1024 * 1024
-
-        /** The configured size clamped to the hard cap — the baseline trims restore to. */
         fun cappedBaseline(configuredMaxSize: Long): Long =
             configuredMaxSize.coerceAtMost(MEMORY_CACHE_HARD_CAP_BYTES)
-
-        /**
-         * The size a foreground pressure trim shrinks to: half the baseline, never below the
-         * floor — and never above the baseline, which the old formula violated on small-heap
-         * devices: below a 32 MiB baseline, half of it is under the floor and a "trim" grew
-         * the cache under memory pressure.
-         */
-        fun trimTarget(baseline: Long): Long =
-            (baseline / 2).coerceAtLeast(TRIM_FLOOR_BYTES).coerceAtMost(baseline)
     }
 }
