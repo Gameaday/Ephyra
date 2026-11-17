@@ -152,7 +152,7 @@ is not done until that evidence exists. `E2` = JVM/Robolectric, `E3` = emulator/
 
 ### Track D - Legacy deletion & cleanup (the crispness work)
 
-Reconciliation items from the merged-work audit are in [`2_0_CLEANUP_AUDIT.md`](2_0_CLEANUP_AUDIT.md) (CU-1..CU-8); absorb them into D1/D2/D3.
+Reconciliation items from the merged-work audit are in [`historical/2_0_CLEANUP_AUDIT.md`](historical/2_0_CLEANUP_AUDIT.md) (CU-1..CU-8); absorb them into D1/D2/D3.
 
 | ID | Action | Evidence | Depends on |
 |---|---|---|---|

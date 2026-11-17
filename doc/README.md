@@ -27,8 +27,8 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
   `DOWNLOAD_ARTIFACT_CONTRACT.md`, `DOCUMENT_VIEWPORT_CONTRACT.md`, `READER_ARCHITECTURE.md`,
   `READER_GESTURE_CONTRACT.md`), `SOURCE_ROADMAP.md`, `DEPENDENCY_TARGET_GRAPH.md`,
   `PERFORMANCE_BUDGETS.md`, `BUILD_HEALTH.md`.
-- **In-flight — active work:** `REBUILD_STATUS.md` (the ledger), `2_0_COMPLETION_PLAN.md`,
-  `2_0_CLEANUP_AUDIT.md`, `2_0_CONTENT_MODEL_PLAN.md`, `TARGET_DATA_*`, `source/`.
+- **In-flight — active work:** `REBUILD_STATUS.md` (the ledger),
+  `2_0_COMPLETION_PLAN.md`, `2_0_CONTENT_MODEL_PLAN.md`, `TARGET_DATA_*`, `source/`.
 - **Forward-looking — planned:** `../ROADMAP.md` (scope + non-negotiables),
   `UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`, `UNIFIED_RENDERING_PIPELINE.md`,
   `rfcs/RFC-0001-content-identity-unification.md`.
@@ -43,7 +43,7 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
 | Document | Purpose | Owner / update rule |
 |---|---|---|
 | [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md) | Ordered steps to the `2.0-clean` baseline. | Update when a step lands or the state changes. |
-| [`2_0_CLEANUP_AUDIT.md`](2_0_CLEANUP_AUDIT.md) | Reconciliation of merged work against the current tree. | Update when an item is cleaned up. |
+| [`historical/2_0_CLEANUP_AUDIT.md`](historical/2_0_CLEANUP_AUDIT.md) | Merged-work reconciliation (CU-1..CU-8), all resolved. | HISTORICAL; do not follow. |
 | [`2_0_CONTENT_MODEL_PLAN.md`](2_0_CONTENT_MODEL_PLAN.md) | Subordinate 10-step plan for content model / profile path. | Delete when its last step lands. |
 | [`REBUILD_PROGRAM.md`](REBUILD_PROGRAM.md) | Phased architecture and delivery rules. | Change only with an ADR. |
 | [`REBUILD_EXECUTION_GUIDE.md`](REBUILD_EXECUTION_GUIDE.md) | Operating procedure for humans and agents. | Update when procedure changes. |

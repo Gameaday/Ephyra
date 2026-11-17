@@ -6,6 +6,30 @@
 > This ledger is append-oriented. Update it in the same commit as the work it describes.
 > Forward plan: [2_0_COMPLETION_PLAN.md](2_0_COMPLETION_PLAN.md) · documentation index: [README.md](README.md)
 
+## As-is summary (read this first)
+
+The detailed rows below are append-oriented history. This section is the current state in 30 seconds;
+if a row below disagrees with this summary, the summary is the authority and the row is stale.
+
+- **Architecture (normative):** one graph coordinator (`NavigationCoordinator`); reader is
+  `ReaderViewModel` + `ReaderSessionCoordinator` + `webtoonDocumentTransform` (single container
+  transform); media is `DecodePlanner`/`DecodePlan`/`RenderPathPolicy`/`AnimationPolicy` +
+  `BoundedPageByteStore`; sources flow through `SourceGateway` with `SRC-000` classification.
+  See [`REBUILD_PROGRAM.md`](REBUILD_PROGRAM.md) and [`adr/`](adr/).
+- **Phase gates:** `0A` (Technical contracts), `2` (Quality infrastructure), `7` (Paged reader) are
+  `VERIFIED`; `0`, `1`, `3`, `4`, `5`, `6`, `8`–`13` are `IN_PROGRESS`/`CODE_COMPLETE`/`NOT_STARTED`
+  with named open rows (each is gated on a channel, not on more analysis).
+- **Open user-reported defects:** all recorded `DEF-*` rows are `DEVICE_VERIFIED`/`CODE_COMPLETE`
+  at `E3`; only `E4-user` captures remain (owner-deferred).
+- **Accepted debt (owner decisions):** see [`ACCEPTED_DEBT_REGISTER.md`](ACCEPTED_DEBT_REGISTER.md)
+  — `B-017` keystore rotation, target-data cutover, SRC-007/009/010 wiring, and the retired
+  `macrobenchmark`/frame-deadline gate. Each has a review/expiry condition.
+- **Standing channel blocker:** `B-050` — the CI emulator does not boot, so device runs are local
+  (`ADR-0009` accepts `E4-lab`); publish paths never depend on connected instrumentation.
+- **This branch (`fix/ci-green-tests`) adds:** green `:app`/`:feature:reader`/`:core:common` tests,
+  CI `--max-workers=2` + worker-death diagnostics, the tall-page slice fix, and the
+  cover-cache reload-on-back fix. These are not yet in the phase-gate rows below.
+
 ## Status vocabulary
 
 - `NOT_STARTED`: no implementation accepted.

@@ -1,5 +1,9 @@
 # 2.0 Cleanup Audit — merged work vs. current tree
 
+> **Status:** HISTORICAL - completed reconciliation record (2026-10-05). Every item (CU-1..CU-8)
+> was resolved by the A2/A6/B6/D1/D3 steps in [`../2_0_COMPLETION_PLAN.md`](../2_0_COMPLETION_PLAN.md).
+> Retained for archaeology only; not current guidance.
+
 > **Status:** CURRENT. Audit of code merged into `main` that was authored *before* the recent cleanup,
 > removal, and refactor passes, and therefore needs reconciling with the project's current state.
 > **Companion to:** [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md) (steps D1–D5 are the deletion
