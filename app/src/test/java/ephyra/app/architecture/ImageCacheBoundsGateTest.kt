@@ -82,15 +82,29 @@ class ImageCacheBoundsGateTest {
         )
     }
 
-    /** The pressure-trim floor pins roughly a screenful of covers; it is reviewed, not tuned. */
+    /**
+     * The trim only clears the cache at CRITICAL pressure.
+     *
+     * The old policy halved the cache at `TRIM_MEMORY_RUNNING_LOW`, which the system raises for
+     * ordinary foreground churn and routine backgrounding, not just real pressure — evicting the
+     * covers a user was about to see and forcing a disk re-decode + crossfade on every back
+     * navigation (the "covers reload on every nav back" report). The floor/trim-target pair that
+     * pinned the old halving is gone with it; this gate now pins the live behavior instead.
+     */
     @Test
-    fun `the pressure trim floor stays pinned`() {
+    fun `the trim only clears the cache at critical pressure`() {
         val code = codeOf(memoryPolicy)
         assertTrue(
-            code.contains("TRIM_FLOOR_BYTES = 16L * 1024 * 1024"),
-            "The 16 MiB trim floor was reviewed against the audit (P1) and kept: raising it " +
-                "neuters the trim on LOW-tier devices whose baseline sits near the floor. " +
-                "If it moves, update this gate with the new reviewed value.",
+            code.contains("TRIM_MEMORY_RUNNING_CRITICAL"),
+            "Sanity: this gate reads the policy's trim threshold; if it moved or was renamed, " +
+                "update this gate rather than letting it pass vacuously.",
+        )
+        assertFalse(
+            code.contains("TRIM_MEMORY_RUNNING_LOW"),
+            "Trimming at TRIM_MEMORY_RUNNING_LOW evicts covers on benign foreground churn and " +
+                "ordinary backgrounding, so returning to the app re-decodes every visible cover " +
+                "from disk and replays its crossfade (the 'reload on every nav back' report). " +
+                "Trim only at CRITICAL; restore() resets the size on foreground.",
         )
     }
 }
