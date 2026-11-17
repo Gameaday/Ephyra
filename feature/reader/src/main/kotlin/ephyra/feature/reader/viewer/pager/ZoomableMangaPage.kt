@@ -58,6 +58,7 @@ import ephyra.domain.reader.viewport.PagerViewportState
 import ephyra.domain.reader.viewport.PagerZoomTransform
 import ephyra.domain.reader.viewport.ViewportSize
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.viewer.PageGeometry
 import ephyra.feature.reader.viewer.ReaderPageErrorView
 import ephyra.feature.reader.viewer.ReaderPageLoadingView
 import ephyra.feature.reader.viewer.pageImageErrorPainter
@@ -387,7 +388,7 @@ fun ZoomableMangaPage(
                         }
                     }
 
-                    val isTallImage = imageAspectRatio?.let { it < 0.5f } == true
+                    val isTallImage = PageGeometry.isTall(imageAspectRatio)
                     // Regular pages always fit the available screen without distortion. Tall pages
                     // remain width-filled and vertically scrollable.
                     val contentBoxModifier = if (isTallImage) {
