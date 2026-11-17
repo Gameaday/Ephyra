@@ -21,11 +21,19 @@ import java.io.File
  * # What this deliberately does not assert
  *
  * It does not assert that the checks pass — that is the gate workflow's job. It asserts the
- * structure that makes an unverified publish impossible: the release `build` job cannot start
- * without the `gates` job, the check-run read exists in exactly one implementation, and neither
- * publish path references the connected-instrumentation gate, which fails at emulator boot on
- * GitHub runners (`B-050`) and would turn every publish red for a reason unrelated to the code —
- * the inert-gate failure mode `connected-instrumentation.yml`'s own header documents.
+ * structure of the publish paths: the release `build` job cannot start without the `gates`
+ * job, the verdict logic exists in exactly one implementation, and neither publish path
+ * references the connected-instrumentation gate, which fails at emulator boot on GitHub
+ * runners (`B-050`) and would turn every publish red for a reason unrelated to the code — the
+ * inert-gate failure mode `connected-instrumentation.yml`'s own header documents.
+ *
+ * # Accepted tradeoff (owner decision, 2026-11-16)
+ *
+ * The 2026-11-13 CI simplification deliberately ungated the nightly: it publishes the state of
+ * `main` on a cadence instead of consuming the gate verdict. This test holds the invariant
+ * that keeps that acceptable — the nightly is *cadence-triggered, never push-triggered*, so an
+ * arbitrary push can never ride an ungated path straight to a release channel — rather than
+ * asserting a verdict read the nightly no longer performs.
  */
 class ReleaseGateTest {
 
@@ -63,31 +71,40 @@ class ReleaseGateTest {
     }
 
     @Test
-    fun `the nightly publish consumes the same gate verdict as the release path`() {
-        // The nightly is an installable publish to a release channel, so the same verdict rule
-        // applies. Sharing the composite action is what keeps this one rule rather than two.
+    fun `the nightly publish is cadence-triggered, never push-triggered`() {
+        // Owner decision (2026-11-16): the nightly is deliberately ungated — it publishes the
+        // state of `main` on a cadence instead of consuming the gate verdict. The invariant that
+        // keeps that acceptable is the trigger surface: an installable APK may only be produced
+        // by the schedule or an explicit maintainer dispatch, never as an automatic side effect
+        // of a push (which the PR gate has not verified at push time).
         val nightly = workflows.getValue(NIGHTLY_WORKFLOW)
+        val on = onBlock(nightly)
         assertTrue(
-            VERDICT_ACTION_REF in nightly,
-            "$NIGHTLY_WORKFLOW does not consume the gate verdict; an unverified push to main " +
-                "currently ships an installable APK",
+            "schedule" in on && "workflow_dispatch" in on,
+            "$NIGHTLY_WORKFLOW must be triggered by `schedule` and `workflow_dispatch`; its " +
+                "`on:` block was:\n$on",
+        )
+        assertTrue(
+            "push" !in on,
+            "$NIGHTLY_WORKFLOW is push-triggered; an unverified push to main would ship an " +
+                "installable APK without ever passing the PR gate",
         )
     }
 
     @Test
     fun `the check-verdict logic has exactly one implementation`() {
-        // The check-run read must live in the composite action alone. An inline copy in a
+        // The verdict read must live in the composite action alone. An inline copy in a
         // workflow would be a second authority for the same rule — the ci.yml failure mode,
         // wearing a new hat.
-        val offenders = workflows.filterValues { CHECK_RUNS_READ in it }.keys.sorted()
+        val offenders = workflows.filterValues { VERDICT_DIR in it }.keys.sorted()
         assertTrue(
             offenders.isEmpty(),
-            "The check-run read is inlined in $offenders; it must exist only in $VERDICT_ACTION " +
+            "The verdict read is inlined in $offenders; it must exist only in $VERDICT_ACTION " +
                 "so the verdict rule has one implementation",
         )
         assertTrue(
-            CHECK_RUNS_READ in verdictAction,
-            "$VERDICT_ACTION does not contain the check-run read; the gate this file exists to " +
+            VERDICT_DIR in verdictAction,
+            "$VERDICT_ACTION does not contain the verdict read; the gate this file exists to " +
                 "hold has lost its implementation",
         )
     }
@@ -185,6 +202,23 @@ class ReleaseGateTest {
         return body.toString()
     }
 
+    /**
+     * The YAML body of the top-level `on:` (trigger) block. Same deliberate naivety as
+     * [jobBlock]: these are file-reading gates whose helpers stay independently readable.
+     */
+    private fun onBlock(workflow: String): String {
+        val lines = workflow.lines()
+        val start = lines.indexOfFirst { it.trimEnd() == "on:" }
+        if (start == -1) return ""
+        val body = StringBuilder()
+        for (i in start + 1 until lines.size) {
+            val line = lines[i]
+            if (TOP_LEVEL_KEY.matches(line)) break
+            body.appendLine(line)
+        }
+        return body.toString()
+    }
+
     private val verdictAction: String by lazy {
         File(repositoryRoot(), VERDICT_ACTION).readText()
     }
@@ -205,7 +239,7 @@ class ReleaseGateTest {
         const val NIGHTLY_WORKFLOW = "nightly.yml"
         const val GATES_JOB = "gates"
         const val BUILD_JOB = "build"
-        const val CHECK_RUNS_READ = "check-runs"
+        const val VERDICT_DIR = "gate-verdicts"
         const val CONNECTED_TASK = "connectedDebugAndroidTest"
         const val CONNECTED_WORKFLOW = "connected-instrumentation"
         const val SIGNATURE_VERIFY = "\"\${APKSIGNER}\" verify"

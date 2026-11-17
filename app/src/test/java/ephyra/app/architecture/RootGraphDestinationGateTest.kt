@@ -8,13 +8,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
 import ephyra.app.App
+import ephyra.app.di.FeatureApiEntryPoint
 import ephyra.app.startup.ShadowAnimatedVectorResources
-import ephyra.presentation.core.feature.FeatureApi
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
@@ -64,12 +61,6 @@ class RootGraphDestinationGateTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
-
-    @EntryPoint
-    @InstallIn(SingletonComponent::class)
-    interface FeatureApiEntryPoint {
-        fun featureApis(): Set<@JvmSuppressWildcards FeatureApi>
-    }
 
     /**
      * Every FeatureApi the app declares via `@Binds @IntoSet`. If a new feature is added, add it
