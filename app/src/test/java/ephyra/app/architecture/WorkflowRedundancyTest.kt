@@ -36,7 +36,11 @@ class WorkflowRedundancyTest {
         assertTrue(dir.isDirectory, "$WORKFLOW_DIR is missing")
         dir.listFiles { file -> file.extension == "yml" || file.extension == "yaml" }
             .orEmpty()
-            .associate { it.name to it.readText() }
+            // Normalise CRLF -> LF. Java's regex `.` does not match `\r`, so a CRLF working tree
+            // (Windows `core.autocrlf`) leaves the `paths:` block unparseable and this rule fails
+            // on the developer's machine while passing on the LF checkout CI uses. Reading both
+            // as LF makes the gate platform-independent.
+            .associate { it.name to it.readText().replace("\r\n", "\n").replace("\r", "\n") }
     }
 
     @Test

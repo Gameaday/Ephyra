@@ -49,10 +49,15 @@ class NavGraphRegistrationTest {
     private fun codeTree(relativePath: String): String = File(repoRoot(), relativePath)
         .walkTopDown()
         .filter {
+            // Normalise separators: `File.path` uses `\` on Windows, so a literal "/src/main/"
+            // never matches there and the scan silently reads an empty tree — a vacuous pass on
+            // the platform these gates are most often run from. Portability fix, not a change to
+            // what the rule checks.
+            val path = it.path.replace('\\', '/')
             it.isFile && it.extension == "kt" &&
-                it.path.contains("/src/main/") &&
-                !it.path.contains("/build/") &&
-                !it.path.contains("/.git/")
+                path.contains("/src/main/") &&
+                !path.contains("/build/") &&
+                !path.contains("/.git/")
         }
         .joinToString("\n") { it.readText() }
         .replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
@@ -83,7 +88,10 @@ class NavGraphRegistrationTest {
     private fun registrationCode(): String {
         val featureApis = File(repoRoot(), "feature")
             .walkTopDown()
-            .filter { it.isFile && it.name.endsWith("FeatureApi.kt") && !it.path.contains("/build/") }
+            .filter {
+                it.isFile && it.name.endsWith("FeatureApi.kt") &&
+                    !it.path.replace('\\', '/').contains("/build/")
+            }
             .map { it.readText() }
             .joinToString("\n")
         return codeOf(mainActivity) + "\n" + codeOf(homeScreen) + "\n" + featureApis
