@@ -263,6 +263,19 @@ jobs:
             echo "Re-run with '--stacktrace' or read the log for the first 'FAILURE:' line."
           fi
 
+      # A worker dying mid-discovery is a symptom. Surface the cause -- a JVM crash log, an OOM
+      # kill, or the memory picture -- so a red run is diagnosable from the log alone, without
+      # downloading artifacts or re-running with guesswork.
+      - name: Diagnose test worker death
+        if: failure()
+        run: |
+          echo "=== JVM crash logs (hs_err_pid / replay_pid) ==="
+          find . -type f \( -name 'hs_err_pid*.log' -o -name 'replay_pid*.log' \) -print -exec sed -n '1,60p' {} \; 2>/dev/null || true
+          echo "=== memory ==="
+          free -h 2>/dev/null || true
+          echo "=== OOM kills (best effort) ==="
+          { sudo dmesg 2>/dev/null || dmesg 2>/dev/null || true; } | grep -iE 'killed process|out of memory|oom' | tail -20 || true
+
       - name: Compile connected instrumentation APK
         run: ./gradlew :app:assembleDebugAndroidTest --no-daemon
 
