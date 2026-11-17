@@ -17,6 +17,27 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
 6. Subsystem contracts (`*CONTRACT.md`, `CACHE_POLICY.md`, `SOURCE_ROADMAP.md`, …).
 7. This index and everything else — context only.
 
+## Read me first: as-is / in-flight / forward
+
+> The flat table below is the full reference. This is the 30‑second orientation: what to read to
+> understand the system *today*, what is *in flight*, and what is *planned*.
+
+- **As-is — how it works today:** `REBUILD_PROGRAM.md` (architecture + rules), `adr/` (accepted
+  decisions), the subsystem contracts (`*CONTRACT.md`, `CACHE_POLICY.md`, `MEDIA_PIPELINE_CONTRACT.md`,
+  `DOWNLOAD_ARTIFACT_CONTRACT.md`, `DOCUMENT_VIEWPORT_CONTRACT.md`, `READER_ARCHITECTURE.md`,
+  `READER_GESTURE_CONTRACT.md`), `SOURCE_ROADMAP.md`, `DEPENDENCY_TARGET_GRAPH.md`,
+  `PERFORMANCE_BUDGETS.md`, `BUILD_HEALTH.md`.
+- **In-flight — active work:** `REBUILD_STATUS.md` (the ledger), `2_0_COMPLETION_PLAN.md`,
+  `2_0_CLEANUP_AUDIT.md`, `2_0_CONTENT_MODEL_PLAN.md`, `TARGET_DATA_*`, `source/`.
+- **Forward-looking — planned:** `../ROADMAP.md` (scope + non-negotiables),
+  `UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`, `UNIFIED_RENDERING_PIPELINE.md`,
+  `rfcs/RFC-0001-content-identity-unification.md`.
+- **Historical — do not follow:** `historical/` (archaeology only; each carries a `HISTORICAL` banner).
+
+> **Cruft note (owner 2026‑11‑16):** `REBUILD_STATUS.md` has grown to ~424 KB of append‑only
+> history. Per `DOCUMENTATION_GOVERNANCE.md` ("a long‑lived old plan is not an archive"), the
+> forward‑looking summary should be split out and the bulk archived; tracked as a cleanup task.
+
 ## Current documents
 
 | Document | Purpose | Owner / update rule |
