@@ -98,6 +98,8 @@ import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.pageImageErrorPainter
 import ephyra.feature.reader.viewer.pageImagePlaceholderPainter
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
+import ephyra.feature.reader.viewer.render.PagePixelSurface
+import ephyra.feature.reader.viewer.render.SliceSizing
 import ephyra.presentation.core.data.coil.cropBorders
 import ephyra.presentation.reader.ChapterTransition
 import ephyra.presentation.reader.TransitionDirection
@@ -481,6 +483,16 @@ fun ComposeWebtoonReader(
     }
 }
 
+/**
+ * Stable per-page identity for the slice renderer's sample-continuity state.
+ *
+ * Only the page identity belongs here. The bytes, the intrinsic size and the crop rect are already
+ * separate keys of the plan and of the decode, and repeating them here would give two copies of the
+ * same fact that could drift apart.
+ */
+private fun webtoonPageKey(page: ReaderPage): String =
+    "${page.chapter.chapter.id}:${page.index}:${page.number}"
+
 @Composable
 private fun WebtoonPageItem(
     page: ReaderPage,
@@ -791,9 +803,10 @@ private fun WebtoonPageItem(
                     // A1: the tuple is threaded, not re-derived — metadata carries the three
                     // facts the policies read (size, animation, format) plus the crop rect, the
                     // source asserts the bytes are resident, and the render path is the decision
-                    // RenderPathPolicy already made above. SlicedWebtoonImage renders the plan.
-                    SlicedWebtoonImage(
-                        page = page,
+                    // RenderPathPolicy already made above. PagePixelSurface renders the plan.
+                    PagePixelSurface(
+                        pageKey = webtoonPageKey(page),
+                        pageNumber = page.number,
                         bytes = readyBytes!!,
                         metadata = PageMetadata(
                             intrinsicSize = PixelSize(
@@ -810,8 +823,9 @@ private fun WebtoonPageItem(
                         ),
                         source = PageSource.InMemory(readyBytes!!.size),
                         renderPath = renderPath,
-                        targetWidthPx = targetWidthPx,
-                        viewportHeightPx = viewportHeightPx,
+                        targetWidthPx = targetWidthPx.toInt(),
+                        viewportHeightPx = viewportHeightPx?.toInt(),
+                        sizing = SliceSizing.FILL_PARENT,
                         fallback = {
                             SingleWebtoonImage(
                                 page = page,

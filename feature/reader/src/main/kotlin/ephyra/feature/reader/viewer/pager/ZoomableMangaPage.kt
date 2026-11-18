@@ -71,6 +71,8 @@ import ephyra.feature.reader.viewer.ReaderPageLoadingView
 import ephyra.feature.reader.viewer.pageImageErrorPainter
 import ephyra.feature.reader.viewer.pageImagePlaceholderPainter
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
+import ephyra.feature.reader.viewer.render.PagePixelSurface
+import ephyra.feature.reader.viewer.render.SliceSizing
 import ephyra.feature.reader.viewer.webtoon.RateLimitedRetry
 import ephyra.feature.reader.viewer.webtoon.isRateLimitError
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
@@ -474,7 +476,9 @@ fun ZoomableMangaPage(
                                             ?.toPageImageFormat()
                                     }.getOrNull() ?: PageImageFormat.UNSUPPORTED
                                 }
-                                PagedSliceColumn(
+                                PagePixelSurface(
+                                    pageKey = "${page.chapter.chapter.id}:${page.index}:${page.number}",
+                                    pageNumber = page.number,
                                     bytes = pageBytes,
                                     metadata = PageMetadata(
                                         intrinsicSize = PixelSize(
@@ -493,7 +497,13 @@ fun ZoomableMangaPage(
                                     renderPath = PageRenderPath.SLICED,
                                     targetWidthPx = containerWidth.toInt().coerceAtLeast(1),
                                     viewportHeightPx = containerHeight.toInt().coerceAtLeast(1),
+                                    sizing = SliceSizing.INTRINSIC,
                                     modifier = imageItemModifier,
+                                    // The fallback's single oversized bitmap is exactly what this
+                                    // avoids, so show a spinner while the first decode runs.
+                                    decodingPlaceholder = {
+                                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                                    },
                                     fallback = fallback,
                                 )
                             } else {

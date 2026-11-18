@@ -1,39 +1,30 @@
 # Unified page-rendering pipeline
 
-Status: **Phases 1, 2 and 3 done; only the composable merge and visual QA remain.**
+Status: **Complete in code — Phases 1, 2 and 3 done. Only visual QA remains.**
 
-- **Phase 1 (done).** The reader-agnostic *machinery* lives in
-  `feature/reader/.../viewer/render/`: `WebtoonSlicer`, `WebtoonRegionDecoder`, `WebtoonSlicePlanner`
-  (pure, JVM-tested). Nothing about them is webtoon-specific, and the name is now the only
-  webtoon-flavoured thing left. The two **composables** remain separate hosts
-  (`SlicedWebtoonImage` in `viewer/webtoon/`, `PagedSliceColumn` in `viewer/pager/`) but now consume
-  the same plan, so the only difference between them is the host: the pager wraps its stack in
-  `pagerZoomLayer` and keeps one-page-one-item sizing.
+**One renderer now serves every reader mode: `PagePixelSurface`**
+(`feature/reader/.../viewer/render/PagePixelSurface.kt`). `SlicedWebtoonImage` and
+`PagedSliceColumn` are deleted; both hosts call the one composable.
+
+- **What the host still decides** — only two things, both genuine:
+  1. **Layout contract** (`SliceSizing`): `FILL_PARENT` takes proportional `weight` because the
+     webtoon item has already reserved a box at the page's aspect ratio; `INTRINSIC` takes each
+     slice's own height because the pager page sits inside a `verticalScroll` with no reserved box.
+  2. **The transform it wraps the surface in** — `WebtoonZoomSurface` vs `pagerZoomLayer`. The
+     surface itself renders bare `Image`s and owns no zoom or gestures.
+  The pager also passes `decodingPlaceholder` (a spinner) because its `fallback` is the single
+  oversized bitmap the whole mechanism exists to avoid.
+- **What is now shared, and was previously two implementations:** the slice rect (crop-aware), the
+  exact partition, the region-decode sample **with hysteresis**, the `DecodePlan`, cooperative
+  cancellation, and the "is this bitmap still valid" guard.
 - **Safety net.** `PageSliceRoundTripTest` (in `viewer/render/`) encodes each pixel with its own
   coordinates into a lossless PNG, runs it through the real planner and region decoder, stitches the
   slices, and asserts the result is **pixel-identical to one whole-image decode** — so a doubled or
   offset strip fails with the offending row named. Falsification probe: a 1 px overlap in
-  `computeSlices` turns it red with `expected:<9000> but was:<9002>`. This is what makes the
-  renderer refactor verifiable without a GPU.
-- **Phase 2 (done).** `PagedSliceColumn` now takes the **same media tuple** as `SlicedWebtoonImage`
-  and delegates to `WebtoonSlicePlanner`; it no longer re-derives a plan. The four defects that
-  duplicated planning carried are gone with it:
-  1. slice sizing is now viewport-aware — `viewportHeightPx` reaches `maxSliceDisplayPx`, so slices
-     are cut to the viewport instead of the full texture ceiling;
-  2. the sample goes through `SampleSizePolicy` hysteresis, so a rotation or viewport change holds
-     the previous legal sample instead of re-decoding every slice;
-  3. the slice rect comes from `RenderPathPolicy.sliceSourceRect`, so a cropped page slices its
-     artwork rather than raw image coordinates (the scale is computed from the planned rect too);
-  4. the `DecodePlan` is produced, so `EXCEEDS_TEXTURE_LIMIT` — the reason the strip is sliced — is
-     recorded.
-  What unlocked it: `containerHeight` was already in scope in `ZoomableMangaPage` (it is the
-  viewport height), and the image format is derived with the same
-  `ImageUtil.findImageType(...)?.toPageImageFormat()` call the webtoon host uses. The remaining
-  difference is only the host: paged keeps `pagerZoomLayer` and one-page-one-item sizing.
-- **Phase 3 (done).** `ZoomableMangaPage` slices tall pages via `PagedSliceColumn` instead of one
-  oversized `AsyncImage` (`feat(reader): slice tall paged pages…`), guarded by
-  `fix(reader): re-decode paged slices when the page bytes change`.
-- **Remaining gate for all of it:** visual QA on a real tall page — no GPU in CI.
+  `computeSlices` turns it red with `expected:<9000> but was:<9002>`. This is what makes the merge
+  verifiable without a GPU.
+- **Remaining gate:** visual QA on a real tall page, and on a long webtoon strip, on a device — no
+  GPU in CI.
 
 ## The symptom
 
