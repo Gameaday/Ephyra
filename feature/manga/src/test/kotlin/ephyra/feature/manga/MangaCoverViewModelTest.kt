@@ -1,4 +1,4 @@
-package ephyra.feature.manga
+﻿package ephyra.feature.manga
 
 import android.app.Application
 import app.cash.turbine.test
@@ -69,6 +69,7 @@ class MangaCoverViewModelTest {
             networkHelper = networkHelper,
             application = application,
             localCoverManager = localCoverManager,
+            ioDispatcher = testDispatcher,
         )
     }
 

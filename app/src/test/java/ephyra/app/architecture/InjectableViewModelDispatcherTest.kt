@@ -163,14 +163,12 @@ class InjectableViewModelDispatcherTest {
          * ViewModels that still reach a real dispatcher, and therefore carry this test's risk.
          *
          * Each is one CI failure away. `AboutViewModel` is absent because it was fixed, as are
-         * `StatsViewModel`, `MigrateSourceViewModel`, `BrowseSourceViewModel`, `UpdatesViewModel`
-         * and the `SearchViewModel` family.
+         * `StatsViewModel`, `MigrateSourceViewModel`, `BrowseSourceViewModel`, `UpdatesViewModel`,
+         * the `SearchViewModel` family, `LibraryViewModel` and `MangaCoverViewModel`.
          */
         val ALLOWED = listOf(
             "AuthoritySearchViewModel",
             "HistoryViewModel",
-            "LibraryViewModel",
-            "MangaCoverViewModel",
             "MangaViewModel",
             "MatchResultsViewModel",
             "ReaderViewModel",

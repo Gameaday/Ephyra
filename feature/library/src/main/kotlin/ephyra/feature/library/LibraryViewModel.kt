@@ -1,4 +1,4 @@
-package ephyra.feature.library
+﻿package ephyra.feature.library
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastAny
@@ -7,10 +7,10 @@ import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.util.lang.compareToWithCollator
-import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.download.DownloadCache
 import ephyra.core.download.util.getNextUnread
@@ -68,6 +68,8 @@ import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.collections.immutable.toPersistentSet
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -86,6 +88,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -115,6 +118,12 @@ class LibraryViewModel @Inject constructor(
     private val downloadCache: DownloadCache,
     private val trackerManager: TrackerManager,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
+    // Injectable so a test can drive this on its own scheduler. `launchIO`/`withIOContext` are
+    // `Dispatchers.IO`, a real thread pool that `Dispatchers.setMain` and `advanceUntilIdle()`
+    // cannot reach, so a test could only race it or sleep. Production is unchanged:
+    // `@IoDispatcher` binds `Dispatchers.IO`. See `InjectableViewModelDispatcherTest`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<LibraryViewModel.State, LibraryScreenEvent, LibraryScreenEffect>(State()) {
 
     override fun onEvent(event: LibraryScreenEvent) {
@@ -145,7 +154,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryScreenEvent.OpenDeleteMangaDialog -> openDeleteMangaDialog()
             is LibraryScreenEvent.CloseDialog -> closeDialog()
 
-            // Sealed UDF: previously public ViewModel methods → events
+            // Sealed UDF: previously public ViewModel methods â†’ events
             is LibraryScreenEvent.RefreshLibrary -> refreshLibrary(event.category)
             is LibraryScreenEvent.GetRandomManga -> getRandomManga()
             is LibraryScreenEvent.NavigateToNextUnread -> navigateToNextUnread(event.manga)
@@ -155,7 +164,7 @@ class LibraryViewModel @Inject constructor(
     init {
         // Read active category index asynchronously to avoid blocking the main thread.
         // The combine block below will re-emit with the correct index once loaded.
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             val index = libraryPreferences.lastUsedCategory().get()
             updateState {
                 it.copy(
@@ -169,7 +178,7 @@ class LibraryViewModel @Inject constructor(
             }
         }
 
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             combine(
                 state.map { it.searchQuery }.distinctUntilChanged().debounce(SEARCH_DEBOUNCE_MILLIS),
                 getCategories.subscribe(),
@@ -209,7 +218,7 @@ class LibraryViewModel @Inject constructor(
                 }
         }
 
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             state
                 .dropWhile { !it.libraryData.isInitialized }
                 .map { it.libraryData }
@@ -562,7 +571,7 @@ class LibraryViewModel @Inject constructor(
             getLibraryItemPreferencesFlow(),
             downloadCache.changes,
         ) { libraryManga, preferences, _ ->
-            // Build a source→language map once per emission instead of once per manga, so a library
+            // Build a sourceâ†’language map once per emission instead of once per manga, so a library
             // with 1 000 manga from 10 sources makes 10 getOrStub calls instead of 1 000.
             val sourceLangMap = if (preferences.languageBadge) {
                 libraryManga.mapTo(HashSet()) { it.manga.source }
@@ -709,7 +718,7 @@ class LibraryViewModel @Inject constructor(
             DownloadAction.UNREAD_CHAPTERS -> downloadNextChapters(null)
             DownloadAction.BOOKMARKED_CHAPTERS -> downloadBookmarkedChapters()
             // Jellyfin sync actions are handled at the manga screen level,
-            // not the library level — no-op here for safety
+            // not the library level â€” no-op here for safety
             DownloadAction.SYNC_TO_JELLYFIN,
             DownloadAction.SYNC_READ_TO_JELLYFIN,
             DownloadAction.SYNC_ALL_TO_JELLYFIN,
@@ -861,7 +870,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun toggleFilter(filterType: LibraryFilterType) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             val pref = when (filterType) {
                 LibraryFilterType.Unread -> libraryPreferences.filterUnread()
                 LibraryFilterType.Downloaded -> libraryPreferences.filterDownloaded()
@@ -957,7 +966,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun openChangeCategoryDialog() {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             // Create a copy of selected manga
             val mangaList = state.value.selectedManga
 
@@ -1015,7 +1024,7 @@ class LibraryViewModel @Inject constructor(
 
     /** UDF handler for [LibraryScreenEvent.NavigateToNextUnread]. */
     private fun navigateToNextUnread(manga: Manga) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             val chapter = getNextUnreadChapter(manga)
             if (chapter != null) {
                 // The screen observes the effect stream

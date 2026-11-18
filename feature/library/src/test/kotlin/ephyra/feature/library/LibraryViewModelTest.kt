@@ -1,4 +1,4 @@
-package ephyra.feature.library
+﻿package ephyra.feature.library
 
 import app.cash.turbine.test
 import ephyra.core.common.preference.Preference
@@ -155,6 +155,7 @@ class LibraryViewModelTest {
             downloadManager = downloadManager,
             downloadCache = downloadCache,
             trackerManager = trackerManager,
+            ioDispatcher = testDispatcher,
             libraryUpdateScheduler = libraryUpdateScheduler,
         )
     }

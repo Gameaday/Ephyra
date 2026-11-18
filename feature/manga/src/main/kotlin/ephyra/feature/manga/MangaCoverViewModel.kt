@@ -1,4 +1,4 @@
-package ephyra.feature.manga
+﻿package ephyra.feature.manga
 
 import android.app.Application
 import android.net.Uri
@@ -9,12 +9,11 @@ import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.size.Size
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.saver.Image
 import ephyra.core.common.saver.ImageSaver
 import ephyra.core.common.saver.Location
-import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetManga
@@ -30,7 +29,10 @@ import ephyra.source.local.image.LocalCoverManager
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import okhttp3.Request
 import javax.inject.Inject
@@ -46,6 +48,12 @@ class MangaCoverViewModel @Inject constructor(
     private val networkHelper: NetworkHelper,
     private val application: Application,
     private val localCoverManager: LocalCoverManager,
+    // Injectable so a test can drive this on its own scheduler. `launchIO`/`withIOContext` are
+    // `Dispatchers.IO`, a real thread pool that `Dispatchers.setMain` and `advanceUntilIdle()`
+    // cannot reach, so a test could only race it or sleep. Production is unchanged:
+    // `@IoDispatcher` binds `Dispatchers.IO`. See `InjectableViewModelDispatcherTest`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<Manga?, MangaCoverScreenEvent, MangaCoverEffect>(null) {
 
     private var isInitialized = false
@@ -54,7 +62,7 @@ class MangaCoverViewModel @Inject constructor(
         if (isInitialized) return
         isInitialized = true
 
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             getManga.subscribe(mangaId)
                 .collect { newManga -> updateState { newManga } }
         }
@@ -94,7 +102,7 @@ class MangaCoverViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val uri = saveCoverInternal(temp = true) ?: return@launch
-                // Emit effect — the UI layer handles startActivity with Activity context
+                // Emit effect â€” the UI layer handles startActivity with Activity context
                 emitEffect(MangaCoverEffect.StartShare(uri))
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
@@ -124,11 +132,11 @@ class MangaCoverViewModel @Inject constructor(
             libraryPreferences.imageFormat().get().encoder()
         }
 
-        return withIOContext {
+        return withContext(ioDispatcher) {
             val result = application.imageLoader.execute(req).image?.asDrawable(application.resources)
 
             // TODO: Handle animated cover
-            val bitmap = result?.getBitmapOrNull() ?: return@withIOContext null
+            val bitmap = result?.getBitmapOrNull() ?: return@withContext null
             imageSaver.save(
                 Image.Cover(
                     bitmap = bitmap,
@@ -142,7 +150,7 @@ class MangaCoverViewModel @Inject constructor(
 
     private fun editCover(data: Uri) {
         val manga = state.value ?: return
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             application.contentResolver.openInputStream(data)?.use {
                 try {
                     manga.editCover(localCoverManager, it, updateManga, coverCache)
@@ -156,7 +164,7 @@ class MangaCoverViewModel @Inject constructor(
 
     private fun deleteCustomCover() {
         val id = state.value?.id ?: return
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             try {
                 coverCache.deleteCustomCover(id)
                 updateManga.awaitUpdateCoverLastModified(id)
@@ -169,7 +177,7 @@ class MangaCoverViewModel @Inject constructor(
 
     private fun setCoverFromUrl(coverUrl: String, sourceId: Long) {
         val manga = state.value ?: return
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             try {
                 val source = sourceManager.get(sourceId)
                 val httpSource = source as? HttpSource
