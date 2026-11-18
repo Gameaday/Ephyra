@@ -45,6 +45,24 @@ android {
             // actually runs the heaviest Compose reader tests. Any module with
             // `isIncludeAndroidResources = true` needs the same heap.
             it.maxHeapSize = "2g"
+
+            // One JVM per test class, matching `:app` (see app/build.gradle.kts for the full
+            // rationale). This module is the one whose CI worker died mid-discovery with
+            // "TestEngine with ID 'junit-vintage' failed to discover tests", and a fresh JVM per
+            // class is the fix that addresses the mechanism rather than the symptom:
+            //
+            //  * Robolectric installs a sandbox per class and Compose/Coil retain native bitmap
+            //    and shadow state. Across 50 classes in one long-lived worker that memory only
+            //    grows, so the worker is killed while discovering a *later* class -- which is
+            //    exactly the reported shape (death during discovery, not during an assertion).
+            //    Forking per class releases all of it at the class boundary and bounds the peak.
+            //  * It also removes the shadow-installation-order hazard `:app` documented: a
+            //    `Resources` shadow installed without ours fails a cast in any later test that
+            //    reaches DecorView, and whether that happens depends on what shared the JVM.
+            //
+            // The cost is JVM startup per class, paid in CI rather than as a test that fails for
+            // reasons unrelated to what it tests.
+            it.forkEvery = 1
         }
     }
 }

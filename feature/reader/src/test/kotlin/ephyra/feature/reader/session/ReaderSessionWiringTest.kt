@@ -215,7 +215,11 @@ class ReaderSessionWiringTest {
             progressWriteReached.await(5, TimeUnit.SECONDS),
             "the IO progress write must reach the smart-combine read within the deadline",
         )
-        Thread.sleep(100)
+        // No sleep follows on purpose. The latch is the happens-before edge: it is counted down
+        // by the last stubbed call on the path, and everything after it on that coroutine is pure
+        // code over never-stubbed mocks (class KDoc). A `Thread.sleep` here added a wall-clock
+        // dependency without adding a guarantee -- if the ordering ever regressed, the sleep would
+        // make the failure intermittent instead of catching it.
 
         assertTrue(
             viewModel.sessionState.phase is ReaderSessionPhase.Closed,
