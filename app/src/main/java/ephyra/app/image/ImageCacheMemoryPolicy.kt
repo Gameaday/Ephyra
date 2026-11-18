@@ -30,7 +30,7 @@ class ImageCacheMemoryPolicy {
      * Captures the loader's configured memory-cache size — once, before any trim has had a
      * chance to shrink it, so a trim always computes from the configured size rather than from
      * the previous trim's result — and enforces the hard cap: Coil's `maxSize` setter trims to
-     * the assigned size, and this runs at loader build, before any trim could halve from it.
+     * the assigned size, and this runs at loader build, before any trim could shrink from it.
      */
     fun captureBaseline(loader: ImageLoader) {
         val memoryCache = loader.memoryCache ?: return
