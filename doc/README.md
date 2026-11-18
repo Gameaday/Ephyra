@@ -34,10 +34,13 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
   `rfcs/RFC-0001-content-identity-unification.md`.
 - **Historical — do not follow:** `historical/` (archaeology only; each carries a `HISTORICAL` banner).
 
-> **Ledger note:** `REBUILD_STATUS.md` is large (~424 KB) because it is append‑only evidence
-> history. Read its **As‑is summary** section first — that is the current state; the rows below it
-> are the detailed history. Completed reconciliation docs are moved to `historical/` rather than
-> left in the current set (see `2_0_CLEANUP_AUDIT.md` as the example).
+> **Ledger note:** `REBUILD_STATUS.md` carries the **As-is summary** (current state), the
+> **Task ledger** (row state per task) and the **Phase gates**. Its append-only change log was
+> 226 KB of reverse-chronological history — 53% of the file — and is now
+> [`historical/REBUILD_STATUS_CHANGELOG.md`](historical/REBUILD_STATUS_CHANGELOG.md), preserved
+> verbatim. Completed reconciliation docs are moved to `historical/` rather than left in the current
+> set (see `2_0_CLEANUP_AUDIT.md` as the example). Read the **As-is summary** first; if a row below
+> it disagrees with the summary, the summary is the authority.
 
 ## Current documents
 
