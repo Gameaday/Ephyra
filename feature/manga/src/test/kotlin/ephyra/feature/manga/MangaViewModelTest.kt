@@ -1,4 +1,4 @@
-package ephyra.feature.manga
+﻿package ephyra.feature.manga
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
@@ -151,6 +151,7 @@ class MangaViewModelTest {
             basePreferences = basePreferences,
             coverCache = coverCache,
             appInfo = appInfo,
+            ioDispatcher = testDispatcher,
         )
     }
 
@@ -197,6 +198,7 @@ class MangaViewModelTest {
             basePreferences = basePreferences,
             coverCache = coverCache,
             appInfo = appInfo,
+            ioDispatcher = testDispatcher,
         )
 
         vm.state.test {
@@ -485,7 +487,7 @@ class MangaViewModelTest {
 
         viewModel.init(1L, false)
 
-        // "Mark previous as read" on ch2 must mark ch1 — the chapter displayed *below* ch2
+        // "Mark previous as read" on ch2 must mark ch1 â€” the chapter displayed *below* ch2
         // that comes before ch2 in chronological reading order.
         viewModel.onEvent(MangaScreenEvent.MarkPreviousChapterRead(ch2))
         coVerify { mangaChapterInteractor.markChaptersRead(listOf(ch1), true) }

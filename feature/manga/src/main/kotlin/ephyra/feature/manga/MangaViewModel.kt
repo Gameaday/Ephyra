@@ -1,17 +1,17 @@
-package ephyra.feature.manga
+﻿package ephyra.feature.manga
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.preference.mapAsCheckboxState
 import ephyra.core.common.util.addOrRemove
 import ephyra.core.common.util.insertSeparators
-import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
@@ -53,6 +53,8 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -94,6 +96,12 @@ class MangaViewModel @Inject constructor(
     val basePreferences: ephyra.domain.base.BasePreferences,
     val coverCache: ephyra.domain.manga.service.CoverCache,
     val appInfo: AppInfo,
+    // Injectable so a test can drive this on its own scheduler. `launchIO` is `Dispatchers.IO`,
+    // a real thread pool that `Dispatchers.setMain` and `advanceUntilIdle()` cannot reach.
+    // Production is unchanged: `@IoDispatcher` binds `Dispatchers.IO`.
+    // See `InjectableViewModelDispatcherTest`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<MangaViewModel.State, MangaScreenEvent, MangaScreenEffect>(State.Loading) {
 
     private val successState: State.Success?
@@ -159,9 +167,9 @@ class MangaViewModel @Inject constructor(
         }
 
         if (isFromSource) {
-            viewModelScope.launchIO {
+            viewModelScope.launch(ioDispatcher) {
                 sourceManager.isInitialized.first { it }
-                val manga = getManga.await(mangaId) ?: return@launchIO
+                val manga = getManga.await(mangaId) ?: return@launch
                 val src = sourceManager.getOrStub(manga.source)
                 runCatching {
                     mangaChapterInteractor.syncChaptersWithSource(
@@ -314,13 +322,13 @@ class MangaViewModel @Inject constructor(
     }
 
     fun fetchAllFromSource(manualFetch: Boolean = true) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             sourceManager.isInitialized.first { it }
-            val success = successState ?: return@launchIO
+            val success = successState ?: return@launch
             val manga = success.manga
             val source = sourceManager.getOrStub(manga.source)
             if (source.isLocalOrStub()) {
-                return@launchIO
+                return@launch
             }
             runCatching {
                 mangaChapterInteractor.syncChaptersWithSource(
@@ -345,7 +353,7 @@ class MangaViewModel @Inject constructor(
     /** Runs [block] with the current success-state manga on the IO dispatcher, if available. */
     private fun withSuccessManga(block: suspend (Manga) -> Unit) {
         val success = successState ?: return
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             block(success.manga)
         }
     }
@@ -353,7 +361,7 @@ class MangaViewModel @Inject constructor(
     /** Applies a metadata edit and mirrors it to Jellyfin when linked. */
     private fun editManga(update: (Manga) -> MangaUpdate) {
         val manga = manga ?: return
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             mangaInfoInteractor.updateManga(update(manga))
             mangaInfoInteractor.pushMetadataToJellyfinIfLinked(manga)
         }
@@ -364,7 +372,7 @@ class MangaViewModel @Inject constructor(
         swipeAction: LibraryPreferences.ChapterSwipeAction,
     ) {
         val success = successState ?: return
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             when (swipeAction) {
                 LibraryPreferences.ChapterSwipeAction.ToggleRead -> {
                     mangaChapterInteractor.markChaptersRead(
@@ -477,8 +485,8 @@ class MangaViewModel @Inject constructor(
                 }
             }
             MangaScreenEvent.ShowChangeCategoryDialog -> {
-                viewModelScope.launchIO {
-                    val manga = manga ?: return@launchIO
+                viewModelScope.launch(ioDispatcher) {
+                    val manga = manga ?: return@launch
                     val categories = getCategories.await()
                     val selection = categories.map { category ->
                         CheckboxState.State.None(category) as CheckboxState<Category>
@@ -496,7 +504,7 @@ class MangaViewModel @Inject constructor(
                 }
             }
             is MangaScreenEvent.SetFetchInterval -> {
-                viewModelScope.launchIO {
+                viewModelScope.launch(ioDispatcher) {
                     val updatedManga = event.manga.copy(fetchInterval = -event.interval)
                     mangaInfoInteractor.updateFetchInterval(updatedManga)
                     updateState { state ->
@@ -557,12 +565,12 @@ class MangaViewModel @Inject constructor(
                 markPreviousChapterRead(event.pointer)
             }
             is MangaScreenEvent.MarkChaptersRead -> {
-                viewModelScope.launchIO {
+                viewModelScope.launch(ioDispatcher) {
                     mangaChapterInteractor.markChaptersRead(event.chapters, event.read)
                 }
             }
             is MangaScreenEvent.BookmarkChapters -> {
-                viewModelScope.launchIO {
+                viewModelScope.launch(ioDispatcher) {
                     mangaChapterInteractor.bookmarkChapters(event.chapters, event.bookmarked)
                 }
             }
@@ -645,13 +653,13 @@ class MangaViewModel @Inject constructor(
                 mangaChapterInteractor.downloadChapters(chapters, success.manga)
             }
             ChapterDownloadAction.START_NOW -> {
-                viewModelScope.launchIO {
+                viewModelScope.launch(ioDispatcher) {
                     mangaChapterInteractor.downloadChapters(chapters, success.manga)
                     downloadManager.startDownloadNow(chapters.first().id)
                 }
             }
             ChapterDownloadAction.CANCEL -> {
-                viewModelScope.launchIO {
+                viewModelScope.launch(ioDispatcher) {
                     val queued = chapters.mapNotNull { downloadManager.getQueuedDownloadOrNull(it.id) }
                     downloadManager.cancelQueuedDownloads(queued)
                 }
@@ -665,7 +673,7 @@ class MangaViewModel @Inject constructor(
 
     private fun runDownloadAction(action: DownloadAction) {
         val success = successState ?: return
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             val items = success.chapterListItems.filterIsInstance<ChapterList.Item>()
             when (action) {
                 DownloadAction.NEXT_1_CHAPTER -> downloadNextChapters(items, success.manga, 1)
@@ -741,7 +749,7 @@ class MangaViewModel @Inject constructor(
         if (pointerPos != -1) {
             val toMark = prevChapters.take(pointerPos)
             if (toMark.isNotEmpty()) {
-                viewModelScope.launchIO {
+                viewModelScope.launch(ioDispatcher) {
                     mangaChapterInteractor.markChaptersRead(toMark, true)
                 }
             }
@@ -754,8 +762,8 @@ class MangaViewModel @Inject constructor(
     }
 
     private fun setExcludedScanlators(excludedScanlators: Set<String>) {
-        viewModelScope.launchIO {
-            val success = successState ?: return@launchIO
+        viewModelScope.launch(ioDispatcher) {
+            val success = successState ?: return@launch
             mangaInfoInteractor.setExcludedScanlators(success.manga.id, excludedScanlators)
             updateState { state ->
                 val current = state as? State.Success ?: return@updateState state

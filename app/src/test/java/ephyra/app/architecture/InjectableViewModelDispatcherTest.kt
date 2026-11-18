@@ -109,6 +109,34 @@ class InjectableViewModelDispatcherTest {
         )
     }
 
+    /**
+     * The empty allowlist must actually trip.
+     *
+     * An empty `ALLOWED` plus a predicate that stopped matching would both produce zero violations
+     * -- the exact failure mode where the gate reports green while catching nothing. This pins the
+     * two halves independently: the predicate is asserted above, and here the *filter* is asserted
+     * to report a violating file when one exists.
+     */
+    @Test
+    fun `the allowlist is empty and the filter still reports a violation`() {
+        assertTrue(
+            ALLOWED.isEmpty(),
+            "the allowlist must stay empty; adding a name re-grandfathers debt instead of fixing it",
+        )
+        // `newViolations()` reads real files, so assert the mechanism rather than the current
+        // result: a synthetic body that reaches IO with no dispatcher must fail the predicate, and
+        // `ALLOWED.none {}` must then be true so it is reported.
+        val violating = "viewModelScope.launchIO { load() }"
+        assertTrue(
+            REACHES_IO.containsMatchIn(violating),
+            "a ViewModel launching on IO must still be detected",
+        )
+        assertTrue(
+            ALLOWED.none { violating.startsWith(it) },
+            "an empty allowlist must exclude nothing, so every violation is reported",
+        )
+    }
+
     /** Production ViewModels under `feature`, wherever the build is running. */
     private fun productionViewModels(): List<File> =
         File(repositoryRoot(), "feature").walkTopDown()
@@ -160,16 +188,17 @@ class InjectableViewModelDispatcherTest {
         )
 
         /**
-         * ViewModels that still reach a real dispatcher, and therefore carry this test's risk.
+         * The allowlist is deliberately empty, and that is the point.
          *
-         * Each is one CI failure away. `AboutViewModel` is absent because it was fixed, as are
-         * `StatsViewModel`, `MigrateSourceViewModel`, `BrowseSourceViewModel`, `UpdatesViewModel`,
-         * the `SearchViewModel` family, `LibraryViewModel`, `MangaCoverViewModel`,
-         * `AuthoritySearchViewModel`, `MatchResultsViewModel`, `HistoryViewModel` and
-         * `ReaderViewModel`.
+         * It was never meant to be a permanent list of exceptions. Every entry was removed as its
+         * ViewModel took an `@IoDispatcher` constructor parameter, and the last one
+         * (`MangaViewModel`, 14 sites) landed on 2026-11-17. Nothing is left to grandfather in.
+         *
+         * It is kept as a **hard tripwire** rather than deleted: if a future ViewModel starts
+         * reaching `Dispatchers.IO` without taking a dispatcher, this test fails and names the
+         * file. Deleting the list would make a regression invisible instead. Adding a name here is
+         * therefore the wrong fix -- the fix is the constructor parameter.
          */
-        val ALLOWED = listOf(
-            "MangaViewModel",
-        )
+        val ALLOWED = emptyList<String>()
     }
 }
