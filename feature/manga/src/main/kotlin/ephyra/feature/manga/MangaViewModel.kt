@@ -1,4 +1,4 @@
-﻿package ephyra.feature.manga
+package ephyra.feature.manga
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
