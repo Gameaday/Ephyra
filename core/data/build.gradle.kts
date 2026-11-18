@@ -52,6 +52,15 @@ android {
                 // `isIncludeAndroidResources = true` needs this; `:app`, `:feature:browse` and
                 // `:feature:reader` already carry it.
                 it.maxHeapSize = "2g"
+
+                // One JVM per test class, matching `:app` and `:feature:reader`. Eighteen of this
+                // module's classes are Robolectric, and Robolectric installs a sandbox per class
+                // while Room/DAO suites retain native state. In a worker shared across modules
+                // that memory only accumulates, so a *later* class -- possibly in another module
+                // -- is the one that dies, which is why a module can pass alone and fail in the
+                // full suite. Forking per class bounds the peak and removes the cross-module
+                // interference rather than relying on which classes happened to share a JVM.
+                it.forkEvery = 1
             }
         }
     }
