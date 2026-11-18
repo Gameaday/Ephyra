@@ -1,4 +1,4 @@
-package ephyra.feature.reader.session
+﻿package ephyra.feature.reader.session
 
 import android.app.Application
 import androidx.lifecycle.SavedStateHandle
@@ -176,6 +176,7 @@ class ReaderSessionWiringTest {
             localCoverManager = localCoverManager,
             updateManga = updateManga,
             chapterCache = chapterCache,
+            ioDispatcher = testDispatcher,
         )
     }
 

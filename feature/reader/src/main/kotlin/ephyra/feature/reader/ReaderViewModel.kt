@@ -1,4 +1,4 @@
-package ephyra.feature.reader
+﻿package ephyra.feature.reader
 
 import android.app.Application
 import android.net.Uri
@@ -7,13 +7,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.preference.toggle
 import ephyra.core.common.saver.Image
 import ephyra.core.common.saver.ImageSaver
 import ephyra.core.common.saver.Location
-import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.storage.cacheImageDir
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.ImageUtil
@@ -84,6 +83,7 @@ import ephyra.source.local.image.LocalCoverManager
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -92,6 +92,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import java.io.InputStream
 import java.util.Date
@@ -126,6 +128,12 @@ class ReaderViewModel @Inject constructor(
     private val localCoverManager: LocalCoverManager,
     private val updateManga: UpdateManga,
     private val chapterCache: ChapterCache,
+    // Injectable so a test can drive this on its own scheduler. `launchIO`/`withIOContext` are
+    // `Dispatchers.IO`, a real thread pool that `Dispatchers.setMain` and `advanceUntilIdle()`
+    // cannot reach. Production is unchanged: `@IoDispatcher` binds `Dispatchers.IO`.
+    // See `InjectableViewModelDispatcherTest`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<ReaderViewModel.State, ReaderEvent, ReaderViewModel.Event>(State()),
     ChapterLoadingEffectHandler,
     ReaderImageEffectHandler,
@@ -349,8 +357,8 @@ class ReaderViewModel @Inject constructor(
                     savedRestoreApplied = hasAppliedSavedPageIndex,
                 )
                 startRequest.requestedPage?.let { currentChapter.requestedPage = it }
-                // The restore decision is made for the first chapter that resolves — whether or not
-                // there was an index to restore — so a later chapter can never be mistaken for the
+                // The restore decision is made for the first chapter that resolves â€” whether or not
+                // there was an index to restore â€” so a later chapter can never be mistaken for the
                 // restored one. Progress stays synchronized through onPageSelected().
                 hasAppliedSavedPageIndex = startRequest.savedRestoreResolved
                 chapterId = currentChapter.chapter.id
@@ -361,7 +369,7 @@ class ReaderViewModel @Inject constructor(
                 // "page 2" while nothing had reported a page yet (the pager was still showing the
                 // transition card). Clear it until the first page selection reports the real
                 // position; the indicator is hidden at 0 rather than showing a stale number.
-                // The recorded page identity (R-C, F7) is cleared for the same reason — it
+                // The recorded page identity (R-C, F7) is cleared for the same reason â€” it
                 // belongs to the *previous* chapter's page list until a selection reports the
                 // new chapter's actual page, and the automatic background must not sample a
                 // stale chapter's surface.
@@ -376,10 +384,10 @@ class ReaderViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    // ── Cold-tier eviction (doc/cache-retention-policy.md rule 1) ────────────
-    // The reader keeps the current chapter ±2 hot. A chapter that falls out of the
+    // â”€â”€ Cold-tier eviction (doc/cache-retention-policy.md rule 1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // The reader keeps the current chapter Â±2 hot. A chapter that falls out of the
     // window has its page list and images evicted: pages are large, viewed once
-    // sequentially, and cheap to re-fetch in the rare long backward jump — retention
+    // sequentially, and cheap to re-fetch in the rare long backward jump â€” retention
     // follows revisit probability, not arrival order. Eviction makes no network calls.
     private val readingWindow = ArrayDeque<ephyra.domain.chapter.model.Chapter>(WINDOW_SIZE)
 
@@ -405,8 +413,8 @@ class ReaderViewModel @Inject constructor(
         }
         // Series-switch eviction (doc/cache-retention-policy.md rule 1, second half):
         // the sliding window only slides within one series, and each series gets its
-        // own ViewModel — so without this, reading the latest chapter of N series
-        // caches N × WINDOW_SIZE chapters until byte-pressure LRU notices. On reader
+        // own ViewModel â€” so without this, reading the latest chapter of N series
+        // caches N Ã— WINDOW_SIZE chapters until byte-pressure LRU notices. On reader
         // close, keep only the chapter being left (instant resume) and decache the
         // rest. Rotation does not call onCleared, so this fires on genuine exit only.
         val keepId = readingWindow.lastOrNull()?.id
@@ -418,7 +426,7 @@ class ReaderViewModel @Inject constructor(
         readingWindow.clear()
     }
 
-    // ── UDF entry-point ──────────────────────────────────────────────────────
+    // â”€â”€ UDF entry-point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     override fun onEvent(event: ReaderEvent) {
         when (event) {
             is ReaderEvent.ActivityFinish -> onActivityFinish()
@@ -480,7 +488,7 @@ class ReaderViewModel @Inject constructor(
      */
     suspend fun init(mangaId: Long, initialChapterId: Long): Result<Boolean> {
         if (!needsInit()) return Result.success(true)
-        return withIOContext {
+        return withContext(ioDispatcher) {
             try {
                 val manga = getManga.await(mangaId)
                 if (manga != null) {
@@ -534,7 +542,7 @@ class ReaderViewModel @Inject constructor(
         chapterLoading.openChapter(chapter)
     }
 
-    // ── Chapter-loading effects (R-A Stage 3 seam 1: the coordinator drives, the VM executes) ──
+    // â”€â”€ Chapter-loading effects (R-A Stage 3 seam 1: the coordinator drives, the VM executes) â”€â”€
 
     override suspend fun openSessionForChapter(chapter: ReaderChapter) {
         // RDR-001: the session owns the chapter-open transition (persist the prior chapter
@@ -598,7 +606,7 @@ class ReaderViewModel @Inject constructor(
             neighbours.next,
         )
 
-        // MutableStateFlow.update is thread-safe — no UI-thread dispatch needed.
+        // MutableStateFlow.update is thread-safe â€” no UI-thread dispatch needed.
         updateState {
             // Add new references first to avoid unnecessary recycling
             newChapters.ref()
@@ -683,7 +691,7 @@ class ReaderViewModel @Inject constructor(
     private fun loadNewChapter(chapter: ReaderChapter) {
         if (loader == null) return
 
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             logcat { "Loading ${chapter.chapter.url}" }
 
             updateHistory()
@@ -723,7 +731,7 @@ class ReaderViewModel @Inject constructor(
 
         updateState { it.copy(isLoadingAdjacentChapter = true) }
         try {
-            withIOContext {
+            withContext(ioDispatcher) {
                 loadChapter(chapter)
             }
         } catch (e: Throwable) {
@@ -805,7 +813,7 @@ class ReaderViewModel @Inject constructor(
 
     /**
      * Starts image preloading for the next chapter if the current chapter's forward buffer is
-     * healthy enough that we can spare bandwidth. Idempotent — pages already downloading or
+     * healthy enough that we can spare bandwidth. Idempotent â€” pages already downloading or
      * cached are skipped by [preloadFirstPages].
      *
      * @param currentPageIndex zero-based index of the page the user just navigated to.
@@ -829,10 +837,10 @@ class ReaderViewModel @Inject constructor(
      * what order - are the coordinator's (R-A, Stage 3 seam 3); this is the drive.
      */
     private fun downloadNextChapters() {
-        viewModelScope.launchIO { downloadPolicy.downloadNextChapters() }
+        viewModelScope.launch(ioDispatcher) { downloadPolicy.downloadNextChapters() }
     }
 
-    // ── Download-seam effects (R-A Stage 3 seam 3: the coordinator drives, the VM executes) ──
+    // â”€â”€ Download-seam effects (R-A Stage 3 seam 3: the coordinator drives, the VM executes) â”€â”€
 
     override fun nextChapter(): ReaderChapter? = state.value.viewerChapters?.nextChapter
 
@@ -1007,7 +1015,7 @@ class ReaderViewModel @Inject constructor(
 
         // Compute the 1-based display position by counting only visible pages up to
         // and including the current page. This keeps the bottom indicator and slider in sync
-        // with what is actually visible — hidden pages (absorbed stubs and blocked pages)
+        // with what is actually visible â€” hidden pages (absorbed stubs and blocked pages)
         // are invisible to the user and should not inflate the page count or current position.
         val displayIndex = if (chapterPages != null) {
             chapterPages.take(pageIndex + 1).count { !it.isHidden }
@@ -1016,9 +1024,9 @@ class ReaderViewModel @Inject constructor(
         }
         // R-C (Stage 4, audit F7): the selected page's identity is recorded alongside the display
         // index. `currentPage` counts *visible* pages, so it is a display position, not a raw list
-        // index — the screen that previously indexed `pages[getOrNull(currentPage)]` with it was
+        // index â€” the screen that previously indexed `pages[getOrNull(currentPage)]` with it was
         // reading (with no pages hidden) the *next* page's bytes. Consumers that need the page
-        // itself — the automatic background's rendered-surface sampling — read this field instead
+        // itself â€” the automatic background's rendered-surface sampling â€” read this field instead
         // of re-deriving a page from a display number.
         updateState {
             it.copy(currentPage = displayIndex, currentReaderPage = page)
@@ -1061,7 +1069,7 @@ class ReaderViewModel @Inject constructor(
                 updateChapterProgressOnComplete(readerChapter)
             }
 
-            // Skip the DB write when neither lastPageRead nor read changed — a memory
+            // Skip the DB write when neither lastPageRead nor read changed â€” a memory
             // equality check is cheaper than a SQL UPDATE and avoids unnecessary I/O.
             if (readerChapter.chapter.lastPageRead != prevLastPageRead ||
                 readerChapter.chapter.read != prevRead
@@ -1086,7 +1094,7 @@ class ReaderViewModel @Inject constructor(
     /**
      * Checks if [page] has become the effective last page of the chapter
      * (e.g. following pages were absorbed by smart-combine or blocked by filter).
-     * If so, marks the chapter read and updates trackers and DB — but only when the
+     * If so, marks the chapter read and updates trackers and DB â€” but only when the
      * arrival [navigationVector] is [NavigationVector.FORWARD]; backward movement never
      * mutates read state.
      */
@@ -1303,7 +1311,7 @@ class ReaderViewModel @Inject constructor(
      * launching - so a missing manga now stops the path on the coroutine, before any effect.
      */
     private fun setMangaReadingMode(readingMode: ReadingMode) {
-        viewModelScope.launchIO { viewerModeResolver.setMangaReadingMode(readingMode) }
+        viewModelScope.launch(ioDispatcher) { viewerModeResolver.setMangaReadingMode(readingMode) }
     }
 
     /**
@@ -1322,7 +1330,7 @@ class ReaderViewModel @Inject constructor(
      * in IO, with the manga-null gate moved onto the path exactly as the reading-mode setter.
      */
     private fun setMangaOrientationType(orientation: ReaderOrientation) {
-        viewModelScope.launchIO { viewerModeResolver.setMangaOrientationType(orientation) }
+        viewModelScope.launch(ioDispatcher) { viewerModeResolver.setMangaOrientationType(orientation) }
     }
 
     private fun toggleCropBorders(): Boolean = viewerModeResolver.toggleCropBorders()
@@ -1455,7 +1463,7 @@ class ReaderViewModel @Inject constructor(
     override suspend fun pageDHash(page: ReaderPage): Long? {
         val stream = page.resource.stream ?: return null
         return try {
-            withIOContext { stream().use { ImageUtil.computeDHash(it) } }
+            withContext(ioDispatcher) { stream().use { ImageUtil.computeDHash(it) } }
         } catch (e: Exception) {
             logcat(LogPriority.DEBUG, e) {
                 "Failed to check blocked-page hash for current page; treating as unblocked"
@@ -1475,7 +1483,7 @@ class ReaderViewModel @Inject constructor(
     }
 
     override suspend fun removeBlockedHash(hex: String): Boolean =
-        withIOContext {
+        withContext(ioDispatcher) {
             val pref = downloadPreferences.blockedPageHashes()
             val current = pref.get().toMutableSet()
             if (current.remove(hex)) {
@@ -1545,7 +1553,7 @@ class ReaderViewModel @Inject constructor(
         class Error(val error: Throwable) : SaveImageResult
     }
 
-    // ── Progress-seam effects (R-A Stage 3 seam 4: the coordinator drives, the VM executes) ──
+    // â”€â”€ Progress-seam effects (R-A Stage 3 seam 4: the coordinator drives, the VM executes) â”€â”€
 
     override fun nowMillis(): Long = System.currentTimeMillis()
 
@@ -1592,7 +1600,7 @@ class ReaderViewModel @Inject constructor(
         updateChapter.awaitAll(updates)
     }
 
-    // ── Viewer-mode-seam effects (R-A Stage 3 seam 5: the coordinator decides, the VM executes) ──
+    // â”€â”€ Viewer-mode-seam effects (R-A Stage 3 seam 5: the coordinator decides, the VM executes) â”€â”€
 
     // currentMangaId() is implemented once, in the progress-seam section above; the single
     // override satisfies both effect contracts because the signatures are identical.
@@ -1674,7 +1682,7 @@ class ReaderViewModel @Inject constructor(
 
         /**
          * The [ReaderPage] the user is currently on (R-C, Stage 4, audit F7). Unlike
-         * [currentPage] — a *display* position that counts only visible pages — this is the
+         * [currentPage] â€” a *display* position that counts only visible pages â€” this is the
          * actual page object, recorded by [updateChapterProgress] at selection time. Consumers
          * that need page payload (e.g. the automatic background's rendered-surface sampling)
          * read this instead of re-deriving a page from the display number, which previously

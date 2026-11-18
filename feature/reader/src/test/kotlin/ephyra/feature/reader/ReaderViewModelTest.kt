@@ -1,4 +1,4 @@
-package ephyra.feature.reader
+﻿package ephyra.feature.reader
 
 import android.app.Application
 import androidx.lifecycle.SavedStateHandle
@@ -111,7 +111,7 @@ class ReaderViewModelTest {
         // The page-progress path reads this on every selection. A bare relaxed mock cannot
         // answer a generic `get(): T` with a real Boolean (it hands back an Object that the
         // erased cast at the call site rejects with ClassCastException), so it is stubbed
-        // explicitly — same reason the prefs above are.
+        // explicitly â€” same reason the prefs above are.
         val smartCombinePagedPref: Preference<Boolean> = mockk(relaxed = true) {
             coEvery { get() } returns false
         }
@@ -149,6 +149,7 @@ class ReaderViewModelTest {
             localCoverManager = localCoverManager,
             updateManga = updateManga,
             chapterCache = chapterCache,
+            ioDispatcher = testDispatcher,
         )
     }
 
@@ -290,7 +291,7 @@ class ReaderViewModelTest {
         }
         readerChapter.state = ReaderChapter.State.Loaded(listOf(page))
 
-        // Active chapter: release is never called in-chapter — bytes stay for up/down scroll.
+        // Active chapter: release is never called in-chapter â€” bytes stay for up/down scroll.
         assertEquals(8, page.resource.cachedBytes?.size)
 
         // Chapter falls out of the prev/curr/next window: ref/unref boundary disposes.
@@ -311,7 +312,7 @@ class ReaderViewModelTest {
         val page1 = ReaderPage(1, "http://p/1").apply { this.chapter = readerChapter }
         readerChapter.state = ReaderChapter.State.Loaded(listOf(page0, page1))
 
-        // The progress write runs inside launchNonCancellable — launch(Dispatchers.IO) — so it
+        // The progress write runs inside launchNonCancellable â€” launch(Dispatchers.IO) â€” so it
         // lands on a real IO thread, not the test scheduler. Reading state.value immediately
         // after onEvent raced that thread: four consecutive green branch rounds, then red on
         // main's post-merge push run against a byte-identical tree (push runners execute
@@ -324,7 +325,7 @@ class ReaderViewModelTest {
             viewModel.onEvent(ReaderEvent.PageSelected(page1))
 
             val updated = awaitItem()
-            // R-C (Stage 4, audit F7): the display index counts visible pages (page 1 → position 2),
+            // R-C (Stage 4, audit F7): the display index counts visible pages (page 1 â†’ position 2),
             // while the recorded identity is the page object itself. The automatic background reads
             // the recorded page's rendered surface, so it can never sample the wrong page by
             // re-deriving one from the display number.
