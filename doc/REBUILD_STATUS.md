@@ -26,15 +26,23 @@ if a row below disagrees with this summary, the summary is the authority and the
   `macrobenchmark`/frame-deadline gate. Each has a review/expiry condition.
 - **Standing channel blocker:** `B-050` â€” the CI emulator does not boot, so device runs are local
   (`ADR-0009` accepts `E4-lab`); publish paths never depend on connected instrumentation.
-- **This branch (`fix/ci-green-tests`) adds:** green `:app`/`:feature:reader`/`:core:common` tests,
-  CI `--max-workers=2` + worker-death diagnostics, the tall-page slice fix, and the
-  cover-cache reload-on-back fix. These are not yet in the phase-gate rows below.
-- **Unidirectional data flow (2026-11-17):** every production `ViewModel` under `feature/` now takes
-  an `@IoDispatcher CoroutineDispatcher` and launches on it. The
-  `InjectableViewModelDispatcherTest` allowlist is **empty** and kept as a tripwire — a ViewModel that
-  reaches `Dispatchers.IO` without a dispatcher fails the build and names the file. Debt went
-  `10 -> 0` across six commits; 8 of the 10 are behaviour-verified by their own test suites, and
-  `AuthoritySearchViewModel` / `MatchResultsViewModel` have no tests and are compile-verified only.
+- **CI (confirmed green on `main`, 2026-11-18):** `Build & Test` succeeded on `1209e5356` (23m 44s) and
+  `8755be5d5`. That settles the `feature:reader` `junit-vintage` worker‑death: `--max-workers=2` plus
+  `forkEvery = 1` on the Robolectric modules fixed it. Runs showing `cancelled` are
+  concurrency‑superseded by a newer push, never failures. The failure‑only "Diagnose test worker
+  death" step remains as the next signal if it ever recurs.
+- **Unidirectional data flow (complete):** every production `ViewModel` under `feature/` takes an
+  `@IoDispatcher CoroutineDispatcher` and launches on it — debt `10 -> 0`. The gate now enforces
+  **two** properties, not one: a ViewModel must not reach `Dispatchers.IO` *and* must actually **use**
+  the dispatcher it declares, so a decorative injection fails the build. Allowlist empty and kept as a
+  tripwire.
+- **Architecture enforcement (fixed 2026-11-18):** `ArchitectureTest`'s feature‑isolation rule checked
+  only `ephyra.feature.library..` — a module with **zero** cross‑feature imports — so it was vacuously
+  green while twelve real declared edges went unchecked. It now covers all sixteen feature packages, and
+  a companion test asserts the permission set equals the declared edge set in the build files.
+- **This branch (`fix/ci-green-tests`, merged) added:** green `:app`/`:feature:reader`/`:core:common`
+  tests, CI `--max-workers=2` + worker-death diagnostics, the tall‑page slice fix, the unified
+  `PagePixelSurface` renderer, and the cover‑cache reload‑on‑back fix.
 
 ## Status vocabulary
 

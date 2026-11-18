@@ -63,11 +63,6 @@ class ArchitectureTest {
      * Feature Module Isolation Rule:
      * Feature modules must not directly depend on each other.
      * All cross-feature communication must go through core/domain interfaces.
-     */
-    /**
-     * Feature Module Isolation Rule:
-     * Feature modules must not directly depend on each other.
-     * All cross-feature communication must go through core/domain interfaces.
      *
      * **This rule used to check exactly one feature, so it guarded nothing.** It read
      * `.that().resideInAPackage("ephyra.feature.library..")` and listed fifteen other features as

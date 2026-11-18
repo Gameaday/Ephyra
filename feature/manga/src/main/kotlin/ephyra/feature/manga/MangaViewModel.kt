@@ -12,8 +12,6 @@ import ephyra.core.common.preference.TriState
 import ephyra.core.common.preference.mapAsCheckboxState
 import ephyra.core.common.util.addOrRemove
 import ephyra.core.common.util.insertSeparators
-import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.core.download.DownloadCache
 import ephyra.domain.category.interactor.GetCategories
