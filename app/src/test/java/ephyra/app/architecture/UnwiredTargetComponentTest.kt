@@ -67,11 +67,24 @@ class UnwiredTargetComponentTest {
      * failed with the complete inventory, and was restored at the measured value — the
      * falsification `2_0_CLEANUP_AUDIT.md` CU-2 asked for.
      *
+     * **85 on 2026-11-17, raised deliberately — not drifted.** The unified renderer
+     * (`PagePixelSurface`) added exactly two public types, `SliceSizing` and `WebtoonSlicePlan`.
+     * Both are live in production: `ZoomableMangaPage` and `ComposeWebtoonReader` pass
+     * `SliceSizing`, and `WebtoonSlicePlanner.plan()` returns `WebtoonSlicePlan`. They are counted
+     * only because `feature/reader` is itself a target area, so a type referenced *only* from inside
+     * it can never join the wired set — the "declared names are the only carriers" blind spot
+     * documented above. This is a known false positive of a deliberately conservative rule, not two
+     * new dead components.
+     *
+     * The alternative — deleting or hiding the types to satisfy the metric — would be worse code to
+     * flatter a number. If you can make either type reachable from outside `feature/reader` without
+     * contorting the design, do that and lower this back to 83.
+     *
      * Lower it in the same commit that wires or deletes something. A ceiling that only ever rises is
      * a backlog with extra steps.
      */
     private companion object {
-        const val MAX_UNWIRED = 83
+        const val MAX_UNWIRED = 85
 
         /** Directories holding 2.0 target components, per `REBUILD_PROGRAM.md` §3. */
         val TARGET_AREAS = listOf(
