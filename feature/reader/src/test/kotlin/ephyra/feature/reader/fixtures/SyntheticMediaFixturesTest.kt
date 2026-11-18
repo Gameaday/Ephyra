@@ -1,4 +1,4 @@
-package ephyra.feature.reader.fixtures
+﻿package ephyra.feature.reader.fixtures
 
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
@@ -7,7 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil3.size.Size
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.data.coil.BorderCropTransformation
-import ephyra.feature.reader.viewer.webtoon.WebtoonSlicer
+import ephyra.feature.reader.viewer.render.WebtoonSlicer
 import kotlinx.coroutines.runBlocking
 import okio.Buffer
 import org.junit.Assert.assertEquals

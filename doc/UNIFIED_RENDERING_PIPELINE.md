@@ -1,9 +1,33 @@
 # Unified page-rendering pipeline
 
-Status: Phase 1–3 **implemented** (commit `feat(reader): slice tall paged pages...`). The shared
-slice renderer currently lives in `viewer/pager/PagedSliceColumn.kt`; folding `SlicedWebtoonImage`
-onto it (Phase 1's move to a neutral package) is deferred until PR #367 lands, to avoid a conflict
-on that file. Remaining gate: visual QA on a real tall page (no GPU in CI).
+Status: **Phase 1 partially done, Phase 3 done, Phase 2 open.**
+
+- **Phase 1 (in progress).** The reader-agnostic *machinery* now lives in
+  `feature/reader/.../viewer/render/`: `WebtoonSlicer`, `WebtoonRegionDecoder`, `WebtoonSlicePlanner`
+  (pure, JVM-tested). Nothing about them is webtoon-specific, and the name is now the only
+  webtoon-flavoured thing left. Still outstanding: the two **composables** are still two renderers
+  (`SlicedWebtoonImage` in `viewer/webtoon/`, `PagedSliceColumn` in `viewer/pager/`), not one
+  `PagePixelSurface`. Folding them together is Phase 2's job — see below.
+- **Phase 2 (open, and it is not cosmetic).** `PagedSliceColumn` does not call `WebtoonSlicePlanner`.
+  It re-derives the plan inline and is **strictly worse** than the planner it duplicates:
+  1. it calls `WebtoonSlicer.maxSliceDisplayPx(textureLimitPx = …)` **without `viewportHeightPx`**,
+     so slices are cut to the full texture ceiling rather than the viewport;
+  2. it computes the sample with `sampleSizeForWidth` only, **skipping `SampleSizePolicy`
+     hysteresis** — so a rotation or viewport change re-decodes every slice instead of holding the
+     previous legal sample;
+  3. it is **not crop-aware**: it passes `srcWidth/srcHeight` instead of
+     `RenderPathPolicy.sliceSourceRect(...)`. Today the call site guards `!cropBorders`, so this is
+     latent rather than live — but it is one removed guard away from decoding the wrong rectangle;
+  4. it produces no `DecodePlan`, so `EXCEEDS_TEXTURE_LIMIT` — the reason the strip is sliced — is
+     not recorded anywhere.
+  The fix is to give the paged host the same tuple the webtoon host already builds inline
+  (`PageMetadata`, `PageSource.InMemory`, `RenderPathPolicy.choose`, `targetWidthPx`,
+  `viewportHeightPx`) and render `plan.slices`. The paged host already has every input **except**
+  `viewportHeightPx` and an image format; both must be threaded before the planner can be shared.
+- **Phase 3 (done).** `ZoomableMangaPage` slices tall pages via `PagedSliceColumn` instead of one
+  oversized `AsyncImage` (`feat(reader): slice tall paged pages…`), guarded by
+  `fix(reader): re-decode paged slices when the page bytes change`.
+- **Remaining gate for all of it:** visual QA on a real tall page — no GPU in CI.
 
 ## The symptom
 
@@ -77,11 +101,12 @@ and the surrounding Box are untouched.
 
 ## Phasing (each step independently shippable / revertible)
 
-1. **Pure move (no behaviour change).** Move `SlicedWebtoonImage` + `SliceColumn` +
-   `rememberDecodedSlices` (and, if desired, `WebtoonSlicePlanner/RegionDecoder/Slicer`) into a
-   neutral package, e.g. `feature/reader/.../viewer/render/`, renamed `PagePixelSurface`. Update
-   the single webtoon call site. Validate: build + existing `WebtoonSlicerTest`,
-   `WebtoonSlicePlannerTest`, `WebtoonWholeImagePathTest` stay green.
+1. **Pure move (no behaviour change).** — *Partly done.* `WebtoonSlicer`, `WebtoonRegionDecoder`
+   and `WebtoonSlicePlanner` now live in `feature/reader/.../viewer/render/` (git-tracked renames,
+   package/import updates only; `WebtoonSlicerTest`, `WebtoonRegionDecoderTest`,
+   `WebtoonSlicePlannerTest` moved with them and stay green). Still to do: move and merge the two
+   composables (`SlicedWebtoonImage` + `PagedSliceColumn`) into one `PagePixelSurface`, which is
+   Phase 2.
 2. **One decision, two callers.** Add a pure `PageRenderDecision`/reuse of `RenderPathPolicy` +
    `PageDecodeWidth` so the paged host computes `renderPath` and `targetWidthPx` the same way the
    webtoon host does. JVM-testable.

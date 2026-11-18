@@ -22,6 +22,9 @@ import ephyra.domain.reader.media.PageSource
 import ephyra.domain.reader.media.PixelRect
 import ephyra.domain.reader.media.SampleSize
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.viewer.render.WebtoonRegionDecoder
+import ephyra.feature.reader.viewer.render.WebtoonSlicePlanner
+import ephyra.feature.reader.viewer.render.WebtoonSlicer
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 

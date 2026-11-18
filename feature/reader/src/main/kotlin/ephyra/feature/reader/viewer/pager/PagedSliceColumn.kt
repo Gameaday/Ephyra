@@ -1,4 +1,4 @@
-package ephyra.feature.reader.viewer.pager
+﻿package ephyra.feature.reader.viewer.pager
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
@@ -20,8 +20,8 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.domain.reader.media.PixelRect
 import ephyra.domain.reader.media.SampleSize
-import ephyra.feature.reader.viewer.webtoon.WebtoonRegionDecoder
-import ephyra.feature.reader.viewer.webtoon.WebtoonSlicer
+import ephyra.feature.reader.viewer.render.WebtoonRegionDecoder
+import ephyra.feature.reader.viewer.render.WebtoonSlicer
 
 /** Sentinel: the region decode has not produced a result yet (distinct from a null failure). */
 private object Decoding
@@ -36,7 +36,7 @@ private object Decoding
  * slice's own source height (not `weight`) so it composes inside the pager's `verticalScroll`.
  *
  * [fallback] is drawn when the page is not sliceable (short, or unknown size) or when region
- * decoding is unsupported/fails. While decoding, a spinner is shown rather than the fallback —
+ * decoding is unsupported/fails. While decoding, a spinner is shown rather than the fallback â€”
  * the fallback's single oversized bitmap is exactly what this avoids.
  *
  * This composable renders **no zoom or gestures of its own**: the pager's `pagerZoomLayer` wraps
@@ -105,7 +105,7 @@ fun PagedSliceColumn(
     }
 }
 
-/** The exact slices for a [srcWidth]×[srcHeight] page shown at [targetWidthPx], or null to fall back. */
+/** The exact slices for a [srcWidth]Ã—[srcHeight] page shown at [targetWidthPx], or null to fall back. */
 private fun planSlices(srcWidth: Int, srcHeight: Int, targetWidthPx: Int): List<WebtoonSlicer.SliceRect>? {
     if (srcWidth <= 0 || srcHeight <= 0 || targetWidthPx <= 0) return null
     val textureLimit = ImageUtil.hardwareBitmapThreshold

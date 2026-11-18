@@ -1,4 +1,4 @@
-package ephyra.feature.reader.viewer.webtoon
+﻿package ephyra.feature.reader.viewer.render
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
