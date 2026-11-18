@@ -1,7 +1,8 @@
-package ephyra.feature.browse.migration.search
+﻿package ephyra.feature.browse.migration.search
 
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.di.IoDispatcher
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
@@ -13,6 +14,8 @@ import ephyra.feature.browse.source.globalsearch.GlobalSearchCache
 import ephyra.feature.browse.source.globalsearch.SearchItemResult
 import ephyra.feature.browse.source.globalsearch.SearchViewModel
 import eu.kanade.tachiyomi.source.CatalogueSource
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -26,6 +29,8 @@ class MigrateSearchViewModel @Inject constructor(
     networkToLocalManga: NetworkToLocalManga,
     searchCache: GlobalSearchCache,
     unifiedSearchEngine: ephyra.domain.manga.interactor.UnifiedSearchEngine,
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : SearchViewModel(
     sourcePreferences = sourcePreferences,
     sourceManager = sourceManager,
@@ -34,6 +39,7 @@ class MigrateSearchViewModel @Inject constructor(
     getManga = getManga,
     searchCache = searchCache,
     unifiedSearchEngine = unifiedSearchEngine,
+    ioDispatcher = ioDispatcher,
 ) {
 
     private val migrationSources by lazy { sourcePreferences.migrationSources().getSync() }

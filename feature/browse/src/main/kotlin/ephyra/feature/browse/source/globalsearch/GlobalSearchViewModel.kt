@@ -1,8 +1,9 @@
-package ephyra.feature.browse.source.globalsearch
+﻿package ephyra.feature.browse.source.globalsearch
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.di.IoDispatcher
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.GetManga
@@ -12,6 +13,8 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -34,6 +37,8 @@ class GlobalSearchViewModel @Inject constructor(
     private val recentSearches: RecentSearches,
     private val getLibraryManga: GetLibraryManga,
     unifiedSearchEngine: ephyra.domain.manga.interactor.UnifiedSearchEngine,
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : SearchViewModel(
     sourcePreferences = sourcePreferences,
     sourceManager = sourceManager,
@@ -42,10 +47,11 @@ class GlobalSearchViewModel @Inject constructor(
     getManga = getManga,
     searchCache = searchCache,
     unifiedSearchEngine = unifiedSearchEngine,
+    ioDispatcher = ioDispatcher,
 ) {
 
     /**
-     * Library matches for the current query — powers the "From your library" section at the
+     * Library matches for the current query â€” powers the "From your library" section at the
      * top of the results. Instant (local DB), no network; same normalization engine as Smart
      * Merge. Empty unless the query is >= 2 chars after normalization, so it is safe to
      * render as-you-type without firing network traffic.
@@ -72,8 +78,8 @@ class GlobalSearchViewModel @Inject constructor(
 
     /**
      * Recent-query chip row: recent searches filtered to the active query, for one-tap
-     * re-runs. Library titles are intentionally no longer chips — they live in the
-     * [libraryMatches] section as full rows, so the page reads Library → recents → sources
+     * re-runs. Library titles are intentionally no longer chips â€” they live in the
+     * [libraryMatches] section as full rows, so the page reads Library â†’ recents â†’ sources
      * instead of duplicating the same work as both a chip and a card.
      */
     val suggestions: StateFlow<List<String>> = combine(

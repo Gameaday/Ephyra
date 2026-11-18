@@ -87,6 +87,7 @@ class GlobalSearchViewModelTest {
             recentSearches = recentSearches,
             getLibraryManga = getLibraryManga,
             unifiedSearchEngine = unifiedSearchEngine,
+            ioDispatcher = testDispatcher,
         )
     }
 

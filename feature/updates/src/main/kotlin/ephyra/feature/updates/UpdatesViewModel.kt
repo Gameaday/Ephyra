@@ -1,13 +1,13 @@
-package ephyra.feature.updates
+﻿package ephyra.feature.updates
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.util.addOrRemove
 import ephyra.core.common.util.insertSeparators
-import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.core.common.util.system.logcat
@@ -32,6 +32,8 @@ import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -64,6 +66,12 @@ class UpdatesViewModel @Inject constructor(
     private val libraryPreferences: LibraryPreferences,
     private val updatesPreferences: UpdatesPreferences,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
+    // Injectable so a test can drive this on its own scheduler. `launchIO` is `launch(IO)`, a real
+    // thread pool that `Dispatchers.setMain` and `advanceUntilIdle()` cannot reach, so a test could
+    // only race it or sleep. Production is unchanged: `@IoDispatcher` binds `Dispatchers.IO`.
+    // See `InjectableViewModelDispatcherTest` and `AboutViewModel.updateCheckDispatcher`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<UpdatesViewModel.State, UpdatesScreenEvent, UpdatesViewModel.Effect>(State()) {
 
     val lastUpdated: Long
@@ -78,7 +86,7 @@ class UpdatesViewModel @Inject constructor(
             .onEach { timestamp -> updateState { it.copy(lastUpdated = timestamp) } }
             .launchIn(viewModelScope)
 
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             // Set date limit for recent chapters
             val limit = ZonedDateTime.now().minusMonths(3).toInstant()
 
@@ -118,7 +126,7 @@ class UpdatesViewModel @Inject constructor(
                 }
         }
 
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             merge(downloadManager.statusFlow(), downloadManager.progressFlow())
                 .catch { logcat(LogPriority.ERROR, it) }
                 .collect(this@UpdatesViewModel::updateDownloadState)
@@ -184,9 +192,9 @@ class UpdatesViewModel @Inject constructor(
             }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // UDF entry-point: all UI interactions are routed through this single method
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     override fun onEvent(event: UpdatesScreenEvent) {
         when (event) {
@@ -206,9 +214,9 @@ class UpdatesViewModel @Inject constructor(
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Private business logic — not part of the public API
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Private business logic â€” not part of the public API
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun updateLibrary(): Boolean {
         val started = libraryUpdateScheduler.startNow()
@@ -289,7 +297,7 @@ class UpdatesViewModel @Inject constructor(
      * @param read whether to mark chapters as read or unread.
      */
     private fun markUpdatesRead(updates: List<UpdatesItem>, read: Boolean) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             setReadStatus.await(
                 read = read,
                 chapters = updates
@@ -305,7 +313,7 @@ class UpdatesViewModel @Inject constructor(
      * @param updates the list of chapters to bookmark.
      */
     private fun bookmarkUpdates(updates: List<UpdatesItem>, bookmark: Boolean) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             updates
                 .filterNot { it.update.bookmark == bookmark }
                 .map { ChapterUpdate(id = it.update.chapterId, bookmark = bookmark) }

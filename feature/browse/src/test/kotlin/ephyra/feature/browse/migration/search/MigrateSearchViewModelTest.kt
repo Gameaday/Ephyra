@@ -87,6 +87,7 @@ class MigrateSearchViewModelTest {
             networkToLocalManga = networkToLocalManga,
             searchCache = searchCache,
             unifiedSearchEngine = unifiedSearchEngine,
+            ioDispatcher = testDispatcher,
         )
     }
 

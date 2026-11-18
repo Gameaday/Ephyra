@@ -110,6 +110,7 @@ class UpdatesViewModelTest {
             libraryPreferences = libraryPreferences,
             updatesPreferences = updatesPreferences,
             libraryUpdateScheduler = libraryUpdateScheduler,
+            ioDispatcher = testDispatcher,
         )
     }
 

@@ -115,8 +115,6 @@ class InjectableViewModelDispatcherTest {
             "MangaCoverViewModel",
             "MangaViewModel",
             "ReaderViewModel",
-            "UpdatesViewModel",
-            "SearchViewModel",
         )
     }
 }

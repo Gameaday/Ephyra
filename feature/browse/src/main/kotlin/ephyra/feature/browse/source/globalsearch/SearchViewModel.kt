@@ -1,13 +1,13 @@
-package ephyra.feature.browse.source.globalsearch
+﻿package ephyra.feature.browse.source.globalsearch
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.produceState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.extension.runExtensionCall
 import ephyra.core.common.preference.toggle
-import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
@@ -23,6 +23,7 @@ import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toPersistentMap
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -46,9 +47,14 @@ abstract class SearchViewModel(
     private val getManga: GetManga,
     private val searchCache: GlobalSearchCache,
     protected val unifiedSearchEngine: UnifiedSearchEngine,
+    // Injectable so a test can drive this on its own scheduler. `launchIO` is `launch(IO)`, a real
+    // thread pool that `Dispatchers.setMain` and `advanceUntilIdle()` cannot reach, so a test could
+    // only race it or sleep. Production is unchanged: `@IoDispatcher` binds `Dispatchers.IO`.
+    // See `InjectableViewModelDispatcherTest` and `AboutViewModel.updateCheckDispatcher`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<SearchViewModel.State, SearchScreenEvent, SearchEffect>(initialState) {
 
-    private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(5)
     private var searchJob: Job? = null
 
     private val enabledLanguages = sourcePreferences.enabledLanguages().getSync()
@@ -192,7 +198,7 @@ abstract class SearchViewModel(
         val needsNetwork = itemsForSources.values.any { it is SearchItemResult.Loading }
         if (!needsNetwork) return
 
-        searchJob = viewModelScope.launchIO {
+        searchJob = viewModelScope.launch(ioDispatcher) {
             sources.map { source ->
                 async {
                     if (state.value.items[source] !is SearchItemResult.Loading) {
@@ -244,8 +250,8 @@ abstract class SearchViewModel(
     }
 
     protected fun setMigrateDialog(currentId: Long, target: Manga) {
-        viewModelScope.launchIO {
-            val current = getManga.await(currentId) ?: return@launchIO
+        viewModelScope.launch(ioDispatcher) {
+            val current = getManga.await(currentId) ?: return@launch
             updateState { it.copy(dialog = Dialog.Migrate(target, current)) }
         }
     }
@@ -259,7 +265,7 @@ abstract class SearchViewModel(
         val from: Manga? = null,
         val searchQuery: String? = null,
         // Defaults to All so a fresh search fans out across every enabled source.
-        // PinnedOnly is intentionally opt-in only — it is exposed as a filter chip
+        // PinnedOnly is intentionally opt-in only â€” it is exposed as a filter chip
         // for users who want to limit network fan-out to their pinned sources, but
         // defaulting to it meant users with no pinned sources got an empty result
         // set on every search (and on every suggestion-chip tap).
