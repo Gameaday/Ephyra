@@ -1,9 +1,9 @@
-package ephyra.feature.browse.source.authority
+﻿package ephyra.feature.browse.source.authority
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GenerateAuthorityChapters
 import ephyra.domain.content.model.ContentType
@@ -29,8 +29,11 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import javax.inject.Inject
 
@@ -45,13 +48,18 @@ class AuthoritySearchViewModel @Inject constructor(
     private val insertTrack: InsertTrack,
     private val generateAuthorityChapters: GenerateAuthorityChapters,
     private val findContentSource: FindContentSource,
+    // Injectable so a test can drive this on its own scheduler. `withIOContext` is `Dispatchers.IO`,
+    // a real thread pool that `Dispatchers.setMain` and `advanceUntilIdle()` cannot reach. Production
+    // is unchanged: `@IoDispatcher` binds `Dispatchers.IO`. See `InjectableViewModelDispatcherTest`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<AuthoritySearchState, AuthoritySearchScreenEvent, Nothing>(AuthoritySearchState()) {
 
     private var searchJob: Job? = null
 
     init {
         viewModelScope.launch {
-            val trackers = withIOContext {
+            val trackers = withContext(ioDispatcher) {
                 trackerManager.getAll(AddTracks.TRACKER_CANONICAL_PREFIXES.keys)
                     .filter {
                         AddTracks.TRACKER_CANONICAL_PREFIXES.containsKey(it.id) &&
@@ -133,7 +141,7 @@ class AuthoritySearchViewModel @Inject constructor(
         }
         searchJob = viewModelScope.launch {
             try {
-                val results = withIOContext { tracker.search(query) }
+                val results = withContext(ioDispatcher) { tracker.search(query) }
                 updateState {
                     it.copy(
                         results = results.toImmutableList(),
@@ -164,7 +172,7 @@ class AuthoritySearchViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                withIOContext {
+                withContext(ioDispatcher) {
                     val existingByCanonical = getFavoritesByCanonicalId.await(canonicalId, -1L)
                     if (existingByCanonical.isNotEmpty()) {
                         updateState { state ->
@@ -173,7 +181,7 @@ class AuthoritySearchViewModel @Inject constructor(
                                 addingCanonicalIds = state.addingCanonicalIds - canonicalId,
                             )
                         }
-                        return@withIOContext
+                        return@withContext
                     }
 
                     val unpairedMatches = getDuplicateLibraryManga.invoke(result.title)
@@ -190,7 +198,7 @@ class AuthoritySearchViewModel @Inject constructor(
                                 addingCanonicalIds = state.addingCanonicalIds - canonicalId,
                             )
                         }
-                        return@withIOContext
+                        return@withContext
                     }
 
                     createAuthorityEntry(result, tracker, canonicalId)
@@ -207,7 +215,7 @@ class AuthoritySearchViewModel @Inject constructor(
         val prompt = currentState.mergePrompt ?: return
         viewModelScope.launch {
             try {
-                withIOContext {
+                withContext(ioDispatcher) {
                     val result = prompt.result
                     val manga = candidate.manga
                     updateManga.await(
@@ -276,7 +284,7 @@ class AuthoritySearchViewModel @Inject constructor(
         updateState { it.copy(mergePrompt = null) }
         viewModelScope.launch {
             try {
-                withIOContext {
+                withContext(ioDispatcher) {
                     createAuthorityEntry(prompt.result, prompt.tracker, prompt.canonicalId)
                 }
             } catch (e: Exception) {
@@ -372,7 +380,7 @@ class AuthoritySearchViewModel @Inject constructor(
     private fun autoSearchForSources(manga: Manga) {
         viewModelScope.launch {
             try {
-                val matches = withIOContext {
+                val matches = withContext(ioDispatcher) {
                     findContentSource.findSources(manga, maxResults = 5, deepSearch = false)
                 }
                 val currentPrompt = currentState.sourcePromptManga ?: return@launch

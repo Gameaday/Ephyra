@@ -1,9 +1,9 @@
-package ephyra.feature.browse.source.authority
+﻿package ephyra.feature.browse.source.authority
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.interactor.GetFavorites
@@ -14,7 +14,10 @@ import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import javax.inject.Inject
 
@@ -27,6 +30,11 @@ sealed interface MatchResultsEvent {
 class MatchResultsViewModel @Inject constructor(
     private val getFavorites: GetFavorites,
     private val matchUnlinkedManga: MatchUnlinkedManga,
+    // Injectable so a test can drive this on its own scheduler. `withIOContext` is `Dispatchers.IO`,
+    // a real thread pool that `Dispatchers.setMain` and `advanceUntilIdle()` cannot reach. Production
+    // is unchanged: `@IoDispatcher` binds `Dispatchers.IO`. See `InjectableViewModelDispatcherTest`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<MatchResultsState, MatchResultsEvent, Nothing>(MatchResultsState()) {
 
     init {
@@ -44,7 +52,7 @@ class MatchResultsViewModel @Inject constructor(
         viewModelScope.launch {
             updateState { it.copy(isLoading = true) }
             try {
-                val favorites = withIOContext { getFavorites.await() }
+                val favorites = withContext(ioDispatcher) { getFavorites.await() }
                 val unlinked = favorites
                     .filter { it.canonicalId == null }
                     .sortedBy { it.title }
@@ -84,7 +92,7 @@ class MatchResultsViewModel @Inject constructor(
                 )
             }
             try {
-                val canonicalId = withIOContext { matchUnlinkedManga.awaitSingle(manga) }
+                val canonicalId = withContext(ioDispatcher) { matchUnlinkedManga.awaitSingle(manga) }
                 if (canonicalId != null) {
                     loadManga()
                 } else {
@@ -112,7 +120,7 @@ class MatchResultsViewModel @Inject constructor(
         viewModelScope.launch {
             updateState { it.copy(isRetryingAll = true) }
             try {
-                withIOContext {
+                withContext(ioDispatcher) {
                     matchUnlinkedManga.await { current, total ->
                         updateState { it.copy(retryAllProgress = current to total) }
                     }
