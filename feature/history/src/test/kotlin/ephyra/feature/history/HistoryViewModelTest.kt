@@ -98,6 +98,7 @@ class HistoryViewModelTest {
             updateManga = updateManga,
             sourceManager = sourceManager,
             collectionScope = scope,
+            ioDispatcher = testDispatcher,
         )
     }
 

@@ -1,14 +1,13 @@
-package ephyra.feature.history
+﻿package ephyra.feature.history
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.mapAsCheckboxState
 import ephyra.core.common.util.insertSeparators
-import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.toLocalDate
-import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
@@ -33,12 +32,15 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import java.util.Date
 import javax.inject.Inject
@@ -65,16 +67,22 @@ class HistoryViewModel @Inject constructor(
      * is not its parent, so nothing owned by the test ever waits for it or stops it: it survives its
      * own test and reports into the shared uncaught-exception collector, which makes a *later* test
      * fail with `UncaughtExceptionsBeforeTest` before executing a line. That is how
-     * `HistoryViewModelTest` came to fail on `clearing all history emits HistoryCleared effect` — a
-     * test with no relationship to whatever actually threw — and only on CI, where timing lets the
+     * `HistoryViewModelTest` came to fail on `clearing all history emits HistoryCleared effect` â€” a
+     * test with no relationship to whatever actually threw â€” and only on CI, where timing lets the
      * leak land between two tests rather than after the last one.
      *
      * Production passes `null` and gets [viewModelScope]. A test passes the `backgroundScope` of its
      * `runTest`, which is cancelled automatically when that test ends: the collector stops *because
      * the test finished*, not because the test remembered to stop it. That is the property a shared
-     * scheduler cannot provide — it isolates coroutines without ever ending them.
+     * scheduler cannot provide â€” it isolates coroutines without ever ending them.
      */
     private val collectionScope: CoroutineScope? = null,
+    // Injectable so a test can drive this on its own scheduler. `launchIO`/`withIOContext` are
+    // `Dispatchers.IO`, a real thread pool that `Dispatchers.setMain` and `advanceUntilIdle()`
+    // cannot reach. Production is unchanged: `@IoDispatcher` binds `Dispatchers.IO`.
+    // See `InjectableViewModelDispatcherTest`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<HistoryViewModel.State, HistoryScreenEvent, HistoryViewModel.Effect>(State()) {
 
     fun getSource(sourceId: Long): Source = sourceManager.getOrStub(sourceId)
@@ -129,7 +137,7 @@ class HistoryViewModel @Inject constructor(
     /**
      * The read date a top-level entry is dated by for day headers. A stacked series is dated by
      * its latest read; its older chapters may span earlier days, which is the intended
-     * trade-off — the group lives where the user last touched that series.
+     * trade-off â€” the group lives where the user last touched that series.
      */
     private fun HistoryUiModel.representativeReadAt(): Date? = when (this) {
         is HistoryUiModel.Series -> latest.readAt
@@ -137,9 +145,9 @@ class HistoryViewModel @Inject constructor(
         is HistoryUiModel.Header -> null
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // UDF entry-point: all UI interactions are routed through this single method
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     override fun onEvent(event: HistoryScreenEvent) {
         when (event) {
@@ -159,21 +167,21 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Suspend accessor — returns a value so cannot be modelled as a fire-and-
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Suspend accessor â€” returns a value so cannot be modelled as a fire-and-
     // forget event; callers (HistoryTab) invoke this directly in a LaunchedEffect.
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     suspend fun getNextChapter(): Chapter? {
-        return withIOContext { getNextChapters.await(onlyUnread = false).firstOrNull() }
+        return withContext(ioDispatcher) { getNextChapters.await(onlyUnread = false).firstOrNull() }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Private business logic — not part of the public API
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Private business logic â€” not part of the public API
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun getNextChapterForManga(mangaId: Long, chapterId: Long) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             sendNextChapterEvent(getNextChapters.await(mangaId, chapterId, onlyUnread = false))
         }
     }
@@ -184,21 +192,21 @@ class HistoryViewModel @Inject constructor(
     }
 
     private fun removeFromHistory(history: HistoryWithRelations) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             removeHistory.await(history)
         }
     }
 
     private fun removeAllFromHistory(mangaId: Long) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             removeHistory.await(mangaId)
         }
     }
 
     private fun removeAllHistory() {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             val result = removeHistory.awaitAll()
-            if (!result) return@launchIO
+            if (!result) return@launch
             emitEffect(Effect.HistoryCleared)
         }
     }
@@ -211,7 +219,7 @@ class HistoryViewModel @Inject constructor(
         updateState { it.copy(dialog = dialog) }
     }
 
-    /** Toggles a stacked series group. Presentational only — no repository call. */
+    /** Toggles a stacked series group. Presentational only â€” no repository call. */
     private fun toggleSeriesExpanded(mangaId: Long) {
         updateState { current ->
             val ids = current.expandedSeriesIds
@@ -236,7 +244,7 @@ class HistoryViewModel @Inject constructor(
     }
 
     private fun moveMangaToCategory(mangaId: Long, categoryIds: List<Long>) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             setMangaCategories.await(mangaId, categoryIds)
         }
     }
@@ -245,7 +253,7 @@ class HistoryViewModel @Inject constructor(
         moveMangaToCategory(manga.id, categories)
         if (manga.favorite) return
 
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             updateManga.awaitUpdateFavorite(manga.id, true)
         }
     }
@@ -256,13 +264,13 @@ class HistoryViewModel @Inject constructor(
     }
 
     private fun addFavorite(mangaId: Long) {
-        viewModelScope.launchIO {
-            val manga = getManga.await(mangaId) ?: return@launchIO
+        viewModelScope.launch(ioDispatcher) {
+            val manga = getManga.await(mangaId) ?: return@launch
 
             val duplicates = getDuplicateLibraryManga(manga)
             if (duplicates.isNotEmpty()) {
                 updateState { it.copy(dialog = Dialog.DuplicateManga(manga, duplicates)) }
-                return@launchIO
+                return@launch
             }
 
             addFavorite(manga)
@@ -270,7 +278,7 @@ class HistoryViewModel @Inject constructor(
     }
 
     private fun addFavorite(manga: Manga) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             // Move to default category if applicable
             val categories = getCategories()
             val defaultCategoryId = libraryPreferences.defaultCategory().get().toLong()
@@ -280,14 +288,14 @@ class HistoryViewModel @Inject constructor(
                 // Default category set
                 defaultCategory != null -> {
                     val result = updateManga.awaitUpdateFavorite(manga.id, true)
-                    if (!result) return@launchIO
+                    if (!result) return@launch
                     moveMangaToCategory(manga.id, defaultCategory)
                 }
 
                 // Automatic 'Default' or no categories
                 defaultCategoryId == 0L || categories.isEmpty() -> {
                     val result = updateManga.awaitUpdateFavorite(manga.id, true)
-                    if (!result) return@launchIO
+                    if (!result) return@launch
                     moveMangaToCategory(manga.id, null)
                 }
 
