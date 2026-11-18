@@ -1,29 +1,35 @@
 # Unified page-rendering pipeline
 
-Status: **Phase 1 partially done, Phase 3 done, Phase 2 open.**
+Status: **Phases 1, 2 and 3 done; only the composable merge and visual QA remain.**
 
-- **Phase 1 (in progress).** The reader-agnostic *machinery* now lives in
+- **Phase 1 (done).** The reader-agnostic *machinery* lives in
   `feature/reader/.../viewer/render/`: `WebtoonSlicer`, `WebtoonRegionDecoder`, `WebtoonSlicePlanner`
   (pure, JVM-tested). Nothing about them is webtoon-specific, and the name is now the only
-  webtoon-flavoured thing left. Still outstanding: the two **composables** are still two renderers
-  (`SlicedWebtoonImage` in `viewer/webtoon/`, `PagedSliceColumn` in `viewer/pager/`), not one
-  `PagePixelSurface`. Folding them together is Phase 2's job — see below.
-- **Phase 2 (open, and it is not cosmetic).** `PagedSliceColumn` does not call `WebtoonSlicePlanner`.
-  It re-derives the plan inline and is **strictly worse** than the planner it duplicates:
-  1. it calls `WebtoonSlicer.maxSliceDisplayPx(textureLimitPx = …)` **without `viewportHeightPx`**,
-     so slices are cut to the full texture ceiling rather than the viewport;
-  2. it computes the sample with `sampleSizeForWidth` only, **skipping `SampleSizePolicy`
-     hysteresis** — so a rotation or viewport change re-decodes every slice instead of holding the
-     previous legal sample;
-  3. it is **not crop-aware**: it passes `srcWidth/srcHeight` instead of
-     `RenderPathPolicy.sliceSourceRect(...)`. Today the call site guards `!cropBorders`, so this is
-     latent rather than live — but it is one removed guard away from decoding the wrong rectangle;
-  4. it produces no `DecodePlan`, so `EXCEEDS_TEXTURE_LIMIT` — the reason the strip is sliced — is
-     not recorded anywhere.
-  The fix is to give the paged host the same tuple the webtoon host already builds inline
-  (`PageMetadata`, `PageSource.InMemory`, `RenderPathPolicy.choose`, `targetWidthPx`,
-  `viewportHeightPx`) and render `plan.slices`. The paged host already has every input **except**
-  `viewportHeightPx` and an image format; both must be threaded before the planner can be shared.
+  webtoon-flavoured thing left. The two **composables** remain separate hosts
+  (`SlicedWebtoonImage` in `viewer/webtoon/`, `PagedSliceColumn` in `viewer/pager/`) but now consume
+  the same plan, so the only difference between them is the host: the pager wraps its stack in
+  `pagerZoomLayer` and keeps one-page-one-item sizing.
+- **Safety net.** `PageSliceRoundTripTest` (in `viewer/render/`) encodes each pixel with its own
+  coordinates into a lossless PNG, runs it through the real planner and region decoder, stitches the
+  slices, and asserts the result is **pixel-identical to one whole-image decode** — so a doubled or
+  offset strip fails with the offending row named. Falsification probe: a 1 px overlap in
+  `computeSlices` turns it red with `expected:<9000> but was:<9002>`. This is what makes the
+  renderer refactor verifiable without a GPU.
+- **Phase 2 (done).** `PagedSliceColumn` now takes the **same media tuple** as `SlicedWebtoonImage`
+  and delegates to `WebtoonSlicePlanner`; it no longer re-derives a plan. The four defects that
+  duplicated planning carried are gone with it:
+  1. slice sizing is now viewport-aware — `viewportHeightPx` reaches `maxSliceDisplayPx`, so slices
+     are cut to the viewport instead of the full texture ceiling;
+  2. the sample goes through `SampleSizePolicy` hysteresis, so a rotation or viewport change holds
+     the previous legal sample instead of re-decoding every slice;
+  3. the slice rect comes from `RenderPathPolicy.sliceSourceRect`, so a cropped page slices its
+     artwork rather than raw image coordinates (the scale is computed from the planned rect too);
+  4. the `DecodePlan` is produced, so `EXCEEDS_TEXTURE_LIMIT` — the reason the strip is sliced — is
+     recorded.
+  What unlocked it: `containerHeight` was already in scope in `ZoomableMangaPage` (it is the
+  viewport height), and the image format is derived with the same
+  `ImageUtil.findImageType(...)?.toPageImageFormat()` call the webtoon host uses. The remaining
+  difference is only the host: paged keeps `pagerZoomLayer` and one-page-one-item sizing.
 - **Phase 3 (done).** `ZoomableMangaPage` slices tall pages via `PagedSliceColumn` instead of one
   oversized `AsyncImage` (`feat(reader): slice tall paged pages…`), guarded by
   `fix(reader): re-decode paged slices when the page bytes change`.

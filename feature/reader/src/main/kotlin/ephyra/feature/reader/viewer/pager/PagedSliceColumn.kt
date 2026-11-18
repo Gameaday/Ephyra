@@ -18,10 +18,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
-import ephyra.domain.reader.media.PixelRect
-import ephyra.domain.reader.media.SampleSize
+import ephyra.domain.reader.media.PageMetadata
+import ephyra.domain.reader.media.PageRenderPath
+import ephyra.domain.reader.media.PageSource
 import ephyra.feature.reader.viewer.render.WebtoonRegionDecoder
-import ephyra.feature.reader.viewer.render.WebtoonSlicer
+import ephyra.feature.reader.viewer.render.WebtoonSlicePlanner
 
 /** Sentinel: the region decode has not produced a result yet (distinct from a null failure). */
 private object Decoding
@@ -32,12 +33,21 @@ private object Decoding
  * A paged page taller than the GPU texture ceiling cannot be drawn as one `AsyncImage`: the
  * renderer downsamples it to fit `GL_MAX_TEXTURE_SIZE`, which is the blurry-strip defect. This
  * decodes the page into slices under that ceiling at the display width and stacks them, so every
- * slice stays sharp. It is the paged counterpart of the webtoon `SlicedWebtoonImage`, sized by each
- * slice's own source height (not `weight`) so it composes inside the pager's `verticalScroll`.
+ * slice stays sharp.
  *
- * [fallback] is drawn when the page is not sliceable (short, or unknown size) or when region
- * decoding is unsupported/fails. While decoding, a spinner is shown rather than the fallback â€”
- * the fallback's single oversized bitmap is exactly what this avoids.
+ * It takes the **same media tuple** as the webtoon `SlicedWebtoonImage`, because *how* to slice is
+ * not reader-specific. `WebtoonSlicePlanner` owns that decision: the slice rect (crop-aware, via
+ * `RenderPathPolicy.sliceSourceRect`), the exact partition, the region-decode sample with its
+ * hysteresis, and the `DecodePlan` recording why the strip is sliced. This composable only
+ * executes the plan — it no longer re-derives one, which is what let the two readers disagree.
+ *
+ * Slices are sized by each slice's own source height (never `weight`) so the stack composes inside
+ * the pager's `verticalScroll` and keeps one-page-one-item sizing.
+ *
+ * [fallback] is drawn when the plan yields no slices (short page, animation, non-resident source,
+ * a sample coarser than `SampleSize.EIGHT`) or when region decoding is unsupported/fails. While
+ * decoding, a spinner is shown rather than the fallback — the fallback's single oversized bitmap
+ * is exactly what this avoids.
  *
  * This composable renders **no zoom or gestures of its own**: the pager's `pagerZoomLayer` wraps
  * it, so the whole stack scales as one unit (the same rule `SlicedWebtoonImage` follows).
@@ -45,38 +55,45 @@ private object Decoding
 @Composable
 fun PagedSliceColumn(
     bytes: ByteArray,
-    srcWidth: Int,
-    srcHeight: Int,
+    metadata: PageMetadata,
+    source: PageSource,
+    renderPath: PageRenderPath,
     targetWidthPx: Int,
+    viewportHeightPx: Int?,
     modifier: Modifier = Modifier,
     fallback: @Composable () -> Unit,
 ) {
-    val slices = remember(srcWidth, srcHeight, targetWidthPx) {
-        planSlices(srcWidth, srcHeight, targetWidthPx)
+    // The real decision path, shared with the webtoon host. Keyed on every input: a rotation or a
+    // viewport change must re-plan, and the planner's sample hysteresis then decides whether that
+    // means a re-decode or a cheap hold of the previous legal sample.
+    val plan = remember(bytes, metadata, source, renderPath, targetWidthPx, viewportHeightPx) {
+        WebtoonSlicePlanner.plan(
+            metadata = metadata,
+            source = source,
+            renderPath = renderPath,
+            targetWidthPx = targetWidthPx,
+            viewportHeightPx = viewportHeightPx,
+            maxTextureSize = ImageUtil.hardwareBitmapThreshold,
+        )
     }
-    if (slices == null) {
+    val slices = plan.slices
+    if (slices.isNullOrEmpty()) {
         fallback()
         return
     }
 
-    val sample = remember(srcWidth, targetWidthPx) {
-        val fit = WebtoonRegionDecoder.sampleSizeForWidth(srcWidth, targetWidthPx)
-        SampleSize.entries.lastOrNull { it.inSampleSize <= fit } ?: SampleSize.ONE
-    }
-
-    // `bytes` is a key: a new page (new array instance) with the same dimensions must re-decode,
-    // or the previous page's slices would be shown under the new page.
-    val decoded by produceState<Any?>(Decoding, bytes, srcWidth, srcHeight, targetWidthPx, sample) {
+    // `bytes` and `plan` are keys: a new page (new array instance) with the same dimensions must
+    // re-decode, or the previous page's slices would be shown under the new page.
+    val decoded by produceState<Any?>(Decoding, bytes, plan) {
         value = withIOContext {
             WebtoonRegionDecoder.decodeSlices(
                 bytes = bytes,
-                sliceRect = PixelRect(0, 0, srcWidth, srcHeight),
+                sliceRect = plan.sliceRect,
                 slices = slices,
-                sampleSize = sample,
+                sampleSize = plan.sampleSize,
             )
         }
     }
-
     when (val result = decoded) {
         Decoding -> CircularProgressIndicator(modifier = Modifier.size(48.dp))
         null -> fallback()
@@ -88,7 +105,10 @@ fun PagedSliceColumn(
                 return
             }
             val density = LocalDensity.current
-            val scale = targetWidthPx.toFloat() / srcWidth
+            // Scale from the *planned* slice rect, not the intrinsic size: on a cropped page the
+            // artwork is narrower than the source, and using the source width here would stretch
+            // every slice horizontally.
+            val scale = targetWidthPx.toFloat() / plan.sliceRect.width
             Column(modifier = modifier.fillMaxWidth()) {
                 slices.forEachIndexed { index, slice ->
                     Image(
@@ -103,17 +123,4 @@ fun PagedSliceColumn(
             }
         }
     }
-}
-
-/** The exact slices for a [srcWidth]Ã—[srcHeight] page shown at [targetWidthPx], or null to fall back. */
-private fun planSlices(srcWidth: Int, srcHeight: Int, targetWidthPx: Int): List<WebtoonSlicer.SliceRect>? {
-    if (srcWidth <= 0 || srcHeight <= 0 || targetWidthPx <= 0) return null
-    val textureLimit = ImageUtil.hardwareBitmapThreshold
-    if (!WebtoonSlicer.needsSlicing(srcWidth, srcHeight, targetWidthPx, textureLimit)) return null
-    return WebtoonSlicer.computeSlices(
-        srcWidth = srcWidth,
-        srcHeight = srcHeight,
-        targetWidthPx = targetWidthPx,
-        maxSliceDisplayPx = WebtoonSlicer.maxSliceDisplayPx(textureLimitPx = textureLimit),
-    ).ifEmpty { null }
 }

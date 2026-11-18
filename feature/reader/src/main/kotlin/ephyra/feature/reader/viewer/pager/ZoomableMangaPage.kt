@@ -53,6 +53,13 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.reader.gesture.ReaderGestureEffect
+import ephyra.domain.reader.media.AnimationKind
+import ephyra.domain.reader.media.PageImageFormat
+import ephyra.domain.reader.media.PageMetadata
+import ephyra.domain.reader.media.PageRenderPath
+import ephyra.domain.reader.media.PageSource
+import ephyra.domain.reader.media.PixelSize
+import ephyra.domain.reader.media.toPageImageFormat
 import ephyra.domain.reader.viewport.PagerViewport
 import ephyra.domain.reader.viewport.PagerViewportState
 import ephyra.domain.reader.viewport.PagerZoomTransform
@@ -457,11 +464,35 @@ fun ZoomableMangaPage(
                                 )
                             }
                             if (canSlice && pageBytes != null) {
+                                // The slice decision belongs to the planner, not to this composable.
+                                // The tuple is the same one the webtoon host builds, so a rotation or
+                                // viewport change is judged by one policy instead of two, and the
+                                // sample hysteresis that prevents re-decode churn applies here too.
+                                val sliceFormat = remember(pageBytes) {
+                                    runCatching {
+                                        ImageUtil.findImageType(pageBytes.inputStream())
+                                            ?.toPageImageFormat()
+                                    }.getOrNull() ?: PageImageFormat.UNSUPPORTED
+                                }
                                 PagedSliceColumn(
                                     bytes = pageBytes,
-                                    srcWidth = page.resource.width,
-                                    srcHeight = page.resource.height,
+                                    metadata = PageMetadata(
+                                        intrinsicSize = PixelSize(
+                                            page.resource.width.coerceAtLeast(1),
+                                            page.resource.height.coerceAtLeast(1),
+                                        ),
+                                        animation = if (isAnimated) {
+                                            AnimationKind.ANIMATED
+                                        } else {
+                                            AnimationKind.STATIC
+                                        },
+                                        format = sliceFormat,
+                                        contentRect = null,
+                                    ),
+                                    source = PageSource.InMemory(pageBytes.size),
+                                    renderPath = PageRenderPath.SLICED,
                                     targetWidthPx = containerWidth.toInt().coerceAtLeast(1),
+                                    viewportHeightPx = containerHeight.toInt().coerceAtLeast(1),
                                     modifier = imageItemModifier,
                                     fallback = fallback,
                                 )
