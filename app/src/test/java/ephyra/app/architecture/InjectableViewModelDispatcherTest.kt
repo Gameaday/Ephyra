@@ -137,6 +137,49 @@ class InjectableViewModelDispatcherTest {
         )
     }
 
+    /**
+     * A ViewModel that takes a dispatcher must actually use it.
+     *
+     * **The blind spot this closes.** The violation test above only proves a ViewModel *has* a
+     * dispatcher parameter. It cannot tell a real injection from a decorative one: a field that is
+     * declared, annotated, and then never referenced still satisfies `body.contains("CoroutineDispatcher")`,
+     * so the ViewModel passes while every coroutine inside it still runs on `Dispatchers.IO`.
+     *
+     * That is not hypothetical. `AboutViewModel` names its field `updateCheckDispatcher` and
+     * `SettingsTrackingViewModel` names its `trackerDispatcher` -- both real, both used. The rule
+     * here is deliberately about *use*, not about the field's name, so both keep passing while a
+     * future `ioDispatcher` that is never referenced would fail.
+     *
+     * A ViewModel is accepted if **either**:
+     *  - it references a dispatcher field in a `launch(...)` / `withContext(...)` call, or
+     *  - it declares no dispatcher field at all (nothing to be decorative about).
+     *
+     * Constructor forwarding counts as use: `SearchViewModel`'s subclasses pass `ioDispatcher`
+     * through to the abstract base, which is exactly how injection reaches the shared `search()`.
+     */
+    @Test
+    fun `a ViewModel that takes a dispatcher actually uses it`() {
+        val decorative = productionViewModels()
+            .filter { file ->
+                val body = file.readText()
+                if (!body.contains("@IoDispatcher")) return@filter false
+                // Any dispatcher field reaching a coroutine builder, OR being forwarded to a
+                // superclass constructor, means the injection is live.
+                val usedInCoroutine = DISPATCHER_IN_USE.containsMatchIn(body)
+                val forwarded = FORWARDED.containsMatchIn(body)
+                !usedInCoroutine && !forwarded
+            }
+            .map { it.relativeTo(repositoryRoot()).path }
+
+        assertTrue(
+            decorative.isEmpty(),
+            "these ViewModels declare an @IoDispatcher field but never pass it to launch/withContext " +
+                "or forward it to a base class, so the injection is decorative and every coroutine " +
+                "still runs on a real dispatcher:\n" +
+                decorative.joinToString("\n") { "  $it" },
+        )
+    }
+
     /** Production ViewModels under `feature`, wherever the build is running. */
     private fun productionViewModels(): List<File> =
         File(repositoryRoot(), "feature").walkTopDown()
@@ -185,6 +228,26 @@ class InjectableViewModelDispatcherTest {
          */
         val REACHES_IO = Regex(
             """viewModelScope\.launch(IO|\(Dispatchers\.)|\bwithIOContext\s*\{""",
+        )
+        /**
+         * A dispatcher field reaching a coroutine builder: `launch(ioDispatcher)`,
+         * `withContext(ioDispatcher)`, `launch(updateCheckDispatcher)`, and so on.
+         *
+         * Matches *any* identifier rather than the literal `ioDispatcher`, because the field's name
+         * is not the contract -- `AboutViewModel.updateCheckDispatcher` and
+         * `SettingsTrackingViewModel.trackerDispatcher` are both correct.
+         */
+        val DISPATCHER_IN_USE = Regex(
+            """\b(?:launch|withContext|async|produce)\s*\(\s*[A-Za-z_]\w*[Dd]ispatcher\w*\s*[\),]""",
+        )
+
+        /**
+         * A dispatcher field forwarded to a superclass constructor, as `SearchViewModel`'s two
+         * subclasses do: `ioDispatcher = ioDispatcher,`. Without this a correct pass-through would
+         * look decorative, because the base class is what actually launches.
+         */
+        val FORWARDED = Regex(
+            """\b[A-Za-z_]\w*[Dd]ispatcher\w*\s*=\s*[A-Za-z_]\w*[Dd]ispatcher\w*\b""",
         )
 
         /**
