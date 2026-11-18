@@ -8,7 +8,9 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.io.File
 
 class ArchitectureTest {
 
@@ -62,31 +64,42 @@ class ArchitectureTest {
      * Feature modules must not directly depend on each other.
      * All cross-feature communication must go through core/domain interfaces.
      */
+    /**
+     * Feature Module Isolation Rule:
+     * Feature modules must not directly depend on each other.
+     * All cross-feature communication must go through core/domain interfaces.
+     *
+     * **This rule used to check exactly one feature, so it guarded nothing.** It read
+     * `.that().resideInAPackage("ephyra.feature.library..")` and listed fifteen other features as
+     * forbidden targets -- but `feature:library` has **zero** cross-feature imports, so the rule was
+     * vacuously green while twelve declared edges elsewhere went unchecked. A gate whose source set
+     * is empty is worse than no gate: it reports success for a property it never tested.
+     *
+     * It now checks **every** `ephyra.feature..` class as a potential source, and the sanctioned
+     * exceptions live in [DECLARED_CROSS_FEATURE_PACKAGES] instead of being implicitly
+     * `everything except library`. The list is the same twelve edges `ModuleDependencyGraphTest`
+     * declares, so the two gates cannot disagree -- `the declared cross-feature edges match the
+     * module build files` below fails if they drift apart.
+     */
     @Test
     fun `feature modules must not depend on each other`() {
         val classes = ClassFileImporter().importPackages("ephyra.feature")
 
-        val rule = noClasses()
-            .that().resideInAPackage("ephyra.feature.library..")
-            .should().dependOnClassesThat().resideInAnyPackage(
-                "ephyra.feature.browse..",
-                "ephyra.feature.reader..",
-                "ephyra.feature.manga..",
-                "ephyra.feature.updates..",
-                "ephyra.feature.history..",
-                "ephyra.feature.settings..",
-                "ephyra.feature.download..",
-                "ephyra.feature.migration..",
-                "ephyra.feature.stats..",
-                "ephyra.feature.upcoming..",
-                "ephyra.feature.webview..",
-                "ephyra.feature.more..",
-                "ephyra.feature.security..",
-                "ephyra.feature.player..",
-                "ephyra.feature.category..",
-            )
+        // ArchUnit's package syntax cannot express "any feature, but only from these sources", so
+        // the rule is asserted once per declared source: that pairing is permitted and every other
+        // pairing is still forbidden. A feature with no declared edges gets the full set.
+        for (source in ALL_FEATURE_PACKAGES) {
+            val allowed = DECLARED_CROSS_FEATURE_PACKAGES[source].orEmpty()
+            val forbidden = ALL_FEATURE_PACKAGES - source - allowed
+            if (forbidden.isEmpty()) continue
 
-        rule.check(classes)
+            noClasses()
+                .that().resideInAPackage("$source..")
+                .should().dependOnClassesThat().resideInAnyPackage(
+                    *forbidden.map { "$it.." }.toTypedArray(),
+                )
+                .check(classes)
+        }
     }
 
     /**
@@ -299,5 +312,107 @@ class ArchitectureTest {
 
         methodsRule.check(classes)
         fieldsRule.check(classes)
+    }
+
+    private fun crossFeatureEdgesFromBuildFiles(): Set<Pair<String, String>> {
+        // The test working directory is the module (`app/`), not the repository root, so walk up
+        // until the settings file is found. `generateSequence(...).first { }` returns a nullable
+        // `File?` and poisons type inference for the whole file, so this is written as a plain loop.
+        var root = File("").absoluteFile
+        while (!File(root, "settings.gradle.kts").exists() && root.parentFile != null) {
+            root = root.parentFile!!
+        }
+        val edges = mutableSetOf<Pair<String, String>>()
+        val featureDir = File(root, "feature")
+        if (!featureDir.isDirectory) return edges
+        featureDir.listFiles()?.forEach { module ->
+            val buildFile = File(module, "build.gradle.kts")
+            if (!buildFile.isFile) return@forEach
+            val source = "ephyra.feature.${module.name}"
+            PROJECT_EDGE.findAll(buildFile.readText()).forEach { match ->
+                // The accessor is dotted (`projects.feature.manga`), so a Gradle coordinate
+                // `feature:manga` becomes the package `ephyra.feature.manga`.
+                val coordinate = match.groupValues[1]
+                if (coordinate.startsWith("feature.")) {
+                    val leaf = coordinate.removePrefix("feature.")
+                    if (!leaf.contains('.')) edges += source to "ephyra.feature.$leaf"
+                }
+            }
+        }
+        return edges
+    }
+
+    /**
+     * The two declarations of "which features may import which" must agree.
+     *
+     * [DECLARED_CROSS_FEATURE_PACKAGES] restates `ModuleDependencyGraphTest.DECLARED_FEATURE_EDGES`
+     * as packages so the isolation rule above can consume them. Two copies of one fact will drift,
+     * so the drift is itself a failure: an edge added to the build files without a permission here
+     * makes a legitimate import fail, and a permission left behind after an edge is removed is
+     * invisible coupling.
+     *
+     * It reads the build files rather than the other test's constant because that constant is
+     * `private`; widening its visibility to serve a test would invert the dependency. The graph of
+     * record is `settings.gradle.kts` plus each module's build file, and this asserts against it.
+     */
+    @Test
+    fun `the declared cross-feature edges match the module build files`() {
+        val fromBuildFiles = crossFeatureEdgesFromBuildFiles()
+        // `flatMap` over a Map iterates Map.Entry, so read key/value explicitly. Destructuring as
+        // `(source, targets)` binds Entry.component1/component2, which is not what this needs.
+        val fromRule = DECLARED_CROSS_FEATURE_PACKAGES
+            .flatMap { entry -> entry.value.map { entry.key to it } }
+            .toSet()
+
+        assertEquals(
+            fromBuildFiles,
+            fromRule,
+            "DECLARED_CROSS_FEATURE_PACKAGES must describe exactly the feature-to-feature project " +
+                "edges the build files declare. Add or remove an edge in both places together: a " +
+                "permission with no edge behind it is invisible coupling, and an edge with no " +
+                "permission makes a legitimate import fail.",
+        )
+    }
+
+    private companion object {
+        val ALL_FEATURE_PACKAGES = listOf(
+            "ephyra.feature.browse",
+            "ephyra.feature.category",
+            "ephyra.feature.download",
+            "ephyra.feature.history",
+            "ephyra.feature.library",
+            "ephyra.feature.manga",
+            "ephyra.feature.migration",
+            "ephyra.feature.more",
+            "ephyra.feature.player",
+            "ephyra.feature.reader",
+            "ephyra.feature.security",
+            "ephyra.feature.settings",
+            "ephyra.feature.stats",
+            "ephyra.feature.upcoming",
+            "ephyra.feature.updates",
+            "ephyra.feature.webview",
+        )
+
+        val DECLARED_CROSS_FEATURE_PACKAGES: Map<String, Set<String>> = mapOf(
+            "ephyra.feature.browse" to setOf("ephyra.feature.manga", "ephyra.feature.migration"),
+            "ephyra.feature.history" to setOf(
+                "ephyra.feature.manga",
+                "ephyra.feature.migration",
+                "ephyra.feature.reader",
+            ),
+            "ephyra.feature.manga" to setOf(
+                "ephyra.feature.migration",
+                "ephyra.feature.reader",
+            ),
+            "ephyra.feature.more" to setOf("ephyra.feature.manga", "ephyra.feature.settings"),
+            "ephyra.feature.settings" to setOf("ephyra.feature.category"),
+            "ephyra.feature.updates" to setOf("ephyra.feature.manga", "ephyra.feature.reader"),
+        )
+
+        val PROJECT_EDGE = Regex(
+            """^\s*(?:implementation|api)\s*\(\s*projects\.((?:[a-zA-Z][a-zA-Z0-9_]*\.)*[a-zA-Z][a-zA-Z0-9_]*)\s*\)""",
+            RegexOption.MULTILINE,
+        )
     }
 }

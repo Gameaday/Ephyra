@@ -229,6 +229,7 @@ class InjectableViewModelDispatcherTest {
         val REACHES_IO = Regex(
             """viewModelScope\.launch(IO|\(Dispatchers\.)|\bwithIOContext\s*\{""",
         )
+
         /**
          * A dispatcher field reaching a coroutine builder: `launch(ioDispatcher)`,
          * `withContext(ioDispatcher)`, `launch(updateCheckDispatcher)`, and so on.
