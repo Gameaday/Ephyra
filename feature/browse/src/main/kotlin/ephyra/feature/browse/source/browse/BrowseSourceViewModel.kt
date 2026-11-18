@@ -11,9 +11,9 @@ import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.mapAsCheckboxState
-import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
 import ephyra.domain.category.model.Category
@@ -39,6 +39,8 @@ import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -71,6 +73,12 @@ class BrowseSourceViewModel @Inject constructor(
     private val updateManga: UpdateManga,
     private val addTracks: AddTracks,
     private val getIncognitoState: GetIncognitoState,
+    // Injectable so a test can drive this on its own scheduler. `launchIO` is `launch(IO)`, a real
+    // thread pool that `Dispatchers.setMain` and `advanceUntilIdle()` cannot reach, so a test could
+    // only race it or sleep. Production is unchanged: `@IoDispatcher` binds `Dispatchers.IO`.
+    // See `InjectableViewModelDispatcherTest` and `AboutViewModel.updateCheckDispatcher`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<BrowseSourceViewModel.State, BrowseSourceScreenEvent, BrowseSourceViewModel.Effect>(
     State(Listing.Popular),
 ) {
@@ -362,7 +370,7 @@ class BrowseSourceViewModel @Inject constructor(
     }
 
     private fun moveMangaToCategories(manga: Manga, categoryIds: List<Long>) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             setMangaCategories.await(
                 mangaId = manga.id,
                 categoryIds = categoryIds,

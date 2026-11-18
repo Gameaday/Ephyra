@@ -3,7 +3,7 @@ package ephyra.feature.browse.migration.sources
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.interactor.GetSourcesWithFavoriteCount
 import ephyra.domain.source.interactor.SetMigrateSorting
@@ -13,10 +13,13 @@ import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import logcat.LogPriority
 import javax.inject.Inject
 
@@ -25,12 +28,18 @@ class MigrateSourceViewModel @Inject constructor(
     preferences: SourcePreferences,
     private val getSourcesWithFavoriteCount: GetSourcesWithFavoriteCount,
     private val setMigrateSorting: SetMigrateSorting,
+    // Injectable so a test can drive this on its own scheduler. `launchIO` is `launch(IO)`, a real
+    // thread pool that `Dispatchers.setMain` and `advanceUntilIdle()` cannot reach, so a test could
+    // only race it or sleep. Production is unchanged: `@IoDispatcher` binds `Dispatchers.IO`.
+    // See `InjectableViewModelDispatcherTest` and `AboutViewModel.updateCheckDispatcher`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<MigrateSourceViewModel.State, MigrateSourceScreenEvent, MigrateSourceViewModel.Effect>(State()) {
 
     val channel = effects
 
     init {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             getSourcesWithFavoriteCount.subscribe()
                 .catch {
                     logcat(LogPriority.ERROR, it)

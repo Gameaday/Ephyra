@@ -3,7 +3,7 @@ package ephyra.feature.stats
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.di.IoDispatcher
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.history.interactor.GetTotalReadDuration
 import ephyra.domain.library.model.LibraryManga
@@ -20,6 +20,9 @@ import ephyra.feature.stats.data.StatsData
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.model.SManga
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,12 +33,18 @@ class StatsViewModel @Inject constructor(
     private val getTracks: GetTracks,
     private val preferences: LibraryPreferences,
     private val trackerManager: TrackerManager,
+    // Injectable so a test can drive this on its own scheduler. `launchIO` is `launch(IO)`, a real
+    // thread pool that `Dispatchers.setMain` and `advanceUntilIdle()` cannot reach, so a test could
+    // only race it or sleep. Production is unchanged: `@IoDispatcher` binds `Dispatchers.IO`.
+    // See `InjectableViewModelDispatcherTest` and `AboutViewModel.updateCheckDispatcher`.
+    @IoDispatcher
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<StatsScreenState, Nothing, Nothing>(StatsScreenState.Loading) {
 
     override fun onEvent(event: Nothing) {}
 
     init {
-        viewModelScope.launchIO {
+        viewModelScope.launch(ioDispatcher) {
             val loggedInTrackers = trackerManager.loggedInTrackers()
             val libraryManga = getLibraryManga.await()
 

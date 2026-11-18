@@ -110,14 +110,11 @@ class InjectableViewModelDispatcherTest {
          * Each is one CI failure away. `AboutViewModel` is absent because it was fixed.
          */
         val ALLOWED = listOf(
-            "MigrateSourceViewModel",
-            "BrowseSourceViewModel",
             "HistoryViewModel",
             "LibraryViewModel",
             "MangaCoverViewModel",
             "MangaViewModel",
             "ReaderViewModel",
-            "StatsViewModel",
             "UpdatesViewModel",
             "SearchViewModel",
         )

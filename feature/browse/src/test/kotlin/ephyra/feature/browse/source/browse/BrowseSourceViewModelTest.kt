@@ -1,4 +1,4 @@
-package ephyra.feature.browse.source.browse
+﻿package ephyra.feature.browse.source.browse
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
@@ -107,6 +107,7 @@ class BrowseSourceViewModelTest {
             updateManga = updateManga,
             addTracks = addTracks,
             getIncognitoState = getIncognitoState,
+            ioDispatcher = testDispatcher,
         )
     }
 
@@ -155,6 +156,7 @@ class BrowseSourceViewModelTest {
             updateManga = updateManga,
             addTracks = addTracks,
             getIncognitoState = getIncognitoState,
+            ioDispatcher = testDispatcher,
         )
         advanceUntilIdle()
 
@@ -181,7 +183,7 @@ class BrowseSourceViewModelTest {
 
     @Test
     fun `a source id of zero is browsable and not mistaken for unset`() = runTest {
-        // `LocalSource.ID` is 0L — the only legitimate source id that is not positive. A guard
+        // `LocalSource.ID` is 0L â€” the only legitimate source id that is not positive. A guard
         // written as `sourceId <= 0` conflates it with the "not set" sentinel and yields a
         // perpetual spinner on the Local source browse screen (DEF-010).
         every { catalogueSource.id } returns 0L
@@ -216,7 +218,7 @@ class BrowseSourceViewModelTest {
      *
      * Both subscriptions are required. The outer flow is `SharingStarted.Lazily`, so nothing
      * starts until something collects it; and the inner flow is what actually drives the
-     * `Pager`, whose `PagingSource` factory — and therefore [GetRemoteManga] — only runs once
+     * `Pager`, whose `PagingSource` factory â€” and therefore [GetRemoteManga] â€” only runs once
      * the paging data is collected.
      */
     private suspend fun TestScope.collectPager(viewModel: BrowseSourceViewModel) {

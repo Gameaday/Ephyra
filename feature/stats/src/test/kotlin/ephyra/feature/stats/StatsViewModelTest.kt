@@ -69,6 +69,7 @@ class StatsViewModelTest {
         getTracks = getTracks,
         preferences = preferences,
         trackerManager = trackerManager,
+        ioDispatcher = testDispatcher,
     )
 
     @Test

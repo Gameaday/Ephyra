@@ -1,4 +1,4 @@
-package ephyra.feature.browse.migration.sources
+﻿package ephyra.feature.browse.migration.sources
 
 import app.cash.turbine.test
 import ephyra.core.common.preference.Preference
@@ -69,7 +69,8 @@ class MigrateSourceViewModelTest {
 
     @Test
     fun `loads sources and updates loading state`() = runTest(testDispatcher) {
-        val viewModel = MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting)
+        val viewModel =
+            MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting, testDispatcher)
 
         viewModel.state.test {
             val initial = awaitItem()
@@ -89,7 +90,8 @@ class MigrateSourceViewModelTest {
             throw RuntimeException("Network error")
         }
 
-        val viewModel = MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting)
+        val viewModel =
+            MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting, testDispatcher)
 
         viewModel.effects.test {
             val effect = awaitItem()
@@ -99,7 +101,8 @@ class MigrateSourceViewModelTest {
 
     @Test
     fun `onEvent ToggleSortingMode toggles between ALPHABETICAL and TOTAL`() = runTest(testDispatcher) {
-        val viewModel = MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting)
+        val viewModel =
+            MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting, testDispatcher)
 
         viewModel.onEvent(MigrateSourceScreenEvent.ToggleSortingMode)
         coVerify { setMigrateSorting.await(SetMigrateSorting.Mode.TOTAL, SetMigrateSorting.Direction.ASCENDING) }
@@ -107,7 +110,8 @@ class MigrateSourceViewModelTest {
 
     @Test
     fun `onEvent ToggleSortingDirection toggles between ASCENDING and DESCENDING`() = runTest(testDispatcher) {
-        val viewModel = MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting)
+        val viewModel =
+            MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting, testDispatcher)
 
         viewModel.onEvent(MigrateSourceScreenEvent.ToggleSortingDirection)
         coVerify {
@@ -117,7 +121,8 @@ class MigrateSourceViewModelTest {
 
     @Test
     fun `preferences changes update state sortingMode and sortingDirection`() = runTest(testDispatcher) {
-        val viewModel = MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting)
+        val viewModel =
+            MigrateSourceViewModel(preferences, getSourcesWithFavoriteCount, setMigrateSorting, testDispatcher)
 
         viewModel.state.test {
             val state = awaitItem()
