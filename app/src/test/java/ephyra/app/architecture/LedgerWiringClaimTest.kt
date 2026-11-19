@@ -217,6 +217,76 @@ class LedgerWiringClaimTest {
      * A member reference such as `ReaderChapter.cacheBytes` is not a file and is dropped: it names
      * a symbol, and resolving a symbol to a file is the guess this gate exists to stop relying on.
      */
+    @Test
+    fun `a cited line number points inside its file`() {
+        // The ledger cites files with line numbers as evidence (`ZoomableMangaPage.kt:334`). When code
+        // moves, the line silently stops being true and nothing catches it: `citationsIn` strips the
+        // `:line` suffix, so the anchor check above passes on a wrong line number. Two stale citations
+        // in MED-002 survived the PagePixelSurface consolidation for exactly that reason.
+        val ledger = ledgerFile()
+        val lines = ledger.readText().lines()
+        val tracked = trackedPaths()
+        val byBasename = tracked.groupBy { it.substringAfterLast('/') }
+
+        val offenders = lines.mapNotNull { line ->
+            val citations = lineCitationsIn(line)
+            val stale = citations.filter { (path, lineNo) ->
+                val target = resolvePath(path, tracked, byBasename) ?: return@filter false
+                val file = File(TrackedFileNames.repositoryRoot(), target)
+                file.exists() && staleIn(lineNo, file.readLines().size)
+            }
+            if (stale.isEmpty()) null else stale.joinToString { "${it.first}:${it.second}" }
+        }
+
+        assertTrue(
+            offenders.isEmpty(),
+            "Ledger rows cite a line past the end of its file. The anchor still resolves, so this " +
+                "gate's existence check cannot catch it, and a reader following the citation lands " +
+                "nowhere:\n" + offenders.joinToString("\n") { "  $it" },
+        )
+    }
+
+    /**
+     * Citations that carry a `:line` suffix, as `(path, line)` pairs.
+     *
+     * Separate from [citationsIn] because that one must *drop* the suffix to resolve the file. This
+     * one is only interested in the suffix, and only for paths that exist, so it does not need to
+     * distinguish prose from citations — a false positive here would report a non-existent file as
+     * stale, which the existence check above already handles.
+     */
+    private fun lineCitationsIn(text: String): List<Pair<String, Int>> =
+        BACKTICKED.findAll(text)
+            .map { it.groupValues[1] }
+            .mapNotNull { cited ->
+                val colon = cited.lastIndexOf(':')
+                if (colon <= 0) return@mapNotNull null
+                val lineNo = cited.substring(colon + 1).toIntOrNull() ?: return@mapNotNull null
+                // Require a source/doc extension. Without this, a backticked ratio or timestamp such
+                // as `1:2` or `12:30` would parse as a citation, resolve to nothing, and then be
+                // reported as missing rather than stale -- a false positive in a doc full of numbers.
+                if (!SOURCE_EXTENSIONS.contains(cited.substringAfterLast('.').substringBefore(':'))) {
+                    return@mapNotNull null
+                }
+                cited.substring(0, colon).substringBefore('#') to lineNo
+            }
+            .toList()
+
+    /** The tracked path a citation resolves to, or null if it names nothing in the tree. */
+    private fun resolvePath(citation: String, tracked: Set<String>, byBasename: Map<String, List<String>>): String? =
+        if (citation in tracked) {
+            citation
+        } else {
+            byBasename[citation.substringAfterLast('/')]?.singleOrNull()
+        }
+
+    /**
+     * Whether a cited line falls past the end of its file.
+     *
+     * Extracted so the falsification test exercises the same comparison the real check uses, rather
+     * than re-asserting arithmetic that would pass regardless.
+     */
+    private fun staleIn(lineNo: Int, fileLength: Int): Boolean = lineNo > fileLength
+
     private fun citationsIn(text: String): List<String> =
         BACKTICKED.findAll(text)
             .map { it.groupValues[1] }
@@ -230,6 +300,48 @@ class LedgerWiringClaimTest {
     private fun resolves(citation: String, tracked: Set<String>, byBasename: Map<String, List<String>>): Boolean =
         citation in tracked || byBasename[citation.substringAfterLast('/')]?.isNotEmpty() == true
 
+    @Test
+    fun `the line citation predicate distinguishes stale from fresh`() {
+        // Without this the new check could pass by matching nothing, which is the sixth inert-gate
+        // failure mode in this programme's history. Exercises the parser and the EOF boundary on a
+        // real file rather than a paraphrase.
+        val tracked = setOf(
+            "feature/reader/src/main/kotlin/ephyra/feature/reader/viewer/pager/ZoomableMangaPage.kt",
+        )
+        val byBasename = tracked.groupBy { it.substringAfterLast('/') }
+        val target = tracked.single()
+        val realLength = File(TrackedFileNames.repositoryRoot(), target).readLines().size
+
+        assertTrue(
+            lineCitationsIn("`$target:${realLength + 1}`").isNotEmpty(),
+            "a citation with a :line suffix must be parsed, else this gate is inert",
+        )
+        assertTrue(
+            lineCitationsIn("`$target`").isEmpty(),
+            "a citation with no :line suffix must not be treated as one",
+        )
+        assertTrue(
+            lineCitationsIn("`ReaderChapter.cacheBytes`").isEmpty(),
+            "a member reference has no line number and must not be treated as one",
+        )
+        assertTrue(
+            lineCitationsIn("`1:2` and `12:30`").isEmpty(),
+            "a ratio or timestamp must not parse as a citation; it has no source extension",
+        )
+
+        // The actual predicate: EOF+1 is stale, EOF is not. `staleIn` is the same comparison the
+        // real check performs, applied here to a file that exists.
+        val length = File(TrackedFileNames.repositoryRoot(), target).readLines().size
+        assertTrue(staleIn(length + 1, length), "a line past EOF must be reported as stale")
+        assertTrue(!staleIn(length, length), "a line at EOF must be accepted")
+
+        // A bare basename that matches nothing in the tree must not resolve to a path.
+        assertTrue(
+            resolvePath("DefinitelyNotARealFile.kt", tracked, byBasename) == null,
+            "an absent basename must not resolve",
+        )
+    }
+
     private fun ledgerFile(): File = File(TrackedFileNames.repositoryRoot(), LEDGER)
 
     private fun trackedPaths(): Set<String> =
@@ -241,5 +353,13 @@ class LedgerWiringClaimTest {
 
         /** A backticked span, captured. */
         val BACKTICKED = Regex("`([^`]+)`")
+
+        /**
+         * Extensions a citation may carry, used to tell a path from a bare `1:2` or `12:30`.
+         *
+         * Deliberately the same set [citationsIn] filters on, so the two parsers agree about what a
+         * citation is -- a divergence there would mean one parser sees a span the other rejects.
+         */
+        val SOURCE_EXTENSIONS = setOf("kt", "kts", "md", "yml", "yaml", "xml", "toml", "properties")
     }
 }
