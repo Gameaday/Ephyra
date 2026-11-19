@@ -109,6 +109,23 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Turns flat history rows into the list the screen renders.
+     *
+     * **Cover interning happens here.** `HistoryMapper` builds a `MangaCover` per row, so a series
+     * read 50 times arrived as 50 equal-but-distinct `MangaCover` instances. `MangaCover` is a
+     * `data class`, so those instances are `equals()`-equal but **not identical**, and `MangaCover.kt`
+     * does `remember(data, isSharedElement) { ImageRequest... }` — keyed on the instance. Fifty
+     * distinct instances therefore build fifty `ImageRequest`s and issue fifty Coil requests for one
+     * cover, even though Coil's memory cache dedupes the *result*. On a long history or updates
+     * list that is a lot of duplicate work per scroll frame, and it is why the same cover could
+     * appear to reload while others stayed warm.
+     *
+     * Interning by `mangaId` makes the instances identical, so every row of a series shares one
+     * `remember` entry and one in-flight request. It is done in the ViewModel rather than in Coil
+     * because this is where the "same series" relationship is already known — the `groupBy` below
+     * is exactly that grouping.
+     */
     private fun List<HistoryWithRelations>.toHistoryUiModels(
         expandedSeries: Set<Long>,
     ): List<HistoryUiModel> {
@@ -117,10 +134,15 @@ class HistoryViewModel @Inject constructor(
         val topLevel = mutableListOf<HistoryUiModel>()
         groupBy { it.mangaId }.values.forEach { entries ->
             val latest = entries.first()
-            topLevel += if (entries.size == 1) {
-                HistoryUiModel.Item(latest)
+            // One cover instance per series, shared by every row in the group. `latest.coverData`
+            // is used as the canonical instance because every row in a group describes the same
+            // series and therefore carries an equal MangaCover (same id, url, lastModified).
+            val sharedCover = latest.coverData
+            val group = entries.map { entry -> entry.copy(coverData = sharedCover) }
+            topLevel += if (group.size == 1) {
+                HistoryUiModel.Item(group.first())
             } else {
-                HistoryUiModel.Series(latest = latest, older = entries.drop(1))
+                HistoryUiModel.Series(latest = group.first(), older = group.drop(1))
             }
         }
         return topLevel.insertSeparators { before, after ->

@@ -30,7 +30,9 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -229,9 +231,17 @@ class HistoryViewModelTest {
     /**
      * Separate builder from [historyEntry] (which pins `mangaId = 1L`) so multi-series tests
      * can control the manga id without touching the existing helper's call sites.
+     *
+     * The cover is rebuilt to match the new `mangaId`, because a real `HistoryMapper` derives
+     * `MangaCover.mangaId` from the row it is mapping. Leaving the cover at the helper's pinned
+     * `mangaId = 1L` would make two series carry *equal* covers, so a test asserting that distinct
+     * series keep distinct cover instances would pass for the wrong reason.
      */
     private fun seriesEntry(id: Long, mangaId: Long, readAt: Date) =
-        historyEntry(id, readAt).copy(mangaId = mangaId)
+        historyEntry(id, readAt).copy(
+            mangaId = mangaId,
+            coverData = historyEntry(id, readAt).coverData.copy(mangaId = mangaId),
+        )
 
     /** Distinct calendar dates: a fixed base plus whole days, so day headers are stable. */
     private fun day(offsetDays: Long) = Date(1_700_000_000_000L + offsetDays * 86_400_000L)
@@ -255,6 +265,66 @@ class HistoryViewModelTest {
             val series = list.filterIsInstance<HistoryUiModel.Series>().single()
             assertEquals(3L, series.latest.id)
             assertEquals(listOf(2L, 1L), series.older.map { it.id })
+        }
+    }
+
+    @Test
+    fun `every row of one series shares a single cover instance`() = runTest(testDispatcher) {
+        // The point of interning: MangaCover is a data class, so per-row instances are equals-equal
+        // but not identical, and MangaCover.kt keys its `remember(data, ...)` on the instance. Equal
+        // but distinct instances therefore each build their own ImageRequest and issue their own
+        // Coil request for the same cover. assertSame is the assertion that actually catches it --
+        // assertEquals would pass on the broken version, which is why this test is written this way.
+        val viewModel = createViewModel(backgroundScope)
+
+        viewModel.state.test {
+            assertNull(awaitItem().list)
+
+            historyFlow.emit(
+                listOf(
+                    seriesEntry(id = 3L, mangaId = 7L, readAt = day(3)),
+                    seriesEntry(id = 2L, mangaId = 7L, readAt = day(2)),
+                    seriesEntry(id = 1L, mangaId = 7L, readAt = day(1)),
+                ),
+            )
+
+            val list = requireNotNull(awaitItem().list) { "history must populate the list" }
+            val series = list.filterIsInstance<HistoryUiModel.Series>().single()
+            assertSame(
+                series.latest.coverData,
+                series.older.first().coverData,
+                "a series' rows must share one MangaCover instance, or each row issues its own " +
+                    "cover request and the list re-decodes the same image once per row",
+            )
+            // Older rows keep their identity; only the cover is shared.
+            assertEquals(listOf(2L, 1L), series.older.map { it.id })
+        }
+    }
+
+    @Test
+    fun `different series keep distinct cover instances`() = runTest(testDispatcher) {
+        // The counterpart to the test above: interning must key on mangaId, not collapse everything
+        // to one instance. A single global instance would make two different series share a cover.
+        val viewModel = createViewModel(backgroundScope)
+
+        viewModel.state.test {
+            assertNull(awaitItem().list)
+
+            historyFlow.emit(
+                listOf(
+                    seriesEntry(id = 4L, mangaId = 8L, readAt = day(4)),
+                    seriesEntry(id = 3L, mangaId = 7L, readAt = day(3)),
+                ),
+            )
+
+            val list = requireNotNull(awaitItem().list) { "history must populate the list" }
+            val covers = list.filterIsInstance<HistoryUiModel.Item>().map { it.item.coverData }
+            assertEquals(2, covers.size)
+            assertNotSame(
+                covers.first(),
+                covers.last(),
+                "two different series must not share one MangaCover instance",
+            )
         }
     }
 

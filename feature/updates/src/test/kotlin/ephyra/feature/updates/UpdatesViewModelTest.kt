@@ -12,8 +12,10 @@ import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.interactor.GetManga
+import ephyra.domain.manga.model.MangaCover
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.updates.interactor.GetUpdates
+import ephyra.domain.updates.model.UpdatesWithRelations
 import ephyra.domain.updates.service.UpdatesPreferences
 import io.mockk.coEvery
 import io.mockk.every
@@ -29,6 +31,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -168,4 +172,78 @@ class UpdatesViewModelTest {
             assertEquals(UpdatesViewModel.Effect.LibraryUpdateTriggered(true), effect)
         }
     }
+
+    /**
+     * A series with many updates must resolve to one cover instance, not one per row.
+     *
+     * This is the case that motivated the change: the updates list is where one series
+     * legitimately contributes many rows. `MangaCover` is a data class, so per-row instances are
+     * `equals()`-equal but not identical, and `MangaCover.kt` keys its `remember(data, ...)` on the
+     * instance -- so N distinct instances build N `ImageRequest`s and issue N Coil requests for one
+     * cover. `assertSame` catches it; `assertEquals` would pass on the broken version.
+     */
+    @Test
+    fun `every update of one series shares a single cover instance`() {
+        val interned = listOf(
+            updateRow(id = 3L, mangaId = 7L, chapterNumber = 3.0),
+            updateRow(id = 2L, mangaId = 7L, chapterNumber = 2.0),
+            updateRow(id = 1L, mangaId = 7L, chapterNumber = 1.0),
+        ).withInternedCovers()
+
+        assertEquals(3, interned.size, "interning must not drop or add rows")
+        val covers = interned.map { it.coverData }
+        covers.forEachIndexed { index, cover ->
+            assertSame(
+                covers.first(),
+                cover,
+                "row $index of one series must share the series' single MangaCover instance",
+            )
+        }
+        // Rows keep their own identity; only the cover is shared.
+        assertEquals(listOf(3L, 2L, 1L), interned.map { it.chapterId })
+    }
+
+    @Test
+    fun `different series keep distinct cover instances`() {
+        val interned = listOf(
+            updateRow(id = 2L, mangaId = 8L, chapterNumber = 1.0),
+            updateRow(id = 1L, mangaId = 7L, chapterNumber = 1.0),
+        ).withInternedCovers()
+
+        assertEquals(2, interned.size)
+        assertNotSame(
+            interned.first().coverData,
+            interned.last().coverData,
+            "two different series must not share one MangaCover instance",
+        )
+    }
+
+    @Test
+    fun `interning an empty list is a no-op`() {
+        val empty = emptyList<UpdatesWithRelations>()
+        assertSame(empty, empty.withInternedCovers(), "an empty list must be returned unchanged")
+    }
+
+    /** An `UpdatesWithRelations` row with a cover matching its own `mangaId`. */
+    private fun updateRow(id: Long, mangaId: Long, chapterNumber: Double) =
+        UpdatesWithRelations(
+            mangaId = mangaId,
+            mangaTitle = "Test Manga $mangaId",
+            chapterId = id,
+            chapterName = "Chapter $chapterNumber",
+            scanlator = null,
+            chapterUrl = "https://example.com/$mangaId/$id",
+            read = false,
+            bookmark = false,
+            lastPageRead = 0L,
+            sourceId = 1L,
+            dateFetch = 0L,
+            coverData = MangaCover(
+                mangaId = mangaId,
+                sourceId = 1L,
+                isMangaFavorite = false,
+                url = null,
+                lastModified = 0L,
+            ),
+        )
 }

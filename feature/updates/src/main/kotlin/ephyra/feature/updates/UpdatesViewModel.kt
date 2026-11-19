@@ -21,6 +21,7 @@ import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.interactor.GetManga
+import ephyra.domain.manga.model.MangaCover
 import ephyra.domain.manga.model.applyFilter
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.updates.interactor.GetUpdates
@@ -167,30 +168,41 @@ class UpdatesViewModel @Inject constructor(
         }
     }
 
-    private fun List<UpdatesWithRelations>.toUpdateItems(): List<UpdatesItem> {
-        return this
-            .map { update ->
-                val activeDownload = downloadManager.getQueuedDownloadOrNull(update.chapterId)
-                val downloaded = downloadManager.isChapterDownloaded(
-                    update.chapterName,
-                    update.scanlator,
-                    update.chapterUrl,
-                    update.mangaTitle,
-                    update.sourceId,
-                )
-                val downloadState = when {
-                    activeDownload != null -> activeDownload.status
-                    downloaded -> Download.State.DOWNLOADED
-                    else -> Download.State.NOT_DOWNLOADED
-                }
-                UpdatesItem(
-                    update = update,
-                    downloadStateProvider = { downloadState },
-                    downloadProgressProvider = { activeDownload?.progress ?: 0 },
-                    selected = update.chapterId in selectedChapterIds,
-                )
+    /**
+     * Maps rows to display items.
+     *
+     * **Cover interning happens here, for the same reason as `HistoryViewModel`.** The mapper builds
+     * one `MangaCover` per row, so a series with 50 updates arrived as 50 equal-but-distinct
+     * instances. `MangaCover` is a `data class` — `equals()`-equal but not identical — and
+     * `MangaCover.kt` does `remember(data, isSharedElement) { ImageRequest... }`, keyed on the
+     * instance. Fifty distinct instances therefore build fifty requests for one cover.
+     *
+     * Collapsing them to one instance per `mangaId` means every row of a series shares a single
+     * `remember` entry and a single in-flight request. This is the case that motivated the change:
+     * the updates list is exactly where one series legitimately contributes many rows.
+     */
+    private fun List<UpdatesWithRelations>.toUpdateItems(): List<UpdatesItem> =
+        withInternedCovers().map { update ->
+            val activeDownload = downloadManager.getQueuedDownloadOrNull(update.chapterId)
+            val downloaded = downloadManager.isChapterDownloaded(
+                update.chapterName,
+                update.scanlator,
+                update.chapterUrl,
+                update.mangaTitle,
+                update.sourceId,
+            )
+            val downloadState = when {
+                activeDownload != null -> activeDownload.status
+                downloaded -> Download.State.DOWNLOADED
+                else -> Download.State.NOT_DOWNLOADED
             }
-    }
+            UpdatesItem(
+                update = update,
+                downloadStateProvider = { downloadState },
+                downloadProgressProvider = { activeDownload?.progress ?: 0 },
+                selected = update.chapterId in selectedChapterIds,
+            )
+        }
 
     // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // UDF entry-point: all UI interactions are routed through this single method
@@ -547,3 +559,36 @@ data class UpdatesItem(
     val downloadProgressProvider: () -> Int,
     val selected: Boolean = false,
 )
+
+/**
+ * Rewrites every row so that all rows of one series carry the **same** `MangaCover` instance.
+ *
+ * **Why.** `MangaCover` is a `data class`, and the row mappers build one per row. So a series with
+ * 50 updates arrived as 50 `equals()`-equal but *distinct* instances — and `MangaCover.kt` does
+ * `remember(data, isSharedElement) { ImageRequest... }`, keyed on the instance. Fifty distinct
+ * instances therefore build fifty `ImageRequest`s and issue fifty Coil requests for one cover.
+ *
+ * Coil dedupes the decoded *result* in its memory cache, so the waste is the duplicate request and
+ * `remember` work rather than a second copy of the bitmap. That is exactly why this reads as
+ * "some covers reload and some do not" rather than as a hard failure.
+ *
+ * **Why here and not in Coil.** This is where the "same series" relationship is already known: the
+ * ViewModel has the rows, the mapper does not, and Coil has no concept of a series.
+ *
+ * **`internal` rather than `private`** so it is directly testable. As a private extension the only
+ * way to reach it was through the `state` flow, and that flow cannot be driven in a unit test: it is
+ * a `combine` of four sources, one of which is `downloadCache.changes` — a `SharedFlow` no test can
+ * make emit — so `combine` never produces a value and `state.items` stays at its initial empty list
+ * however `getUpdates` is stubbed. Asserting the mapping directly is both possible and more precise.
+ */
+internal fun List<UpdatesWithRelations>.withInternedCovers(): List<UpdatesWithRelations> {
+    if (isEmpty()) return this
+    // The first row of each series wins. Every row in a series carries an equal MangaCover (same id,
+    // url, lastModified), so which one is chosen is immaterial -- sharing the *instance* is the point.
+    val coverByMangaId = buildMap<Long, MangaCover> {
+        this@withInternedCovers.forEach { row ->
+            if (row.mangaId !in this) put(row.mangaId, row.coverData)
+        }
+    }
+    return map { row -> row.copy(coverData = coverByMangaId.getValue(row.mangaId)) }
+}
