@@ -34,8 +34,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.Constants
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.download.service.DownloadManager
-import ephyra.feature.settings.widget.SwitchPreferenceWidget
-import ephyra.feature.settings.widget.TextPreferenceWidget
+import ephyra.feature.settings.ui.widget.SwitchPreferenceWidget
+import ephyra.feature.settings.ui.widget.TextPreferenceWidget
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.material.Scaffold

@@ -15,6 +15,9 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.presentationCore)
     implementation(projects.feature.category)
+    // Referenced as a string, not a type-safe accessor: Gradle generates no accessor for a module
+    // whose name contains a hyphen.
+    implementation(project(":feature:settings-ui"))
 
     // External dependencies
     implementation(libs.hilt.android)

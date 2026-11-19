@@ -10,7 +10,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import ephyra.core.common.i18n.stringResource
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.feature.settings.Preference
+import ephyra.feature.settings.ui.Preference
+import ephyra.feature.settings.ui.SearchableSettings
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes

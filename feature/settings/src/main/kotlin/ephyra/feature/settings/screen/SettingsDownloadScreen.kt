@@ -47,8 +47,9 @@ import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.domain.track.service.TrackerManager
-import ephyra.feature.settings.Preference
-import ephyra.feature.settings.widget.TriStateListDialog
+import ephyra.feature.settings.ui.Preference
+import ephyra.feature.settings.ui.SearchableSettings
+import ephyra.feature.settings.ui.widget.TriStateListDialog
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.components.visualName
 import ephyra.presentation.core.i18n.pluralStringResource

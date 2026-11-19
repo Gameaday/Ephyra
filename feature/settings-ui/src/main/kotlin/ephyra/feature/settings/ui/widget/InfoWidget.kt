@@ -1,4 +1,4 @@
-package ephyra.feature.settings.widget
+package ephyra.feature.settings.ui.widget
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,7 +18,7 @@ import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
-internal fun InfoWidget(text: String) {
+fun InfoWidget(text: String) {
     Column(
         modifier = Modifier
             .padding(

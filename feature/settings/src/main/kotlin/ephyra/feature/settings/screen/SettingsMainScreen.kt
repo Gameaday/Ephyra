@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import ephyra.feature.settings.widget.TextPreferenceWidget
+import ephyra.feature.settings.ui.widget.TextPreferenceWidget
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold

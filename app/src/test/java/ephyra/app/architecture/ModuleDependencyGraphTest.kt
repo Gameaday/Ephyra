@@ -1,4 +1,4 @@
-package ephyra.app.architecture
+﻿package ephyra.app.architecture
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -11,7 +11,7 @@ import java.io.File
  * Repository-walking gates used to be built on `File.walkTopDown()` plus a hand-maintained list of
  * directories to exclude (`build/`, `.git/`, and an agent worktree directory). That list is a
  * correctness liability: a gate that must be told about every directory that can appear inside the
- * repository will eventually miss one, and it fails *open* — the unseen tree is simply not checked.
+ * repository will eventually miss one, and it fails *open* â€” the unseen tree is simply not checked.
  * `SigningSecretTest` is the sharp case, because a keystore hidden in an unscanned tree is exactly
  * the leak it exists to catch.
  *
@@ -22,7 +22,7 @@ import java.io.File
  * disk".
  *
  * **Failure behaviour is fail-open and is stated rather than hidden.** If git cannot be executed,
- * `list` returns empty, and both consumers assert "nothing offending was found" — so the gate passes
+ * `list` returns empty, and both consumers assert "nothing offending was found" â€” so the gate passes
  * without having checked anything. That is the correct trade for a repository-shape gate, whose
  * real risk is noise from a 1200-file project, but it is a real limitation: on a machine with no git
  * on `PATH`, these two gates are inert. The mitigation is that the environment which runs them
@@ -47,7 +47,7 @@ object TrackedFiles {
 }
 
 /**
- * ARC-001 — enforce the target module dependency graph.
+ * ARC-001 â€” enforce the target module dependency graph.
  *
  * The repository's confirmed debt (ledger row B-006) is that `presentation-core` exports
  * `core:data`, and that feature modules broadly depend on data. A cap on the raw number of
@@ -61,7 +61,7 @@ object TrackedFiles {
  * test rewritten. That is the deliberate difference between a gate and a metric: these rules do not
  * move when a number moves, and they cannot be satisfied by editing one.
  *
- * E2 by construction — parses the build scripts from disk; no device required.
+ * E2 by construction â€” parses the build scripts from disk; no device required.
  */
 class ModuleDependencyGraphTest {
 
@@ -85,7 +85,7 @@ class ModuleDependencyGraphTest {
         assertTrue(
             stale.isEmpty(),
             "DECLARED_CORE_DOMAIN_EDGES still lists $stale, which no longer exists. Remove the " +
-                "declaration so the exception list reflects reality — and treat removing the edge " +
+                "declaration so the exception list reflects reality â€” and treat removing the edge " +
                 "as the prompt to tighten the layer.",
         )
     }
@@ -106,14 +106,45 @@ class ModuleDependencyGraphTest {
     fun `feature modules do not depend on each other`() {
         val offenders = allEdges()
             .filter { isLayer(it.from, "feature") && isLayer(it.to, "feature") }
+            .filterNot { it in designSystemEdges }
             .filterNot { it in DECLARED_FEATURE_EDGES }
         assertTrue(
             offenders.isEmpty(),
             "Feature-to-feature edges let one product slice reach into another's internals and " +
                 "makes features impossible to delete independently. These are not declared in " +
-                "DECLARED_FEATURE_EDGES: $offenders. Feature-to-feature dependencies are the " +
-                "confirmed debt in ledger row B-006; a new one must be routed through a public " +
-                "navigation contract instead of a direct module edge.",
+                "DECLARED_FEATURE_EDGES (or exempt as design-system edges): $offenders. " +
+                "Feature-to-feature dependencies are the confirmed debt in ledger row B-006; a new " +
+                "one must be routed through a public navigation contract instead of a direct module " +
+                "edge.",
+        )
+    }
+
+    @Test
+    fun `a design-system module cannot become a product slice by accident`() {
+        // The exemption above is only honest if a design-system module *cannot* hold product logic.
+        // A ViewModel or a Hilt module would make it a product slice with extra steps, at which point
+        // treating its inbound edges as healthy would be exactly the false negative B-006 warns about.
+        val offenders = DESIGN_SYSTEM_MODULES
+            .map { module -> module to sourceFiles(module) }
+            .flatMap { (module, files) ->
+                files.mapNotNull { file ->
+                    val text = file.readText()
+                    when {
+                        text.contains("androidx.lifecycle.ViewModel") ->
+                            "$module: ${file.name} extends ViewModel, so it is a product slice"
+                        text.isHiltModule() ->
+                            "$module: ${file.name} is a Hilt module, so it owns app wiring"
+                        else -> null
+                    }
+                }
+            }
+
+        assertTrue(
+            offenders.isEmpty(),
+            "A module exempted from the feature-to-feature rule as a design system must stay a " +
+                "design system. If one of these is now deliberate, move it out of " +
+                "DESIGN_SYSTEM_MODULES and declare its edges instead of widening the exemption:\n" +
+                offenders.joinToString("\n") { "  $it" },
         )
     }
 
@@ -127,7 +158,7 @@ class ModuleDependencyGraphTest {
         assertTrue(
             stale.isEmpty(),
             "DECLARED_FEATURE_EDGES still lists $stale, which no longer exists. Remove the " +
-                "declaration so the exception list reflects reality — and treat removing the edge " +
+                "declaration so the exception list reflects reality â€” and treat removing the edge " +
                 "as progress against B-006.",
         )
     }
@@ -244,7 +275,7 @@ class ModuleDependencyGraphTest {
      * True when [module] is, or is nested under, any of [layers].
      *
      * Module coordinates are canonical `:a:b` strings, so a bare `startsWith("core")` never matches
-     * `:core:domain` — the leading colon. Each layer must therefore be compared as a path segment
+     * `:core:domain` â€” the leading colon. Each layer must therefore be compared as a path segment
      * boundary. This is a second defect the falsification probe exposed: even with correct edge
      * extraction, every prefix test here would have compared a colon-prefixed string against a
      * colon-less literal and silently reported no offenders.
@@ -329,6 +360,44 @@ class ModuleDependencyGraphTest {
         }
     }
 
+    /**
+     * The inbound edges to [DESIGN_SYSTEM_MODULES].
+     *
+     * Derived from the build files rather than listed, so adding a feature module cannot leave the
+     * exemption half-populated. `lazy` because it walks the tree and the companion is initialised
+     * before the first test runs.
+     */
+    private val designSystemEdges: Set<Edge> by lazy {
+        val root = repositoryRoot()
+        // Same path form `edgesFrom` produces: `feature/settings-ui` -> `:feature:settings-ui`. The
+        // conversion is not cosmetic -- Edge equality is by string, so a slash-form path would never
+        // match the real edge and the exemption would silently be empty.
+        val featurePaths = buildFiles()
+            .map { ":" + it.parentFile.relativeTo(root).path.replace('\\', '/').replace('/', ':') }
+            .filter { it.startsWith(":feature:") }
+            .toSet()
+        DESIGN_SYSTEM_MODULES.flatMap { module ->
+            featurePaths.map { Edge(it, module) }
+        }.toSet()
+    }
+
+    @Test
+    fun `a hyphenated module path is not truncated at the hyphen`() {
+        // The bug this pins: the first STRING_REFERENCE was `(:[a-zA-Z:]+)`, which captured
+        // `:feature:settings` from `project(":feature:settings-ui")`. That is worse than missing the
+        // edge -- it reports an edge to a module that does not exist, so the graph looks complete
+        // while being wrong about which module is depended on.
+        val edges = referencedProjects("""implementation(project(":feature:settings-ui"))""")
+        assertTrue(
+            edges.contains(":feature:settings-ui"),
+            "a hyphenated module path must survive parsing intact, got $edges",
+        )
+        assertTrue(
+            !edges.contains(":feature:settings"),
+            "the parser must not truncate a hyphenated name into a shorter real module, got $edges",
+        )
+    }
+
     private fun edgesFrom(modulePath: String): List<Edge> {
         val buildFile = File(File(repositoryRoot(), modulePath), "build.gradle.kts")
         if (!buildFile.isFile) return emptyList()
@@ -342,8 +411,8 @@ class ModuleDependencyGraphTest {
     /**
      * Extracts every project this build script depends on, in canonical `:a:b` form.
      *
-     * The repository uses Gradle's type-safe accessor form exclusively — `projects.core.data`,
-     * `projects.feature.reader` — verified by scanning every tracked `build.gradle.kts`. The
+     * The repository uses Gradle's type-safe accessor form exclusively â€” `projects.core.data`,
+     * `projects.feature.reader` â€” verified by scanning every tracked `build.gradle.kts`. The
      * `project(":a:b")` form does not occur and is still accepted.
      *
      * **This previously did not work, and the gate was inert because of it.** The old extraction was
@@ -353,11 +422,11 @@ class ModuleDependencyGraphTest {
      * contains a colon, the filter removed *every* real edge, `allEdges()` was always empty, and all
      * five graph rules asserted over an empty list and therefore passed unconditionally.
      *
-     * That is the failure mode `REBUILD_EXECUTION_GUIDE.md` §7 names: "A test that passes because
+     * That is the failure mode `REBUILD_EXECUTION_GUIDE.md` Â§7 names: "A test that passes because
      * behavior is skipped is not passing." These rules were reported as the structural backstop for
      * the layering architecture, and they could not have failed. It was found by staging a
      * deliberate `core -> feature` violation and observing the gate stay green, not by reading the
-     * code — which is the argument for keeping a falsification probe rather than trusting a green run.
+     * code â€” which is the argument for keeping a falsification probe rather than trusting a green run.
      */
     private fun referencedProjects(text: String): List<String> {
         val fromAccessors = ACCESSOR_REFERENCE.findAll(text).map { match ->
@@ -374,6 +443,21 @@ class ModuleDependencyGraphTest {
     private fun buildFiles(): List<File> = TrackedFiles.list(repositoryRoot())
         .filter { it.isFile && it.name == "build.gradle.kts" }
         .toList()
+
+    /** Whether a file declares a Hilt module (`@Module` plus a Hilt install). */
+    private fun String.isHiltModule(): Boolean =
+        contains("@Module") && (
+            contains("dagger.hilt") ||
+                contains("com.google.dagger.hilt") ||
+                contains("InstallIn")
+            )
+
+    /** Production Kotlin sources of a Gradle module path such as `:feature:settings-ui`. */
+    private fun sourceFiles(module: String): List<File> {
+        val dir = File(repositoryRoot(), module.removePrefix(":") + "/src/main")
+        if (!dir.isDirectory) return emptyList()
+        return dir.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+    }
 
     private fun repositoryRoot(): File {
         var directory: File? = File(".").absoluteFile
@@ -396,7 +480,7 @@ class ModuleDependencyGraphTest {
          * hidden: a new edge fails immediately, and a declaration that no longer matches reality
          * also fails, so the exception list cannot drift in either direction.
          *
-         * Removing them is Phase 3 / `ARC-002` work — they are `B-006`-class debt with a named
+         * Removing them is Phase 3 / `ARC-002` work â€” they are `B-006`-class debt with a named
          * replacement, not an accepted end state.
          */
         val DECLARED_CORE_DOMAIN_EDGES =
@@ -407,15 +491,44 @@ class ModuleDependencyGraphTest {
             )
 
         /**
-         * The 24 feature-to-feature edges that exist today — the concrete form of ledger row
+         * Modules that are design systems rather than product slices.
+         *
+         * A design-system module is depended on *by* features and is meant to be: it owns the visual
+         * vocabulary (widgets, tokens, shared layout) and no app state. Its inbound feature edges are
+         * healthy, so they are not `B-006` debt and must not be listed there â€” that would make the
+         * debt list false and would make extracting a design system look like a regression.
+         *
+         * Membership is load-bearing, so it is policed: `feature modules do not depend on each other`
+         * exempts inbound edges to these modules, and `a design-system module cannot become a product
+         * slice by accident` fails if any of them grows a ViewModel or a Hilt module. A design system
+         * that starts owning product logic is a product slice and has to be declared as one.
+         */
+        val DESIGN_SYSTEM_MODULES = setOf(
+            ":feature:settings-ui",
+        )
+
+        /**
+         * The feature-to-feature edges that exist today â€” the concrete form of ledger row
          * `B-006`, where sibling features reach into each other. They are the reason
          * `ROADMAP.md` rule 5 exists and why Phase 9 requires sibling-feature dependencies to
          * become an explicit allowlist of navigation contracts.
          *
          * Declaring them individually, rather than allowing a count, is the point: the count cannot
          * say *which* edges are wrong, and a new edge must fail even though twenty-four others are
-         * tolerated. As each is replaced by a public contract, remove it here — the
+         * tolerated. As each is replaced by a public contract, remove it here â€” the
          * `feature declarations have not gone stale` test makes the removal the prompt.
+         *
+         * **`:feature:settings -> :feature:settings-ui` is deliberately *not* in this set.** It is a
+         * design-system edge, not a product-slice edge: `feature:settings-ui` holds the preference
+         * widget vocabulary, the `Preference` model and the `SearchableSettings` contract, and has
+         * zero ViewModels, zero Hilt and no app state. `B-006` is about one product slice reaching
+         * into another's *internals* so neither can be deleted independently; a design system is
+         * meant to be depended on by every screen that renders a preference. Classifying it as
+         * `B-006` debt would make the debt list say something false, and would make the correct fix
+         * (extract the design system) look like a regression.
+         *
+         * The distinction is enforced structurally by [DESIGN_SYSTEM_MODULES]: a module there may not
+         * own a ViewModel or a Hilt module, so it cannot become a product slice by accident.
          */
         val DECLARED_FEATURE_EDGES =
             setOf(
@@ -434,12 +547,12 @@ class ModuleDependencyGraphTest {
             )
 
         /**
-         * `projects.core.data`, `projects.feature.reader` — the full dotted accessor path, so a
+         * `projects.core.data`, `projects.feature.reader` â€” the full dotted accessor path, so a
          * nested module resolves to `core:data` rather than the bare first segment.
          */
         val ACCESSOR_REFERENCE = Regex("""projects\.((?:[a-zA-Z][a-zA-Z0-9_]*\.)*[a-zA-Z][a-zA-Z0-9_]*)""")
 
-        /** `project(":core:data")` — not currently used in this repository, accepted anyway. */
-        val STRING_REFERENCE = Regex("""project\("(:[a-zA-Z:]+)"\)""")
+        /** `project(":core:data")` â€” not currently used in this repository, accepted anyway. */
+        val STRING_REFERENCE = Regex("""project\("(:[a-zA-Z0-9:_-]+)"\)""")
     }
 }

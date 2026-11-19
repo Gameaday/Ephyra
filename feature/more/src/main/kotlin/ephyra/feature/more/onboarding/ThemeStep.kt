@@ -3,8 +3,8 @@ package ephyra.feature.more.onboarding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import ephyra.feature.settings.widget.AppThemeModePreferenceWidget
-import ephyra.feature.settings.widget.AppThemePreferenceWidget
+import ephyra.feature.settings.ui.widget.AppThemeModePreferenceWidget
+import ephyra.feature.settings.ui.widget.AppThemePreferenceWidget
 import ephyra.presentation.core.util.LocalUiPreferences
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.setAppCompatDelegateThemeMode

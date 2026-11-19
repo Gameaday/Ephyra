@@ -9,7 +9,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.service.ReaderPreferences
-import ephyra.feature.settings.Preference
+import ephyra.feature.settings.ui.Preference
+import ephyra.feature.settings.ui.SearchableSettings
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState

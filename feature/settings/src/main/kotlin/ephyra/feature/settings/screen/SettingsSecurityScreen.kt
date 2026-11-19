@@ -10,7 +10,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.i18n.stringResource
-import ephyra.feature.settings.Preference
+import ephyra.feature.settings.ui.Preference
+import ephyra.feature.settings.ui.SearchableSettings
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppInfo

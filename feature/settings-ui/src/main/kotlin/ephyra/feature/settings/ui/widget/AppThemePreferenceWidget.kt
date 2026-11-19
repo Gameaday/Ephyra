@@ -1,4 +1,4 @@
-package ephyra.feature.settings.widget
+package ephyra.feature.settings.ui.widget
 
 import android.app.Activity
 import androidx.compose.foundation.background

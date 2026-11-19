@@ -17,6 +17,9 @@ dependencies {
     implementation(projects.presentationCore)
 
     implementation(projects.feature.settings)
+    // Direct, not transitive through feature:settings: the widgets it uses live in the settings
+    // design-system module now, and `implementation` does not re-export.
+    implementation(project(":feature:settings-ui"))
     implementation(projects.feature.manga)
     implementation(libs.bundles.markdown)
 

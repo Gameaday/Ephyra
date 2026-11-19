@@ -1,4 +1,4 @@
-package ephyra.feature.settings
+package ephyra.feature.settings.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -21,16 +21,16 @@ import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import ephyra.feature.settings.widget.EditTextPreferenceWidget
-import ephyra.feature.settings.widget.InfoWidget
-import ephyra.feature.settings.widget.ListPreferenceWidget
-import ephyra.feature.settings.widget.MultiSelectListPreferenceWidget
-import ephyra.feature.settings.widget.PrefsHorizontalPadding
-import ephyra.feature.settings.widget.PrefsVerticalPadding
-import ephyra.feature.settings.widget.SwitchPreferenceWidget
-import ephyra.feature.settings.widget.TextPreferenceWidget
-import ephyra.feature.settings.widget.TitleFontSize
-import ephyra.feature.settings.widget.TrackingPreferenceWidget
+import ephyra.feature.settings.ui.widget.EditTextPreferenceWidget
+import ephyra.feature.settings.ui.widget.InfoWidget
+import ephyra.feature.settings.ui.widget.ListPreferenceWidget
+import ephyra.feature.settings.ui.widget.MultiSelectListPreferenceWidget
+import ephyra.feature.settings.ui.widget.PrefsHorizontalPadding
+import ephyra.feature.settings.ui.widget.PrefsVerticalPadding
+import ephyra.feature.settings.ui.widget.SwitchPreferenceWidget
+import ephyra.feature.settings.ui.widget.TextPreferenceWidget
+import ephyra.feature.settings.ui.widget.TitleFontSize
+import ephyra.feature.settings.ui.widget.TrackingPreferenceWidget
 import ephyra.presentation.core.components.BaseSliderItem
 import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.core.util.collectAsState
@@ -65,7 +65,7 @@ fun StatusWrapper(
 }
 
 @Composable
-internal fun PreferenceItem(
+fun PreferenceItem(
     item: Preference.PreferenceItem<*, *>,
     highlightKey: String?,
 ) {

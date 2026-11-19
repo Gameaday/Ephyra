@@ -1,4 +1,4 @@
-package ephyra.feature.settings.widget
+package ephyra.feature.settings.ui.widget
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding

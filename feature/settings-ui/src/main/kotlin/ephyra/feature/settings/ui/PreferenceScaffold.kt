@@ -1,4 +1,4 @@
-package ephyra.feature.settings
+package ephyra.feature.settings.ui
 
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable

@@ -24,7 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.release.interactor.GetApplicationRelease
-import ephyra.feature.settings.widget.TextPreferenceWidget
+import ephyra.feature.settings.ui.widget.TextPreferenceWidget
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LinkIcon
 import ephyra.presentation.core.components.LogoHeader

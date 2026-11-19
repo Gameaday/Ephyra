@@ -57,10 +57,11 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.storage.service.StoragePreferences
-import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.data.StorageInfo
-import ephyra.feature.settings.widget.BasePreferenceWidget
-import ephyra.feature.settings.widget.PrefsHorizontalPadding
+import ephyra.feature.settings.ui.Preference
+import ephyra.feature.settings.ui.SearchableSettings
+import ephyra.feature.settings.ui.widget.BasePreferenceWidget
+import ephyra.feature.settings.ui.widget.PrefsHorizontalPadding
 import ephyra.presentation.core.components.material.TextButton
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController

@@ -1,4 +1,4 @@
-package ephyra.feature.settings.widget
+package ephyra.feature.settings.ui.widget
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box

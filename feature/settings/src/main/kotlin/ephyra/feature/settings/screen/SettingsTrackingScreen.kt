@@ -55,7 +55,8 @@ import ephyra.domain.track.model.AutoTrackState
 import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
-import ephyra.feature.settings.Preference
+import ephyra.feature.settings.ui.Preference
+import ephyra.feature.settings.ui.SearchableSettings
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.MatchUnlinkedJobRunner

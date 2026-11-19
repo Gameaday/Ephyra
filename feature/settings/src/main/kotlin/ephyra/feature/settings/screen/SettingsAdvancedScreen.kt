@@ -31,7 +31,8 @@ import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.MetadataUpdateScheduler
 import ephyra.domain.manga.interactor.ResetViewerFlags
-import ephyra.feature.settings.Preference
+import ephyra.feature.settings.ui.Preference
+import ephyra.feature.settings.ui.SearchableSettings
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.ui.navigation.LocalNavController

@@ -1,10 +1,8 @@
-package ephyra.feature.settings.screen
+package ephyra.feature.settings.ui
 
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import ephyra.feature.settings.Preference
-import ephyra.feature.settings.PreferenceScaffold
 import ephyra.presentation.core.util.LocalBackPress
 
 interface SearchableSettings {

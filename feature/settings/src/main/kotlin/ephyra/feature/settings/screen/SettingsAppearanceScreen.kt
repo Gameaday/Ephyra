@@ -13,9 +13,10 @@ import androidx.navigation.NavController
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.TabletUiMode
 import ephyra.domain.ui.model.ThemeMode
-import ephyra.feature.settings.Preference
-import ephyra.feature.settings.widget.AppThemeModePreferenceWidget
-import ephyra.feature.settings.widget.AppThemePreferenceWidget
+import ephyra.feature.settings.ui.Preference
+import ephyra.feature.settings.ui.SearchableSettings
+import ephyra.feature.settings.ui.widget.AppThemeModePreferenceWidget
+import ephyra.feature.settings.ui.widget.AppThemePreferenceWidget
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes

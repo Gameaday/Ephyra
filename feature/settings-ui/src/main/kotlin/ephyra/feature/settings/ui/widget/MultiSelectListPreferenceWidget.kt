@@ -1,4 +1,4 @@
-package ephyra.feature.settings.widget
+package ephyra.feature.settings.ui.widget
 
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
@@ -11,7 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.window.DialogProperties
-import ephyra.feature.settings.Preference
+import ephyra.feature.settings.ui.Preference
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.i18n.stringResource
 

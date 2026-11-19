@@ -11,10 +11,10 @@ import androidx.navigation.NavController
 import androidx.profileinstaller.ProfileVerifier
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.WebViewUtil
-import ephyra.feature.settings.Preference
-import ephyra.feature.settings.PreferenceScaffold
 import ephyra.feature.settings.screen.about.AboutScreen
 import ephyra.feature.settings.screen.about.AboutViewModel
+import ephyra.feature.settings.ui.Preference
+import ephyra.feature.settings.ui.PreferenceScaffold
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.mutate

@@ -1,4 +1,4 @@
-package ephyra.feature.settings.widget
+package ephyra.feature.settings.ui.widget
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
@@ -29,14 +29,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ephyra.feature.settings.LocalPreferenceHighlighted
-import ephyra.feature.settings.LocalPreferenceMinHeight
+import ephyra.feature.settings.ui.LocalPreferenceHighlighted
+import ephyra.feature.settings.ui.LocalPreferenceMinHeight
 import ephyra.presentation.core.theme.MotionTokens
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
-internal fun BasePreferenceWidget(
+fun BasePreferenceWidget(
     modifier: Modifier = Modifier,
     title: String? = null,
     subcomponent: @Composable (ColumnScope.() -> Unit)? = null,
@@ -87,7 +87,7 @@ internal fun BasePreferenceWidget(
 }
 
 @Composable
-internal fun Modifier.highlightBackground(highlighted: Boolean): Modifier {
+fun Modifier.highlightBackground(highlighted: Boolean): Modifier {
     var highlightFlag by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         if (highlighted) {
@@ -120,7 +120,7 @@ internal fun Modifier.highlightBackground(highlighted: Boolean): Modifier {
     return this.background(color = highlight)
 }
 
-internal val TrailingWidgetBuffer = 16.dp
-internal val PrefsHorizontalPadding = 16.dp
-internal val PrefsVerticalPadding = 16.dp
-internal val TitleFontSize = 16.sp
+val TrailingWidgetBuffer = 16.dp
+val PrefsHorizontalPadding = 16.dp
+val PrefsVerticalPadding = 16.dp
+val TitleFontSize = 16.sp
