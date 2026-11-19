@@ -8,7 +8,9 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods
+import ephyra.app.security.TrackedFileNames
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -95,6 +97,58 @@ class ArchitectureTest {
                 )
                 .check(classes)
         }
+    }
+
+    /**
+     * Package-Root Rule:
+     * Every source file under `feature/X` must declare `package ephyra.feature.X...`.
+     *
+     * **Why this gate exists.** `feature:manga` had 8 files declaring `ephyra.presentation.manga`
+     * while living under `feature/manga/src/main/kotlin/ephyra/presentation/manga/` — and 19
+     * others in the same tree correctly declaring `ephyra.feature.manga.presentation.components`.
+     * Both compile, because Kotlin does not require the directory to match the package, so the drift
+     * was invisible to every other gate: `feature modules must not depend on each other` checks
+     * *edges*, not roots.
+     *
+     * The cost was not cosmetic. `ephyra.presentation.manga` reads as part of `presentation-core`,
+     * so any package-grouped tooling (a UI audit, a dependency report, an IDE refactor) silently
+     * misattributes those files — which is how a structural audit this cycle counted `feature:manga`
+     * as having two identities.
+     *
+     * **Why a source check rather than ArchUnit.** ArchUnit reasons about compiled classes and their
+     * packages; it cannot see that a *file* sits in the wrong directory. The defect is a
+     * source-layout property, so the assertion has to read source.
+     */
+    @Test
+    fun `every feature source file declares its own module's package root`() {
+        val offenders = mutableListOf<String>()
+
+        for (module in FEATURE_MODULES) {
+            val moduleRoot = File(TrackedFileNames.repositoryRoot(), "feature/$module/src")
+            if (!moduleRoot.isDirectory) continue
+
+            moduleRoot.walkTopDown()
+                .filter { it.isFile && it.extension == "kt" }
+                .forEach { file ->
+                    val declared = file.readText()
+                        .lineSequence()
+                        .firstOrNull { it.startsWith("package ") }
+                        ?.removePrefix("package ")
+                        ?.trim()
+                    val expected = "ephyra.feature.$module"
+                    if (declared != null && declared != expected && !declared.startsWith("$expected.")) {
+                        offenders += "feature/$module: ${file.name} declares `$declared`, expected `$expected...`"
+                    }
+                }
+        }
+
+        assertTrue(
+            offenders.isEmpty(),
+            "These files sit in feature/<module> but declare a package outside it. Kotlin allows the " +
+                "mismatch, so nothing else catches it, and package-grouped tooling misattributes the " +
+                "file to whatever the declaration says:\n" +
+                offenders.joinToString("\n") { "  $it" },
+        )
     }
 
     /**
@@ -388,6 +442,20 @@ class ArchitectureTest {
             "ephyra.feature.updates",
             "ephyra.feature.webview",
         )
+
+        /**
+         * Module directory names, derived from [ALL_FEATURE_PACKAGES] so the two cannot drift.
+         *
+         * The package list is the authority because the cross-feature rule needs full package names;
+         * this is that list with the `ephyra.feature.` prefix removed. Deriving rather than repeating
+         * means adding a feature in one place keeps both gates correct.
+         *
+         * Declared *after* `ALL_FEATURE_PACKAGES` deliberately: Kotlin initialises companion
+         * properties in declaration order, so referencing it from above is a compile error
+         * ("must be initialized"), not a subtle bug.
+         */
+        val FEATURE_MODULES: List<String> =
+            ALL_FEATURE_PACKAGES.map { it.removePrefix("ephyra.feature.") }
 
         val DECLARED_CROSS_FEATURE_PACKAGES: Map<String, Set<String>> = mapOf(
             "ephyra.feature.browse" to setOf("ephyra.feature.manga", "ephyra.feature.migration"),

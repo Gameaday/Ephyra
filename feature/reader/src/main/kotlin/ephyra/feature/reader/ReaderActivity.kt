@@ -42,6 +42,7 @@ import ephyra.feature.reader.ReaderViewModel.SetAsCoverResult.Success
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
+import ephyra.feature.reader.presentation.DisplayRefreshHost
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.navigation.DisabledNavigation
@@ -61,7 +62,6 @@ import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.core.util.view.applyHighRefreshRate
 import ephyra.presentation.core.util.view.setComposeContent
-import ephyra.presentation.reader.DisplayRefreshHost
 import ephyra.presentation.theme.EphyraTheme
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.Dispatchers

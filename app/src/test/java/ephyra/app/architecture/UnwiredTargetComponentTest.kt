@@ -80,11 +80,24 @@ class UnwiredTargetComponentTest {
      * flatter a number. If you can make either type reachable from outside `feature/reader` without
      * contorting the design, do that and lower this back to 83.
      *
+     * **89 on 2026-11-19, raised for the same documented reason — a file move, not new code.** The
+     * package-root cleanup (`ephyra.presentation.reader` → `ephyra.feature.reader.presentation`)
+     * moved 19 files *inside* `feature/reader`. Those files were reachability **roots** before
+     * (outside the target area) and are target area now, so the types they referenced only from
+     * there dropped out of the wired set. Nothing became dead; the root set shrank by one UI
+     * package. This is precisely the blind spot described above, triggered by a *correct* refactor.
+     *
+     * The fix that would lower this properly is to give the target-area rule an explicit root
+     * allowance for legitimate UI code inside a target module (e.g. everything under
+     * `feature/reader/presentation`), rather than treating the whole module as non-root. That is a
+     * change to the rule's semantics and needs its own falsification pass; until then this ceiling
+     * records the measured state.
+     *
      * Lower it in the same commit that wires or deletes something. A ceiling that only ever rises is
      * a backlog with extra steps.
      */
     private companion object {
-        const val MAX_UNWIRED = 85
+        const val MAX_UNWIRED = 89
 
         /** Directories holding 2.0 target components, per `REBUILD_PROGRAM.md` §3. */
         val TARGET_AREAS = listOf(

@@ -1,4 +1,4 @@
-﻿package ephyra.feature.reader
+package ephyra.feature.reader
 
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
@@ -45,6 +45,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.feature.reader.presentation.DisplayRefreshHost
+import ephyra.feature.reader.presentation.ReaderContentOverlay
+import ephyra.feature.reader.presentation.ReaderPageActionsSheet
+import ephyra.feature.reader.presentation.ReaderPageIndicator
+import ephyra.feature.reader.presentation.appbars.ReaderAppBars
+import ephyra.feature.reader.presentation.settings.ReaderSettingsSheet
 import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation
@@ -55,12 +61,6 @@ import ephyra.feature.reader.viewer.webtoon.ComposeWebtoonReader
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.core.util.collectAsState
-import ephyra.presentation.reader.DisplayRefreshHost
-import ephyra.presentation.reader.ReaderContentOverlay
-import ephyra.presentation.reader.ReaderPageActionsSheet
-import ephyra.presentation.reader.ReaderPageIndicator
-import ephyra.presentation.reader.appbars.ReaderAppBars
-import ephyra.presentation.reader.settings.ReaderSettingsSheet
 import eu.kanade.tachiyomi.source.online.HttpSource
 
 /**

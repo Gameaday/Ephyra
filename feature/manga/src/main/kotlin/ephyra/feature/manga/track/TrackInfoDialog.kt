@@ -60,6 +60,12 @@ import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.ui.UiPreferences
+import ephyra.feature.manga.presentation.track.TrackChapterSelector
+import ephyra.feature.manga.presentation.track.TrackDateSelector
+import ephyra.feature.manga.presentation.track.TrackInfoDialogHome
+import ephyra.feature.manga.presentation.track.TrackScoreSelector
+import ephyra.feature.manga.presentation.track.TrackStatusSelector
+import ephyra.feature.manga.presentation.track.TrackerSearch
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.AlertDialogContent
@@ -68,12 +74,6 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toast
-import ephyra.presentation.manga.track.TrackChapterSelector
-import ephyra.presentation.manga.track.TrackDateSelector
-import ephyra.presentation.manga.track.TrackInfoDialogHome
-import ephyra.presentation.manga.track.TrackScoreSelector
-import ephyra.presentation.manga.track.TrackStatusSelector
-import ephyra.presentation.manga.track.TrackerSearch
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList

@@ -1,0 +1,148 @@
+package ephyra.feature.reader.presentation.appbars
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import ephyra.domain.reader.model.ReaderOrientation
+import ephyra.domain.reader.model.ReadingMode
+import ephyra.feature.reader.presentation.components.ChapterNavigator
+import ephyra.feature.reader.viewer.Viewer
+import ephyra.feature.reader.viewer.pager.R2LPagerViewer
+import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.theme.MotionTokens
+
+private val readerBarsSlideEnterAnimationSpec = tween<IntOffset>(
+    durationMillis = MotionTokens.DURATION_MEDIUM_2,
+    easing = MotionTokens.EasingEmphasizedDecelerate,
+)
+private val readerBarsSlideExitAnimationSpec = tween<IntOffset>(
+    durationMillis = MotionTokens.DURATION_SHORT_4,
+    easing = MotionTokens.EasingEmphasizedAccelerate,
+)
+private val readerBarsFadeEnterAnimationSpec = tween<Float>(
+    durationMillis = MotionTokens.DURATION_MEDIUM_2,
+    easing = MotionTokens.EasingEmphasizedDecelerate,
+)
+private val readerBarsFadeExitAnimationSpec = tween<Float>(
+    durationMillis = MotionTokens.DURATION_SHORT_4,
+    easing = MotionTokens.EasingEmphasizedAccelerate,
+)
+
+@Composable
+fun ReaderAppBars(
+    visible: Boolean,
+
+    mangaTitle: String?,
+    chapterTitle: String?,
+    navigateUp: () -> Unit,
+    onClickTopAppBar: () -> Unit,
+    bookmarked: Boolean,
+    onToggleBookmarked: () -> Unit,
+    onOpenInWebView: (() -> Unit)?,
+    onOpenInBrowser: (() -> Unit)?,
+    onShare: (() -> Unit)?,
+
+    viewer: Viewer?,
+    onNextChapter: () -> Unit,
+    enabledNext: Boolean,
+    onPreviousChapter: () -> Unit,
+    enabledPrevious: Boolean,
+    currentPage: Int,
+    totalPages: Int,
+    onPageIndexChange: (Int) -> Unit,
+
+    readingMode: ReadingMode,
+    onClickReadingMode: () -> Unit,
+    orientation: ReaderOrientation,
+    onClickOrientation: () -> Unit,
+    cropEnabled: Boolean,
+    onClickCropBorder: () -> Unit,
+    onClickSettings: () -> Unit,
+) {
+    val isRtl = viewer is R2LPagerViewer
+    val backgroundColor = MaterialTheme.colorScheme
+        .surfaceColorAtElevation(3.dp)
+        .copy(alpha = if (isSystemInDarkTheme()) 0.96f else 0.98f)
+
+    Column(modifier = Modifier.fillMaxHeight()) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInVertically(initialOffsetY = { -it }, animationSpec = readerBarsSlideEnterAnimationSpec) +
+                fadeIn(animationSpec = readerBarsFadeEnterAnimationSpec),
+            exit = slideOutVertically(targetOffsetY = { -it }, animationSpec = readerBarsSlideExitAnimationSpec) +
+                fadeOut(animationSpec = readerBarsFadeExitAnimationSpec),
+        ) {
+            ReaderTopBar(
+                modifier = Modifier
+                    .background(backgroundColor)
+                    .clickable(onClick = onClickTopAppBar),
+                mangaTitle = mangaTitle,
+                chapterTitle = chapterTitle,
+                navigateUp = navigateUp,
+                bookmarked = bookmarked,
+                onToggleBookmarked = onToggleBookmarked,
+                onOpenInWebView = onOpenInWebView,
+                onOpenInBrowser = onOpenInBrowser,
+                onShare = onShare,
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInVertically(initialOffsetY = { it }, animationSpec = readerBarsSlideEnterAnimationSpec) +
+                fadeIn(animationSpec = readerBarsFadeEnterAnimationSpec),
+            exit = slideOutVertically(targetOffsetY = { it }, animationSpec = readerBarsSlideExitAnimationSpec) +
+                fadeOut(animationSpec = readerBarsFadeExitAnimationSpec),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small)) {
+                ChapterNavigator(
+                    isRtl = isRtl,
+                    onNextChapter = onNextChapter,
+                    enabledNext = enabledNext,
+                    onPreviousChapter = onPreviousChapter,
+                    enabledPrevious = enabledPrevious,
+                    currentPage = currentPage,
+                    totalPages = totalPages,
+                    onPageIndexChange = onPageIndexChange,
+                )
+                ReaderBottomBar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(backgroundColor)
+                        .padding(horizontal = MaterialTheme.padding.small)
+                        .windowInsetsPadding(WindowInsets.navigationBars),
+                    readingMode = readingMode,
+                    onClickReadingMode = onClickReadingMode,
+                    orientation = orientation,
+                    onClickOrientation = onClickOrientation,
+                    cropEnabled = cropEnabled,
+                    onClickCropBorder = onClickCropBorder,
+                    onClickSettings = onClickSettings,
+                )
+            }
+        }
+    }
+}

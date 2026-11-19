@@ -1,4 +1,4 @@
-﻿package ephyra.feature.manga
+package ephyra.feature.manga
 
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -505,7 +505,7 @@ fun MangaDetailsScreen(
             )
         }
         is MangaViewModel.Dialog.ShareRecommendation -> {
-            ephyra.presentation.manga.components.ShareRecommendationDialog(
+            ephyra.feature.manga.presentation.components.ShareRecommendationDialog(
                 manga = dialog.manga,
                 readChapters = dialog.readChapters,
                 totalChapters = dialog.totalChapters,

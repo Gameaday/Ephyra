@@ -1,0 +1,523 @@
+Starting a Gradle Daemon, 4 busy Daemons could not be reused, use --status for details
+Calculating task graph as no cached configuration is available for tasks: :app:testDebugUnitTest --tests ephyra.app.architecture.UnwiredTargetComponentTest --tests ephyra.feature.reader.PageByteWriteSiteTest
+Type-safe project accessors is an incubating feature.
+> Task :buildSrc:checkKotlinCompilerVersion
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins
+> Task :buildSrc:generateScriptPluginAdapters
+> Task :buildSrc:pluginDescriptors
+> Task :buildSrc:processResources
+> Task :buildSrc:compilePluginsBlocks
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors
+> Task :buildSrc:compileKotlin
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:classes
+> Task :buildSrc:jar
+Configuration 'debugCompileClasspath' was resolved during configuration time.
+This is a build performance and scalability issue.
+See https://github.com/gradle/gradle/issues/2298
+Run with --info for a stacktrace.
+Configuration 'debugRuntimeClasspath' was resolved during configuration time.
+This is a build performance and scalability issue.
+See https://github.com/gradle/gradle/issues/2298
+Run with --info for a stacktrace.
+> Task :feature:download:preBuild UP-TO-DATE
+> Task :core:download:preBuild UP-TO-DATE
+> Task :feature:download:preDebugBuild UP-TO-DATE
+> Task :core:domain:preBuild UP-TO-DATE
+> Task :core:download:preDebugBuild UP-TO-DATE
+> Task :core-metadata:preBuild UP-TO-DATE
+> Task :feature:browse:preBuild UP-TO-DATE
+> Task :core-metadata:preDebugBuild UP-TO-DATE
+> Task :core:archive:preBuild UP-TO-DATE
+> Task :feature:category:preBuild UP-TO-DATE
+> Task :core:domain:preDebugBuild UP-TO-DATE
+> Task :presentation-core:preBuild UP-TO-DATE
+> Task :core:data:preBuild UP-TO-DATE
+> Task :core:archive:preDebugBuild UP-TO-DATE
+> Task :core:data:preDebugBuild UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :core:common:preBuild UP-TO-DATE
+> Task :feature:category:preDebugBuild UP-TO-DATE
+> Task :telemetry:preBuild UP-TO-DATE
+> Task :core:common:preDebugBuild UP-TO-DATE
+> Task :source-local:preBuild UP-TO-DATE
+> Task :source-api:preBuild UP-TO-DATE
+> Task :feature:browse:preDebugBuild UP-TO-DATE
+> Task :presentation-widget:preBuild UP-TO-DATE
+> Task :telemetry:preDebugBuild UP-TO-DATE
+> Task :presentation-core:preDebugBuild UP-TO-DATE
+> Task :presentation-widget:preDebugBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :source-local:preDebugBuild UP-TO-DATE
+> Task :source-api:preDebugBuild UP-TO-DATE
+> Task :app:compileDebugAidl NO-SOURCE
+> Task :core:archive:processDebugNavigationResources
+> Task :core:domain:processDebugNavigationResources
+> Task :feature:history:preBuild UP-TO-DATE
+> Task :presentation-core:processDebugNavigationResources
+> Task :feature:history:preDebugBuild UP-TO-DATE
+> Task :feature:library:preBuild UP-TO-DATE
+> Task :feature:library:preDebugBuild UP-TO-DATE
+> Task :feature:download:processDebugNavigationResources
+> Task :presentation-widget:processDebugNavigationResources
+> Task :feature:manga:preBuild UP-TO-DATE
+> Task :feature:migration:preBuild UP-TO-DATE
+> Task :feature:manga:preDebugBuild UP-TO-DATE
+> Task :feature:migration:preDebugBuild UP-TO-DATE
+> Task :core:data:processDebugNavigationResources
+> Task :core:common:processDebugNavigationResources
+> Task :feature:player:preBuild UP-TO-DATE
+> Task :feature:more:preBuild UP-TO-DATE
+> Task :telemetry:processDebugNavigationResources
+> Task :source-api:processDebugNavigationResources
+> Task :core-metadata:processDebugNavigationResources
+> Task :core:download:processDebugNavigationResources
+> Task :app:generateDebugResources
+> Task :feature:more:preDebugBuild UP-TO-DATE
+> Task :feature:player:preDebugBuild UP-TO-DATE
+> Task :feature:settings:preBuild UP-TO-DATE
+> Task :feature:security:preBuild UP-TO-DATE
+> Task :feature:settings:preDebugBuild UP-TO-DATE
+> Task :source-local:processDebugNavigationResources
+> Task :feature:reader:preBuild UP-TO-DATE
+> Task :feature:upcoming:preBuild UP-TO-DATE
+> Task :feature:security:preDebugBuild UP-TO-DATE
+> Task :feature:upcoming:preDebugBuild UP-TO-DATE
+> Task :feature:updates:preBuild UP-TO-DATE
+> Task :feature:stats:preBuild UP-TO-DATE
+> Task :feature:reader:preDebugBuild UP-TO-DATE
+> Task :feature:stats:preDebugBuild UP-TO-DATE
+> Task :feature:updates:preDebugBuild UP-TO-DATE
+> Task :feature:category:processDebugNavigationResources
+> Task :feature:webview:preBuild UP-TO-DATE
+> Task :feature:webview:preDebugBuild UP-TO-DATE
+> Task :feature:browse:processDebugNavigationResources
+> Task :feature:history:processDebugNavigationResources
+> Task :feature:library:processDebugNavigationResources
+> Task :feature:updates:processDebugNavigationResources
+> Task :app:generateDebugBuildConfig
+> Task :feature:manga:processDebugNavigationResources
+> Task :feature:migration:processDebugNavigationResources
+> Task :feature:security:processDebugNavigationResources
+> Task :feature:player:processDebugNavigationResources
+> Task :feature:upcoming:processDebugNavigationResources
+> Task :feature:settings:processDebugNavigationResources
+> Task :feature:reader:processDebugNavigationResources
+> Task :feature:stats:processDebugNavigationResources
+> Task :feature:webview:processDebugNavigationResources
+> Task :feature:more:processDebugNavigationResources
+> Task :core-metadata:generateDebugResources
+> Task :source-api:generateDebugResources
+> Task :core:common:generateDebugResources
+> Task :source-local:javaPreCompileDebug
+> Task :source-api:javaPreCompileDebug
+> Task :presentation-core:generateDebugResources
+> Task :core:domain:javaPreCompileDebug
+> Task :core:common:javaPreCompileDebug
+> Task :core:archive:javaPreCompileDebug
+> Task :core-metadata:javaPreCompileDebug
+> Task :source-local:generateDebugResources
+> Task :core:domain:generateDebugResources
+> Task :core:data:generateDebugBuildConfig
+> Task :core:data:generateDebugResources
+> Task :core:archive:generateDebugResources
+> Task :core:download:generateDebugResources
+> Task :presentation-widget:generateDebugResources
+> Task :core:data:javaPreCompileDebug
+> Task :telemetry:generateDebugResources
+> Task :feature:browse:generateDebugResources
+> Task :feature:migration:generateDebugResources
+> Task :feature:manga:generateDebugResources
+> Task :feature:reader:generateDebugResources
+> Task :core:data:packageDebugResources
+> Task :feature:migration:javaPreCompileDebug
+> Task :core:archive:packageDebugResources
+> Task :source-api:packageDebugResources
+> Task :source-local:packageDebugResources
+> Task :core:domain:packageDebugResources
+> Task :core-metadata:packageDebugResources
+> Task :core:download:packageDebugResources
+> Task :feature:reader:javaPreCompileDebug
+> Task :core:data:parseDebugLocalResources
+> Task :core:archive:parseDebugLocalResources
+> Task :core:download:parseDebugLocalResources
+> Task :core:domain:parseDebugLocalResources
+> Task :core-metadata:parseDebugLocalResources
+> Task :source-local:parseDebugLocalResources
+> Task :presentation-widget:javaPreCompileDebug
+> Task :telemetry:packageDebugResources
+> Task :telemetry:parseDebugLocalResources
+> Task :core:domain:generateDebugRFile
+> Task :core-metadata:generateDebugRFile
+> Task :source-local:generateDebugRFile
+> Task :core:archive:generateDebugRFile
+> Task :core:common:packageDebugResources
+> Task :feature:manga:packageDebugResources
+> Task :feature:browse:packageDebugResources
+> Task :feature:migration:packageDebugResources
+> Task :feature:manga:parseDebugLocalResources
+> Task :feature:migration:parseDebugLocalResources
+> Task :feature:manga:generateDebugRFile
+> Task :presentation-widget:packageDebugResources
+> Task :core:download:generateDebugRFile
+> Task :telemetry:javaPreCompileDebug
+> Task :feature:migration:generateDebugRFile
+> Task :telemetry:generateDebugRFile
+> Task :feature:browse:parseDebugLocalResources
+> Task :source-api:parseDebugLocalResources
+> Task :feature:reader:packageDebugResources
+> Task :core:data:generateDebugRFile
+> Task :feature:category:generateDebugResources
+> Task :presentation-core:javaPreCompileDebug
+> Task :presentation-widget:parseDebugLocalResources
+> Task :core:common:parseDebugLocalResources
+> Task :feature:category:javaPreCompileDebug
+> Task :feature:download:generateDebugResources
+> Task :feature:reader:parseDebugLocalResources
+> Task :source-api:generateDebugRFile
+> Task :core:download:javaPreCompileDebug
+> Task :presentation-widget:generateDebugRFile
+> Task :feature:category:packageDebugResources
+> Task :feature:download:javaPreCompileDebug
+> Task :feature:browse:generateDebugRFile
+> Task :feature:manga:javaPreCompileDebug
+> Task :core:common:generateDebugRFile
+> Task :feature:browse:javaPreCompileDebug
+> Task :feature:category:parseDebugLocalResources
+> Task :feature:reader:generateDebugRFile
+> Task :feature:history:javaPreCompileDebug
+> Task :feature:history:generateDebugResources
+> Task :feature:library:javaPreCompileDebug
+> Task :feature:download:packageDebugResources
+> Task :app:processDebugNavigationResources
+> Task :feature:library:generateDebugResources
+> Task :feature:category:generateDebugRFile
+> Task :feature:settings:javaPreCompileDebug
+> Task :feature:more:generateDebugResources
+> Task :feature:download:parseDebugLocalResources
+> Task :feature:settings:generateDebugResources
+> Task :feature:more:javaPreCompileDebug
+> Task :feature:player:javaPreCompileDebug
+> Task :feature:history:packageDebugResources
+> Task :feature:download:generateDebugRFile
+> Task :feature:player:generateDebugResources
+> Task :feature:security:javaPreCompileDebug
+> Task :feature:security:generateDebugResources
+> Task :feature:stats:javaPreCompileDebug
+> Task :feature:upcoming:generateDebugResources
+> Task :feature:stats:generateDebugResources
+> Task :feature:history:parseDebugLocalResources
+> Task :feature:updates:generateDebugResources
+> Task :feature:library:packageDebugResources
+> Task :feature:settings:packageDebugResources
+> Task :feature:library:parseDebugLocalResources
+> Task :feature:more:packageDebugResources
+> Task :feature:player:packageDebugResources
+> Task :feature:upcoming:javaPreCompileDebug
+> Task :feature:settings:parseDebugLocalResources
+> Task :feature:updates:javaPreCompileDebug
+> Task :feature:history:generateDebugRFile
+> Task :feature:updates:packageDebugResources
+> Task :feature:more:parseDebugLocalResources
+> Task :feature:player:parseDebugLocalResources
+> Task :feature:stats:packageDebugResources
+> Task :feature:library:generateDebugRFile
+> Task :feature:security:packageDebugResources
+> Task :feature:upcoming:packageDebugResources
+> Task :app:javaPreCompileDebug
+> Task :core-metadata:writeDebugAarMetadata
+> Task :feature:webview:generateDebugResources
+> Task :feature:updates:parseDebugLocalResources
+> Task :presentation-widget:writeDebugAarMetadata
+> Task :presentation-core:writeDebugAarMetadata
+> Task :source-local:writeDebugAarMetadata
+> Task :feature:settings:generateDebugRFile
+> Task :source-api:writeDebugAarMetadata
+> Task :feature:stats:parseDebugLocalResources
+> Task :feature:webview:javaPreCompileDebug
+> Task :telemetry:writeDebugAarMetadata
+> Task :core:common:writeDebugAarMetadata
+> Task :feature:security:parseDebugLocalResources
+> Task :feature:upcoming:parseDebugLocalResources
+> Task :feature:player:generateDebugRFile
+> Task :feature:updates:generateDebugRFile
+> Task :feature:more:generateDebugRFile
+> Task :core:domain:writeDebugAarMetadata
+> Task :feature:browse:writeDebugAarMetadata
+> Task :feature:category:writeDebugAarMetadata
+> Task :core:archive:writeDebugAarMetadata
+> Task :core:data:writeDebugAarMetadata
+> Task :core:download:writeDebugAarMetadata
+> Task :feature:library:writeDebugAarMetadata
+> Task :feature:migration:writeDebugAarMetadata
+> Task :feature:manga:writeDebugAarMetadata
+> Task :feature:history:writeDebugAarMetadata
+> Task :feature:player:writeDebugAarMetadata
+> Task :feature:reader:writeDebugAarMetadata
+> Task :feature:more:writeDebugAarMetadata
+> Task :feature:security:writeDebugAarMetadata
+> Task :feature:download:writeDebugAarMetadata
+> Task :feature:stats:generateDebugRFile
+> Task :feature:upcoming:generateDebugRFile
+> Task :feature:security:generateDebugRFile
+> Task :feature:webview:packageDebugResources
+> Task :feature:updates:writeDebugAarMetadata
+> Task :presentation-core:packageDebugResources
+> Task :feature:settings:writeDebugAarMetadata
+> Task :app:createDebugCompatibleScreenManifests
+> Task :presentation-widget:extractDeepLinksDebug
+> Task :feature:webview:writeDebugAarMetadata
+> Task :presentation-core:extractDeepLinksDebug
+> Task :feature:webview:parseDebugLocalResources
+> Task :core-metadata:extractDeepLinksDebug
+> Task :source-api:extractDeepLinksDebug
+> Task :feature:stats:writeDebugAarMetadata
+> Task :source-local:extractDeepLinksDebug
+> Task :telemetry:extractDeepLinksDebug
+> Task :core:archive:extractDeepLinksDebug
+> Task :feature:upcoming:writeDebugAarMetadata
+> Task :core:common:extractDeepLinksDebug
+> Task :feature:webview:generateDebugRFile
+> Task :core:data:extractDeepLinksDebug
+> Task :core:domain:extractDeepLinksDebug
+> Task :presentation-core:parseDebugLocalResources
+> Task :presentation-widget:processDebugManifest
+> Task :source-api:processDebugManifest
+
+> Task :telemetry:processDebugManifest
+C:\Project\Android\Ephyra\telemetry\src\main\AndroidManifest.xml:10:5-12:31 Warning:
+	uses-permission#android.permission.ACCESS_ADSERVICES_AD_ID was tagged at AndroidManifest.xml:10 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\telemetry\src\main\AndroidManifest.xml:14:5-16:31 Warning:
+	uses-permission#android.permission.ACCESS_ADSERVICES_ATTRIBUTION was tagged at AndroidManifest.xml:14 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\telemetry\src\main\AndroidManifest.xml:18:5-20:31 Warning:
+	uses-permission#com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE was tagged at AndroidManifest.xml:18 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\telemetry\src\main\AndroidManifest.xml:22:5-24:31 Warning:
+	uses-permission#com.google.android.gms.permission.AD_ID was tagged at AndroidManifest.xml:22 to remove other declarations but no other declaration present
+
+> Task :presentation-core:processDebugManifest
+> Task :core:archive:processDebugManifest
+> Task :core:download:extractDeepLinksDebug
+> Task :core:data:processDebugManifest
+> Task :source-local:processDebugManifest
+> Task :core:common:processDebugManifest
+> Task :core-metadata:processDebugManifest
+> Task :feature:browse:extractDeepLinksDebug
+> Task :feature:category:extractDeepLinksDebug
+> Task :feature:download:extractDeepLinksDebug
+> Task :feature:library:extractDeepLinksDebug
+> Task :feature:history:extractDeepLinksDebug
+> Task :feature:manga:extractDeepLinksDebug
+> Task :core:domain:processDebugManifest
+> Task :feature:migration:extractDeepLinksDebug
+> Task :feature:more:extractDeepLinksDebug
+> Task :feature:category:processDebugManifest
+> Task :feature:player:extractDeepLinksDebug
+> Task :feature:reader:extractDeepLinksDebug
+> Task :feature:migration:processDebugManifest
+> Task :feature:manga:processDebugManifest
+> Task :presentation-core:generateDebugRFile
+> Task :core:download:processDebugManifest
+> Task :feature:download:processDebugManifest
+> Task :feature:browse:processDebugManifest
+> Task :feature:library:processDebugManifest
+> Task :feature:history:processDebugManifest
+> Task :feature:player:processDebugManifest
+> Task :feature:settings:extractDeepLinksDebug
+> Task :feature:security:extractDeepLinksDebug
+> Task :feature:more:processDebugManifest
+> Task :feature:stats:extractDeepLinksDebug
+> Task :feature:updates:extractDeepLinksDebug
+> Task :feature:upcoming:extractDeepLinksDebug
+> Task :presentation-core:mapDebugSourceSetPaths
+> Task :core-metadata:mapDebugSourceSetPaths
+> Task :feature:webview:extractDeepLinksDebug
+> Task :feature:settings:processDebugManifest
+> Task :presentation-widget:mapDebugSourceSetPaths
+> Task :feature:security:processDebugManifest
+> Task :feature:reader:processDebugManifest
+> Task :telemetry:mapDebugSourceSetPaths
+> Task :source-api:mapDebugSourceSetPaths
+> Task :feature:stats:processDebugManifest
+> Task :core:archive:mapDebugSourceSetPaths
+> Task :feature:upcoming:processDebugManifest
+> Task :source-local:mapDebugSourceSetPaths
+> Task :core:common:mapDebugSourceSetPaths
+> Task :feature:updates:processDebugManifest
+> Task :core:data:mapDebugSourceSetPaths
+> Task :core:domain:mapDebugSourceSetPaths
+> Task :core:download:mapDebugSourceSetPaths
+> Task :feature:browse:mapDebugSourceSetPaths
+> Task :feature:category:mapDebugSourceSetPaths
+> Task :feature:history:mapDebugSourceSetPaths
+> Task :feature:webview:processDebugManifest
+> Task :feature:download:mapDebugSourceSetPaths
+> Task :feature:library:mapDebugSourceSetPaths
+> Task :app:checkDebugAarMetadata
+> Task :feature:manga:mapDebugSourceSetPaths
+> Task :telemetry:compileDebugLibraryResources
+> Task :core:archive:compileDebugLibraryResources
+> Task :feature:reader:mapDebugSourceSetPaths
+> Task :feature:more:mapDebugSourceSetPaths
+> Task :source-api:compileDebugLibraryResources
+> Task :core-metadata:compileDebugLibraryResources
+> Task :feature:migration:mapDebugSourceSetPaths
+> Task :source-local:compileDebugLibraryResources
+> Task :feature:player:mapDebugSourceSetPaths
+> Task :core:data:compileDebugLibraryResources
+> Task :core:domain:compileDebugLibraryResources
+> Task :feature:security:mapDebugSourceSetPaths
+> Task :core:download:compileDebugLibraryResources
+> Task :feature:settings:mapDebugSourceSetPaths
+> Task :feature:stats:mapDebugSourceSetPaths
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :core-metadata:generateDebugAssets UP-TO-DATE
+> Task :feature:browse:compileDebugLibraryResources
+> Task :feature:upcoming:mapDebugSourceSetPaths
+> Task :presentation-core:generateDebugAssets UP-TO-DATE
+> Task :feature:category:compileDebugLibraryResources
+> Task :feature:webview:mapDebugSourceSetPaths
+> Task :presentation-widget:generateDebugAssets UP-TO-DATE
+> Task :feature:updates:mapDebugSourceSetPaths
+> Task :source-api:generateDebugAssets UP-TO-DATE
+> Task :feature:history:compileDebugLibraryResources
+> Task :feature:library:compileDebugLibraryResources
+> Task :feature:migration:compileDebugLibraryResources
+> Task :feature:download:compileDebugLibraryResources
+> Task :feature:more:compileDebugLibraryResources
+> Task :feature:manga:compileDebugLibraryResources
+> Task :feature:security:compileDebugLibraryResources
+> Task :feature:reader:compileDebugLibraryResources
+> Task :feature:settings:compileDebugLibraryResources
+> Task :core:common:compileDebugLibraryResources
+> Task :source-local:generateDebugAssets UP-TO-DATE
+> Task :presentation-core:mergeDebugAssets
+> Task :telemetry:generateDebugAssets UP-TO-DATE
+> Task :core-metadata:mergeDebugAssets
+> Task :source-api:mergeDebugAssets
+> Task :presentation-widget:mergeDebugAssets
+> Task :core:archive:generateDebugAssets UP-TO-DATE
+> Task :core:common:generateDebugAssets UP-TO-DATE
+> Task :core:data:generateDebugAssets UP-TO-DATE
+> Task :feature:player:compileDebugLibraryResources
+> Task :core:domain:generateDebugAssets UP-TO-DATE
+> Task :feature:updates:compileDebugLibraryResources
+> Task :core:download:generateDebugAssets UP-TO-DATE
+> Task :feature:webview:compileDebugLibraryResources
+> Task :feature:browse:generateDebugAssets UP-TO-DATE
+> Task :source-local:mergeDebugAssets
+> Task :feature:category:generateDebugAssets UP-TO-DATE
+> Task :core:data:mergeDebugAssets
+> Task :feature:download:generateDebugAssets UP-TO-DATE
+> Task :feature:stats:compileDebugLibraryResources
+> Task :feature:history:generateDebugAssets UP-TO-DATE
+> Task :core:download:mergeDebugAssets
+> Task :feature:library:generateDebugAssets UP-TO-DATE
+> Task :feature:upcoming:compileDebugLibraryResources
+> Task :feature:manga:generateDebugAssets UP-TO-DATE
+> Task :core:domain:mergeDebugAssets
+> Task :feature:download:mergeDebugAssets
+> Task :feature:migration:generateDebugAssets UP-TO-DATE
+> Task :feature:more:generateDebugAssets UP-TO-DATE
+> Task :core:archive:mergeDebugAssets
+> Task :feature:player:generateDebugAssets UP-TO-DATE
+> Task :feature:browse:mergeDebugAssets
+> Task :feature:category:mergeDebugAssets
+> Task :feature:reader:generateDebugAssets UP-TO-DATE
+> Task :feature:security:generateDebugAssets UP-TO-DATE
+> Task :core:common:mergeDebugAssets
+> Task :feature:settings:generateDebugAssets UP-TO-DATE
+> Task :telemetry:mergeDebugAssets
+> Task :feature:stats:generateDebugAssets UP-TO-DATE
+> Task :feature:history:mergeDebugAssets
+> Task :feature:upcoming:generateDebugAssets UP-TO-DATE
+> Task :feature:library:mergeDebugAssets
+> Task :feature:updates:generateDebugAssets UP-TO-DATE
+> Task :feature:stats:mergeDebugAssets
+> Task :feature:webview:generateDebugAssets UP-TO-DATE
+> Task :feature:reader:mergeDebugAssets
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :feature:manga:mergeDebugAssets
+> Task :feature:security:mergeDebugAssets
+> Task :feature:more:mergeDebugAssets
+> Task :feature:settings:mergeDebugAssets
+> Task :feature:player:mergeDebugAssets
+> Task :feature:updates:mergeDebugAssets
+> Task :feature:webview:mergeDebugAssets
+> Task :app:javaPreCompileDebugUnitTest
+> Task :feature:upcoming:mergeDebugAssets
+> Task :presentation-widget:compileDebugLibraryResources
+> Task :feature:migration:mergeDebugAssets
+> Task :presentation-core:compileDebugLibraryResources
+> Task :app:prepareLibraryDefinitionsDebug
+> Task :app:mapDebugSourceSetPaths
+> Task :app:extractDeepLinksDebug
+> Task :app:compileDebugNavigationResources
+> Task :app:mergeDebugAssets
+
+> Task :app:processDebugMainManifest
+C:\Project\Android\Ephyra\app\src\debug\AndroidManifest.xml Warning:
+	uses-permission#android.permission.ACCESS_ADSERVICES_AD_ID was tagged at AndroidManifest.xml:0 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\app\src\debug\AndroidManifest.xml Warning:
+	uses-permission#android.permission.ACCESS_ADSERVICES_ATTRIBUTION was tagged at AndroidManifest.xml:0 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\app\src\debug\AndroidManifest.xml Warning:
+	uses-permission#com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE was tagged at AndroidManifest.xml:0 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\app\src\debug\AndroidManifest.xml Warning:
+	uses-permission#com.google.android.gms.permission.AD_ID was tagged at AndroidManifest.xml:0 to remove other declarations but no other declaration present
+
+> Task :app:mergeDebugUnitTestManifest
+C:\Project\Android\Ephyra\app\src\debug\AndroidManifest.xml Warning:
+	meta-data#androidx.work.WorkManagerInitializer was tagged at AndroidManifest.xml:0 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\app\build\intermediates\tmp\manifest\test\debug\tempFile2ProcessTestManifest16561041774056582506.xml Warning:
+	uses-permission#android.permission.ACCESS_ADSERVICES_AD_ID was tagged at tempFile2ProcessTestManifest16561041774056582506.xml:0 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\app\build\intermediates\tmp\manifest\test\debug\tempFile2ProcessTestManifest16561041774056582506.xml Warning:
+	uses-permission#android.permission.ACCESS_ADSERVICES_ATTRIBUTION was tagged at tempFile2ProcessTestManifest16561041774056582506.xml:0 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\app\build\intermediates\tmp\manifest\test\debug\tempFile2ProcessTestManifest16561041774056582506.xml Warning:
+	uses-permission#com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE was tagged at tempFile2ProcessTestManifest16561041774056582506.xml:0 to remove other declarations but no other declaration present
+C:\Project\Android\Ephyra\app\build\intermediates\tmp\manifest\test\debug\tempFile2ProcessTestManifest16561041774056582506.xml Warning:
+	uses-permission#com.google.android.gms.permission.AD_ID was tagged at tempFile2ProcessTestManifest16561041774056582506.xml:0 to remove other declarations but no other declaration present
+
+> Task :app:processDebugManifest
+> Task :app:processDebugUnitTestManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:packageDebugResources
+> Task :app:parseDebugLocalResources
+> Task :app:generateDebugRFile
+> Task :telemetry:compileDebugKotlin
+> Task :telemetry:compileDebugJavaWithJavac NO-SOURCE
+> Task :telemetry:bundleLibRuntimeToJarDebug FAILED
+> Task :telemetry:processDebugJavaRes
+> Task :telemetry:bundleLibCompileToJarDebug
+> Task :core:archive:compileDebugKotlin
+
+> Task :core:common:compileDebugKotlin
+w: file:///C:/Project/Android/Ephyra/core/common/src/main/java/ephyra/core/common/util/network/TransientErrors.kt:105:32 Unnecessary safe call on a non-null receiver of type 'Throwable'.
+w: file:///C:/Project/Android/Ephyra/core/common/src/main/kotlin/ephyra/core/common/util/storage/DiskUtil.kt:24:30 'static fun getExternalFilesDirs(p0: Context, p1: String?): Array<(out) File!>' is deprecated. Deprecated in Java.
+
+> Task :app:mergeDebugResources
+
+[Incubating] Problems report is available at: file:///C:/Project/Android/Ephyra/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':telemetry:bundleLibRuntimeToJarDebug' (registered by plugin 'com.android.internal.library').
+> java.nio.file.FileSystemException: C:\Project\Android\Ephyra\telemetry\build\intermediates\runtime_library_classes_jar\debug\bundleLibRuntimeToJarDebug\classes.jar: The process cannot access the file because it is being used by another process
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.9.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1m 30s
+362 actionable tasks: 362 executed
+Configuration cache entry stored.

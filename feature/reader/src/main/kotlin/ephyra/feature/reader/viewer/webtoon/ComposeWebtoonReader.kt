@@ -91,6 +91,8 @@ import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.resolveReaderStartIndex
+import ephyra.feature.reader.presentation.ChapterTransition
+import ephyra.feature.reader.presentation.TransitionDirection
 import ephyra.feature.reader.viewer.ChapterPositionTracker
 import ephyra.feature.reader.viewer.ReaderPageErrorView
 import ephyra.feature.reader.viewer.ReaderPageLoadingView
@@ -101,8 +103,6 @@ import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
 import ephyra.feature.reader.viewer.render.PagePixelSurface
 import ephyra.feature.reader.viewer.render.SliceSizing
 import ephyra.presentation.core.data.coil.cropBorders
-import ephyra.presentation.reader.ChapterTransition
-import ephyra.presentation.reader.TransitionDirection
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.distinctUntilChanged

@@ -41,7 +41,7 @@ class ReaderDisabledControlStateTest {
         .replace(Regex("//.*"), "")
 
     private val chapterNavigator =
-        "feature/reader/src/main/kotlin/ephyra/presentation/reader/components/ChapterNavigator.kt"
+        "feature/reader/src/main/kotlin/ephyra/feature/reader/presentation/components/ChapterNavigator.kt"
 
     /**
      * The navigator's next/previous controls must not pin their disabled container colour to

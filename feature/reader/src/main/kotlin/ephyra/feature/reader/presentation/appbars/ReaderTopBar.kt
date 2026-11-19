@@ -1,0 +1,82 @@
+package ephyra.feature.reader.presentation.appbars
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import ephyra.presentation.core.components.AppBar
+import ephyra.presentation.core.components.AppBarActions
+import ephyra.presentation.core.i18n.stringResource
+import kotlinx.collections.immutable.persistentListOf
+
+@Composable
+fun ReaderTopBar(
+    mangaTitle: String?,
+    chapterTitle: String?,
+    navigateUp: () -> Unit,
+    bookmarked: Boolean,
+    onToggleBookmarked: () -> Unit,
+    onOpenInWebView: (() -> Unit)?,
+    onOpenInBrowser: (() -> Unit)?,
+    onShare: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    AppBar(
+        modifier = modifier,
+        backgroundColor = Color.Transparent,
+        title = mangaTitle,
+        subtitle = chapterTitle,
+        navigateUp = navigateUp,
+        actions = {
+            AppBarActions(
+                actions = persistentListOf<AppBar.AppBarAction>().builder()
+                    .apply {
+                        add(
+                            AppBar.Action(
+                                title = stringResource(
+                                    if (bookmarked) {
+                                        ephyra.app.core.common.R.string.action_remove_bookmark
+                                    } else {
+                                        ephyra.app.core.common.R.string.action_bookmark
+                                    },
+                                ),
+                                icon = if (bookmarked) {
+                                    Icons.Outlined.Bookmark
+                                } else {
+                                    Icons.Outlined.BookmarkBorder
+                                },
+                                onClick = onToggleBookmarked,
+                            ),
+                        )
+                        onOpenInWebView?.let {
+                            add(
+                                AppBar.OverflowAction(
+                                    title = stringResource(ephyra.app.core.common.R.string.action_open_in_web_view),
+                                    onClick = it,
+                                ),
+                            )
+                        }
+                        onOpenInBrowser?.let {
+                            add(
+                                AppBar.OverflowAction(
+                                    title = stringResource(ephyra.app.core.common.R.string.action_open_in_browser),
+                                    onClick = it,
+                                ),
+                            )
+                        }
+                        onShare?.let {
+                            add(
+                                AppBar.OverflowAction(
+                                    title = stringResource(ephyra.app.core.common.R.string.action_share),
+                                    onClick = it,
+                                ),
+                            )
+                        }
+                    }
+                    .build(),
+            )
+        },
+    )
+}

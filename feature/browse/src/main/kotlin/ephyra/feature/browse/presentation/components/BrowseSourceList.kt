@@ -12,9 +12,9 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaCover
+import ephyra.feature.manga.presentation.components.CommonMangaItemDefaults
+import ephyra.feature.manga.presentation.components.MangaListItem
 import ephyra.presentation.core.util.plus
-import ephyra.presentation.manga.components.CommonMangaItemDefaults
-import ephyra.presentation.manga.components.MangaListItem
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable

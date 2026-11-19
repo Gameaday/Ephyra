@@ -36,10 +36,10 @@ import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.resolveReaderStartIndex
+import ephyra.feature.reader.presentation.ChapterTransition
+import ephyra.feature.reader.presentation.TransitionDirection
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
-import ephyra.presentation.reader.ChapterTransition
-import ephyra.presentation.reader.TransitionDirection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.distinctUntilChanged

@@ -261,6 +261,54 @@ Small enough to rewrite rather than refactor. If any module is a candidate for *
 (delete and reimplement) rather than restructuring, this is it — and it has a contract document
 (`doc/DOWNLOAD_ARTIFACT_CONTRACT.md`) to rewrite against.
 
+### 4.6 Updates does not stack the way History does (owner request, 2026-11-16)
+
+**History already solves this.** `HistoryUiModel` is a sealed interface with
+`Header` / `Item` / `Series(latest, older)`; the ViewModel groups by `mangaId`, and
+`withExpandedSeriesChildren` lifts an expanded series' children into real lazy items so they
+animate and keep identity. Reading 100 chapters of one series produces **one row plus a toggle**.
+
+**Updates has the grouping but only uses it for actions.** `UpdatesViewModel` calls
+`groupBy { it.update.mangaId }` in exactly two places — `downloadChapters` (line 331) and
+`deleteChapters` (line 351). The *display* list is flat: `UpdatesUiModel.Item` per chapter, one row
+each. So 50 updates from one series is 50 rows.
+
+**Why it matters beyond scrolling:** each row is a `MangaCover.Square` request, so a stacked series
+would also cut cover requests 50 → 1 (see §4.7).
+
+**Effort:** low. The pattern is already written and tested in `feature:history` (which has 463 test
+LOC). Port `Series(latest, older)` + the expand toggle + `withExpandedSeriesChildren` into
+`UpdatesUiModel`, and group in `UpdatesViewModel`'s state mapping. The actions already group
+correctly, so selection/delete/download semantics should be preserved by keying selection on
+`mangaId`+`chapterId` rather than list position.
+
+### 4.7 The same series' cover is requested once per row, not once per series (owner request, 2026-11-16)
+
+`MangaCover` is a 5-field data class (`mangaId`, `sourceId`, `isMangaFavorite`, `url`,
+`lastModified`), built per row by `asMangaCover()`. Both `HistoryItem` (line 54) and
+`UpdatesUiItem` (line 171) pass `history.coverData` / `update.coverData` into `MangaCover.Book` /
+`MangaCover.Square`, which does `remember(data, isSharedElement) { ImageRequest... }`.
+
+**The consequence:** a series with 50 updates constructs **50 equal-but-distinct `MangaCover`
+instances**, so:
+- 50 `remember` blocks each build their own `ImageRequest`;
+- 50 Coil requests are issued (Coil's memory cache dedupes the *result*, but the requests are still
+  in flight and the key includes decoded size, so a different aspect ratio on another screen is a
+  genuine second decode of the same bytes);
+- `data` differs by **identity** across rows even when it is equal by value.
+
+**Fix:** intern `coverData` by `mangaId` in the ViewModel — one `MangaCover` instance per series,
+shared by reference across every row of that series. Then `remember(data, ...)` hits for all of them,
+one request is in flight, and a long updates/history list stops re-decoding the same cover.
+
+**Why this is the right level:** interning in the *ViewModel* (not in Coil) keeps the fix explicit
+and testable — a `coverDataByMangaId` map, asserted by a test that two rows of one series receive
+the *same instance* (`assertSame`). A Coil-level cache already exists and is not the problem; the
+problem is the N duplicate requests and N `remember` allocations upstream of it.
+
+**Effort:** low. Touches the two ViewModels' state mapping. Pairs naturally with §4.6, since
+stacking a series already collapses its rows to one.
+
 ---
 
 ## 5. Recommendation
@@ -271,17 +319,24 @@ Do these in order. Each is independently shippable and each one makes the next c
 |---|---|---|---|
 | 1 | **Package-root gate + fix** `feature:manga` (§2.1), `theme` (§2.2) | ~1 day | cheapest real win; adds the gate that stops recurrence |
 | 2 | **Literal-colour gate + fix** (§2.3) | ~0.5 day | 10 violations, small stable exception list |
-| 3 | **`feature:settings` decomposition + tests** (§4.2) | ~1 week | best value/risk; builds the pattern for the rest |
-| 4 | **UI model layer** on library/manga/history (§3.2) | ~1–2 weeks | the actual prerequisite for a UI overhaul |
-| 5 | **`presentation-core` design-system split** (§2.5) | ~1 week | makes the theme swappable as a unit |
-| 6 | **Re-theme** (§3.3 phase 3) | ~1 week | the cheap part, once 4+5 land |
-| 7 | **`core:data` capability split** (§4.1) | ~2 weeks | biggest payoff, highest risk — needs 3's map |
+| 3 | **Cover interning by `mangaId`** (§4.7) | ~0.5 day | owner request; one instance per series, kills N duplicate cover requests |
+| 4 | **Updates stacking like History** (§4.6) | ~2 days | owner request; pattern already written and tested in `feature:history` |
+| 5 | **`feature:settings` decomposition + tests** (§4.2) | ~1 week | best value/risk; builds the pattern for the rest |
+| 6 | **UI model layer** on library/manga/history (§3.2) | ~1–2 weeks | the actual prerequisite for a UI overhaul |
+| 7 | **`presentation-core` design-system split** (§2.5) | ~1 week | makes the theme swappable as a unit |
+| 8 | **Re-theme** (§3.3 phase 3) | ~1 week | the cheap part, once 6+7 land |
+| 9 | **`core:data` capability split** (§4.1) | ~2 weeks | biggest payoff, highest risk — needs 5's map |
 
 **The headline:** the app's architecture is in good shape where it has tests (`core:domain`,
 `feature:reader`) and weakest exactly where it is least tested (`feature:settings`,
 `feature:manga`, `core:data`). The highest-value next effort is not a new abstraction — it is
 **raising coverage on the modules a UI overhaul would touch**, because that is what makes every
 later change safe.
+
+**Two of these are owner-requested and are cheap** (3 and 4): both reuse a pattern the codebase
+already has, and both are user-visible immediately. They are deliberately placed ahead of the
+structural work because they pay back in a day rather than a week, and because #4 *reduces* the
+surface #3 has to cover.
 
 ---
 

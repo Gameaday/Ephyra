@@ -17,10 +17,10 @@ import androidx.compose.ui.unit.dp
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaCover
 import ephyra.domain.manga.model.asMangaCover
+import ephyra.feature.manga.presentation.components.CommonMangaItemDefaults
+import ephyra.feature.manga.presentation.components.MangaComfortableGridItem
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.manga.components.CommonMangaItemDefaults
-import ephyra.presentation.manga.components.MangaComfortableGridItem
 
 @Composable
 fun GlobalSearchCardRow(

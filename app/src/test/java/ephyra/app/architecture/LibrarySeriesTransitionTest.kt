@@ -52,7 +52,7 @@ class LibrarySeriesTransitionTest {
         .replace(Regex("//.*"), "")
 
     private val seriesHeader =
-        "feature/manga/src/main/kotlin/ephyra/presentation/manga/components/MangaInfoHeader.kt"
+        "feature/manga/src/main/kotlin/ephyra/feature/manga/presentation/components/MangaInfoHeader.kt"
     private val mainActivity = "app/src/main/java/ephyra/app/ui/main/MainActivity.kt"
     private val seriesScreen = "feature/manga/src/main/kotlin/ephyra/feature/manga/MangaScreen.kt"
     private val mangaCover = "presentation-core/src/main/java/ephyra/presentation/core/components/MangaCover.kt"
