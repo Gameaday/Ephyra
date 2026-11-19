@@ -35,7 +35,9 @@ if a row below disagrees with this summary, the summary is the authority and the
   `@IoDispatcher CoroutineDispatcher` and launches on it — debt `10 -> 0`. The gate now enforces
   **two** properties, not one: a ViewModel must not reach `Dispatchers.IO` *and* must actually **use**
   the dispatcher it declares, so a decorative injection fails the build. Allowlist empty and kept as a
-  tripwire.
+  tripwire. All ten converted ViewModels are behaviour-verified, not merely compile-verified:
+  `MatchResultsViewModelTest` and `AuthoritySearchViewModelTest` were added for the two that had no
+  tests, both injecting a `StandardTestDispatcher` so `advanceUntilIdle()` is authoritative.
 - **Architecture enforcement (fixed 2026-11-18):** `ArchitectureTest`'s feature‑isolation rule checked
   only `ephyra.feature.library..` — a module with **zero** cross‑feature imports — so it was vacuously
   green while twelve real declared edges went unchecked. It now covers all sixteen feature packages, and
