@@ -31,6 +31,7 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
   `2_0_COMPLETION_PLAN.md`, `2_0_CONTENT_MODEL_PLAN.md`, `TARGET_DATA_*`, `source/`.
 - **Forward-looking — planned:** `../ROADMAP.md` (scope + non-negotiables),
   `UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md`, `UNIFIED_RENDERING_PIPELINE.md`,
+  `STRUCTURAL_AUDIT_2026_11.md` (options for the next major effort),
   `rfcs/RFC-0001-content-identity-unification.md`.
 - **Historical — do not follow:** `historical/` (archaeology only; each carries a `HISTORICAL` banner).
 
@@ -60,6 +61,7 @@ is [`2_0_COMPLETION_PLAN.md`](2_0_COMPLETION_PLAN.md).
 | [`READER_GESTURE_CONTRACT.md`](READER_GESTURE_CONTRACT.md) | Pointer state machine and gesture ownership. | Update with gesture changes. |
 | [`READER_MODULAR_REDESIGN_AUDIT.md`](READER_MODULAR_REDESIGN_AUDIT.md) | E1 audit + staged redesign decision record for the reader. | Update on reader architecture changes; superseded per stage. |
 | [`APP_HEALTH_DESIGN_AUDIT.md`](APP_HEALTH_DESIGN_AUDIT.md) | Whole-app health & design audit (function/performance/design/safety) with a staged remediation plan. | Update as remediation stages land; supersede findings when fixed. |
+| [`STRUCTURAL_AUDIT_2026_11.md`](STRUCTURAL_AUDIT_2026_11.md) | Measured options for the next major effort: org/structural fixes, modular-replacement candidates, and the path to a UI overhaul. | Decision input only; update when a measurement changes or an effort is chosen. |
 | [`DOCUMENT_VIEWPORT_CONTRACT.md`](DOCUMENT_VIEWPORT_CONTRACT.md) | Document coordinates and zoom ownership. | Zoom-ownership current; tile half superseded by ADR-0010. |
 | [`MEDIA_PIPELINE_CONTRACT.md`](MEDIA_PIPELINE_CONTRACT.md) | Source identity, decode plans, render caches. | Update with media-pipeline changes. |
 | [`DOWNLOAD_ARTIFACT_CONTRACT.md`](DOWNLOAD_ARTIFACT_CONTRACT.md) | Download artifact identity and verification. | Update with download changes. |
