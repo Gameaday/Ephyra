@@ -93,6 +93,13 @@ retained for archaeology and are **not** current guidance. Each carries a `HISTO
 They are archived rather than deleted because they name the reasoning behind fixes that are still in
 the tree; Git history alone would lose the index.
 
+Two large ledgers are split rather than kept inline:
+
+| Archive | Split from | Why |
+|---|---|---|
+| [`historical/REBUILD_STATUS_CHANGELOG.md`](historical/REBUILD_STATUS_CHANGELOG.md) | `REBUILD_STATUS.md` change log | 226 KB of reverse-chronological history that buried the current state. |
+| [`historical/REBUILD_STATUS_BASELINE_FACTS.md`](historical/REBUILD_STATUS_BASELINE_FACTS.md) | `REBUILD_STATUS.md` baseline facts | 97 KB of narrative; the ledger now carries one line per `B-*` ID. |
+
 ## Adding or retiring a document
 
 Follow the change protocol in [`DOCUMENTATION_GOVERNANCE.md`](DOCUMENTATION_GOVERNANCE.md):
