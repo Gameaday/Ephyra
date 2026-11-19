@@ -30,6 +30,8 @@ build_assemble_output.txt
 build-log*.txt
 gradle_domain*.txt
 gradle_domain*.txt.err
+# Scratch gradle logs from validation runs (*.out, e.g. spotless.out, full.out)
+*.out
 
 # Local helper scripts
 _*.ps1
