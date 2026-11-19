@@ -70,6 +70,7 @@ fun UpdateScreen(
     onUpdateSelected: (UpdatesItem, Boolean, Boolean) -> Unit,
     onOpenChapter: (UpdatesItem) -> Unit,
     onFilterClicked: () -> Unit,
+    onToggleSeries: (mangaId: Long) -> Unit,
     hasActiveFilters: Boolean,
 ) {
     BackHandler(enabled = state.selectionMode) {
@@ -121,11 +122,13 @@ fun UpdateScreen(
 
                         updatesUiItems(
                             uiModels = state.getUiModel(),
+                            expandedSeriesIds = state.expandedSeriesIds,
                             selectionMode = state.selectionMode,
                             onUpdateSelected = onUpdateSelected,
                             onClickCover = onClickCover,
                             onClickUpdate = onOpenChapter,
                             onDownloadChapter = onDownloadChapter,
+                            onToggleSeries = onToggleSeries,
                         )
                     }
                 }
@@ -232,6 +235,23 @@ private fun UpdatesBottomBar(
 sealed interface UpdatesUiModel {
     data class Header(val date: LocalDate) : UpdatesUiModel
     data class Item(val item: UpdatesItem) : UpdatesUiModel
+
+    /**
+     * Several updates of one series, stacked behind its newest so reading 50 chapters of one series
+     * does not produce 50 rows.
+     *
+     * Mirrors `HistoryUiModel.Series` deliberately: the two lists answer the same question ("what
+     * happened recently") and the user asked for them to behave the same way. [latest] renders as the
+     * row; [older] are revealed by the expand toggle and become top-level lazy items of their own, so
+     * only the visible ones compose and each keeps a key of its own.
+     *
+     * `latest` is the row the list is sorted by — updates arrive newest‑first from the repository, so
+     * the first of a group is its most recent chapter.
+     */
+    data class Series(
+        val latest: UpdatesItem,
+        val older: List<UpdatesItem>,
+    ) : UpdatesUiModel
 }
 
 @Composable
@@ -279,6 +299,7 @@ fun UpdatesScreen(
             navController.navigate(ScreenRoutes.Upcoming.route)
         },
         onFilterClicked = { viewModel.onEvent(UpdatesScreenEvent.ShowFilterDialog) },
+        onToggleSeries = { mangaId -> viewModel.onEvent(UpdatesScreenEvent.ToggleSeriesExpanded(mangaId)) },
         hasActiveFilters = state.hasActiveFilters,
     )
 

@@ -223,6 +223,25 @@ class UpdatesViewModel @Inject constructor(
             is UpdatesScreenEvent.SetDialog -> setDialog(event.dialog)
             is UpdatesScreenEvent.ResetNewUpdatesCount -> resetNewUpdatesCount()
             is UpdatesScreenEvent.ShowFilterDialog -> showFilterDialog()
+            is UpdatesScreenEvent.ToggleSeriesExpanded -> toggleSeriesExpanded(event.mangaId)
+        }
+    }
+
+    /**
+     * Toggles whether a stacked series shows its older updates.
+     *
+     * Presentational: `getUiModel()` re-derives the grouping from the items already in state, so this
+     * never refetches. Mirrors `HistoryViewModel`'s handler so both lists behave identically.
+     */
+    private fun toggleSeriesExpanded(mangaId: Long) {
+        updateState { state ->
+            state.copy(
+                expandedSeriesIds = if (mangaId in state.expandedSeriesIds) {
+                    state.expandedSeriesIds - mangaId
+                } else {
+                    state.expandedSeriesIds + mangaId
+                },
+            )
         }
     }
 
@@ -511,22 +530,63 @@ class UpdatesViewModel @Inject constructor(
         val items: PersistentList<UpdatesItem> = persistentListOf(),
         val dialog: Dialog? = null,
         val lastUpdated: Long = 0L,
+        /**
+         * Series whose stacked older updates are expanded, by `mangaId`.
+         *
+         * Presentational only. Membership is re-derived from [items] on every read, so it can name a
+         * series that has scrolled out of the window; `getUiModel()` simply ignores unknown ids.
+         */
+        val expandedSeriesIds: Set<Long> = emptySet(),
     ) {
         val selected = items.filter { it.selected }
         val selectionMode = selected.isNotEmpty()
 
+        /**
+         * The rows the list renders, grouped by series.
+         *
+         * **Why group here.** `toUpdateItems()` already interns each series' cover to one instance,
+         * but the *rows* were still one per chapter — so reading 50 chapters of one series meant 50
+         * rows and 50 near‑identical covers. Stacking collapses that to one row plus an expand
+         * toggle, which is what `HistoryUiModel.Series` already does for history.
+         *
+         * Grouping is by `mangaId` and the input is newest‑first, so the first of each group is its
+         * most recent chapter and becomes the visible row. Series that appear once stay as plain
+         * [UpdatesUiModel.Item]s — no expand affordance for a single update, which would be noise.
+         *
+         * Headers are inserted *after* grouping, so a stacked series is filed under the day of its
+         * newest update rather than being split across days by its older chapters.
+         */
         fun getUiModel(): List<UpdatesUiModel> {
-            return items
-                .map { UpdatesUiModel.Item(it) }
+            val grouped = items.groupBy { it.update.mangaId }.values.map { rows ->
+                if (rows.size == 1) {
+                    UpdatesUiModel.Item(rows.first())
+                } else {
+                    UpdatesUiModel.Series(latest = rows.first(), older = rows.drop(1))
+                }
+            }
+            return grouped
                 .insertSeparators { before, after ->
-                    val beforeDate = before?.item?.update?.dateFetch?.toLocalDate()
-                    val afterDate = after?.item?.update?.dateFetch?.toLocalDate()
+                    val beforeDate = dateOf(before)
+                    val afterDate = dateOf(after)
                     when {
                         beforeDate != afterDate && afterDate != null -> UpdatesUiModel.Header(afterDate)
                         // Return null to avoid adding a separator between two items.
                         else -> null
                     }
                 }
+        }
+
+        /**
+         * The day a row is filed under, or null for a header.
+         *
+         * A stacked series is dated by its **newest** update, which is deliberate: the group lives
+         * where the user last touched that series, exactly as `HistoryViewModel.representativeReadAt`
+         * documents for the same situation. Its older chapters may span earlier days.
+         */
+        private fun dateOf(model: UpdatesUiModel?) = when (model) {
+            null, is UpdatesUiModel.Header -> null
+            is UpdatesUiModel.Item -> model.item.update.dateFetch.toLocalDate()
+            is UpdatesUiModel.Series -> model.latest.update.dateFetch.toLocalDate()
         }
     }
 

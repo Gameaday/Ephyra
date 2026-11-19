@@ -1605,4 +1605,15 @@
         <item quantity="one">%1$d more chapter read</item>
         <item quantity="other">%1$d more chapters read</item>
     </plurals>
+
+    <!--
+      Updates: expander label under a stacked series group. Deliberately differs from
+      history_series_more_chapters: on Updates the chapters are newly fetched, not read, so
+      "read" would be wrong. Kept as its own resource because the two strings answer different
+      questions, and sharing one would make one of them always slightly wrong.
+    -->
+    <plurals name="updates_series_more_chapters">
+        <item quantity="one">%1$d more chapter</item>
+        <item quantity="other">%1$d more chapters</item>
+    </plurals>
 </resources>
