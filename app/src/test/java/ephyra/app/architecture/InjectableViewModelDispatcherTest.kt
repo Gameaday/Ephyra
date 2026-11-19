@@ -180,6 +180,56 @@ class InjectableViewModelDispatcherTest {
         )
     }
 
+    /**
+     * A ViewModel that takes a dispatcher must have a test that injects one.
+     *
+     * **The limitation this closes.** The two rules above are both source-text checks on production
+     * code. They can prove a ViewModel *declares* a dispatcher and *uses* it, but not that any test
+     * ever passes one -- a ViewModel could take the parameter, use it, and still have every test
+     * exercise the production `Dispatchers.IO`, which is the flake the whole exercise exists to
+     * remove.
+     *
+     * Closing that properly needs reflection or a compiler plugin. What is available cheaply is the
+     * empirical form: for each ViewModel that declares a dispatcher, look for a test file that
+     * constructs it with an explicit dispatcher argument. That is a proxy, not a proof -- it cannot
+     * tell which constructor call a given test uses, or whether the injected value is a test
+     * dispatcher -- so a failure here means "go look", not "this is broken".
+     *
+     * ViewModels with no IO to inject need no exemption: they declare no `@IoDispatcher`, so the
+     * filter below skips them. The four such ViewModels (`NewUpdate`, `Onboarding`,
+     * `VideoPlayer`, `BackupSchema`) were checked and genuinely reach no dispatcher.
+     */
+    @Test
+    fun `each ViewModel that takes a dispatcher has a test that injects one`() {
+        // Read each test file once. Walking the tree per ViewModel made this O(viewModels x files)
+        // and the test ran for minutes -- it has to be a single pass.
+        val testSources = File(repositoryRoot(), "feature").walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .filter { it.path.replace(File.separatorChar, '/').contains("/src/test/") }
+            .associate { it.name to it.readText() }
+
+        val offenders = mutableListOf<String>()
+        for (file in productionViewModels()) {
+            if (!file.readText().contains("@IoDispatcher")) continue
+            val name = file.name.removeSuffix(".kt")
+
+            val injecting = testSources.any { (testName, source) ->
+                testName.contains(name, ignoreCase = true) &&
+                    DISPATCHER_ARGUMENT.containsMatchIn(source)
+            }
+            if (!injecting) offenders += name
+        }
+
+        assertTrue(
+            offenders.isEmpty(),
+            "these ViewModels take an @IoDispatcher but no test of theirs passes a dispatcher, so " +
+                "every test still runs on the production Dispatchers.IO:\n" +
+                offenders.joinToString("\n") { "  $it" } +
+                "\nAdd a dispatcher argument to the test's construction (as StatsViewModelTest does), " +
+                "or -- if the ViewModel has no IO -- remove the unused parameter.",
+        )
+    }
+
     /** Production ViewModels under `feature`, wherever the build is running. */
     private fun productionViewModels(): List<File> =
         File(repositoryRoot(), "feature").walkTopDown()
@@ -229,6 +279,14 @@ class InjectableViewModelDispatcherTest {
         val REACHES_IO = Regex(
             """viewModelScope\.launch(IO|\(Dispatchers\.)|\bwithIOContext\s*\{""",
         )
+        /**
+         * A named-argument assignment of a dispatcher, as in `ioDispatcher = testDispatcher`.
+         *
+         * Deliberately loose: the point is only to tell "this test supplies a dispatcher" from "it
+         * does not". Confirming the supplied value really is a test dispatcher would need parsing,
+         * and a wrong guess here produces a review prompt rather than a broken build.
+         */
+        val DISPATCHER_ARGUMENT = Regex("""\b\w*[Dd]ispatcher\w*\s*=\s*\w+""")
 
         /**
          * A dispatcher field reaching a coroutine builder: `launch(ioDispatcher)`,
