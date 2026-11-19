@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Shape
@@ -129,12 +130,35 @@ enum class MangaCover(val ratio: Float) {
 }
 
 /**
- * Placeholder painted while a cover loads.
+ * The placeholder painted while a cover loads.
  *
  * Derived from the theme rather than a fixed translucent grey. The literal was the same in all
  * themes, so on the Monochrome and Monet palettes the placeholder was the one surface in the grid
  * that did not belong to the palette it was sitting in.
+ *
+ * `public` rather than private because `CoverSearchDialog` had its own `Color(0x1F888888)`
+ * placeholder — a fixed grey with no relationship to the theme, and therefore wrong in every palette
+ * except the one it was picked from. A cover placeholder is a cover placeholder; there should be one.
+ * It is a design-system function, so it is part of `presentation-core`'s surface by design.
  */
 @Composable
-private fun coverPlaceholderColor(): Color =
+fun coverPlaceholderColor(): Color =
     MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
+
+/**
+ * The bottom-edge scrim behind text laid over a cover (title, "continue reading" affordance).
+ *
+ * A fixed 67%-black fade rather than a theme colour, deliberately: this is legibility over
+ * arbitrary artwork, so it must not change with the palette. A theme-derived scrim would let a
+ * light palette drop white text onto a bright cover.
+ *
+ * Exists because the same `Brush.verticalGradient(0f to Transparent, 1f to Color(0xAA000000))`
+ * was written out twice — `CommonMangaItem` and `CommonMangaGridItem` — with no name and no reason
+ * recorded for the alpha.
+ */
+val CoverTextScrim: Brush
+    @Composable
+    get() = Brush.verticalGradient(
+        0f to Color.Transparent,
+        1f to Color(0xAA000000),
+    )

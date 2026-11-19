@@ -31,6 +31,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ephyra.presentation.core.components.BadgeGroup
+import ephyra.presentation.core.components.CoverTextScrim
 import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.theme.LocalBrandedTheme
 import ephyra.presentation.core.theme.ShapeTokens
@@ -86,12 +87,7 @@ fun MangaCompactGridItem(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp))
-                            .background(
-                                Brush.verticalGradient(
-                                    0f to Color.Transparent,
-                                    1f to Color(0xAA000000),
-                                ),
-                            )
+                            .background(CoverTextScrim)
                             .fillMaxHeight(0.33f)
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter),

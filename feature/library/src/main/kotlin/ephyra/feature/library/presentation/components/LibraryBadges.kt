@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.domain.manga.model.SourceStatus
+import ephyra.presentation.core.components.AuthorityBrandColors
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.theme.EphyraPreviewTheme
 
@@ -91,12 +92,13 @@ internal fun AuthorityBadge(hasCanonicalId: Boolean, canonicalId: String? = null
 /**
  * Returns the brand color for a known authority, or null for unknown prefixes.
  * Used by both library badges and the series detail page authority badge.
+ *
+ * The values live in [AuthorityBrandColors] because `feature:manga` needs the same map and neither
+ * feature may depend on the other. This file and `MangaInfoHeader.kt` each carried a byte-identical
+ * copy of the map before, which is how one brand colour could change in one place and not the other.
  */
-internal fun authorityBrandColor(canonicalId: String?): Color? {
-    if (canonicalId == null) return null
-    val prefix = canonicalId.substringBefore(":", "")
-    return AUTHORITY_BRAND_COLORS[prefix]
-}
+internal fun authorityBrandColor(canonicalId: String?): Color? =
+    AuthorityBrandColors.forAuthority(canonicalId)
 
 /**
  * Returns a gradient [Brush] for authorities that use a multi-color brand identity,
@@ -104,24 +106,9 @@ internal fun authorityBrandColor(canonicalId: String?): Color? {
  * has a gradient (purple → blue, matching the Jellyfin logo).
  */
 internal fun authorityBrandGradient(canonicalId: String?): Brush? {
-    if (canonicalId == null) return null
-    val prefix = canonicalId.substringBefore(":", "")
-    val colors = AUTHORITY_GRADIENT_COLORS[prefix] ?: return null
+    val colors = AuthorityBrandColors.gradientFor(canonicalId) ?: return null
     return Brush.horizontalGradient(colors)
 }
-
-/** Brand colors for known authority trackers. */
-private val AUTHORITY_BRAND_COLORS = mapOf(
-    "al" to Color(0xFF02A9FF), // AniList blue
-    "mal" to Color(0xFF2E51A2), // MyAnimeList blue
-    "mu" to Color(0xFFFF6740), // MangaUpdates orange
-    "jf" to Color(0xFF00A4DC), // Jellyfin blue (primary)
-)
-
-/** Gradient stops for authorities with multi-color brand identities. */
-private val AUTHORITY_GRADIENT_COLORS = mapOf(
-    "jf" to listOf(Color(0xFFAA5CC3), Color(0xFF00A4DC)), // Jellyfin purple → blue
-)
 
 @PreviewLightDark
 @Composable

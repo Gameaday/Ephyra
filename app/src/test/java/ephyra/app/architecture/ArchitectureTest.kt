@@ -100,6 +100,60 @@ class ArchitectureTest {
     }
 
     /**
+     * Colour-Token Rule:
+     * A literal `Color(0x...)` outside the theme must be justified by being a *brand* colour or a
+     * non-themeable constant — never a UI colour that a palette should own.
+     *
+     * **Why this gate exists.** An audit found 22 literal colours across 12 files outside
+     * `theme/colorscheme/`. Most were *correct* and this gate had to be able to tell them apart:
+     *
+     * - `theme/colorscheme` — ~700 literals that *are* the palettes. Correct by definition.
+     * - `icons` (Github, Discord, Reddit, X, Facebook) — third-party brand marks that must render
+     *   identically in every palette. A themeable GitHub logo is a wrong GitHub logo.
+     * - `AuthorityBrandColors` — same argument for service brands (AniList, MyAnimeList, ...).
+     * - `MangaCover.CoverTextScrim` / `coverPlaceholderColor` — legibility over arbitrary artwork.
+     *
+     * What was *not* correct: the same authority brand map defined **three times**
+     * (`LibraryBadges`, `MangaInfoHeader`, `TrackInfoDialogHome`), and two copies of the cover scrim
+     * gradient with no name. Those are now one definition each.
+     *
+     * **The rule is deliberately narrow.** It asserts that every literal colour lives under one of a
+     * few named, individually-justified paths — it does *not* try to judge whether a given literal
+     * "should" be a token, which no regex can decide. Adding a new legitimate exception means adding
+     * it here with the reason, so the exception list stays short and reviewed rather than growing
+     * silently.
+     *
+     * **Kotlin block comments nest, and this KDoc originally broke the build because of it.** The
+     * first draft listed the exceptions with a trailing glob (`colorscheme` + slash-star, and `icons`
+     * + slash-star) — and that slash-star sequence *inside* a block comment opens a nested comment
+     * that nothing ever closes. ktlint reported the resulting imbalance as `Missing '}'` at L100, 30
+     * lines *before* the real cause, which sent the search in the wrong direction twice. The paths
+     * below are written without the trailing glob for that reason; the meaning is still obvious.
+     */
+    @Test
+    fun `a literal colour outside the theme is a brand or non-themeable constant`() {
+        val allowed = COLOR_EXCEPTION_PATHS
+        val offenders = TrackedFileNames.inMainSources()
+            .filter { it.endsWith(".kt") }
+            .filterNot { file -> allowed.any { file.contains(it) } }
+            .mapNotNull { file ->
+                val text = File(TrackedFileNames.repositoryRoot(), file).readText()
+                val count = LITERAL_COLOR.findAll(text).count()
+                if (count > 0) "$file ($count)" else null
+            }
+
+        assertTrue(
+            offenders.isEmpty(),
+            "These files hardcode a Color(0x...) outside the theme. A literal UI colour cannot be " +
+                "re-skinned by a palette, so it stays wrong in every theme but the one it was " +
+                "picked from. Brand colours (icons, authority badges) and non-themeable constants " +
+                "(text scrims over artwork) are legitimate and live under the paths listed in " +
+                "COLOR_EXCEPTION_PATHS; anything else should be a theme token:\n" +
+                offenders.joinToString("\n") { "  $it" },
+        )
+    }
+
+    /**
      * Package-Root Rule:
      * Every source file under `feature/X` must declare `package ephyra.feature.X...`.
      *
@@ -456,6 +510,33 @@ class ArchitectureTest {
          */
         val FEATURE_MODULES: List<String> =
             ALL_FEATURE_PACKAGES.map { it.removePrefix("ephyra.feature.") }
+
+        /** A literal `Color(0x......)` — 6 or 8 hex digits, with or without alpha. */
+        val LITERAL_COLOR = Regex("""Color\(0x[0-9A-Fa-f]{6,8}\)""")
+
+        /**
+         * Paths allowed to hold a literal colour, each with the reason it is not a theme token.
+         *
+         * Kept as an explicit, short list so a new exception is a reviewed decision rather than a
+         * silent addition. If you add one, add the reason here too — a future reader cannot tell
+         * from the path alone why a brand colour belongs in a colour gate's allowlist.
+         */
+        val COLOR_EXCEPTION_PATHS = listOf(
+            // The palettes themselves. ~700 literals that ARE the theme. Note the path has no `core`
+            // segment: `core` is part of the *package* (ephyra.presentation.core.theme), while the
+            // directory is presentation-core/src/main/java/ephyra/presentation/theme/.
+            "presentation/theme/colorscheme/",
+            // Third-party brand marks: must render identically in every palette.
+            "presentation/core/icons/",
+            // Service brand colours (AniList/MyAnimeList/MangaUpdates/Jellyfin) + the cover scrim and
+            // placeholder tokens that must not be re-skinned. Both live in components/ and are named
+            // for that reason.
+            "presentation/core/components/AuthorityBrandColors.kt",
+            "presentation/core/components/MangaCover.kt",
+            // Bitmap compositing for the reader's hardware/software decode paths: these operate on
+            // raw pixels, not on themed UI, so a palette has no say.
+            "feature/reader/src/main/kotlin/ephyra/feature/reader/viewer/ReaderImagePainters.kt",
+        )
 
         val DECLARED_CROSS_FEATURE_PACKAGES: Map<String, Set<String>> = mapOf(
             "ephyra.feature.browse" to setOf("ephyra.feature.manga", "ephyra.feature.migration"),

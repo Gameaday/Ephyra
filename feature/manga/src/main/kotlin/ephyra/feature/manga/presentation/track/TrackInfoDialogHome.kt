@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.domain.track.service.Tracker
 import ephyra.feature.manga.track.TrackItem
+import ephyra.presentation.core.components.AuthorityBrandColors
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.TrackLogoIcon
 import ephyra.presentation.core.i18n.stringResource
@@ -345,8 +346,8 @@ private const val UNSET_TEXT_ALPHA = 0.5F
 /** Alpha applied to tonal authority badge surfaces — shared across all authority UI. */
 private const val AUTHORITY_SURFACE_ALPHA = 0.4f
 
-/** Jellyfin brand color (#00A4DC). */
-private val JellyfinBadgeColor = Color(0xFF00A4DC)
+/** Jellyfin brand color (#00A4DC), shared with the library and series-header badges. */
+private val JellyfinBadgeColor = AuthorityBrandColors.JELLYFIN
 
 @Composable
 private fun TrackDetailsItem(

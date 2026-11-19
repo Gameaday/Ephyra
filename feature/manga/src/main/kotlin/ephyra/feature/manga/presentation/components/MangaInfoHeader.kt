@@ -93,6 +93,7 @@ import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.SourceStatus
 import ephyra.presentation.core.R
+import ephyra.presentation.core.components.AuthorityBrandColors
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
@@ -993,26 +994,10 @@ private fun RowScope.MangaActionButton(
     }
 }
 
-private val AUTHORITY_BRAND_COLORS = mapOf(
-    "al" to Color(0xFF02A9FF),
-    "mal" to Color(0xFF2E51A2),
-    "mu" to Color(0xFFFF6740),
-    "jf" to Color(0xFF00A4DC),
-)
-
-private val AUTHORITY_GRADIENT_COLORS = mapOf(
-    "jf" to listOf(Color(0xFFAA5CC3), Color(0xFF00A4DC)),
-)
-
-private fun authorityBrandColor(canonicalId: String?): Color? {
-    if (canonicalId == null) return null
-    val prefix = canonicalId.substringBefore(":", "")
-    return AUTHORITY_BRAND_COLORS[prefix]
-}
+private fun authorityBrandColor(canonicalId: String?): Color? =
+    AuthorityBrandColors.forAuthority(canonicalId)
 
 private fun authorityBrandGradient(canonicalId: String?): Brush? {
-    if (canonicalId == null) return null
-    val prefix = canonicalId.substringBefore(":", "")
-    val colors = AUTHORITY_GRADIENT_COLORS[prefix] ?: return null
+    val colors = AuthorityBrandColors.gradientFor(canonicalId) ?: return null
     return Brush.horizontalGradient(colors)
 }

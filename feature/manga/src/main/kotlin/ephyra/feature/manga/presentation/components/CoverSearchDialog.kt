@@ -42,6 +42,7 @@ import ephyra.feature.manga.CoverResult
 import ephyra.feature.manga.CoverSearchViewModel
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.DropdownMenu
+import ephyra.presentation.core.components.coverPlaceholderColor
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
@@ -157,7 +158,7 @@ private fun CoverSearchItem(
             AsyncImage(
                 model = cover.thumbnailUrl,
                 contentDescription = cover.mangaTitle,
-                placeholder = ColorPainter(Color(0x1F888888)),
+                placeholder = ColorPainter(coverPlaceholderColor()),
                 error = rememberResourceBitmapPainter(id = R.drawable.cover_error),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
