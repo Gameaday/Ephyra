@@ -279,6 +279,7 @@ class InjectableViewModelDispatcherTest {
         val REACHES_IO = Regex(
             """viewModelScope\.launch(IO|\(Dispatchers\.)|\bwithIOContext\s*\{""",
         )
+
         /**
          * A named-argument assignment of a dispatcher, as in `ioDispatcher = testDispatcher`.
          *
