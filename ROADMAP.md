@@ -68,3 +68,16 @@ Next, in order:
 
 Blocked on device: nav ViewModel retention across tab switches, tall‑page sharpness,
 back‑motion feel, page‑load parity vs MiHon, cache exhaustion over a long series.
+
+### Open question: `popUpTo(0)` in `HomeScreen` (needs a device)
+
+`HomeScreen` clears the tab stack at three sites with `popUpTo(0) { inclusive = true }`.
+`0` is not a destination id anywhere in this graph (`DeepLinkScreen` correctly uses
+`ScreenRoutes.Home.route`). In Navigation Compose an unmatched id pops **nothing**, which
+would mean the stack is never cleared and `LibraryViewModel` is recreated on every tab
+switch — re-running the five‑way `combine` and re‑showing the spinner.
+
+`TabNavControllerLifetimeTest` asserts `popUpTo(0)` as *required*, so this cannot be changed
+on inspection alone: the assertion encodes the owner's two defect reports, and `popUpTo(0)`
+may be behaving as intended for a reason not visible from the source. Confirm on a device
+whether the back stack is actually empty on return to a tab root before touching it.
