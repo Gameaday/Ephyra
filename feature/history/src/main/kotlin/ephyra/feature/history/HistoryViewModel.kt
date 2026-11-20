@@ -69,14 +69,14 @@ class HistoryViewModel @Inject constructor(
      * is not its parent, so nothing owned by the test ever waits for it or stops it: it survives its
      * own test and reports into the shared uncaught-exception collector, which makes a *later* test
      * fail with `UncaughtExceptionsBeforeTest` before executing a line. That is how
-     * `HistoryViewModelTest` came to fail on `clearing all history emits HistoryCleared effect` â€” a
-     * test with no relationship to whatever actually threw â€” and only on CI, where timing lets the
+     * `HistoryViewModelTest` came to fail on `clearing all history emits HistoryCleared effect` — a
+     * test with no relationship to whatever actually threw — and only on CI, where timing lets the
      * leak land between two tests rather than after the last one.
      *
      * Production passes `null` and gets [viewModelScope]. A test passes the `backgroundScope` of its
      * `runTest`, which is cancelled automatically when that test ends: the collector stops *because
      * the test finished*, not because the test remembered to stop it. That is the property a shared
-     * scheduler cannot provide â€” it isolates coroutines without ever ending them.
+     * scheduler cannot provide — it isolates coroutines without ever ending them.
      */
     private val collectionScope: CoroutineScope? = null,
     // Injectable so a test can drive this on its own scheduler. `launchIO`/`withIOContext` are
@@ -184,7 +184,7 @@ class HistoryViewModel @Inject constructor(
     /**
      * The read date a top-level entry is dated by for day headers. A stacked series is dated by
      * its latest read; its older chapters may span earlier days, which is the intended
-     * trade-off â€” the group lives where the user last touched that series.
+     * trade-off — the group lives where the user last touched that series.
      */
     private fun HistoryUiModel.representativeReadAt(): Date? = when (this) {
         is HistoryUiModel.Series -> latest.readAt
@@ -212,7 +212,7 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    // Suspend accessor â€” returns a value so cannot be modelled as a fire-and-
+    // Suspend accessor — returns a value so cannot be modelled as a fire-and-
     // forget event; callers (HistoryTab) invoke this directly in a LaunchedEffect.
 
     suspend fun getNextChapter(): Chapter? {
@@ -259,7 +259,7 @@ class HistoryViewModel @Inject constructor(
         updateState { it.copy(dialog = dialog) }
     }
 
-    /** Toggles a stacked series group. Presentational only â€” no repository call. */
+    /** Toggles a stacked series group. Presentational only — no repository call. */
     private fun toggleSeriesExpanded(mangaId: Long) {
         updateState { current ->
             val ids = current.expandedSeriesIds

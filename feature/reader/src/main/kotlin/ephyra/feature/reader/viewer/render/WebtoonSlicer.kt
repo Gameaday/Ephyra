@@ -1,4 +1,4 @@
-﻿package ephyra.feature.reader.viewer.render
+package ephyra.feature.reader.viewer.render
 
 import kotlin.math.ceil
 import kotlin.math.max
@@ -23,7 +23,7 @@ import kotlin.math.max
  * height duplicated a band of content at every joint (2x overlap), broke aspect-ratio
  * accounting, and made revisit/layout unstable. If a 1px hairline seam is ever observed on a
  * specific GPU, the fix is to decode with overlap but *clip* (display only the non-overlapping
- * window) â€” never to stack overlapping bitmaps at full height.
+ * window) — never to stack overlapping bitmaps at full height.
  */
 object WebtoonSlicer {
 

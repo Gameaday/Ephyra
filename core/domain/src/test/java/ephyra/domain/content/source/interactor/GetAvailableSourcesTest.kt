@@ -1,4 +1,4 @@
-﻿package ephyra.domain.content.source.interactor
+package ephyra.domain.content.source.interactor
 
 import ephyra.core.common.preference.Preference
 import ephyra.domain.content.source.SourceType
@@ -36,7 +36,7 @@ class GetAvailableSourcesTest {
     // A hand-written fake instead of mockk: `SourceManager` exposes both a
     // `catalogueSources: Flow<List<CatalogueSource>>` property and a
     // `getCatalogueSources(): List<CatalogueSource>` overload, and mockk's call recorder
-    // resolves the property getter to the `List`-returning overload â€” throwing a
+    // resolves the property getter to the `List`-returning overload — throwing a
     // "Class cast exception happened / use `hint`" MockKException while recording the
     // `every { ... }` block (intermittent under its auto-hinter). A fake sidesteps the
     // recorder entirely.
@@ -153,7 +153,7 @@ class GetAvailableSourcesTest {
     }
 
     /**
-     * Minimal deterministic [SourceManager] â€” see the note on [sourceManager] for why this
+     * Minimal deterministic [SourceManager] — see the note on [sourceManager] for why this
      * is a hand-written fake rather than a `mockk(relaxed = true)`.
      */
     private class FakeSourceManager(

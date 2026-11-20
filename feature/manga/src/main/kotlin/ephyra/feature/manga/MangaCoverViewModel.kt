@@ -1,4 +1,4 @@
-﻿package ephyra.feature.manga
+package ephyra.feature.manga
 
 import android.app.Application
 import android.net.Uri
@@ -102,7 +102,7 @@ class MangaCoverViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val uri = saveCoverInternal(temp = true) ?: return@launch
-                // Emit effect â€” the UI layer handles startActivity with Activity context
+                // Emit effect — the UI layer handles startActivity with Activity context
                 emitEffect(MangaCoverEffect.StartShare(uri))
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)

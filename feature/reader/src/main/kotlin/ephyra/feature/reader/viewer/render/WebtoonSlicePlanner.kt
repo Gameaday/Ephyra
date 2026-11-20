@@ -1,4 +1,4 @@
-﻿package ephyra.feature.reader.viewer.render
+package ephyra.feature.reader.viewer.render
 
 import ephyra.domain.reader.media.DecodePlan
 import ephyra.domain.reader.media.DecodePlanner
@@ -16,7 +16,7 @@ import ephyra.domain.reader.media.SampleSizePolicy
  * ComposeWebtoonReader decides *whether* a page is sliceable with RenderPathPolicy (total and
  * tested, no inline conjunctions). This planner decides *how* a sliceable page is rendered: which
  * rectangle the slices tile, the exact partition of it (WebtoonSlicer), and the region decode
- * sample (SampleSizePolicy hysteresis over the width-fit rule). Everything here is pure â€” the
+ * sample (SampleSizePolicy hysteresis over the width-fit rule). Everything here is pure — the
  * composable calls it inside remember, and the same decision is reachable from JVM tests.
  *
  * Each tuple member earns its place:
@@ -28,7 +28,7 @@ import ephyra.domain.reader.media.SampleSizePolicy
  *  - PageRenderPath is the decision made upstream; a non-SLICED path yields no slices, so the
  *    composable renders its whole-image fallback without re-deriving anything.
  *  - DecodePlanner records the whole-page decode plan. For a long strip it names
- *    EXCEEDS_TEXTURE_LIMIT â€” the exact failure slicing exists to avoid â€” so the reason a strip
+ *    EXCEEDS_TEXTURE_LIMIT — the exact failure slicing exists to avoid — so the reason a strip
  *    is sliced travels with the slices instead of living in a reader's memory.
  *  - SampleSizePolicy owns the sample's hysteresis across re-plans: when the display demand
  *    changes (rotation, viewport change) the deadband keeps the previous sample while it is
@@ -55,7 +55,7 @@ object WebtoonSlicePlanner {
      *
      * [previousSample] is the sample this page last decoded with (null on the first plan); it
      * seeds the hysteresis so a demand change does not churn the decode. It is never allowed to
-     * override the width fit â€” see [refineSample].
+     * override the width fit — see [refineSample].
      */
     fun plan(
         metadata: PageMetadata,
@@ -113,7 +113,7 @@ object WebtoonSlicePlanner {
      *
      * The width-fit rule (never decode narrower than the display width) is a hard one-sided
      * constraint: BitmapRegionDecoder only accepts powers of two, and a sample coarser than the
-     * fit decodes a strip narrower than the screen and upscales it â€” the blurry-strip defect.
+     * fit decodes a strip narrower than the screen and upscales it — the blurry-strip defect.
      * SampleSizePolicy hysteresis therefore refines *within* the fit: a deadband hold is kept
      * when it is still legal, and anything the policy would coarsen past the fit is clamped
      * back. Without the clamp the policy alone answers over-coarse for widths just above a

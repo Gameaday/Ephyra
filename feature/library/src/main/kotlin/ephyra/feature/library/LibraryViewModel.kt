@@ -1,4 +1,4 @@
-﻿package ephyra.feature.library
+package ephyra.feature.library
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastAny
@@ -154,7 +154,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryScreenEvent.OpenDeleteMangaDialog -> openDeleteMangaDialog()
             is LibraryScreenEvent.CloseDialog -> closeDialog()
 
-            // Sealed UDF: previously public ViewModel methods â†’ events
+            // Sealed UDF: previously public ViewModel methods → events
             is LibraryScreenEvent.RefreshLibrary -> refreshLibrary(event.category)
             is LibraryScreenEvent.GetRandomManga -> getRandomManga()
             is LibraryScreenEvent.NavigateToNextUnread -> navigateToNextUnread(event.manga)
@@ -579,7 +579,7 @@ class LibraryViewModel @Inject constructor(
             getLibraryItemPreferencesFlow(),
             downloadCache.changes,
         ) { libraryManga, preferences, _ ->
-            // Build a sourceâ†’language map once per emission instead of once per manga, so a library
+            // Build a source→language map once per emission instead of once per manga, so a library
             // with 1 000 manga from 10 sources makes 10 getOrStub calls instead of 1 000.
             val sourceLangMap = if (preferences.languageBadge) {
                 libraryManga.mapTo(HashSet()) { it.manga.source }
@@ -726,7 +726,7 @@ class LibraryViewModel @Inject constructor(
             DownloadAction.UNREAD_CHAPTERS -> downloadNextChapters(null)
             DownloadAction.BOOKMARKED_CHAPTERS -> downloadBookmarkedChapters()
             // Jellyfin sync actions are handled at the manga screen level,
-            // not the library level â€” no-op here for safety
+            // not the library level — no-op here for safety
             DownloadAction.SYNC_TO_JELLYFIN,
             DownloadAction.SYNC_READ_TO_JELLYFIN,
             DownloadAction.SYNC_ALL_TO_JELLYFIN,

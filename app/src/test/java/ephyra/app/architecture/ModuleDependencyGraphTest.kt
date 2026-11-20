@@ -1,4 +1,4 @@
-﻿package ephyra.app.architecture
+package ephyra.app.architecture
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -11,7 +11,7 @@ import java.io.File
  * Repository-walking gates used to be built on `File.walkTopDown()` plus a hand-maintained list of
  * directories to exclude (`build/`, `.git/`, and an agent worktree directory). That list is a
  * correctness liability: a gate that must be told about every directory that can appear inside the
- * repository will eventually miss one, and it fails *open* â€” the unseen tree is simply not checked.
+ * repository will eventually miss one, and it fails *open* — the unseen tree is simply not checked.
  * `SigningSecretTest` is the sharp case, because a keystore hidden in an unscanned tree is exactly
  * the leak it exists to catch.
  *
@@ -22,7 +22,7 @@ import java.io.File
  * disk".
  *
  * **Failure behaviour is fail-open and is stated rather than hidden.** If git cannot be executed,
- * `list` returns empty, and both consumers assert "nothing offending was found" â€” so the gate passes
+ * `list` returns empty, and both consumers assert "nothing offending was found" — so the gate passes
  * without having checked anything. That is the correct trade for a repository-shape gate, whose
  * real risk is noise from a 1200-file project, but it is a real limitation: on a machine with no git
  * on `PATH`, these two gates are inert. The mitigation is that the environment which runs them
@@ -47,7 +47,7 @@ object TrackedFiles {
 }
 
 /**
- * ARC-001 â€” enforce the target module dependency graph.
+ * ARC-001 — enforce the target module dependency graph.
  *
  * The repository's confirmed debt (ledger row B-006) is that `presentation-core` exports
  * `core:data`, and that feature modules broadly depend on data. A cap on the raw number of
@@ -61,7 +61,7 @@ object TrackedFiles {
  * test rewritten. That is the deliberate difference between a gate and a metric: these rules do not
  * move when a number moves, and they cannot be satisfied by editing one.
  *
- * E2 by construction â€” parses the build scripts from disk; no device required.
+ * E2 by construction — parses the build scripts from disk; no device required.
  */
 class ModuleDependencyGraphTest {
 
@@ -85,7 +85,7 @@ class ModuleDependencyGraphTest {
         assertTrue(
             stale.isEmpty(),
             "DECLARED_CORE_DOMAIN_EDGES still lists $stale, which no longer exists. Remove the " +
-                "declaration so the exception list reflects reality â€” and treat removing the edge " +
+                "declaration so the exception list reflects reality — and treat removing the edge " +
                 "as the prompt to tighten the layer.",
         )
     }
@@ -158,7 +158,7 @@ class ModuleDependencyGraphTest {
         assertTrue(
             stale.isEmpty(),
             "DECLARED_FEATURE_EDGES still lists $stale, which no longer exists. Remove the " +
-                "declaration so the exception list reflects reality â€” and treat removing the edge " +
+                "declaration so the exception list reflects reality — and treat removing the edge " +
                 "as progress against B-006.",
         )
     }
@@ -275,7 +275,7 @@ class ModuleDependencyGraphTest {
      * True when [module] is, or is nested under, any of [layers].
      *
      * Module coordinates are canonical `:a:b` strings, so a bare `startsWith("core")` never matches
-     * `:core:domain` â€” the leading colon. Each layer must therefore be compared as a path segment
+     * `:core:domain` — the leading colon. Each layer must therefore be compared as a path segment
      * boundary. This is a second defect the falsification probe exposed: even with correct edge
      * extraction, every prefix test here would have compared a colon-prefixed string against a
      * colon-less literal and silently reported no offenders.
@@ -411,8 +411,8 @@ class ModuleDependencyGraphTest {
     /**
      * Extracts every project this build script depends on, in canonical `:a:b` form.
      *
-     * The repository uses Gradle's type-safe accessor form exclusively â€” `projects.core.data`,
-     * `projects.feature.reader` â€” verified by scanning every tracked `build.gradle.kts`. The
+     * The repository uses Gradle's type-safe accessor form exclusively — `projects.core.data`,
+     * `projects.feature.reader` — verified by scanning every tracked `build.gradle.kts`. The
      * `project(":a:b")` form does not occur and is still accepted.
      *
      * **This previously did not work, and the gate was inert because of it.** The old extraction was
@@ -426,7 +426,7 @@ class ModuleDependencyGraphTest {
      * behavior is skipped is not passing." These rules were reported as the structural backstop for
      * the layering architecture, and they could not have failed. It was found by staging a
      * deliberate `core -> feature` violation and observing the gate stay green, not by reading the
-     * code â€” which is the argument for keeping a falsification probe rather than trusting a green run.
+     * code — which is the argument for keeping a falsification probe rather than trusting a green run.
      */
     private fun referencedProjects(text: String): List<String> {
         val fromAccessors = ACCESSOR_REFERENCE.findAll(text).map { match ->
@@ -480,7 +480,7 @@ class ModuleDependencyGraphTest {
          * hidden: a new edge fails immediately, and a declaration that no longer matches reality
          * also fails, so the exception list cannot drift in either direction.
          *
-         * Removing them is Phase 3 / `ARC-002` work â€” they are `B-006`-class debt with a named
+         * Removing them is Phase 3 / `ARC-002` work — they are `B-006`-class debt with a named
          * replacement, not an accepted end state.
          */
         val DECLARED_CORE_DOMAIN_EDGES =
@@ -495,7 +495,7 @@ class ModuleDependencyGraphTest {
          *
          * A design-system module is depended on *by* features and is meant to be: it owns the visual
          * vocabulary (widgets, tokens, shared layout) and no app state. Its inbound feature edges are
-         * healthy, so they are not `B-006` debt and must not be listed there â€” that would make the
+         * healthy, so they are not `B-006` debt and must not be listed there — that would make the
          * debt list false and would make extracting a design system look like a regression.
          *
          * Membership is load-bearing, so it is policed: `feature modules do not depend on each other`
@@ -508,14 +508,14 @@ class ModuleDependencyGraphTest {
         )
 
         /**
-         * The feature-to-feature edges that exist today â€” the concrete form of ledger row
+         * The feature-to-feature edges that exist today — the concrete form of ledger row
          * `B-006`, where sibling features reach into each other. They are the reason
          * `ROADMAP.md` rule 5 exists and why Phase 9 requires sibling-feature dependencies to
          * become an explicit allowlist of navigation contracts.
          *
          * Declaring them individually, rather than allowing a count, is the point: the count cannot
          * say *which* edges are wrong, and a new edge must fail even though twenty-four others are
-         * tolerated. As each is replaced by a public contract, remove it here â€” the
+         * tolerated. As each is replaced by a public contract, remove it here — the
          * `feature declarations have not gone stale` test makes the removal the prompt.
          *
          * **`:feature:settings -> :feature:settings-ui` is deliberately *not* in this set.** It is a
@@ -547,12 +547,12 @@ class ModuleDependencyGraphTest {
             )
 
         /**
-         * `projects.core.data`, `projects.feature.reader` â€” the full dotted accessor path, so a
+         * `projects.core.data`, `projects.feature.reader` — the full dotted accessor path, so a
          * nested module resolves to `core:data` rather than the bare first segment.
          */
         val ACCESSOR_REFERENCE = Regex("""projects\.((?:[a-zA-Z][a-zA-Z0-9_]*\.)*[a-zA-Z][a-zA-Z0-9_]*)""")
 
-        /** `project(":core:data")` â€” not currently used in this repository, accepted anyway. */
+        /** `project(":core:data")` — not currently used in this repository, accepted anyway. */
         val STRING_REFERENCE = Regex("""project\("(:[a-zA-Z0-9:_-]+)"\)""")
     }
 }

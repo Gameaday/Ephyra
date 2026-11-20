@@ -1,4 +1,4 @@
-﻿package ephyra.feature.reader.viewer.render
+package ephyra.feature.reader.viewer.render
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -14,20 +14,20 @@ import kotlin.math.max
 /**
  * Decodes vertical slices of a webtoon strip at full screen-width resolution.
  *
- * Each slice is small enough to stay under the GPU texture ceiling, so â€” unlike a single
- * full-strip Coil request (which forces a global `inSampleSize` downscale) â€” text stays sharp.
+ * Each slice is small enough to stay under the GPU texture ceiling, so — unlike a single
+ * full-strip Coil request (which forces a global `inSampleSize` downscale) — text stays sharp.
  * Callers share the page bytes they already buffered; no extra network fetch per slice.
  *
  * A1: the sample size and the rectangle to slice are decisions made upstream by
  * [WebtoonSlicePlanner] (width fit plus hysteresis, crop-aware rect). This object only
- * executes them against BitmapRegionDecoder â€” it no longer derives a sample of its own, so
+ * executes them against BitmapRegionDecoder — it no longer derives a sample of its own, so
  * the policy and the decoder cannot disagree about how finely a strip is fetched.
  */
 object WebtoonRegionDecoder {
 
     /**
      * Decodes [slice] out of [bytes], subsampled so the result is ~[targetWidthPx] wide.
-     * Returns `null` when region decoding is unsupported (progressive JPEG, JXL, HEIF, â€¦)
+     * Returns `null` when region decoding is unsupported (progressive JPEG, JXL, HEIF, …)
      * so the caller can fall back to single-image rendering.
      *
      * The sample size is the smallest power of two that keeps the decoded width at or above
@@ -74,7 +74,7 @@ object WebtoonRegionDecoder {
      * [sampleSize] comes from the caller's plan: [WebtoonSlicePlanner] owns the choice, so the
      * width-fit rule and its hysteresis live in one testable place.
      *
-     * Cooperative cancellation: checks [isActive] between slices so a fast fling (1â†’5)
+     * Cooperative cancellation: checks [isActive] between slices so a fast fling (1→5)
      * abandons stale page decodes instead of racing them against the visible strip.
      */
     suspend fun decodeSlices(

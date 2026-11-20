@@ -1,4 +1,4 @@
-﻿package ephyra.feature.reader.viewer.render
+package ephyra.feature.reader.viewer.render
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -28,7 +28,7 @@ class WebtoonSlicerTest {
         // No slice exceeds the ceiling once scaled to display pixels.
         val scale = 1080.0 / 800
         slices.forEach { assertTrue(it.srcHeight * scale <= 2048 + 1e-6) }
-        // Exact partition: no overlap, no gaps â€” each row rendered exactly once.
+        // Exact partition: no overlap, no gaps — each row rendered exactly once.
         slices.zipWithNext().forEach { (a, b) -> assertEquals(a.bottom, b.top) }
         assertEquals(12000, slices.sumOf { it.srcHeight })
     }

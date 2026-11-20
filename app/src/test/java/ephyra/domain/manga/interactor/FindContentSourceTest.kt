@@ -1,4 +1,4 @@
-﻿package ephyra.domain.manga.interactor
+package ephyra.domain.manga.interactor
 
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
@@ -143,7 +143,7 @@ class FindContentSourceTest {
 
         val result = interactor.rankResults(matches, maxResults = 5)
 
-        // B and C tie on confidence (0.90), C has more chapters â†’ C first
+        // B and C tie on confidence (0.90), C has more chapters → C first
         result[0].sourceName shouldBe "C"
         result[1].sourceName shouldBe "B"
         result[2].sourceName shouldBe "A"

@@ -1,4 +1,4 @@
-﻿package ephyra.feature.reader
+package ephyra.feature.reader
 
 import android.app.Application
 import android.net.Uri
@@ -357,8 +357,8 @@ class ReaderViewModel @Inject constructor(
                     savedRestoreApplied = hasAppliedSavedPageIndex,
                 )
                 startRequest.requestedPage?.let { currentChapter.requestedPage = it }
-                // The restore decision is made for the first chapter that resolves â€” whether or not
-                // there was an index to restore â€” so a later chapter can never be mistaken for the
+                // The restore decision is made for the first chapter that resolves — whether or not
+                // there was an index to restore — so a later chapter can never be mistaken for the
                 // restored one. Progress stays synchronized through onPageSelected().
                 hasAppliedSavedPageIndex = startRequest.savedRestoreResolved
                 chapterId = currentChapter.chapter.id
@@ -369,7 +369,7 @@ class ReaderViewModel @Inject constructor(
                 // "page 2" while nothing had reported a page yet (the pager was still showing the
                 // transition card). Clear it until the first page selection reports the real
                 // position; the indicator is hidden at 0 rather than showing a stale number.
-                // The recorded page identity (R-C, F7) is cleared for the same reason â€” it
+                // The recorded page identity (R-C, F7) is cleared for the same reason — it
                 // belongs to the *previous* chapter's page list until a selection reports the
                 // new chapter's actual page, and the automatic background must not sample a
                 // stale chapter's surface.
@@ -387,7 +387,7 @@ class ReaderViewModel @Inject constructor(
     // â”€â”€ Cold-tier eviction (doc/cache-retention-policy.md rule 1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // The reader keeps the current chapter Â±2 hot. A chapter that falls out of the
     // window has its page list and images evicted: pages are large, viewed once
-    // sequentially, and cheap to re-fetch in the rare long backward jump â€” retention
+    // sequentially, and cheap to re-fetch in the rare long backward jump — retention
     // follows revisit probability, not arrival order. Eviction makes no network calls.
     private val readingWindow = ArrayDeque<ephyra.domain.chapter.model.Chapter>(WINDOW_SIZE)
 
@@ -413,7 +413,7 @@ class ReaderViewModel @Inject constructor(
         }
         // Series-switch eviction (doc/cache-retention-policy.md rule 1, second half):
         // the sliding window only slides within one series, and each series gets its
-        // own ViewModel â€” so without this, reading the latest chapter of N series
+        // own ViewModel — so without this, reading the latest chapter of N series
         // caches N Ã— WINDOW_SIZE chapters until byte-pressure LRU notices. On reader
         // close, keep only the chapter being left (instant resume) and decache the
         // rest. Rotation does not call onCleared, so this fires on genuine exit only.
@@ -606,7 +606,7 @@ class ReaderViewModel @Inject constructor(
             neighbours.next,
         )
 
-        // MutableStateFlow.update is thread-safe â€” no UI-thread dispatch needed.
+        // MutableStateFlow.update is thread-safe — no UI-thread dispatch needed.
         updateState {
             // Add new references first to avoid unnecessary recycling
             newChapters.ref()
@@ -813,7 +813,7 @@ class ReaderViewModel @Inject constructor(
 
     /**
      * Starts image preloading for the next chapter if the current chapter's forward buffer is
-     * healthy enough that we can spare bandwidth. Idempotent â€” pages already downloading or
+     * healthy enough that we can spare bandwidth. Idempotent — pages already downloading or
      * cached are skipped by [preloadFirstPages].
      *
      * @param currentPageIndex zero-based index of the page the user just navigated to.
@@ -1015,7 +1015,7 @@ class ReaderViewModel @Inject constructor(
 
         // Compute the 1-based display position by counting only visible pages up to
         // and including the current page. This keeps the bottom indicator and slider in sync
-        // with what is actually visible â€” hidden pages (absorbed stubs and blocked pages)
+        // with what is actually visible — hidden pages (absorbed stubs and blocked pages)
         // are invisible to the user and should not inflate the page count or current position.
         val displayIndex = if (chapterPages != null) {
             chapterPages.take(pageIndex + 1).count { !it.isHidden }
@@ -1024,9 +1024,9 @@ class ReaderViewModel @Inject constructor(
         }
         // R-C (Stage 4, audit F7): the selected page's identity is recorded alongside the display
         // index. `currentPage` counts *visible* pages, so it is a display position, not a raw list
-        // index â€” the screen that previously indexed `pages[getOrNull(currentPage)]` with it was
+        // index — the screen that previously indexed `pages[getOrNull(currentPage)]` with it was
         // reading (with no pages hidden) the *next* page's bytes. Consumers that need the page
-        // itself â€” the automatic background's rendered-surface sampling â€” read this field instead
+        // itself — the automatic background's rendered-surface sampling — read this field instead
         // of re-deriving a page from a display number.
         updateState {
             it.copy(currentPage = displayIndex, currentReaderPage = page)
@@ -1069,7 +1069,7 @@ class ReaderViewModel @Inject constructor(
                 updateChapterProgressOnComplete(readerChapter)
             }
 
-            // Skip the DB write when neither lastPageRead nor read changed â€” a memory
+            // Skip the DB write when neither lastPageRead nor read changed — a memory
             // equality check is cheaper than a SQL UPDATE and avoids unnecessary I/O.
             if (readerChapter.chapter.lastPageRead != prevLastPageRead ||
                 readerChapter.chapter.read != prevRead
@@ -1094,7 +1094,7 @@ class ReaderViewModel @Inject constructor(
     /**
      * Checks if [page] has become the effective last page of the chapter
      * (e.g. following pages were absorbed by smart-combine or blocked by filter).
-     * If so, marks the chapter read and updates trackers and DB â€” but only when the
+     * If so, marks the chapter read and updates trackers and DB — but only when the
      * arrival [navigationVector] is [NavigationVector.FORWARD]; backward movement never
      * mutates read state.
      */
@@ -1682,7 +1682,7 @@ class ReaderViewModel @Inject constructor(
 
         /**
          * The [ReaderPage] the user is currently on (R-C, Stage 4, audit F7). Unlike
-         * [currentPage] â€” a *display* position that counts only visible pages â€” this is the
+         * [currentPage] — a *display* position that counts only visible pages — this is the
          * actual page object, recorded by [updateChapterProgress] at selection time. Consumers
          * that need page payload (e.g. the automatic background's rendered-surface sampling)
          * read this instead of re-deriving a page from the display number, which previously

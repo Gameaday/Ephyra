@@ -1,4 +1,4 @@
-﻿package ephyra.feature.browse.source.globalsearch
+package ephyra.feature.browse.source.globalsearch
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -265,7 +265,7 @@ abstract class SearchViewModel(
         val from: Manga? = null,
         val searchQuery: String? = null,
         // Defaults to All so a fresh search fans out across every enabled source.
-        // PinnedOnly is intentionally opt-in only â€” it is exposed as a filter chip
+        // PinnedOnly is intentionally opt-in only — it is exposed as a filter chip
         // for users who want to limit network fan-out to their pinned sources, but
         // defaulting to it meant users with no pinned sources got an empty result
         // set on every search (and on every suggestion-chip tap).

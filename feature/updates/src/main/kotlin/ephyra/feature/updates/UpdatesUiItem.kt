@@ -1,4 +1,4 @@
-﻿package ephyra.feature.updates
+package ephyra.feature.updates
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -190,13 +190,13 @@ internal fun LazyListScope.updatesUiItems(
  *
  * Identical in intent to `HistoryScreen.withExpandedSeriesChildren`, and for the same reason: a series
  * rendered as a single lazy item would compose every older update whenever the group composed, give
- * none of them a key of their own, and none could animate with [animateItemFastScroll] â€” that
- * modifier only exists on the direct `LazyItemScope` receiver of a topâ€‘level item.
+ * none of them a key of their own, and none could animate with [animateItemFastScroll] — that
+ * modifier only exists on the direct `LazyItemScope` receiver of a top‑level item.
  *
  * Collapsed groups pass through untouched, so the collapsed list is exactly the stacked shape. The
- * children reuse the plainâ€‘item key and content type, which is unambiguous because grouping is by
+ * children reuse the plain‑item key and content type, which is unambiguous because grouping is by
  * `mangaId`: an update is either its group's newest (the [UpdatesUiModel.Series] row) or one of its
- * older items â€” never both.
+ * older items — never both.
  */
 internal fun List<UpdatesUiModel>.withExpandedSeriesItems(
     expandedSeriesIds: Set<Long>,
@@ -211,7 +211,7 @@ internal fun List<UpdatesUiModel>.withExpandedSeriesItems(
 /**
  * The expand/collapse affordance under a stacked series row.
  *
- * A wholeâ€‘width clickable row rather than an icon button, matching the history list: a small chevron
+ * A whole‑width clickable row rather than an icon button, matching the history list: a small chevron
  * under a row that is itself clickable is ambiguous about which row it belongs to, and a wider target
  * is easier to hit.
  */

@@ -1,4 +1,4 @@
-﻿package ephyra.feature.browse.source.globalsearch
+package ephyra.feature.browse.source.globalsearch
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -51,7 +51,7 @@ class GlobalSearchViewModel @Inject constructor(
 ) {
 
     /**
-     * Library matches for the current query â€” powers the "From your library" section at the
+     * Library matches for the current query — powers the "From your library" section at the
      * top of the results. Instant (local DB), no network; same normalization engine as Smart
      * Merge. Empty unless the query is >= 2 chars after normalization, so it is safe to
      * render as-you-type without firing network traffic.
@@ -78,8 +78,8 @@ class GlobalSearchViewModel @Inject constructor(
 
     /**
      * Recent-query chip row: recent searches filtered to the active query, for one-tap
-     * re-runs. Library titles are intentionally no longer chips â€” they live in the
-     * [libraryMatches] section as full rows, so the page reads Library â†’ recents â†’ sources
+     * re-runs. Library titles are intentionally no longer chips — they live in the
+     * [libraryMatches] section as full rows, so the page reads Library → recents → sources
      * instead of duplicating the same work as both a chip and a card.
      */
     val suggestions: StateFlow<List<String>> = combine(

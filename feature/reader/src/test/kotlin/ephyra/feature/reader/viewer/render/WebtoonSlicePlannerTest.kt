@@ -1,4 +1,4 @@
-﻿package ephyra.feature.reader.viewer.render
+package ephyra.feature.reader.viewer.render
 
 import ephyra.domain.reader.media.AnimationKind
 import ephyra.domain.reader.media.DecodePath
@@ -162,8 +162,8 @@ class WebtoonSlicePlannerTest {
     @Test
     fun `refinement never coarsens past the width fit`() {
         // 1500px source at a 1080px demand: the fit is ONE (1500/2 = 750 is below the demand).
-        // SampleSizePolicy alone answers TWO here â€” its ideal 1.5 lies outside ONE's deadband,
-        // so a single step coarsens â€” and decoding 750px for a 1080px screen is exactly the
+        // SampleSizePolicy alone answers TWO here — its ideal 1.5 lies outside ONE's deadband,
+        // so a single step coarsens — and decoding 750px for a 1080px screen is exactly the
         // blurry-strip defect the clamp exists to prevent. Falsification: no clamp, TWO.
         val metadata = PageMetadata(PixelSize(1500, 20000), AnimationKind.STATIC, PageImageFormat.JPEG)
         assertEquals(
@@ -179,7 +179,7 @@ class WebtoonSlicePlannerTest {
     @Test
     fun `a decisive demand growth moves the sample finer`() {
         // 2160px source: at 1080 the fit is TWO. The demand grows to 1200 (a wider viewport):
-        // the fit is ONE now, and the previous sample is coarser than the fit â€” holding TWO
+        // the fit is ONE now, and the previous sample is coarser than the fit — holding TWO
         // would decode 1080px for a 1200px demand, so the planner must follow the fit down.
         val metadata = PageMetadata(PixelSize(2160, 20000), AnimationKind.STATIC, PageImageFormat.JPEG)
         assertEquals(SampleSize.TWO, plan(metadata = metadata, targetWidthPx = 1080).sampleSize)
@@ -192,7 +192,7 @@ class WebtoonSlicePlannerTest {
     @Test
     fun `a small demand change keeps a still legal sample`() {
         // 2160px source at a 1050px demand: the fit stays TWO and the previous TWO sits inside
-        // the deadband â€” the sample is held, not recomputed past it. The hold only becomes
+        // the deadband — the sample is held, not recomputed past it. The hold only becomes
         // observable per-frame once demand is continuous (A4's pinch zoom); here it must at
         // least never drift.
         val metadata = PageMetadata(PixelSize(2160, 20000), AnimationKind.STATIC, PageImageFormat.JPEG)
