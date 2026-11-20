@@ -31,7 +31,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.core.common.i18n.stringResource
-import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.feature.history.components.HistoryDeleteAllDialog
 import ephyra.feature.history.components.HistoryDeleteDialog
 import ephyra.feature.history.components.HistoryItem
@@ -61,6 +60,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import java.time.LocalDate
+import java.util.Date
 
 @Composable
 fun HistoryScreen(
@@ -118,7 +118,7 @@ fun HistoryScreen(
                     expandedSeriesIds = state.expandedSeriesIds,
                     onClickCover = { history -> onClickCover(history.mangaId) },
                     onClickResume = { history -> onClickResume(history.mangaId, history.chapterId) },
-                    onClickDelete = { item -> onDialogChange(HistoryViewModel.Dialog.Delete(item)) },
+                    onClickDelete = { item -> onDialogChange(HistoryViewModel.Dialog.Delete(item.mangaId, item.id)) },
                     onClickFavorite = { history -> onClickFavorite(history.mangaId) },
                     onToggleSeries = onToggleSeries,
                 )
@@ -132,10 +132,10 @@ private fun HistoryScreenContent(
     history: List<HistoryUiModel>,
     contentPadding: PaddingValues,
     expandedSeriesIds: Set<Long>,
-    onClickCover: (HistoryWithRelations) -> Unit,
-    onClickResume: (HistoryWithRelations) -> Unit,
-    onClickDelete: (HistoryWithRelations) -> Unit,
-    onClickFavorite: (HistoryWithRelations) -> Unit,
+    onClickCover: (HistoryUiItem) -> Unit,
+    onClickResume: (HistoryUiItem) -> Unit,
+    onClickDelete: (HistoryUiItem) -> Unit,
+    onClickFavorite: (HistoryUiItem) -> Unit,
     onToggleSeries: (mangaId: Long) -> Unit,
 ) {
     FastScrollLazyColumn(
@@ -251,7 +251,7 @@ internal fun List<HistoryUiModel>.withExpandedSeriesChildren(
 
 sealed interface HistoryUiModel {
     data class Header(val date: LocalDate) : HistoryUiModel
-    data class Item(val item: HistoryWithRelations) : HistoryUiModel
+    data class Item(val item: HistoryUiItem) : HistoryUiModel
 
     /**
      * A series read more than once in the loaded window, stacked so reading 100 chapters of
@@ -259,8 +259,8 @@ sealed interface HistoryUiModel {
      * row); [older] are the remaining reads, newest-first, revealed by the expand toggle.
      */
     data class Series(
-        val latest: HistoryWithRelations,
-        val older: List<HistoryWithRelations>,
+        val latest: HistoryUiItem,
+        val older: List<HistoryUiItem>,
     ) : HistoryUiModel
 }
 
@@ -299,9 +299,9 @@ fun HistoryTabScreen(
                 onDismissRequest = onDismissRequest,
                 onDelete = { all ->
                     if (all) {
-                        viewModel.onEvent(HistoryScreenEvent.RemoveAllForManga(dialog.history.mangaId))
+                        viewModel.onEvent(HistoryScreenEvent.RemoveAllForManga(dialog.mangaId))
                     } else {
-                        viewModel.onEvent(HistoryScreenEvent.RemoveFromHistory(dialog.history))
+                        viewModel.onEvent(HistoryScreenEvent.RemoveFromHistory(dialog.historyId))
                     }
                 },
             )

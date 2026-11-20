@@ -1,4 +1,4 @@
-﻿package ephyra.feature.history
+package ephyra.feature.history
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
@@ -8,6 +8,7 @@ import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.mapAsCheckboxState
 import ephyra.core.common.util.insertSeparators
 import ephyra.core.common.util.lang.toLocalDate
+import ephyra.core.common.util.lang.toTimestampString
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
@@ -26,6 +27,7 @@ import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.presentation.core.udf.BaseUdfViewModel
+import ephyra.presentation.core.util.formatChapterNumber
 import ephyra.presentation.core.util.lang.searchResults
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
@@ -138,7 +140,7 @@ class HistoryViewModel @Inject constructor(
             // is used as the canonical instance because every row in a group describes the same
             // series and therefore carries an equal MangaCover (same id, url, lastModified).
             val sharedCover = latest.coverData
-            val group = entries.map { entry -> entry.copy(coverData = sharedCover) }
+            val group = entries.map { entry -> entry.copy(coverData = sharedCover).toUiItem() }
             topLevel += if (group.size == 1) {
                 HistoryUiModel.Item(group.first())
             } else {
@@ -155,6 +157,29 @@ class HistoryViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Maps one persisted history row to what the row renders.
+     *
+     * All formatting happens here so the composable holds no domain knowledge: it must not know that
+     * `chapterNumber < 0` is the sentinel for "unknown", and it must not carry a `Date` formatter.
+     * Both were previously inline in `HistoryItem`, which made the rules untestable without
+     * composing and made a `HistoryView` column rename a UI change.
+     */
+    private fun HistoryWithRelations.toUiItem(): HistoryUiItem = HistoryUiItem(
+        id = id,
+        mangaId = mangaId,
+        chapterId = chapterId,
+        title = title,
+        // `< 0` is the source's "no usable chapter number" sentinel; render the timestamp alone.
+        chapterLabel = if (chapterNumber > -1) formatChapterNumber(chapterNumber) else null,
+        readAtLabel = readAt?.toTimestampString().orEmpty(),
+        coverData = coverData,
+        // Offered only when the series is not already in the library. Read off the interned cover so
+        // it cannot disagree with the cover that is actually drawn.
+        canAddToLibrary = !coverData.isMangaFavorite,
+        readAt = readAt,
+    )
 
     /**
      * The read date a top-level entry is dated by for day headers. A stacked series is dated by
@@ -177,7 +202,7 @@ class HistoryViewModel @Inject constructor(
             is HistoryScreenEvent.AddFavorite -> addFavorite(event.manga)
             is HistoryScreenEvent.MoveMangaToCategoriesAndAddToLibrary ->
                 moveMangaToCategoriesAndAddToLibrary(event.manga, event.categories)
-            is HistoryScreenEvent.RemoveFromHistory -> removeFromHistory(event.history)
+            is HistoryScreenEvent.RemoveFromHistory -> removeFromHistory(event.historyId)
             is HistoryScreenEvent.RemoveAllForManga -> removeAllFromHistory(event.mangaId)
             is HistoryScreenEvent.RemoveAllHistory -> removeAllHistory()
             is HistoryScreenEvent.ShowMigrateDialog -> showMigrateDialog(event.target, event.current)
@@ -206,15 +231,15 @@ class HistoryViewModel @Inject constructor(
         emitEffect(Effect.OpenChapter(chapter))
     }
 
-    private fun removeFromHistory(history: HistoryWithRelations) {
+    private fun removeFromHistory(historyId: Long) {
         viewModelScope.launch(ioDispatcher) {
-            removeHistory.await(history)
+            removeHistory.await(historyId)
         }
     }
 
     private fun removeAllFromHistory(mangaId: Long) {
         viewModelScope.launch(ioDispatcher) {
-            removeHistory.await(mangaId)
+            removeHistory.awaitByMangaId(mangaId)
         }
     }
 
@@ -354,7 +379,7 @@ class HistoryViewModel @Inject constructor(
 
     sealed interface Dialog {
         data object DeleteAll : Dialog
-        data class Delete(val history: HistoryWithRelations) : Dialog
+        data class Delete(val mangaId: Long, val historyId: Long) : Dialog
         data class DuplicateManga(val manga: Manga, val duplicates: List<MangaWithChapterCount>) : Dialog
         data class ChangeCategory(
             val manga: Manga,

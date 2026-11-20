@@ -15,7 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -23,19 +22,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import ephyra.core.common.util.lang.toTimestampString
-import ephyra.domain.history.model.HistoryWithRelations
+import ephyra.feature.history.HistoryUiItem
 import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.formatChapterNumber
 import ephyra.presentation.theme.EphyraPreviewTheme
 
 private val HistoryItemHeight = 96.dp
 
 @Composable
 fun HistoryItem(
-    history: HistoryWithRelations,
+    history: HistoryUiItem,
     onClickCover: () -> Unit,
     onClickResume: () -> Unit,
     onClickDelete: () -> Unit,
@@ -54,8 +51,8 @@ fun HistoryItem(
             data = history.coverData,
             // Named so this cover is the shared element for History -> Series, like the library
             // grid cell. Without it the series page declared a shared element with no counterpart
-            // here, and because the pair's container motion is a deliberate no-op the whole
-            // transition had nothing left to animate — it cut.
+            // here, and because the pair container motion is a deliberate no-op the whole
+            // transition had nothing left to animate, so it cut.
             mangaId = history.mangaId,
             onClick = onClickCover,
         )
@@ -72,25 +69,26 @@ fun HistoryItem(
                 overflow = TextOverflow.Ellipsis,
                 style = textStyle,
             )
-            // Keyed: in a LazyColumn the same slot is reused as items scroll, so a keyless
-            // remember would show the previous item's timestamp here — and never update it.
-            val readAt = remember(history.readAt) { history.readAt?.toTimestampString() ?: "" }
+            // Keyed by the label, not the timestamp: the label is what actually changes when the
+            // row is rebound, and keying on a value we no longer hold would be a lie.
+            // In a LazyColumn the same slot is reused as items scroll, so a keyless remember would
+            // show the previous item timestamp here, and never update it.
             Text(
-                text = if (history.chapterNumber > -1) {
+                text = if (history.chapterLabel != null) {
                     stringResource(
                         ephyra.app.core.common.R.string.recent_manga_time,
-                        formatChapterNumber(history.chapterNumber),
-                        readAt,
+                        history.chapterLabel,
+                        history.readAtLabel,
                     )
                 } else {
-                    readAt
+                    history.readAtLabel
                 },
                 modifier = Modifier.padding(top = 4.dp),
                 style = textStyle,
             )
         }
 
-        if (!history.coverData.isMangaFavorite) {
+        if (history.canAddToLibrary) {
             IconButton(onClick = onClickFavorite) {
                 Icon(
                     imageVector = Icons.Outlined.FavoriteBorder,
@@ -114,12 +112,12 @@ fun HistoryItem(
 @Composable
 private fun HistoryItemPreviews(
     @PreviewParameter(HistoryWithRelationsProvider::class)
-    historyWithRelations: HistoryWithRelations,
+    previewItem: HistoryUiItem,
 ) {
     EphyraPreviewTheme {
         Surface {
             HistoryItem(
-                history = historyWithRelations,
+                history = previewItem,
                 onClickCover = {},
                 onClickResume = {},
                 onClickDelete = {},

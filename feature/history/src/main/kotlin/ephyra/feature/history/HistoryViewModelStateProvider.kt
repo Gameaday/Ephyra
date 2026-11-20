@@ -1,8 +1,8 @@
 package ephyra.feature.history
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.domain.manga.model.MangaCover
+import ephyra.presentation.core.util.formatChapterNumber
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -84,17 +84,16 @@ class HistoryViewModelStateProvider : PreviewParameterProvider<HistoryViewModel.
             }
         }
 
-        fun randItem(historyBuilder: (HistoryWithRelations) -> HistoryWithRelations = { it }) =
+        fun randItem(itemBuilder: (HistoryUiItem) -> HistoryUiItem = { it }) =
             HistoryUiModel.Item(
-                historyBuilder(
-                    HistoryWithRelations(
+                itemBuilder(
+                    HistoryUiItem(
                         id = Random.nextLong(),
                         chapterId = Random.nextLong(),
                         mangaId = Random.nextLong(),
                         title = "Test Title",
-                        chapterNumber = Random.nextDouble(),
-                        readAt = Date.from(Instant.now()),
-                        readDuration = Random.nextLong(),
+                        chapterLabel = formatChapterNumber(Random.nextDouble()),
+                        readAtLabel = "2 hours ago",
                         coverData = MangaCover(
                             mangaId = Random.nextLong(),
                             sourceId = Random.nextLong(),
@@ -102,6 +101,8 @@ class HistoryViewModelStateProvider : PreviewParameterProvider<HistoryViewModel.
                             url = "https://example.com/cover.png",
                             lastModified = Random.nextLong(),
                         ),
+                        canAddToLibrary = true,
+                        readAt = Date.from(Instant.now()),
                     ),
                 ),
             )

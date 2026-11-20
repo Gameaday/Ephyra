@@ -1,6 +1,5 @@
 package ephyra.feature.history
 
-import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.domain.manga.model.MangaCover
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -17,14 +16,13 @@ import java.util.Date
  */
 class HistoryExpandedChildrenTest {
 
-    private fun entry(id: Long, mangaId: Long, readAt: Date) = HistoryWithRelations(
+    private fun entry(id: Long, mangaId: Long, readAt: Date) = HistoryUiItem(
         id = id,
         chapterId = id,
         mangaId = mangaId,
         title = "Test Manga",
-        chapterNumber = 1.0,
-        readAt = readAt,
-        readDuration = 0L,
+        chapterLabel = "1",
+        readAtLabel = "3 days ago",
         coverData = MangaCover(
             mangaId = mangaId,
             sourceId = 1L,
@@ -32,6 +30,8 @@ class HistoryExpandedChildrenTest {
             url = null,
             lastModified = 0L,
         ),
+        canAddToLibrary = true,
+        readAt = readAt,
     )
 
     private fun day(offsetDays: Long) = Date(1_700_000_000_000L + offsetDays * 86_400_000L)

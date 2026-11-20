@@ -1,6 +1,5 @@
 package ephyra.feature.history
 
-import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.domain.manga.model.Manga
 
 /**
@@ -32,8 +31,8 @@ sealed interface HistoryScreenEvent {
         val categories: List<Long>,
     ) : HistoryScreenEvent
 
-    /** Delete a single [history] item from the read log. */
-    data class RemoveFromHistory(val history: HistoryWithRelations) : HistoryScreenEvent
+    /** Delete a single read from the read log, identified by its history row id. */
+    data class RemoveFromHistory(val historyId: Long) : HistoryScreenEvent
 
     /** Delete all history items for a given manga. */
     data class RemoveAllForManga(val mangaId: Long) : HistoryScreenEvent
