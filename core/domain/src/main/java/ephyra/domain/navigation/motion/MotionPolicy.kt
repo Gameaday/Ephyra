@@ -3,33 +3,23 @@ package ephyra.domain.navigation.motion
 /**
  * The motion assigned to a route pair.
  *
- * Motion is a property of the *pair*, not of a screen, because the same screen entered from two
- * places should not animate the same way. Assigning per screen is what makes transitions feel
- * arbitrary: a destination can be "the shared-cover destination" on one path and "some other
- * destination" on another, and the inconsistency is invisible in code review.
+ * Motion is a property of the *pair*, not of a screen: the same screen entered from two places
+ * should not animate the same way. Assigning per screen is what makes transitions feel arbitrary.
  */
 enum class MotionRoutePair {
     /** Library grid to series detail. Cover is the only shared element. */
     LIBRARY_SERIES,
 
     /**
-     * A hierarchical push or pop between destinations that have no more specific rule — the
-     * declared form of what the root NavHost used to hardcode as its shared-axis-X fallback.
+     * A hierarchical push or pop between destinations with no more specific rule — the declared
+     * form of what the root NavHost used to hardcode as a shared-axis-X fallback.
      *
-     * Naming the fallback here moves the last local motion decision out of the activity: a
-     * transition with no special pair is *assigned* the hierarchical plan by the policy rather
-     * than handed a token by the layer that renders it, so its durations and container are
-     * decided with every other rule and unit-tested beside them.
+     * Named here so the last local motion decision leaves the activity and is unit-tested beside
+     * the other rules. The plan is the policy crossfade in both directions: the 2026-11-09 motion
+     * audit removed the shared axis, because a cross-screen slide reads as elements flying.
      *
-     * The owner's motion audit (2026-11-09) removed the shared axis itself: a cross-screen slide
-     * reads as elements flying, the motion the audit rejected. This pair's plan is therefore the
-     * policy crossfade, in both directions — the same minimal, no-movement change the Activity
-     * boundary renders.
-     *
-     * Tab motion still belongs to HomeScreen's tab NavHost, reader entry to the Activity window
-     * animations, and sheets to the predictive-back drag — those are still not pairs, because
-     * no `plan()` call site can produce them as one. A pair exists here exactly when a caller
-     * names it.
+     * Tab motion, reader entry and sheets are still not pairs — no `plan()` call site can produce
+     * them as one. A pair exists exactly when a caller names it.
      */
     HIERARCHICAL,
 }
@@ -37,22 +27,11 @@ enum class MotionRoutePair {
 /**
  * Which way the user is travelling through a route pair.
  *
- * ## Why this exists
- *
- * The policy was originally direction-free: `plan(LIBRARY_SERIES, …)` returned the same duration
- * whether the user was opening a series or returning to the library, and a test asserted that
- * symmetry. It reads well — "enter and exit share one duration" — and it is wrong.
- *
- * Material 3's shared-element spec is deliberately **asymmetric**. The forward transition is longer
- * because the user is discovering where they are going; the backward one is shorter because they
- * already know, and a long reverse reads as sluggish rather than smooth. Running the full forward
- * timeline in both directions is what made returning from a series page feel "awkward" — the
- * complaint this pair exists to fix.
- *
- * The symmetry was defensible only while the container crossfaded, because then the two halves had
- * to agree or the screens would cross opacity at different points. Now that the container is held
- * still and the cover carries the transition outright, that constraint is gone and the asymmetry
- * costs nothing.
+ * Material 3's shared-element motion is deliberately **asymmetric**: forward is longer because
+ * the user is discovering where they are going, backward shorter because they already know. A
+ * long reverse reads as sluggish, not smooth. The old symmetry was defensible only while the
+ * container crossfaded and both halves had to agree; now the container holds still and the cover
+ * carries the transition, so the asymmetry costs nothing.
  */
 enum class MotionDirection {
     /** Into the destination: the user is arriving somewhere new. */

@@ -59,41 +59,19 @@ data class PageLoadRecoveryDecision(
 data class PageLoadAttempt(val url: String?, val error: Throwable, val errorLabel: String)
 
 /**
- * The single owner of "a page image failed; what now?" — the retry decision, the budget, the
- * backoff, the memory of a URL already proved unusable, and the record of what was tried.
+ * Owns "a page image failed; what now?" — retry decision, budget, backoff, and the memory of a
+ * URL already proved unusable.
  *
- * **Why this is one object rather than a helper called at four sites.** The reader and the
- * downloader each carried their own copy of this decision, and they had already drifted in three
- * ways that matter in the real world:
+ * One object rather than a helper per call site, because the reader and downloader each carried a
+ * copy and had drifted: different backoff for the same rule, no jitter (so parallel page failures
+ * retried in lockstep and burst an already-unhappy source), and only the reader could re-resolve
+ * a host. For sources with short-lived signed URLs that meant the same chapter read but would not
+ * download.
  *
- * - **Different backoff for the same rule.** The reader waited 1s/2s/4s; the downloader waited
- *   2s/4s/8s, from `(2L shl attempt) * 1000`. Two schedules, one meaning, no compiler objecting.
- * - **No jitter in either.** Chapter pages load in parallel, so pages that failed together retried
- *   together, in lockstep, at the instant the backoff expired. A source that was already
- *   unhappy received a synchronised burst. The app already knew this — `RateLimitBackoffInterceptor`
- *   jitters, and its own comment says *"without jitter every in-flight request would retry at the
- *   same instant and trip the limit again"* — but that interceptor only covers 429/503, and the
- *   URL-stale family this class is mostly about is 403 and dead hosts.
- * - **Only the reader could change hosts.** The reader dropped a URL the classifier indicted and
- *   asked the source again; the downloader retried the identical string. `TransientErrors` was
- *   shared between them — which is `DEF-021`'s fix — but only the *classification* was shared.
- *   The *action* was still two copies, so for any source with short-lived signed image URLs the
- *   same chapter read successfully and failed to download.
+ * Decides, does not act: dropping the URL and calling `getImageUrl` belong to the caller, which
+ * owns the page and the source. One request counter, not two — only the *delay* varies by kind.
  *
- * **What is deliberately not here.** This decides; it does not act. Dropping the URL and calling
- * `getImageUrl` belong to the caller, which owns the page and the source. Putting the action here
- * too would need a `Source` in `core:common` and would make the rule untestable without one.
- *
- * **The budget is one counter, not two.** It is tempting to give "this URL is dead, ask again" a
- * larger allowance than "the connection wobbled", on the grounds that only the URL changes. That
- * would raise the worst-case request count for a page. The request budget is held to what it was,
- * and only the *delay* differs by kind: a re-resolve is answered sooner because the next attempt is
- * a different request to a possibly different host, while a same-URL retry keeps the longer ramp
- * because it is the same request again.
- *
- * Not thread-safe, and deliberately so: one instance belongs to one page's load, and the pages of
- * a chapter load concurrently on separate instances. See [ReResolvePacer] for the one piece of
- * state that genuinely has to be shared.
+ * Not thread-safe by design: one instance per page load. See [ReResolvePacer] for the shared part.
  */
 class PageLoadRecovery(
     /** Retries allowed after the first attempt. The default reproduces the reader's previous cap. */
