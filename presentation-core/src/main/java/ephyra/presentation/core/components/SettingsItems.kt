@@ -88,21 +88,6 @@ fun HeadingItem(text: String) {
 }
 
 @Composable
-fun IconItem(label: String, icon: ImageVector, onClick: () -> Unit) {
-    BaseSettingsItem(
-        label = label,
-        widget = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        },
-        onClick = onClick,
-    )
-}
-
-@Composable
 fun SortItem(label: String, sortDescending: Boolean?, onClick: () -> Unit) {
     val arrowIcon = when (sortDescending) {
         true -> Icons.Default.ArrowDownward
@@ -414,24 +399,6 @@ fun SettingsChipRow(labelRes: Int, content: @Composable FlowRowScope.() -> Unit)
                 end = SettingsItemsPaddings.Horizontal,
                 bottom = SettingsItemsPaddings.Vertical,
             ),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-            content = content,
-        )
-    }
-}
-
-@Composable
-fun SettingsIconGrid(labelRes: Int, content: LazyGridScope.() -> Unit) {
-    Column {
-        HeadingItem(labelRes)
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(128.dp),
-            modifier = Modifier.padding(
-                start = SettingsItemsPaddings.Horizontal,
-                end = SettingsItemsPaddings.Horizontal,
-                bottom = SettingsItemsPaddings.Vertical,
-            ),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
             content = content,
         )
