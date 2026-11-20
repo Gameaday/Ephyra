@@ -98,6 +98,31 @@ private inline fun <T> PersistentSet<T>.mutate(action: (MutableSet<T>) -> Unit):
     return builder.build()
 }
 
+/**
+ * The library screen's state.
+ *
+ * **What the first paint waits on.** `isLoading` clears only when the five-way `combine` in
+ * [init] emits, and `combine` emits nothing until every source has produced a value. The
+ * sources were each checked for first-emission cost, because a slow one here is a spinner on
+ * every return to the tab:
+ *
+ *  - `getCategories.subscribe()` — Room flow, emits on the first query.
+ *  - `getFavoritesFlow()` — a `SELECT * FROM libraryView` wrapped in `map`; the query is a
+ *    plain view scan with no join pathology. Its own three inputs are the same manga flow,
+ *    the item-preferences flow, and `downloadCache.changes`, which is `onStart { emit(Unit) }`
+ *    and therefore fires immediately rather than waiting for a download event.
+ *  - the tracks/sort preferences — DataStore flows.
+ *  - the search query — see the debounce note at the combine; this was the one source that
+ *    *did* add fixed latency, and it no longer does.
+ *
+ * The per-emission work (`applyFilters`, `applyGrouping`, `applySort`) is O(items) over an
+ * already-loaded list, and `favoritesById` is `by lazy`, so it is built once per emission
+ * rather than per access. Nothing here is a per-frame cost.
+ *
+ * If the tab is still slow to first paint after this, the remaining candidate is ViewModel
+ * retention across tab switches (`popUpTo(0)` with `saveState`/`restoreState`), which cannot
+ * be settled by reading code — it needs a device.
+ */
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
