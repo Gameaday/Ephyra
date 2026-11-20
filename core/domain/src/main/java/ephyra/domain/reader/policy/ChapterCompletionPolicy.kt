@@ -3,28 +3,23 @@ package ephyra.domain.reader.policy
 /**
  * Decides when a chapter counts as finished.
  *
- * This exists because the decision was previously written twice, inline, inside
- * `ReaderViewModel` — once on the page-progress path and once in
- * `checkChapterCompletion`. Two copies of one policy can drift, and these had already drifted in
- * their null-handling. It also existed with no tests at all, while deciding whether a user's
- * reading history is correct.
+ * Previously written twice, inline in `ReaderViewModel` — once on the page-progress path and once
+ * in `checkChapterCompletion`. Two copies drifted in their null-handling, and neither had a test
+ * while deciding whether a user's reading history is correct.
  *
- * The rule the copies encoded is sound: a merged chapter absorbs its siblings' pages, those
- * absorbed pages are hidden, and once the reader has passed the last *visible* page there is
- * nothing left to show. The defects were in the edges, not the intent:
+ * The rule itself is sound: a merged chapter absorbs its siblings' pages, those are hidden, and once
+ * the reader passes the last *visible* page nothing is left to show. The defects were in the edges:
  *
- *  - **Vacuous tail.** `[].all { it.isHidden }` is `true` in Kotlin, so a `pageIndex` at or past
- *    the end satisfied the "no visible pages follow" test on an *empty* range and completed the
- *    chapter without the reader having reached any content. [isChapterComplete] rejects an
- *    out-of-range index explicitly instead of inheriting that behaviour.
- *  - **Unresolved chapters.** A chapter's page list is populated before the chapter finishes
- *    loading, so a decision taken from the list alone can be taken while pages are still being
- *    fetched. [isChapterComplete] refuses to complete an unresolved chapter.
- *  - **Direction.** Moving backward never marks a chapter read, because swiping back across a
- *    boundary is not completion.
+ *  - **Vacuous tail.** `[].all { it.isHidden }` is `true`, so a `pageIndex` at or past the end
+ *    satisfied "no visible pages follow" on an *empty* range and completed the chapter without
+ *    the reader reaching any content. [isChapterComplete] rejects an out-of-range index.
+ *  - **Unresolved chapters.** The page list populates before the chapter finishes loading, so a
+ *    decision from the list alone can be taken while pages are still being fetched.
+ *  - **Direction.** Moving backward never marks a chapter read; swiping back across a boundary is
+ *    not completion.
  *
- * Pure and total: no I/O, no Android types, and no dependence on the reader's own page model, so
- * the rule can be stated once and tested exhaustively.
+ * Pure and total — no I/O, no Android types, no dependence on the reader's page model — so the rule
+ * is stated once and tested exhaustively.
  */
 object ChapterCompletionPolicy {
 

@@ -5,23 +5,18 @@ import ephyra.core.common.util.network.FailureLayer
 /**
  * The one seam every content provider passes through, whichever transport it uses.
  *
- * **Why this exists, and what it is not.** There were already two content contracts in the tree —
- * `ContentItem`/`ContentUnit` behind [RemoteSource], and `CatalogEntry`/`ChapterInfo`/`ContentPage`
- * behind `UnifiedContentSource] — and an extension source used *neither* directly: it went
- * APK → Tachiyomi ABI → `DynamicHttpSource` → `ContentItem`. So "where does a source's data become
- * ours" had three answers, and a defect could be introduced in one and surface in another with
- * nothing naming the crossing.
+ * Two content contracts already existed — `ContentItem`/`ContentUnit` behind [RemoteSource], and
+ * `CatalogEntry`/`ChapterInfo`/`ContentPage` behind `UnifiedContentSource` — and an extension
+ * source used neither directly: it went APK → Tachiyomi ABI → `DynamicHttpSource` → `ContentItem`.
+ * So "where does a source's data become ours" had three answers, and a defect could be introduced
+ * in one and surface in another with nothing naming the crossing.
  *
- * This is not a third vocabulary. It is the *narrow* one — the point where a provider's own shape
- * stops and ours begins — so a failure can say which side produced it. Concretely, it is what makes
- * [FailureLayer.ADAPTER] implementable: an adapter that returns [AdapterOutput.Rejected] has declared
- * that the defect is in the mapping, before any request is spent and before the reader is told a story
- * about the network that is not true.
+ * This is not a third vocabulary but the *narrow* one: the point where a provider's shape stops and
+ * ours begins. That is what makes [FailureLayer.ADAPTER] implementable — an adapter returning
+ * [AdapterOutput.Rejected] declares the defect is in the mapping, before any request is spent.
  *
- * **Deliberately not an engine registry.** [ContentSourceEngine.handles] selects *which* engine serves
- * a source type; this describes *what crossing the boundary looks like*. Jellyfin, an extension
- * repository, and a local archive folder are three implementations of the same contract with three
- * unrelated transports, which is exactly the property the app should not have to know about.
+ * Not an engine registry: [ContentSourceEngine.handles] selects *which* engine serves a type,
+ * this describes *what crossing the boundary looks like*.
  */
 interface ContentAdapter {
 
@@ -31,21 +26,19 @@ interface ContentAdapter {
     /**
      * Translates one provider response into canonical items.
      *
-     * @return [AdapterOutput.Accepted] with what the provider actually said, or
-     *   [AdapterOutput.Rejected] with the reason the translation was impossible. Implementations must
-     *   not return a half-populated item as accepted: a missing title or an unusable URL is a
-     *   rejection, because an item that reaches the library with a broken address is far more
-     *   expensive to trace than one that never arrived.
+     * @return [AdapterOutput.Accepted] with what the provider said, or [AdapterOutput.Rejected] with
+     *   why translation was impossible. Implementations must not return a half-populated item as
+     *   accepted: a missing title or unusable URL is a rejection, because an item that reaches the
+     *   library with a broken address is far costlier to trace than one that never arrived.
      */
     fun toItems(response: ProviderResponse): AdapterOutput
 
     /**
      * Translates one provider response into canonical page addresses.
      *
-     * The validation here is the whole point of the seam. `host,https` — the MangaDex defect — is a
-     * string an adapter emitted and every downstream layer carried faithfully. An adapter that checks
-     * its own output converts that class of defect from a network error reported to the user into a
-     * named rejection at the layer that caused it.
+     * This validation is the point of the seam. `host,https` — the MangaDex defect — is a string an
+     * adapter emitted and every downstream layer carried faithfully. An adapter that checks its own
+     * output turns that from a network error into a named rejection at the layer that caused it.
      */
     fun toPages(response: ProviderResponse): AdapterOutput
 }

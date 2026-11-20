@@ -5,37 +5,16 @@ import kotlinx.serialization.Serializable
 /**
  * The startup steps this workflow models, in the order they must run.
  *
- * **These were renamed and re-derived from the shipping code on 2026-09-28, and the previous
- * version was wrong.** It declared four steps — `MIGRATE_DATABASE`, `LOAD_PREFERENCES`,
- * `REGISTER_WORKERS`, `RECONCILE_SOURCES` — on the claim that `App.kt` already performed them
- * imperatively, so the reducer was a specification of existing behaviour. Read before migrating,
- * that claim did not hold: `App.kt` does **no source reconciliation at all**, and the phases it
- * actually reports are `logging`, `crash_handler`, `di_container`, `telemetry`, `notifications`,
- * `reactive_bindings` and `async_init` — seven, under two different mechanisms that share no naming
- * (`StartupGuard` phase names and `StartupTracker.Phase` entries are distinct sets).
+ * Order is the contract: each step assumes every earlier one settled, and the reducer refuses
+ * out-of-order settlement, so inserting a step is a deliberate act rather than an append.
  *
- * So the honest position is the opposite of what the old enum asserted: this is a **model of
- * startup that the app does not yet follow**, not a description of it. Renaming the steps to the
- * real ones is what makes the gap nameable — `RECONCILE_SOURCES` had no implementation to migrate
- * onto, whereas `TELEMETRY` and `NOTIFICATIONS` are real, ordered, and independently failable.
- *
- * **A3, 2026-11-06: the model is now the startup state model.** `App.kt` drives it through
- * `StartupWorkflowHost` (the lifecycle callbacks remain the effect executor), and
- * `RECONCILE_SOURCES` has an implementation at last — `SourceReconciler`, on the shipping source
- * authority (`SourceRegistry` and `SourceManager`), not the target-data `ReconcileSourceRegistry`
- * that `DATA-001H` keeps unwired. The historical statements above are retained on purpose: the gap
- * was real, and closing it is the deliberate insert the order contract requires.
- *
- * **B5, 2026-11-08: the one startup vocabulary.** `StartupGuard` and `StartupTracker` are now
- * keyed on this enum, which closes the "two mechanisms that share no naming" gap described
- * above: the workflow host is the single reporting seam (a settle fans out to both), the
- * guard's no-op `completePhase` defect (production phases were never registered, so every
- * completion was lost and crash attribution always saw DI as not ready) is fixed, and the
- * non-workflow timeline markers live in `StartupTracker.Milestone` instead of a parallel enum
- * whose `APP_CREATED` shadowed the step of that name here.
- *
- * Order is the contract. Each step assumes every earlier step settled, and the reducer refuses
- * out-of-order settlement, so inserting a step here is a deliberate act rather than an append.
+ * Historically this enum described four steps (`MIGRATE_DATABASE`, `LOAD_PREFERENCES`,
+ * `REGISTER_WORKERS`, `RECONCILE_SOURCES`) on the claim that `App.kt` performed them imperatively.
+ * It did not — it reported seven different phases under two unrelated mechanisms. The enum was
+ * re-derived from the shipping code so the gap became nameable, and since A3/B5 the model *is* the
+ * startup state model: `App.kt` drives it through `StartupWorkflowHost`, `StartupGuard` and
+ * `StartupTracker` are keyed on it, and `RECONCILE_SOURCES` has an implementation in
+ * `SourceReconciler`.
  */
 @Serializable
 enum class StartupStep {

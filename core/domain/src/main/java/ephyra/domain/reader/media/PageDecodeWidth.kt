@@ -27,26 +27,22 @@ enum class PageZoomPolicy {
 /**
  * How many pixels wide a page should be decoded.
  *
- * **Why this is its own decision and not a [ScaleBucket].** [ScaleBucket] expresses a downscale
- * *factor* applied to the source's intrinsic size, which is the right axis for re-decoding a page as
- * a zoom gesture crosses scale steps. This expresses a decode *target* derived from how the page will
- * be laid out, which is a different question with a different input. Reusing [ScaleBucket] here
- * would have meant inverting it -- solving for a factor from a pixel target -- and a wrong answer
- * there is a wrong-sized bitmap, which costs memory silently.
+ * Not a [ScaleBucket]: that expresses a downscale *factor* from intrinsic size, the right axis for
+ * re-decoding as a zoom gesture crosses scale steps. This expresses a decode *target* derived from
+ * layout, which is a different question. Inverting a bucket to solve for a factor would yield a
+ * wrong-sized bitmap, which costs memory silently.
  *
- * The decision existed in two hand-rolled forms and they had drifted: the webtoon reader computed
- * physical display width inline, and the paged reader asked for [androidx.coil3.size.Size.ORIGINAL]
- * with no statement of why the two answers differ. Both now ask here, so the difference is an
- * argument rather than an omission.
+ * The decision existed in two hand-rolled forms that had drifted — the webtoon reader computed
+ * display width inline, the paged reader asked for [androidx.coil3.size.Size.ORIGINAL] with no
+ * stated reason. Both now ask here, so the difference is an argument rather than an omission.
  */
 object PageDecodeWidth {
 
     /**
      * Physical pixels per layout pixel.
      *
-     * Floored at 1 deliberately. A density below 1 is a display setting, and decoding *fewer* pixels
-     * than the layout asks for is the "blurry strip" defect: the decode cannot invent detail that was
-     * never fetched.
+     * Floored at 1: a density below 1 is a display setting, and decoding *fewer* pixels than the
+     * layout asks for is the blurry-strip defect — the decode cannot invent detail never fetched.
      */
     private const val MIN_DENSITY = 1f
 
