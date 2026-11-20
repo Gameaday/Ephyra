@@ -8,16 +8,23 @@ import kotlin.math.pow
 /**
  * Decides whether two chapter numbers mean the same chapter.
  *
- * `==` is wrong because the value arrives by two routes that disagree. A parsed number is a
- * `Double`; the DB column (`SChapter.chapter_number`, `ChapterImpl.chapter_number`) is a `Float`,
- * narrowed on write and widened on read — so `12.3` comes back as `12.300000190734863` after any
- * save, for every user. `Double.equals` is exact bit comparison, so sync's duplicate‑read
- * propagation and `MigrateMangaUseCase`'s pairing silently stop matching for most decimals.
+ * `==` is not safe on the backup path: `BackupChapter.chapterNumber` is a protobuf `Float`,
+ * so a backup round-trip narrows `12.3` to `12.300000190734863`, and `Double.equals` — exact bit
+ * comparison — then fails to match it against the in-memory value.
+ *
+ * **The live database does not narrow.** `ChapterEntity.chapterNumber` is a `Double` and
+ * `ChapterRepositoryImpl` writes it straight through. The `Float` column and the `.toFloat()` in
+ * `toDbChapter` belonged to the pre-Room schema; that mapper had no callers and is deleted. The
+ * tolerance below therefore exists for *restored backups* and for the `SChapter` extension bridge,
+ * whose `chapter_number` is still a `Float` upstream — not for ordinary storage.
  *
  * Rule: numbers within [tolerance] are the same chapter. The tolerance is far below any real
  * numbering interval (specials at `x.5`, fractional volumes at `x.1`–`x.9`) and far above the
- * widest `Float` round‑trip error at that magnitude. Answers "are these the same", never "which
+ * widest `Float` round-trip error at that magnitude. Answers "are these the same", never "which
  * comes next".
+ *
+ * Widening the backup format to `Double` would make `==` correct and let this object go; that is
+ * the better design, which is why the reason is recorded rather than rediscovered.
  */
 object ChapterNumber {
 
