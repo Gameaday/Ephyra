@@ -196,6 +196,31 @@ class LibraryViewModelTest {
         }
     }
 
+    /**
+     * The first paint must not wait on the search debounce.
+     *
+     * `debounce` delays the *first* element as well as later ones, so with a fixed timeout the
+     * initial null query held the `combine` — and therefore `isLoading` — for the full debounce
+     * window on every ViewModel construction, including every return to the library tab.
+     *
+     * Asserted on virtual time rather than wall clock: with `UnconfinedTestDispatcher` a
+     * fixed 300ms debounce would never emit unless the test advanced the scheduler, so a state
+     * that is already loaded without advancing time proves the initial query passed through
+     * immediately.
+     */
+    @Test
+    fun `the initial state is loaded without waiting out the search debounce`() = runTest {
+        val viewModel = createViewModel()
+
+        val state = viewModel.state.value
+
+        assertTrue(
+            state.isLoading.not(),
+            "first paint must not be gated on the search debounce",
+        )
+        assertTrue(state.libraryData.isInitialized)
+    }
+
     @Test
     fun `Dialog events open and close settings dialog in state`() = runTest {
         val viewModel = createViewModel()

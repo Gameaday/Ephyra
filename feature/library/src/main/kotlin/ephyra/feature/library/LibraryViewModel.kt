@@ -180,7 +180,15 @@ class LibraryViewModel @Inject constructor(
 
         viewModelScope.launch(ioDispatcher) {
             combine(
-                state.map { it.searchQuery }.distinctUntilChanged().debounce(SEARCH_DEBOUNCE_MILLIS),
+                // Debounce only *typing*. `debounce` delays the first element too, so with a
+                // fixed timeout the initial null query — the state on every construction,
+                // including every return to this tab — sat for SEARCH_DEBOUNCE_MILLIS before
+                // `combine` could emit and clear the loading spinner. Returning 0 for the null
+                // query emits it immediately; only a real keystroke is worth waiting for.
+                state
+                    .map { it.searchQuery }
+                    .distinctUntilChanged()
+                    .debounce { query -> if (query == null) 0L else SEARCH_DEBOUNCE_MILLIS },
                 getCategories.subscribe(),
                 getFavoritesFlow(),
                 combine(
