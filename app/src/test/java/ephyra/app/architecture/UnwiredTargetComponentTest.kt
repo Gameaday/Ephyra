@@ -63,9 +63,8 @@ class UnwiredTargetComponentTest {
     /**
      * The ceiling, measured with this file's own reachability rule.
      *
-     * 99 on 2026-09-30; 83 on 2026-11-07, measured by the A6 diagnostic: the gate ran at ceiling 0,
-     * failed with the complete inventory, and was restored at the measured value — the
-     * falsification `2_0_CLEANUP_AUDIT.md` CU-2 asked for.
+     * 99 on 2026-09-30; 83 on 2026-11-07, measured by running this gate at ceiling 0 so it failed
+     * with the complete inventory, then restoring it at the measured value.
      *
      * **85 on 2026-11-17, raised deliberately — not drifted.** The unified renderer
      * (`PagePixelSurface`) added exactly two public types, `SliceSizing` and `WebtoonSlicePlan`.

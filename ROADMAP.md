@@ -1,218 +1,70 @@
 
-# Ephyra Reconstruction Program
+# Ephyra Roadmap
 
-> **Authoritative status:** active program
-> **Baseline:** `4ec5b2c15` (`nightly-43-g4ec5b2c15`) — in progress toward `2.0-clean`
-> **Last verified:** 2026-10-05 (reconciled against `4f2f8e4`)
-> **Target:** Android-native Ephyra 2.0 with explicit state, resource, navigation, and media ownership
-> **Forward plan:** [`doc/2_0_COMPLETION_PLAN.md`](doc/2_0_COMPLETION_PLAN.md)
+> **Baseline:** `02fc665b` · **Verified:** 2026-11-20 · **Target:** `2.0-clean`
+>
+> Single entry point. If another doc disagrees here, this file wins.
 
-This file is the single entry point for the reconstruction program. If another document disagrees with this file, the disagreement is a documentation defect and must be corrected before implementation continues.
+## Documents
 
-> **Sourcing has its own authority:** [`doc/SOURCE_ROADMAP.md`](doc/SOURCE_ROADMAP.md) decides what is
-> current, compatibility, or planned in content sourcing. Read it before any sourcing work — it
-> supersedes the sourcing sections of the documents listed below.
+**Read first**
 
-## Program documents
+| Doc | What it is |
+|---|---|
+| [`doc/README.md`](doc/README.md) | Documentation index and owners |
+| [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md) | As‑is state, task ledger, open defects — start with its As‑is summary |
+| [`doc/REBUILD_PROGRAM.md`](doc/REBUILD_PROGRAM.md) | Architecture and phased delivery plan |
+| [`doc/REBUILD_EXECUTION_GUIDE.md`](doc/REBUILD_EXECUTION_GUIDE.md) | Operating procedure for humans and agents |
+| [`doc/BUILD_HEALTH.md`](doc/BUILD_HEALTH.md) | Health ratchets, timing budgets |
+| [`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md) | Device‑evidence runbook |
 
-1. [`doc/REBUILD_PROGRAM.md`](doc/REBUILD_PROGRAM.md)  complete phased architecture and delivery plan.
-2. [`doc/REBUILD_EXECUTION_GUIDE.md`](doc/REBUILD_EXECUTION_GUIDE.md)  operating procedure for humans and coding agents.
-3. [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md)  verified baseline, open defects, and task status ledger.
-4. [`doc/CACHE_POLICY.md`](doc/CACHE_POLICY.md)  current cache invariants; preserve or supersede them through an ADR.
-5. [`doc/SOURCE_DISCOVERY_ARCHITECTURE.md`](doc/SOURCE_DISCOVERY_ARCHITECTURE.md)  current source, search, ranking, compatibility, and discovery contract.
-6. [`doc/SOURCE_DISCOVERY_EXECUTION.md`](doc/SOURCE_DISCOVERY_EXECUTION.md)  source/search implementation order and task decomposition.
-7. [`doc/READER_ARCHITECTURE.md`](doc/READER_ARCHITECTURE.md)  reader session/state/resource contract.
-8. [`doc/READER_GESTURE_CONTRACT.md`](doc/READER_GESTURE_CONTRACT.md)  pointer state machine and gesture ownership.
-9. [`doc/DOCUMENT_VIEWPORT_CONTRACT.md`](doc/DOCUMENT_VIEWPORT_CONTRACT.md)  document coordinates, tiles, and viewport behavior.
-10. [`doc/MEDIA_PIPELINE_CONTRACT.md`](doc/MEDIA_PIPELINE_CONTRACT.md)  source, geometry, decode, and artifact contracts.
-11. [`doc/NAVIGATION_CONTRACT.md`](doc/NAVIGATION_CONTRACT.md)  one graph, typed routes, and back behavior.
-12. [`doc/MOTION_NAVIGATION_CONTRACT.md`](doc/MOTION_NAVIGATION_CONTRACT.md)  route-pair motion and predictive-back policy.
-13. [`doc/FIXTURE_MANIFEST.md`](doc/FIXTURE_MANIFEST.md)  fixture schema and evidence levels.
-14. [`doc/PERFORMANCE_BUDGETS.md`](doc/PERFORMANCE_BUDGETS.md)  initial resource and frame targets.
-15. [`doc/DEPENDENCY_TARGET_GRAPH.md`](doc/DEPENDENCY_TARGET_GRAPH.md)  allowed and forbidden dependency flow.
-16. [`doc/DOCUMENTATION_GOVERNANCE.md`](doc/DOCUMENTATION_GOVERNANCE.md)  current, historical, archived, and deleted-document policy.
-17. [`doc/adr/`](doc/adr/)  accepted architectural decisions that must not be silently reversed.
-18. [`doc/source/SOURCE_INVENTORY.md`](doc/source/SOURCE_INVENTORY.md)  `SRC-000` target/adapter/compatibility/delete classification.
-19. [`doc/source/SOURCE_CALL_GRAPH.md`](doc/source/SOURCE_CALL_GRAPH.md)  current source/search paths and replacement owners.
-20. [`doc/source/SOURCE_COMPATIBILITY_MATRIX.md`](doc/source/SOURCE_COMPATIBILITY_MATRIX.md)  explicit compatibility decisions and deletion blockers.
-21. [`doc/source/SOURCE_REMOVAL_PLAN.md`](doc/source/SOURCE_REMOVAL_PLAN.md)  ordered legacy bridge removal gates.
-22. [`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md)  device-evidence runbook, artifact format, and what a screenshot may and may not prove.
-23. [`doc/BUILD_HEALTH.md`](doc/BUILD_HEALTH.md)  repository health ratchets, timing budgets, and verified device availability.
-24. [`doc/SOURCE_ROADMAP.md`](doc/SOURCE_ROADMAP.md)  **sourcing authority** — current vs compatibility vs planned, phases, gates, and what must not be reintroduced.
-25. [`doc/README.md`](doc/README.md)  documentation index — the current document set and its owners.
-26. [`doc/2_0_COMPLETION_PLAN.md`](doc/2_0_COMPLETION_PLAN.md)  **forward plan** — validated state and ordered steps to the `2.0-clean` baseline.
+**Contracts** — binding rules, not background reading
 
-## Program outcome
+[`NAVIGATION_CONTRACT`](doc/NAVIGATION_CONTRACT.md) ·
+[`MOTION_NAVIGATION_CONTRACT`](doc/MOTION_NAVIGATION_CONTRACT.md) ·
+[`READER_ARCHITECTURE`](doc/READER_ARCHITECTURE.md) ·
+[`READER_GESTURE_CONTRACT`](doc/READER_GESTURE_CONTRACT.md) ·
+[`DOCUMENT_VIEWPORT_CONTRACT`](doc/DOCUMENT_VIEWPORT_CONTRACT.md) ·
+[`MEDIA_PIPELINE_CONTRACT`](doc/MEDIA_PIPELINE_CONTRACT.md) ·
+[`DOWNLOAD_ARTIFACT_CONTRACT`](doc/DOWNLOAD_ARTIFACT_CONTRACT.md) ·
+[`SOURCE_DISCOVERY_ARCHITECTURE`](doc/SOURCE_DISCOVERY_ARCHITECTURE.md) ·
+[`cache-retention-policy`](doc/cache-retention-policy.md) ·
+[`EXTENSION_COMPATIBILITY`](doc/EXTENSION_COMPATIBILITY.md) ·
+[`phase2-search-v1-spec`](doc/phase2-search-v1-spec.md)
 
-Build a modern Android application in which:
+**Source program** — [`SOURCE_INVENTORY`](doc/source/SOURCE_INVENTORY.md) ·
+[`SOURCE_CALL_GRAPH`](doc/source/SOURCE_CALL_GRAPH.md) ·
+[`SOURCE_COMPATIBILITY_MATRIX`](doc/source/SOURCE_COMPATIBILITY_MATRIX.md) ·
+[`SOURCE_REMOVAL_PLAN`](doc/source/SOURCE_REMOVAL_PLAN.md) ·
+[`UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN`](doc/UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md)
+
+**Decisions** — [`doc/adr/`](doc/adr/) 17 accepted ADRs. Do not silently reverse one.
+
+**Governance** — [`DOCUMENTATION_GOVERNANCE`](doc/DOCUMENTATION_GOVERNANCE.md)
+
+## Outcome
+
+A modern Android app where:
 
 - every state has one authoritative owner;
-- every visible setting has an end-to-end effect;
-- rendering, persistence, and navigation do not share mutable ownership;
-- source bytes, decoded images, and render artifacts have distinct bounded lifecycles;
-- the reader has one gesture arbiter per viewport;
-- the continuous reader uses document coordinates rather than per-item transforms;
-- the main application has one navigation owner;
-- Material 3 defines interaction semantics without forcing specialized media behavior into generic components;
-- correctness is proven by executable contracts, instrumentation, screenshots, and benchmarks rather than optimistic comments;
-- the app is useful with zero legacy extensions installed; the Tachiyomi/Mihon API is a temporary compatibility boundary;
-- source adapters expose capabilities and typed outcomes; empty results are not failures;
-- search is progressive, cancellable, bounded, provenance-preserving, and deterministically ranked;
-- source health and migration are observable, explicit, reversible, and non-destructive by default;
-- no feature imports legacy source types, service locators, or concrete adapters directly;
-- a **sourcing** authority exists that marks every component current, compatibility, or planned, and
-  says what must not be reintroduced (`doc/SOURCE_ROADMAP.md`);
-- documentation has one authority order; superseded “completed” documents are deleted or clearly historical.
+- every setting has an end‑to‑end effect;
+- navigation is one graph with typed routes and back behaviour that reads the same everywhere;
+- media is decoded at the size it is drawn at, in slices where a page exceeds a GPU texture;
+- every rule that matters is enforced by a gate in `app/src/test`, not by prose.
 
-## Non-negotiable rules
+## Current phase
 
-1. **Do not declare a device behavior complete from code inspection or JVM tests alone.**
-2. **Do not add a workaround on top of an unresolved ownership conflict.**
-3. **Do not preserve an option merely because it exists in the current UI.**
-4. **Do not introduce another cache layer without a documented identity, budget, and invalidation rule.**
-5. **Do not allow features to depend on data implementations or on each other without an explicit allowlist.**
-6. **Do not transform LazyColumn webtoon items vertically; continuous zoom belongs to a document viewport.**
-7. **Do not keep two active reader/navigation architectures after replacement.**
-8. **Every phase must compile, pass its automated gates, update status evidence, and remain independently reviewable.**
+**Structural cleanup, then UI.** Done: CI green, UDF/dispatcher debt 0 with a gate,
+encoding corruption repaired and gated, dead code removed, library first‑paint latency fixed,
+updates stacked by series, covers interned per series.
 
-## Phase summary
+Next, in order:
 
-| Phase | Outcome | Exit gate |
-|---|---|---|
-| 0 | Freeze and establish truth | Reproducible baseline and defect ledger |
-| 0A | Technical contracts | Reader, gesture, viewport, media, navigation, motion, source, fixture, budget, and dependency contracts are executable |
-| 1 | Security and platform safety | No hardcoded secrets or unjustified exemptions |
-| 2 | Quality infrastructure | Format, layering, unit, device and build-budget gates run on every change |
-| 3 | Dependency and state foundations | Target graph and effect model enforced |
-| 4 | Media source and image planning | Stable identity, crop geometry, decode policy |
-| 5 | Bounded working and tile caches | Byte-budgeted ownership |
-| 6 | Pure reader core | Deterministic state, commands, chapter policy |
-| 7 | Paged reader | Proven fit/pinch/pan/page navigation |
-| 8 | Continuous reader | Proven virtualized document zoom and scroll |
-| 9 | Application shell and navigation | One main NavHost and adaptive shell |
-| 10 | Library and Series slice | Shared transition, back, predictive back proven |
-| 11 | Remaining product slices | Updates, browse, downloads, history, settings migrated |
-| 12 | Source, search, discovery, data, startup, workers | Typed outcomes, capability-aware adapters, progressive search, safe startup, bounded work |
-| 13 | Release and legacy deletion | New architecture is the only production architecture |
+1. **Coverage on `feature:library` and `feature:manga`** — the least‑tested, most‑visible modules.
+   Blocks every UI change after it.
+2. **Finish the UI model layer** on library and manga (history is done).
+3. **Design‑system split** in `presentation-core`.
+4. **Re‑theme** — needs device verification.
 
-No phase may begin implementation until the prior phase exit criteria are recorded as `VERIFIED` in [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).
-
-## Program health and build performance
-
-Build time and repository health are a standing workstream, not a one-time task. Structural gates —
-module layering, domain purity, signing credentials, manifest privileges — run on every change.
-Repository size and timing are measured on a schedule and never gate a change; see
-[`doc/BUILD_HEALTH.md`](doc/BUILD_HEALTH.md) for the rule and the current numbers. No phase may be
-recorded `VERIFIED` while a health budget is breached.
-
-## Open queue
-
-Only open items are listed. Completed items and their evidence live in
-[`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md); [`doc/2_0_COMPLETION_PLAN.md`](doc/2_0_COMPLETION_PLAN.md)
-gives the ordered steps to close them.
-
-- **Execute `ADR-0017`.** The profile path is accepted-for-deletion but still in the tree
-  (`SourceProfile`, `SourceProfileCache`, `SourceProfileStore`, `RoomSourceProfileStore`,
-  `DynamicHttpSource`, `RemoteSource`, `ContentSourceOrchestrator`). Largest single cleanup item.
-- **[updated 2026-11-08] Wire or delete the unwired 2.0 contracts.** The media tuple and
-  `ReaderSession` are wired (A1/A2); `IngestEngine` remains greenfield. The five former
-  "DI-orphans" (`TargetSeriesRepository`, `TargetMigrationWriter`, `LegacyRoomMigrationAdapter`,
-  `ReconcileSourceRegistry`, `verifyDownloadArtifact`) are reconciled by D3: they are the isolated
-  target-data/source-lifecycle path that [`doc/TARGET_DATA_CUTOVER.md`](doc/TARGET_DATA_CUTOVER.md)
-  (`DATA-001H`) deliberately keeps unwired until its 14 cutover gates are evidenced (`DATA-001I`)
-  — `ACCEPTED_DEBT` with a review condition, not the `B-032` orphan class. "Verified but unwired"
-  without a governing decision is not an allowed resting state.
-
-  **Update 2026-11-08 (D4): the re-audit is done and this queue item is closed.** `ReaderTapSequencer`,
-  the pointer adapter (`detectReaderGestures`), and the "built-ahead entry cluster"
-  (`BookReaderViewModel`, the launchers, `ReaderFeatureApi`, `ReaderModule`, `ChapterStartRequest`)
-  are production-wired through paths the reachability scan cannot see — Hilt `@IntoSet`
-  multibindings (`MediaViewerRegistry` consumed by `MangaScreen`; `MainActivity` registers every
-  `FeatureApi` route) and top-level-function call paths in both readers' gesture streams — and
-  A6's contrary classifications are corrected in the ledger. `RendererSelection`'s four-kind
-  dispatch is kept by decision (`ADR-0008`; wiring belongs to the four-content-type plan). What
-  remains unwired is decision-governed or acknowledged greenfield (`IngestEngine`).
-
-  **Update 2026-11-08 (B6): the target search cluster joins the decision-governed set.**
-  `GlobalSearchCoordinator`/`TargetSearchMapper`/`TargetSearchCommand` stay tested-and-unwired behind
-  R-004's own preconditions (the `SourceContentItem`→product mapping is unapproved; R-008 native
-  coverage is unauthorized; `DATA-001H` forbids the persist target), and `SRC-010`'s Room/backup half is
-  D3's isolated target-data cluster. Wiring the coordinator now would strip every extension source
-  from the single search front door — the native registry refuses legacy gateways by construction — so
-  the deferral is recorded per item with named review conditions in the ledger.
-- **`SRC-011`/`SRC-012`.** One owner for source existence and identity (`ADR-0012`), and the
-  MangaDex-shaped gateway adapter; closes `DEF-029` and the sourcing Phase 1 producer fix.
-- **`DATA-001`.** Clean-slate schema policy; decide the `SChapter.chapter_number: Float` question
-  (`DEF-017`). Not a migration — the live entity is already `Double`.
-- **`OPS-001`.** One startup state model; split `Application` responsibilities. **Update 2026-11-08 (B5): done.** `StartupStep` is the one vocabulary (`StartupGuard`/`StartupTracker` re-keyed on it; `StartupWorkflowHost.settled` is the single reporting seam), the guard's no-op `completePhase` defect is fixed so crash attribution reflects real progress (post-DI crashes route to `CrashActivity` as designed — behaviour change, disclosed), and `App`'s image pipeline, image-cache trim policy and incognito surface moved verbatim to `EphyraImageLoaderFactory`/`ImageCacheMemoryPolicy`/`IncognitoModeMonitor`.
-- **`ARC-002`/`ARC-003`.** Close the remaining dependency-graph rows; migrate a production feature
-  onto the effect/state contract.
-- **Improvement-session remainder.** Unified search v1 Stages B–E; `RFC-0001` identity (resolve O2
-  first); Jellyfin; Discover Steps 3/5/6; cache queue; performance device work.
-- **App health & design audit remediation (2026-11-12).**
-  [`doc/APP_HEALTH_DESIGN_AUDIT.md`](doc/APP_HEALTH_DESIGN_AUDIT.md) records the whole-app audit
-  (function F1; performance P1-P3; design D1-D2; safety S1-S2) with a staged plan: Stage 1
-  next-chapter feedback (owner report: pressing next chapter sometimes does nothing with no feedback),
-  Stage 2 cover pipeline (owner report: delayed cover appearance, especially the most-recent series
-  cover), Stage 3 device measurement of the long-series memory-exhaustion report.
-- **`REL-001`/`CLEAN-001`.** Release gates and deletion of the superseded reader/navigation/media
-generation (plus the unwired `macrobenchmark` module). **Update 2026-11-07 (D2):** `CLEAN-001` is
-executed — the superseded generations were deleted at their cutovers (verified by A6's scan and
-D2's dependency/import audit), and the `macrobenchmark` module is retired with its convention
-plugin and the app `benchmark` build type. `REL-001` remains open.
-
-**Update 2026-11-08 (E1): `REL-001` is executed.** Publish paths consume the gate workflow's verdict instead of re-running it: `release.yml` gains a `gates` job its `build` job needs, and the nightly gates its publish the same way (a nightly is an installable publish), both through the `require-green-checks` composite action, which polls the shipped SHA's check runs and fails unless they are complete, green, and the named core gates are present. Release artifacts are gated after signing — `apksigner verify` on every APK, `versionName` matched against the tag, the R8 mapping required and attached. Connected instrumentation stays `B-050`-blocked and is deliberately not wired into publish. The tag-path run is owner-side: it executes on the next `v*` tag, which this authoring environment cannot cut.
-
-**Update 2026-11-08 (E2): the accepted-debt register is recorded.** Everything the programme has consciously deferred by decision is now one consolidated list at `doc/ACCEPTED_DEBT_REGISTER.md` — each entry with its review or expiry condition, `B-017` (the keystore rotation Phase 1 is waiting on) first, the D3 target-data cluster and the B6 search-wiring deferrals next, the accepted coverage reductions (frame-budget automation, `E4-user` evidence) stated with their losses, and the not-debt classes (`B-050`, ADR-0008 contracts, `IngestEngine` greenfield, `B-055` findings, open decisions) recorded so completeness is not mistaken for debt. The ledger remains the authority; the register is the view.
-
-**Update 2026-11-08 (E3): the health numbers are re-measured at the frozen tree.** `BUILD_HEALTH.md` records the frozen-tree (`de60404`) numbers with each measurement channel named: module count 28, inter-project dependency edges 139 (down from 166 — the recorded `B-020`/`B-027`/D1/D2 retirements), and `OPS-003` green evidenced by the nightly's `require-green-checks` verdict consumption on exactly that commit. The workstation legs (clean-build re-run, warm medians, `git ls-files`-walk counts, release APK, `E4-lab` probe) are owner-side pending, recorded as such rather than approximated — the measurement procedure requires the original host, and a record may only describe a run that occurred. No health budget is breached.
-
-**Update 2026-11-12 (health & design audit): the whole-app audit is recorded at
-[`doc/APP_HEALTH_DESIGN_AUDIT.md`](doc/APP_HEALTH_DESIGN_AUDIT.md).** Findings: F1 the next-chapter press
-can act on a null window with no feedback (disabled affordance rendered identical to enabled, silent
-`loadNextChapter` return, four navigation-universe causes: skipRead, skipDupe, downloadedOnly, stale
-chapterListCache); P1 delayed cover appearance traced to memory-cache eviction (background 10% eviction,
-pressure-trim halving) plus mandatory disk decode plus the 300 ms crossfade; P2 filesystem I/O on the
-cache-key path; P3 the long-series memory-exhaustion report has no unbounded structure left in source
-(Stage 4/MED-002 bounded the page bytes) and needs device reproduction before code changes; S2 storage
-scoping verified clean. Remediation is three staged PRs.
-
-## Current truth
-
-Validated against the tree on 2026-10-05. The detailed state and the ordered completion steps are
-in [`doc/2_0_COMPLETION_PLAN.md`](doc/2_0_COMPLETION_PLAN.md); this is the short form.
-
-- **Reader defects are fixed.** `DEF-001` is `DEVICE_VERIFIED`; `DEF-002`/`DEF-003`/`DEF-005`/
-  `DEF-008` are fixed, production-wired, and at `E3`. `E4-user` remains outstanding for every row by
-  owner decision, and is not the same thing as `E4-lab`.
-- **The canvas viewport deletion is done** (`ADR-0010`): `DocumentViewport`, `DocumentTilePartition`,
-  `TileScalePolicy`, `WebtoonViewport` no longer exist.
-- **The remaining gap is wiring and cleanup, and it is finite.** A set of tested contracts still has
-  no production consumer (`IngestEngine` greenfield; the five former DI-orphans are the D3
-  decision-governed target-data cluster), and a
-  superseded generation still ships beside its replacement. See the open queue above.
-- **`ADR-0017` is accepted but not executed.** The profile path is still in the tree. That is the
-  largest single cleanup item and the claim most likely to mislead a reader.
-- **A second workstream exists.** The improvement session (navigation motion, Discover, unified
-  search, cache/cover, performance) is recorded in [`doc/historical/`](doc/historical/); its forward
-  remainder is in the completion plan.
-- **Do not resume ad hoc reader zoom, crop, transition, or source fallback patches** before the
-  relevant contract/fixture task is complete.
-
-The `RDR-005` replacement (`RDR-004` is done and Phase 7 is `VERIFIED`) and the `CLEAN-001` deletion
-have not begun, so the superseded reader, navigation, and media code all still exist alongside their
-replacements.
-
-**Update 2026-11-07 (A6/D2): this is no longer true.** The `RDR-005` replacement is complete and
-verified (A6: the superseded reader paths are gone, ceiling tightened to the measured 83), and
-`CLEAN-001` is executed (D2: the navigation/media generations were deleted at their cutovers, and
-the unwired `macrobenchmark` module is retired). The remaining open queue is wiring, device
-evidence, and release gates — not deletion.
-
-**Update 2026-11-08 (D4): the wiring re-audit is done.** What A6 classified as "awaiting a call
-site" or "built-ahead" in the reader area is wired — through multibindings and top-level-function
-paths the reachability scan cannot see; the classifications are corrected in place in the ledger,
-and `READER_GESTURE_CONTRACT.md`'s stale passage is corrected with them. The remaining unwired
-contracts are decision-governed (`RendererSelection` under `ADR-0008`, the five target-data items
-under `DATA-001I`) or acknowledged greenfield (`IngestEngine`). The open queue is device evidence,
-product/data/ops work, and release gates.
+Blocked on device: nav ViewModel retention across tab switches, tall‑page sharpness,
+back‑motion feel, page‑load parity vs MiHon, cache exhaustion over a long series.
