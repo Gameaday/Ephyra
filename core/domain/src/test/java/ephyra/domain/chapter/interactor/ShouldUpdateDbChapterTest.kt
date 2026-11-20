@@ -41,15 +41,14 @@ class ShouldUpdateDbChapterTest {
 
     @Test
     fun `a restored chapter number does not count as a difference`() {
-        // The DEF-012 defect. `BackupChapter.chapterNumber` is a `Float`, so a restored row holds
-        // 12.300000190734863 where the source reports 12.3. Compared with `!=` this reports
-        // "different", and the chapter is rewritten on every sync indefinitely.
-        val fromDatabase = chapter(chapterNumber = 12.3.toFloat().toDouble())
+        // DEF-012. A backup round trip used to narrow the number through a Float field; backups now
+        // store Double, so a restored row holds exactly what the source reports.
+        val fromDatabase = chapter(chapterNumber = 12.3)
         val fromSource = chapter(chapterNumber = 12.3)
 
         assertFalse(
             interactor.await(fromDatabase, fromSource),
-            "a Float round trip is not a real change and must not trigger a rewrite",
+            "an identical number must not trigger a rewrite",
         )
     }
 

@@ -47,16 +47,15 @@ class RemovedChapterStateTest {
 
     @Test
     fun `a restored candidate inherits from a source-side removed chapter`() {
-        // The exact `DEF-014` failure. The removed chapter's number arrives fresh from the source;
-        // the candidate's comes from the database and has been through a `Float` backup field.
+        // DEF-014. The removed chapter's number arrives fresh from the source; the candidate's comes
+        // from a restored backup. Backups now store Double, so the two compare exactly.
         val removed = listOf(chapter("/old", 12.3, read = true, bookmark = true, dateFetch = 500L))
         val state = RemovedChapterState.from(removed)
-        val restoredCandidate = chapter("/new", 12.3.toFloat().toDouble())
+        val restoredCandidate = chapter("/new", 12.3)
 
         val inherited = RemovedChapterState.inherit(restoredCandidate, state)
 
-        // A null here is the `DEF-014` defect: the widened candidate failed to match its twin.
-        assertNotNull(inherited, "a Float-widened candidate must still match its source-side twin")
+        assertNotNull(inherited, "a restored candidate must match its source-side twin")
         val matched = inherited!!
         assertEquals(true, matched.read)
         assertEquals(500L, matched.dateFetch)

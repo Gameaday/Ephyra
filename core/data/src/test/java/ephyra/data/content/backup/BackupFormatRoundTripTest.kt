@@ -125,6 +125,32 @@ class BackupFormatRoundTripTest {
     }
 
     @Test
+    fun `a decimal chapter number survives a protobuf round trip exactly`() {
+        // The reason `BackupChapter.chapterNumber` is a Double. A Float field narrowed 12.3 to
+        // 12.300000190734863, so a restored row no longer equalled the source's value and every
+        // chapter-number comparison silently failed. Backups are now write-only-compatible.
+        val backup = Backup(
+            backupManga = listOf(
+                BackupManga(
+                    source = 1L,
+                    url = "/manga/x",
+                    title = "X",
+                    chapters = listOf(
+                        BackupChapter(url = "/c/1", name = "Chapter 12.3", chapterNumber = 12.3),
+                        BackupChapter(url = "/c/2", name = "Chapter 0.7", chapterNumber = 0.7),
+                        BackupChapter(url = "/c/3", name = "Chapter 1234.5678", chapterNumber = 1234.5678),
+                    ),
+                ),
+            ),
+        )
+        val bytes = protoBuf.encodeToByteArray(Backup.serializer(), backup)
+        val restored = protoBuf.decodeFromByteArray(Backup.serializer(), bytes)
+
+        val numbers = restored.backupManga.single().chapters.map { it.chapterNumber }
+        assertEquals(listOf(12.3, 0.7, 1234.5678), numbers)
+    }
+
+    @Test
     fun `plain uncompressed backup also decodes`() {
         val original = sampleBackup()
         val bytes = protoBuf.encodeToByteArray(Backup.serializer(), original)
