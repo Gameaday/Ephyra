@@ -211,6 +211,39 @@ class LibrarySeriesTransitionTest {
     }
 
     /**
+     * The series header must key the cover the same way the library grid does.
+     *
+     * Coil resolves a cache key through a `Keyer` registered for the *model's type*, and there are
+     * two: `MangaKeyer` for `Manga` ("id;coverLastModified") and `MangaCoverKeyer` for
+     * `MangaCover` ("mangaId;lastModified"). The library grid passes a `MangaCover`; this header
+     * passed a raw `Manga`. Both keys are correct in isolation and `MangaCoverKeyerTest` proves
+     * they agree — which is exactly why that test could not catch this: the defect is a *call
+     * site* choosing the other type, so the cover the user had just been looking at resolved to a
+     * different key and was re-decoded on arrival, replaying the crossfade as a flicker.
+     *
+     * Asserted on the call site because that is where the two types meet. A `Manga` handed to
+     * `MangaCover` anywhere on this path reintroduces it.
+     */
+    @Test
+    fun `series header keys its cover through the same type as the library grid`() {
+        val header = codeOf(seriesHeader)
+
+        assertFalse(
+            Regex("""\.data\\(manga\\)""").containsMatchIn(header),
+            "MangaInfoHeader must not pass a raw Manga to MangaCover. Coil keys Manga through " +
+                "MangaKeyer (\"id;coverLastModified\") and MangaCover through MangaCoverKeyer " +
+                "(\"mangaId;lastModified\"), so the same cover gets two cache keys and the series " +
+                "page re-decodes what the library grid already had — the reported flicker. Use " +
+                "manga.asMangaCover(), which preserves mangaId and coverLastModified.",
+        )
+        assertTrue(
+            header.contains("asMangaCover()"),
+            "The series header must derive its cover with asMangaCover() so the key matches the " +
+                "library grid's and arrival is a memory-cache hit rather than a re-decode.",
+        )
+    }
+
+    /**
      * The return must be quicker than the arrival.
      *
      * The policy was direction-free and a test asserted that symmetry ("enter and exit share one

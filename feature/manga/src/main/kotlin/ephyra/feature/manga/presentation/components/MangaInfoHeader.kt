@@ -92,6 +92,7 @@ import ephyra.domain.manga.model.CanonicalId
 import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.SourceStatus
+import ephyra.domain.manga.model.asMangaCover
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.AuthorityBrandColors
 import ephyra.presentation.core.components.DropdownMenu
@@ -390,8 +391,15 @@ private fun MangaAndSourceTitlesLarge(
     ) {
         MangaCover.Book(
             modifier = Modifier.fillMaxWidth(0.65f),
+            // `asMangaCover()`, not the `Manga` itself: the library grid renders a `MangaCover`,
+            // and Coil keys the two through different Keyers (`MangaKeyer` -> "id;coverLastModified"
+            // vs `MangaCoverKeyer` -> "mangaId;lastModified"). Handing the header a raw `Manga`
+            // therefore produced a *different cache key for the same image*, so the cover the user
+            // had just been looking at was re-decoded on arrival and the crossfade played again —
+            // the reported flicker. `asMangaCover()` preserves mangaId and coverLastModified, so
+            // both ends agree on one key and the memory-cache hit is immediate.
             data = ImageRequest.Builder(LocalContext.current)
-                .data(manga)
+                .data(manga.asMangaCover())
                 .crossfade(true)
                 .precision(Precision.EXACT)
                 .build(),
@@ -441,8 +449,10 @@ private fun MangaAndSourceTitlesSmall(
             modifier = Modifier
                 .sizeIn(maxWidth = 100.dp)
                 .align(Alignment.Top),
+            // See the note on the other cover site: `asMangaCover()` keeps the Coil key identical
+            // to the library grid's, so arriving here is a cache hit rather than a re-decode.
             data = ImageRequest.Builder(LocalContext.current)
-                .data(manga)
+                .data(manga.asMangaCover())
                 .crossfade(true)
                 .precision(Precision.EXACT)
                 .build(),
