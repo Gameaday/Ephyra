@@ -3,28 +3,23 @@ package ephyra.domain.workflow
 import kotlinx.serialization.Serializable
 
 /*
- * ARC-003 — the base effect/state pattern for long workflows.
+ * ARC-003 — base effect/state pattern for long workflows.
  *
- * The state law in `REBUILD_PROGRAM.md` §4 is a list of eight rules, and prose rules are the kind
- * that survive review while being quietly violated. This file is the smallest shared vocabulary
- * that lets the checkable ones be tested instead of asserted:
+ * The state law in `REBUILD_PROGRAM.md` §4 is prose, and prose rules survive review while being
+ * quietly violated. This is the smallest shared vocabulary that makes the checkable ones testable:
  *
  *     Intent -> pure reduce() -> immutable State -> typed Effect -> handler -> Intent
  *
- * Deliberately small. It is not a framework and it does not own a coroutine scope, a dispatcher, or
- * a lifecycle. Those belong to the effect handler, and pulling them in here would make the pure
- * layer impure, which is the exact inversion ADR-0001 forbids. What lives here is only what can be
- * decided without a device: what a state is, what an effect is, that reduction is deterministic,
- * and that state survives process death.
+ * Deliberately small: no coroutine scope, dispatcher or lifecycle. Those belong to the effect
+ * handler; pulling them in would make the pure layer impure, which ADR-0001 forbids.
  *
- * Rule coverage is stated per member rather than in a block comment, because a rule with no
- * adjacent test is a rule nobody will notice breaking.
+ * Rule coverage is stated per member, because a rule with no adjacent test goes unnoticed.
  */
 
 /**
- * A value a user or system did, already normalised into something a reducer can act on.
+ * Something a user or system did, normalised for a reducer.
  *
- * Intents are data, never callbacks. A callback in state or in an intent is how a workflow ends up
+ * Intents are data, never callbacks — a callback in state or an intent is how a workflow ends up
  * owning a resource it cannot survive recreation with (rule 1).
  */
 @Serializable
@@ -36,15 +31,10 @@ sealed interface WorkflowIntent {
 /**
  * A side effect the reducer decided should happen, described rather than performed.
  *
- * An effect is a value, so it can be asserted on, persisted, and replayed. It carries an [effectId]
- * for two reasons that are easy to conflate and must not be:
- *
- * - **identity**, so a completion can be matched to the effect that requested it (rule 8);
- * - **cancellation**, so work that is no longer wanted can be stopped and stopping it twice is
- *   harmless (rule 2, rule 3).
- *
- * [cancellable] false means the effect is a one-way commitment the workflow cannot take back, such
- * as having already written bytes. A reducer must not emit a non-cancellable effect speculatively.
+ * Being a value, it can be asserted on, persisted and replayed. [effectId] serves identity (match
+ * a completion to its request, rule 8) and cancellation (rule 2, rule 3) — two purposes that are
+ * easy to conflate. [cancellable] false means a one‑way commitment such as bytes already written;
+ * never emit one speculatively.
  */
 @Serializable
 data class WorkflowEffect(
@@ -57,9 +47,8 @@ data class WorkflowEffect(
 /**
  * The result of one reduction: the new state, plus the effects to run.
  *
- * Returning both together is what makes reduction pure. A reducer cannot secretly start work, so
- * the set of effects is exactly what the state transition implies, and a test can assert on it
- * without a dispatcher.
+ * Returning both together is what makes reduction pure — a reducer cannot secretly start work, so
+ * the effect set is exactly what the state transition implies and needs no dispatcher to assert on.
  */
 @Serializable
 data class WorkflowTransition<S>(
@@ -106,9 +95,8 @@ interface WorkflowReducer<S : Any, I : WorkflowIntent> {
  * Tracks which effects are outstanding, so cancellation is idempotent and completions cannot be
  * mistaken for one another.
  *
- * This is deliberately not a coroutine scope or a job registry — it holds no resources and starts
- * nothing. The effect handler owns execution; this only owns the bookkeeping that rule 2 and rule 3
- * require, and that bookkeeping is the part worth testing.
+ * Holds no resources and starts nothing — the effect handler owns execution. This owns only the
+ * bookkeeping rules 2 and 3 require, which is the part worth testing.
  */
 class EffectLedger {
     private val outstanding = LinkedHashSet<String>()
