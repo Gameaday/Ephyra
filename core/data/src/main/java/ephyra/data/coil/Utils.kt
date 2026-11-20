@@ -35,12 +35,3 @@ val Options.cropBorders: Boolean
     get() = getExtra(cropBordersKey)
 
 private val cropBordersKey = Extras.Key(default = false)
-
-fun ImageRequest.Builder.customDecoder(enable: Boolean) = apply {
-    extras[customDecoderKey] = enable
-}
-
-val Options.customDecoder: Boolean
-    get() = getExtra(customDecoderKey)
-
-private val customDecoderKey = Extras.Key(default = false)
