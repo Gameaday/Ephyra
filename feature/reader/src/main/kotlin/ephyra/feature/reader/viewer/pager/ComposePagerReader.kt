@@ -42,6 +42,7 @@ import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.isActive
 import logcat.LogPriority
@@ -104,9 +105,15 @@ fun ComposePagerReader(
         // must never be replayed into this chapter's pager, where the same index is one page
         // further in. Ignoring a foreign chapter's request is what keeps "swiping off the
         // transition" from changing where the next chapter opens.
+        //
+        // `collectLatest`, not `collect`: `animateScrollToPage` suspends until the animation
+        // finishes, and a plain `collect` therefore reads the *next* target only after the current
+        // animation completes. During a drag that means a queue of stale targets played in order —
+        // the pager chases where the thumb was, not where it is, which is the reported scrub
+        // jitter. Cancelling the in-flight animation on a newer target makes the newest one win.
         LaunchedEffect(viewer, pagerState, currentChapterId) {
-            viewer.targetPageRequest.collect { request ->
-                if (request.chapterId != currentChapterId) return@collect
+            viewer.targetPageRequest.collectLatest { request ->
+                if (request.chapterId != currentChapterId) return@collectLatest
                 try {
                     if (request.index in 0 until pagerState.pageCount) {
                         if (request.animate) {
