@@ -90,7 +90,6 @@ import ephyra.data.track.TrackerManagerImpl
 import ephyra.data.track.TrackingServiceImpl
 import ephyra.data.updater.AppUpdateChecker
 import ephyra.data.updates.UpdatesRepositoryImpl
-import ephyra.feature.library.LibrarySnapshotCache
 import ephyra.domain.backup.service.BackupFileValidator
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.backup.service.BackupSchemaProvider
@@ -1580,8 +1579,4 @@ object AppModule {
     @Provides
     @Nullable
     fun provideViewModelCollectionScope(): CoroutineScope? = null
-
-    @Provides
-    @Singleton
-    fun provideLibrarySnapshotCache(): LibrarySnapshotCache = LibrarySnapshotCache()
 }
