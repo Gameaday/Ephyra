@@ -35,6 +35,8 @@ gradle_domain*.txt.err
 
 # Local helper scripts
 _*.ps1
+*.py
+troubleshooting/
 
 # OS
 .DS_Store
@@ -42,7 +44,6 @@ Thumbs.db
 
 # Project IDX
 # .idx/dev.nix (Keep tracked)
-*.pytroubleshooting/
 
 # transient commit-message scratch file
 commitmsg.tmp
