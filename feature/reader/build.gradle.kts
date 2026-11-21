@@ -76,8 +76,13 @@ dependencies {
     implementation(projects.presentationCore)
 
     implementation(libs.logcat)
+    implementation(platform(libs.coil.bom))
+    implementation(libs.bundles.coil)
+    implementation(libs.okio)
+    implementation(libs.unifile)
 
     // Hilt
+    // Declared: reader uses coil3, okio and unifile. All used to arrive only through presentation-core.
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)

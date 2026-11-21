@@ -24,6 +24,9 @@ dependencies {
     implementation(libs.bundles.markdown)
 
     implementation(libs.hilt.android)
+    // Declared explicitly: OnboardingScreen uses materialSharedAxisX/rememberSlideDistance.
+    // It used to arrive transitively through presentation-core, which never imported it.
+    implementation(libs.compose.materialmotion)
     ksp(libs.hilt.compiler)
 
     testImplementation(libs.bundles.test)

@@ -25,7 +25,10 @@ dependencies {
     implementation(projects.presentationCore)
 
     implementation(libs.logcat)
+    implementation(platform(libs.coil.bom))
+    implementation(libs.bundles.coil)
 
+    // Declared: library uses coil3 for covers. It used to arrive only through presentation-core.
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     testImplementation(libs.bundles.test)

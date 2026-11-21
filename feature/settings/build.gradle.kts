@@ -24,6 +24,9 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.aboutLibraries.compose)
+    // Declared explicitly: OpenSourceLibraryLicenseScreen uses MaterialTextView. It used to
+    // arrive transitively through presentation-core, which never imported it itself.
+    implementation(libs.material)
     implementation(androidx.profileinstaller)
     implementation(kotlinx.bundles.serialization)
     implementation(kotlinx.bundles.coroutines)

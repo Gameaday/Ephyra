@@ -59,8 +59,18 @@ dependencies {
     api(kotlinx.immutables)
     api(androidx.lifecycle.runtime.compose)
     api(libs.materialKolor)
-    api(libs.material)
-    api(libs.compose.materialmotion)
+    // Not `api`: nothing in this module imports either. `material` is reached only by
+    // feature:settings' OpenSourceLibraryLicenseScreen, and `materialmotion` by nobody --
+    // they were transitive here, so every one of the 19 consumers inherited a Material
+    // Components dependency it never declared.
+    implementation(libs.material)
+    implementation(libs.compose.materialmotion)
+    // Stays `api`, but for an accident worth knowing: this module never imports
+    // sh.calvin.reorderable, yet feature:category, feature:migration, feature:download and
+    // feature:settings all use it and none declare it. They get it through this line. That
+    // is invisible coupling -- deleting the line would break four modules that look
+    // self-contained. Giving each of them its own dependency is the fix; it needs their
+    // build files touched, so it is recorded rather than bundled in here.
     api(libs.reorderable)
 
     // Image Loading & Files

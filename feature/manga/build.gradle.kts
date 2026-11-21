@@ -26,10 +26,13 @@ dependencies {
     implementation(projects.feature.reader)
     implementation(projects.feature.migration)
 
+    // Declared: manga uses coil3 for covers. It used to arrive only through presentation-core.
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
     implementation(libs.logcat)
+    implementation(platform(libs.coil.bom))
+    implementation(libs.bundles.coil)
     implementation(libs.navigation.compose)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.bundles.markdown)

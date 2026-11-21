@@ -38,10 +38,16 @@ dependencies {
     implementation(projects.feature.manga)
     implementation(projects.feature.migration)
 
+    // Declared: browse uses coil3 for images and androidx.paging for paged lists. Both used to
+    // arrive only through presentation-core.
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
     implementation(libs.logcat)
+    implementation(platform(libs.coil.bom))
+    implementation(libs.bundles.coil)
+    implementation(androidx.paging.runtime)
+    implementation(androidx.paging.compose)
 
     testImplementation(libs.bundles.test)
     testImplementation(kotlinx.coroutines.test)
