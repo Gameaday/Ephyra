@@ -148,11 +148,10 @@ class LibraryViewModel @Inject constructor(
     /**
      * Where the last snapshot is kept between ViewModel instances.
      *
-     * Defaulted because it is process state, not a collaborator: a test that constructs several
-     * ViewModels would otherwise share one snapshot and see leakage between cases. Tests that care
-     * pass a fresh instance explicitly.
+     * Not defaulted: Hilt provides the `@Singleton` instance, and a default here would quietly
+     * give each ViewModel its own cache, which is the one thing this must not do.
      */
-    private val snapshotCache: LibrarySnapshotCache = LibrarySnapshotCache.get(),
+    private val snapshotCache: LibrarySnapshotCache,
 ) : BaseUdfViewModel<LibraryViewModel.State, LibraryScreenEvent, LibraryScreenEffect>(State()) {
 
     override fun onEvent(event: LibraryScreenEvent) {

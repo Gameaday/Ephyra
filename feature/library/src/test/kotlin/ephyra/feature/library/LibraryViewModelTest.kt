@@ -138,7 +138,7 @@ class LibraryViewModelTest {
     }
 
     private fun createViewModel(
-        snapshotCache: LibrarySnapshotCache = LibrarySnapshotCache.isolated(),
+        snapshotCache: LibrarySnapshotCache = LibrarySnapshotCache(),
     ): LibraryViewModel {
         return LibraryViewModel(
             getLibraryManga = getLibraryManga,
@@ -235,7 +235,7 @@ class LibraryViewModelTest {
      */
     @Test
     fun `a recreated ViewModel paints the cached snapshot immediately`() = runTest {
-        val cache = LibrarySnapshotCache.isolated()
+        val cache = LibrarySnapshotCache()
 
         val first = createViewModel(cache)
         val loaded = first.state.value.libraryData
@@ -262,7 +262,7 @@ class LibraryViewModelTest {
     /** An uninitialized emission must not poison the cache for the next ViewModel. */
     @Test
     fun `the cache ignores an uninitialized snapshot`() = runTest {
-        val cache = LibrarySnapshotCache.isolated()
+        val cache = LibrarySnapshotCache()
 
         cache.store(LibraryViewModel.LibraryData())
         assertNull(cache.current, "an uninitialized LibraryData must not be stored")

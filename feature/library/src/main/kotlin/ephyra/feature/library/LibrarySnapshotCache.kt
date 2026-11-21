@@ -5,6 +5,8 @@ import ephyra.feature.library.LibraryViewModel.LibraryData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * The last library snapshot a live ViewModel produced, kept so a *recreated* one can paint it
@@ -21,14 +23,16 @@ import kotlinx.coroutines.flow.asStateFlow
  * stale‑while‑revalidate trade, and it is safe here because the library is a read‑only view of data
  * the user cannot be mid‑edit on from this tab.
  *
- * Process‑scoped deliberately: the point is to survive the ViewModel, and a ViewModel‑scoped cache
- * would die with the thing it is meant to outlive. It holds one snapshot, so it is bounded by the
- * size of one library list rather than growing per navigation.
+ * `@Singleton` because the scope *is* the requirement: an unscoped binding would hand each ViewModel
+ * its own instance and the snapshot would die with the ViewModel it exists to outlive. It holds one
+ * snapshot, so it is bounded by the size of one library list rather than growing per navigation.
  */
 @Immutable
-class LibrarySnapshotCache internal constructor(
-    private val holder: MutableStateFlow<LibraryData?> = MutableStateFlow(null),
-) {
+@Singleton
+class LibrarySnapshotCache @Inject constructor() {
+
+    private val holder = MutableStateFlow<LibraryData?>(null)
+
     val snapshot: StateFlow<LibraryData?> = holder.asStateFlow()
 
     /** The last snapshot, or null on the first ever visit. */
@@ -40,33 +44,8 @@ class LibrarySnapshotCache internal constructor(
         if (data.isInitialized) holder.value = data
     }
 
-    /** Drops the snapshot. Exists for tests and for sign‑out, where the next user must not see it. */
+    /** Drops the snapshot. Exists for sign‑out, where the next user must not see it. */
     fun clear() {
         holder.value = null
-    }
-
-    companion object {
-        private val shared = MutableStateFlow<LibraryData?>(null)
-
-        /**
-         * The process‑wide instance.
-         *
-         * Process‑scoped deliberately: the point is to survive the ViewModel, and a
-         * ViewModel‑scoped cache would die with the thing it is meant to outlive. It holds one
-         * snapshot, so it is bounded by the size of one library list rather than growing per
-         * navigation.
-         */
-        fun get(): LibrarySnapshotCache = LibrarySnapshotCache(shared)
-
-        /**
-         * A cache that shares nothing.
-         *
-         * Tests must use this. [get] is process‑scoped, so two tests that both default to it
-         * silently share state and become order‑dependent - the second one inherits the first
-         * one's library and assertions about "nothing cached" fail for the wrong reason. That is
-         * a defect in the *test*, not in the cache, but it is invisible until the suite runs in a
-         * different order.
-         */
-        fun isolated(): LibrarySnapshotCache = LibrarySnapshotCache()
     }
 }
