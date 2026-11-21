@@ -1,7 +1,7 @@
 package ephyra.feature.reader.session
 
 import ephyra.domain.chapter.model.Chapter
-import eu.kanade.tachiyomi.source.model.Page
+import ephyra.feature.reader.model.ReaderPage
 
 /**
  * Executes the effects a [ReaderTransition] asks for.
@@ -69,7 +69,7 @@ class ReaderSessionCoordinator(
     fun chapterLoaded(
         chapter: Chapter,
         sourceId: Long,
-        pages: List<Page>,
+        pages: List<ReaderPage>,
         initialPageIndex: Int = 0,
     ): ReaderSessionState {
         val chapterId = ReaderSessionIdentity.chapterId(chapter.url, sourceId)
@@ -103,7 +103,7 @@ class ReaderSessionCoordinator(
      * direction unclaimed. The caller settles the page with [pageLoaded].
      */
     fun selectPage(
-        page: Page,
+        page: ReaderPage,
         chapter: Chapter,
         sourceId: Long,
         direction: ReaderNavigationDirection,
@@ -123,14 +123,14 @@ class ReaderSessionCoordinator(
         return dispatch(ReaderCommand.SelectPage(sessionId, pageId))
     }
 
-    fun pageLoaded(page: Page, chapter: Chapter, sourceId: Long): ReaderSessionState {
+    fun pageLoaded(page: ReaderPage, chapter: Chapter, sourceId: Long): ReaderSessionState {
         val chapterId = ReaderSessionIdentity.chapterId(chapter.url, sourceId)
         val pageId = ReaderSessionIdentity.pageId(page.url, page.index, chapterId)
         return dispatch(ReaderCommand.PageLoaded(sessionId, pageId))
     }
 
     fun pageFailed(
-        page: Page,
+        page: ReaderPage,
         chapter: Chapter,
         sourceId: Long,
         error: ReaderSessionError,
@@ -140,7 +140,7 @@ class ReaderSessionCoordinator(
         return dispatch(ReaderCommand.PageFailed(sessionId, pageId, error))
     }
 
-    fun retryPage(page: Page, chapter: Chapter, sourceId: Long): ReaderSessionState {
+    fun retryPage(page: ReaderPage, chapter: Chapter, sourceId: Long): ReaderSessionState {
         val chapterId = ReaderSessionIdentity.chapterId(chapter.url, sourceId)
         val pageId = ReaderSessionIdentity.pageId(page.url, page.index, chapterId)
         return dispatch(ReaderCommand.RetryPage(sessionId, pageId))

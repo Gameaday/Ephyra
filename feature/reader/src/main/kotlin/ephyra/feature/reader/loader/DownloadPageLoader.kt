@@ -8,6 +8,7 @@ import ephyra.core.download.DownloadProvider
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.reader.model.PageResource
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.Source
@@ -73,7 +74,7 @@ internal class DownloadPageLoader(
                     }
                 },
             ).apply {
-                status = Page.State.Ready
+                status = PageState.Ready
             }
         }
     }

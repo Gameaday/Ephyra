@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import ephyra.feature.reader.ReaderCopyReportButton
 import ephyra.feature.reader.errorDetails
 import ephyra.feature.reader.errorHeadline
+import ephyra.feature.reader.model.PageState
 
 /**
  * Shared loading chrome for the pager ([ephyra.feature.reader.viewer.pager.ZoomableMangaPage])
@@ -40,8 +41,8 @@ import ephyra.feature.reader.errorHeadline
  *
  * A `progress` of `0` renders an indeterminate spinner (the queued / in-transfer
  * states carry no byte offset); a non-zero value renders a determinate one for the
- * downloading state. Used by both readers' [Page.State.Queue], [Page.State.LoadPage]
- * and [Page.State.DownloadImage] branches instead of duplicating the spinner box.
+ * downloading state. Used by both readers' [PageState.Queue], [PageState.LoadPage]
+ * and [PageState.DownloadImage] branches instead of duplicating the spinner box.
  */
 @Composable
 fun ReaderPageLoadingView(
@@ -70,7 +71,7 @@ fun ReaderPageLoadingView(
  *
  * `retryContent` lets a reader inject a backoff-aware retry affordance without the pager
  * depending on webtoon internals; when null a plain "Retry" [OutlinedButton] is shown. The page
- * image itself is never rendered here — each reader owns the [Page.State.Ready] branch.
+ * image itself is never rendered here — each reader owns the [PageState.Ready] branch.
  * Replaces the icon + message + retry blocks that were duplicated in the pager and webtoon
  * status `when`.
  */

@@ -3,6 +3,7 @@ package ephyra.feature.reader.loader
 import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.FilterList
@@ -81,7 +82,7 @@ class HttpPageLoaderForcedRetryTest {
         // Baseline: the first load was a pure cache hit — the network was never touched, which is
         // the state the decode failure happened in.
         assertEquals(0, fixture.fetchCalls, "the first load must be served from the cache")
-        assertTrue(page.status is Page.State.Ready, "expected the page ready, got " + page.status)
+        assertTrue(page.status is PageState.Ready, "expected the page ready, got " + page.status)
 
         // The reported scenario: the viewer failed to decode the cached bytes and the user pressed
         // Retry. The loader still considers the page Ready — the failure lived below its ladder —
@@ -89,7 +90,7 @@ class HttpPageLoaderForcedRetryTest {
         fixture.retry(page)
 
         val status = page.status
-        assertTrue(status is Page.State.Ready, "expected the retried page to settle ready, got " + status)
+        assertTrue(status is PageState.Ready, "expected the retried page to settle ready, got " + status)
 
         // The fix: the retry went past the cache and asked the source for new bytes.
         assertEquals(1, fixture.fetchCalls, "the retry must re-download past the cached entry")
@@ -161,7 +162,7 @@ class HttpPageLoaderForcedRetryTest {
 
         private suspend fun settle(page: ReaderPage) {
             val deadline = System.currentTimeMillis() + SETTLE_TIMEOUT_MS
-            while (page.status !is Page.State.Ready && page.status !is Page.State.Error) {
+            while (page.status !is PageState.Ready && page.status !is PageState.Error) {
                 assertTrue(
                     System.currentTimeMillis() < deadline,
                     "the page never settled; last status was " + page.status,

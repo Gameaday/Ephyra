@@ -1,34 +1,54 @@
 package ephyra.feature.reader.model
 
-import eu.kanade.tachiyomi.source.model.Page
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * One reader page: immutable identity plus a [PageResource] payload handle (R-C, Stage 4 of the
- * reader modular redesign, 2026-11-09).
+ * One reader page: immutable identity plus a [PageResource] payload handle.
  *
- * **What the page is after this sweep.** Identity (`index`, `url`, `imageUrl`, the owning
- * [ReaderChapter]) and cheap session metadata ([isAbsorbed], [isBlockedByFilter],
- * [needsFreshAddress]) — everything heavy a page can hold, the stream lambda, the cached bytes,
- * the merged bitmap and the recorded dimensions, lives behind [resource], whose lifecycle the
- * chapter owns. Audit finding F5 was this class carrying that payload directly: every adapter,
- * viewer and dialog that held a page could reach its bytes, and payload lifetime was page
- * lifetime. Access now goes through the handle, which is enforced by the build rather than by
- * review — the payload members no longer exist here, and `ReaderPageResourceOwnershipTest` fails
- * the build if they come back.
+ * Identity (`index`, `url`, [imageUrl], the owning [ReaderChapter]) and cheap session metadata
+ * ([isAbsorbed], [isBlockedByFilter], [needsFreshAddress]). Everything heavy — the stream
+ * lambda, cached bytes, merged bitmap, recorded dimensions — lives behind [resource], whose
+ * lifecycle the chapter owns. `ReaderPageResourceOwnershipTest` fails the build if those
+ * payload members reappear here.
  *
- * **What still mutates on the page, on purpose.** The inherited [Page.status] is the
- * extension-facing load state (source-api; changing it breaks the extension ABI), and the three
- * session flags are boolean navigation metadata — absorbed/blocked pages report [isHidden] to the
- * completion policy and the adapters, and the recovery ladder reads [needsFreshAddress]. None of
- * them holds payload, and their contracts are pinned by their own tests. The gate names them so
- * adding a fourth mutable member is a deliberate edit.
+ * Does not extend the extension ABI's `Page`. The loader receives `Page` from a source and
+ * maps it here, so the reader describes a page in its own terms.
  */
 open class ReaderPage(
-    index: Int,
-    url: String = "",
+    val index: Int,
+    val url: String = "",
     imageUrl: String? = null,
     resource: PageResource = PageResource(),
-) : Page(index, url, imageUrl, null) {
+) {
+
+    /** Resolved image address, or null when the source has not provided one yet. */
+    var imageUrl: String? = imageUrl
+
+    /** One-based page number, for display. */
+    val number: Int get() = index + 1
+
+    private val _statusFlow = MutableStateFlow<PageState>(PageState.Queue)
+
+    /** Observed by the viewers, which recompose a page when its state changes. */
+    val statusFlow: StateFlow<PageState> = _statusFlow.asStateFlow()
+
+    var status: PageState
+        get() = _statusFlow.value
+        set(value) {
+            _statusFlow.value = value
+        }
+
+    private val _progressFlow = MutableStateFlow(0)
+
+    val progressFlow: StateFlow<Int> = _progressFlow.asStateFlow()
+
+    var progress: Int
+        get() = _progressFlow.value
+        set(value) {
+            _progressFlow.value = value
+        }
 
     open lateinit var chapter: ReaderChapter
 

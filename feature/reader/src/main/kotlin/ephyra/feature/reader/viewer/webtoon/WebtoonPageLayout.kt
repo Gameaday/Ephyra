@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Modifier
 import ephyra.feature.reader.model.ChapterTransition
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 
@@ -58,7 +59,7 @@ fun webtoonContentType(item: Any?, cropBorders: Boolean): String = when (item) {
     is ReaderPage ->
         when {
             cropBorders || item.resource.mergedBitmap != null -> "webtoon_single"
-            item.status == Page.State.Ready -> "webtoon_page_ready"
+            item.status == PageState.Ready -> "webtoon_page_ready"
             else -> "webtoon_page_pending"
         }
     else -> "webtoon_item"

@@ -14,6 +14,6 @@ class InsertPage(val parent: ReaderPage) :
     override var chapter: ReaderChapter = parent.chapter
 
     init {
-        status = State.Ready
+        status = PageState.Ready
     }
 }

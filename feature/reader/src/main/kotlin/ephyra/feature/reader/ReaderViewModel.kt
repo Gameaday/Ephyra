@@ -59,6 +59,7 @@ import ephyra.feature.reader.loading.ChapterLoadingCoordinator
 import ephyra.feature.reader.loading.ChapterLoadingEffectHandler
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.NavigationVector
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderChapterWindowAdapter
 import ephyra.feature.reader.model.ReaderPage
@@ -1034,7 +1035,7 @@ class ReaderViewModel @Inject constructor(
         readerChapter.requestedPage = pageIndex
         chapterPageIndex = pageIndex
 
-        if (!incognitoMode && page.status !is Page.State.Error) {
+        if (!incognitoMode && page.status !is PageState.Error) {
             val prevLastPageRead = readerChapter.chapter.lastPageRead
             val prevRead = readerChapter.chapter.read
 

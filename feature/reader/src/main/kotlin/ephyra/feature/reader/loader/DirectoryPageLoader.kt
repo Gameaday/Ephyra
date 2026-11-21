@@ -3,6 +3,7 @@ package ephyra.feature.reader.loader
 import com.hippo.unifile.UniFile
 import ephyra.core.common.util.lang.compareToCaseInsensitiveNaturalOrder
 import ephyra.core.common.util.system.ImageUtil
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 
@@ -22,7 +23,7 @@ internal class DirectoryPageLoader(val file: UniFile) : PageLoader() {
                 val streamFn = { file.openInputStream() }
                 ReaderPage(i).apply {
                     resource.stream = streamFn
-                    status = Page.State.Ready
+                    status = PageState.Ready
                 }
             }
             .orEmpty()

@@ -3,6 +3,7 @@ package ephyra.feature.reader.loader
 import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.FilterList
@@ -50,7 +51,7 @@ java.net.UnknownHostException: Unable to resolve host "api.mangadex.org": No add
  * (the API host this time) escaped the retry loop, the worker coroutine (a standalone coroutine
  * with no `CoroutineExceptionHandler`) and the process.
  *
- * **What is asserted.** That the page settles into `Page.State.Error` — impossible if the worker
+ * **What is asserted.** That the page settles into `PageState.Error` — impossible if the worker
  * died — and that the surfaced error is the one that actually stopped the page (the image request,
  * `img.example.com`) rather than the machinery of the failed replacement fetch (`api.example.org`).
  * The page is left with no address and its fresh-address flag still set, so a Retry re-asks the
@@ -76,11 +77,11 @@ class HttpPageLoaderFreshAddressFailureTest {
             val page = fixture.loadFirstPage()
 
             val status = page.status
-            assertTrue(status is Page.State.Error, "expected the page to settle into an error, got " + status)
+            assertTrue(status is PageState.Error, "expected the page to settle into an error, got " + status)
 
             // The failure surfaced is the one that stopped the page — the image request — and not
             // the replacement fetch's own failure, which belongs in the log, not on the page.
-            val message = (status as Page.State.Error).error.message.orEmpty()
+            val message = (status as PageState.Error).error.message.orEmpty()
             assertTrue(
                 message.contains(IMAGE_HOST),
                 "expected the image request's failure, got: " + message,
@@ -121,7 +122,7 @@ class HttpPageLoaderFreshAddressFailureTest {
             scope.launch { loader.loadPage(page) }
 
             val deadline = System.currentTimeMillis() + SETTLE_TIMEOUT_MS
-            while (page.status !is Page.State.Ready && page.status !is Page.State.Error) {
+            while (page.status !is PageState.Ready && page.status !is PageState.Error) {
                 assertTrue(
                     System.currentTimeMillis() < deadline,
                     "the page never settled; last status was " + page.status,

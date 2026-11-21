@@ -1,5 +1,6 @@
 package ephyra.feature.reader.viewer.webtoon
 
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 import io.mockk.mockk
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
  */
 class WebtoonPageLayoutTest {
 
-    private fun page(status: Page.State = Page.State.Queue): ReaderPage =
+    private fun page(status: PageState = PageState.Queue): ReaderPage =
         ReaderPage(index = 0).also { it.status = status }
 
     @Test
@@ -25,7 +26,7 @@ class WebtoonPageLayoutTest {
     fun `ready pages pool with slice column compositions`() {
         assertEquals(
             "webtoon_page_ready",
-            webtoonContentType(page(Page.State.Ready), cropBorders = false),
+            webtoonContentType(page(PageState.Ready), cropBorders = false),
         )
     }
 
@@ -33,7 +34,7 @@ class WebtoonPageLayoutTest {
     fun `crop mode pools every page as a single image`() {
         assertEquals(
             "webtoon_single",
-            webtoonContentType(page(Page.State.Ready), cropBorders = true),
+            webtoonContentType(page(PageState.Ready), cropBorders = true),
         )
     }
 

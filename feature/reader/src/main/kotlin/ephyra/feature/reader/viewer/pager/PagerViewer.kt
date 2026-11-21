@@ -15,6 +15,7 @@ import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.NavigationVector
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.viewer.ChapterPositionTracker
@@ -443,9 +444,9 @@ abstract class PagerViewer(
                     continue
                 }
 
-                if (page.status != Page.State.Ready) {
-                    val arrived = page.statusFlow.firstOrNull { it == Page.State.Ready || it is Page.State.Error }
-                    if (arrived != Page.State.Ready || !isActive) {
+                if (page.status != PageState.Ready) {
+                    val arrived = page.statusFlow.firstOrNull { it == PageState.Ready || it is PageState.Error }
+                    if (arrived != PageState.Ready || !isActive) {
                         index++
                         continue
                     }
@@ -461,11 +462,11 @@ abstract class PagerViewer(
                     continue
                 }
 
-                if (nextPage.status != Page.State.Ready) {
+                if (nextPage.status != PageState.Ready) {
                     val arrived = nextPage.statusFlow.firstOrNull {
-                        it == Page.State.Ready || it is Page.State.Error
+                        it == PageState.Ready || it is PageState.Error
                     }
-                    if (arrived != Page.State.Ready || !isActive) {
+                    if (arrived != PageState.Ready || !isActive) {
                         index++
                         continue
                     }
@@ -551,11 +552,11 @@ abstract class PagerViewer(
                             candidateIndex++
                             continue
                         }
-                        if (candidateNext.status != Page.State.Ready) {
+                        if (candidateNext.status != PageState.Ready) {
                             val arrived = candidateNext.statusFlow.firstOrNull {
-                                it == Page.State.Ready || it is Page.State.Error
+                                it == PageState.Ready || it is PageState.Error
                             }
-                            if (arrived != Page.State.Ready || !isActive) break
+                            if (arrived != PageState.Ready || !isActive) break
                         }
                         val candidateStreamFn = candidateNext.resource.stream ?: break
 

@@ -3,6 +3,7 @@ package ephyra.feature.reader.loader
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.download.service.DownloadPreferences
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import logcat.LogPriority
 import java.io.InputStream
@@ -25,7 +26,7 @@ import kotlin.math.abs
  * * **Incremental** ([checkPageOnLoad]) — for pages whose images arrive asynchronously
  *   (online chapters via [HttpPageLoader]). Called each time a page image is fetched.
  *   If the page is blocked, [HttpPageLoader] skips setting its status to
- *   [Page.State.Ready][eu.kanade.tachiyomi.source.model.Page.State.Ready] so the holder
+ *   [PageState.Ready][ephyra.feature.reader.model.PageState.Ready] so the holder
  *   never renders it.
  *
  * Both modes set [ReaderPage.isBlockedByFilter] on matching pages; the viewer adapters

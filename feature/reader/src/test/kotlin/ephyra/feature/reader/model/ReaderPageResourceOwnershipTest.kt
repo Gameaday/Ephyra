@@ -75,9 +75,18 @@ class ReaderPageResourceOwnershipTest {
         }
 
         assertEquals(
-            setOf("chapter", "isAbsorbed", "isBlockedByFilter", "needsFreshAddress"),
+            setOf(
+                "chapter",
+                "imageUrl",
+                "status",
+                "progress",
+                "isAbsorbed",
+                "isBlockedByFilter",
+                "needsFreshAddress",
+            ),
             declaredVars(page),
-            "ReaderPage's mutable members are the chapter anchor and the session flags; anything " +
+            "ReaderPage's mutable members are the identity anchor, the three load fields it owns " +
+                "since it stopped extending the extension Page, and the session flags; anything " +
                 "else joining them is a deliberate edit, not an accident",
         )
     }

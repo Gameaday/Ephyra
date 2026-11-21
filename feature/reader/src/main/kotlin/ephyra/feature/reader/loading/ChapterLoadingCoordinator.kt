@@ -1,6 +1,7 @@
 package ephyra.feature.reader.loading
 
 import ephyra.core.common.util.system.logcat
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -156,7 +157,7 @@ class ChapterLoadingCoordinator(
      */
     fun shouldPreloadNextChapterImages(
         nextChapter: ReaderChapter?,
-        currentPageStatuses: List<Page.State>,
+        currentPageStatuses: List<PageState>,
         currentPageIndex: Int,
     ): Boolean {
         if (nextChapter == null) return false
@@ -169,13 +170,13 @@ class ChapterLoadingCoordinator(
      * The one implementation of the count preload() and tryPreloadNextChapterImages()
      * previously each carried.
      */
-    fun pendingAheadOf(pageStatuses: List<Page.State>, currentPageIndex: Int): Int =
+    fun pendingAheadOf(pageStatuses: List<PageState>, currentPageIndex: Int): Int =
         pageStatuses
             .asSequence()
             .drop(currentPageIndex + 1)
             .take(preloadAheadPages)
             .count {
-                it == Page.State.Queue || it == Page.State.LoadPage || it == Page.State.DownloadImage
+                it == PageState.Queue || it == PageState.LoadPage || it == PageState.DownloadImage
             }
 
     /** Direction-aware start for a toolbar transition: next begins, previous ends. */

@@ -4,6 +4,7 @@ import android.net.Uri
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.reader.ReaderViewModel
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -163,7 +164,7 @@ class ReaderImageActionsTest {
     }
 
     private fun page(
-        status: Page.State = Page.State.Ready,
+        status: PageState = PageState.Ready,
         stream: (() -> InputStream)? = { ByteArrayInputStream(ByteArray(0)) },
     ): ReaderPage =
         ReaderPage(0, "/a.jpg").apply {
@@ -185,7 +186,7 @@ class ReaderImageActionsTest {
 
     @Test
     fun `guards reject a page that is not ready`() = runBlocking {
-        selectedPageValue = page(status = Page.State.Queue)
+        selectedPageValue = page(status = PageState.Queue)
         currentMangaValue = manga()
         actions.saveImage()
         actions.shareImage(copyToClipboard = false)

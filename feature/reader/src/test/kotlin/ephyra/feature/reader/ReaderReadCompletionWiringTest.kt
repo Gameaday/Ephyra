@@ -25,6 +25,7 @@ import ephyra.domain.track.interactor.TrackChapter
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.NavigationVector
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.source.local.image.LocalCoverManager
@@ -228,7 +229,7 @@ class ReaderReadCompletionWiringTest {
         val pages = (0 until pageCount).map { index ->
             ReaderPage(index).also { page ->
                 page.chapter = readerChapter
-                page.status = eu.kanade.tachiyomi.source.model.Page.State.Ready
+                page.status = ephyra.feature.reader.model.PageState.Ready
                 if (index >= absorbedFrom) page.isAbsorbed = true
             }
         }
@@ -294,7 +295,7 @@ class ReaderReadCompletionWiringTest {
         val partial = (0 until 2).map { index ->
             ReaderPage(index).also {
                 it.chapter = readerChapter
-                it.status = eu.kanade.tachiyomi.source.model.Page.State.Ready
+                it.status = ephyra.feature.reader.model.PageState.Ready
             }
         }
         readerChapter.state = ReaderChapter.State.Loading

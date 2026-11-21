@@ -1,6 +1,7 @@
 package ephyra.feature.reader.loader
 
 import ephyra.core.archive.EpubReader
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 
@@ -16,7 +17,7 @@ internal class EpubPageLoader(private val reader: EpubReader) : PageLoader() {
         return reader.getImagesFromPages().mapIndexed { i, path ->
             ReaderPage(i).apply {
                 resource.stream = { requireNotNull(reader.getInputStream(path)) { "Entry '$path' not found in EPUB" } }
-                status = Page.State.Ready
+                status = PageState.Ready
             }
         }
     }

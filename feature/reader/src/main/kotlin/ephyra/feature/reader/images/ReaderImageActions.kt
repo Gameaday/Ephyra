@@ -8,6 +8,7 @@ import ephyra.core.common.util.system.logcat
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.reader.ReaderViewModel
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.model.Page
@@ -83,7 +84,7 @@ interface ReaderImageEffectHandler {
  * - guards, filenames, relative paths, hash matching and result mapping.
  *
  * Every decision is the code that already ran, moved, not rethought:
- *  - the guard is the dialog page in [Page.State.Ready]; save / share / set-cover additionally
+ *  - the guard is the dialog page in [PageState.Ready]; save / share / set-cover additionally
  *    require an open manga, while block and hash-match never did - kept exactly;
  *  - the filename rule (title - chapter - number within the byte budget) and the per-manga
  *    relative path both live here now - one home where the view model had the rules beside
@@ -168,11 +169,11 @@ class ReaderImageActions(
     }
 
     /**
-     * The dialog page in [Page.State.Ready], or null. Block and hash-match stop here; the
+     * The dialog page in [PageState.Ready], or null. Block and hash-match stop here; the
      * others additionally require a manga - exactly the guards the old code ran.
      */
     private fun actionablePage(): ReaderPage? =
-        effects.selectedPage()?.takeIf { it.status == Page.State.Ready }
+        effects.selectedPage()?.takeIf { it.status == PageState.Ready }
 
     /** A ready page paired with its open manga, or null when either guard fails. */
     private fun targetOrNull(): ImageActionTarget? {

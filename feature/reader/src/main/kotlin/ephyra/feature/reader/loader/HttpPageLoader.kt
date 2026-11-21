@@ -16,6 +16,7 @@ import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -247,7 +248,7 @@ internal class HttpPageLoader(
                     emit(runInterruptible { queue.take() })
                 }
             }
-                .filter { it.page.status == Page.State.Queue }
+                .filter { it.page.status == PageState.Queue }
                 .collect { internalLoadPage(it.page, it.priority, it.forceDownload) }
         }
     }
@@ -393,7 +394,7 @@ internal class HttpPageLoader(
         }
 
         // Check if the image has been deleted
-        if (page.status == Page.State.Ready && imageUrl != null && !chapterCache.isImageInCache(imageUrl)) {
+        if (page.status == PageState.Ready && imageUrl != null && !chapterCache.isImageInCache(imageUrl)) {
             prepareForReload(page)
         }
 
@@ -401,13 +402,13 @@ internal class HttpPageLoader(
         // local first because `prepareForReload` overwrites it, and a failure that indicts the URL
         // takes the URL with it, so this retry asks the source rather than repeating the request
         // that just failed.
-        val failedWith = (page.status as? Page.State.Error)?.error
+        val failedWith = (page.status as? PageState.Error)?.error
         if (failedWith != null) {
             prepareForReload(page, dropImageUrl = TransientErrors.shouldReResolveUrl(failedWith))
         }
 
         val queuedPages = mutableListOf<PriorityPage>()
-        if (page.status == Page.State.Queue) {
+        if (page.status == PageState.Queue) {
             queuedPages += PriorityPage(page, 1).also { queue.offer(it) }
         }
         queuedPages += preloadNextPages(page, preloadSize)
@@ -416,7 +417,7 @@ internal class HttpPageLoader(
         suspendCancellableCoroutine<Nothing> { continuation ->
             continuation.invokeOnCancellation {
                 queuedPages.forEach {
-                    if (it.page.status == Page.State.Queue) {
+                    if (it.page.status == PageState.Queue) {
                         queue.remove(it)
                     }
                 }
@@ -439,7 +440,7 @@ internal class HttpPageLoader(
      * previous build wrote non-transactionally), and the viewer surfaced its own error view with
      * this retry button. Without forcing, the reload finds the bad entry still in the cache,
      * skips the download, hands out the identical bytes, and the page fails identically —
-     * forever, because the only writer of `Page.State.Error` is the ladder, which never runs
+     * forever, because the only writer of `PageState.Error` is the ladder, which never runs
      * again for a page that is already `Ready`. Upstream Mihon's `retryPage` passes
      * `force = true` to `internalLoadPage` for exactly this reason. The user asked for a new
      * attempt; one re-download is the honest cost of it. The automatic paths (the visibility
@@ -447,7 +448,7 @@ internal class HttpPageLoader(
      */
     override fun retryPage(page: ReaderPage) {
         check(!isRecycled)
-        val failedWith = (page.status as? Page.State.Error)?.error
+        val failedWith = (page.status as? PageState.Error)?.error
         prepareForReload(page, dropImageUrl = failedWith != null && TransientErrors.shouldReResolveUrl(failedWith))
         queue.offer(PriorityPage(page, 2, forceDownload = true))
     }
@@ -471,8 +472,8 @@ internal class HttpPageLoader(
             var cancelledCount = 0
             for (page in pages) {
                 val status = page.status
-                if (status == Page.State.LoadPage || status == Page.State.DownloadImage) {
-                    page.status = Page.State.Queue
+                if (status == PageState.LoadPage || status == PageState.DownloadImage) {
+                    page.status = PageState.Queue
                     cancelledCount++
                 }
             }
@@ -528,7 +529,7 @@ internal class HttpPageLoader(
         return pages
             .subList(pageIndex + 1, min(pageIndex + 1 + amount, pages.size))
             .mapNotNull {
-                if (it.status == Page.State.Queue) {
+                if (it.status == PageState.Queue) {
                     PriorityPage(it, 0).apply { queue.offer(this) }
                 } else {
                     null
@@ -552,7 +553,7 @@ internal class HttpPageLoader(
         return pages
             .subList(maxOf(0, pageIndex - amount), pageIndex)
             .mapNotNull {
-                if (it.status == Page.State.Queue) {
+                if (it.status == PageState.Queue) {
                     PriorityPage(it, 0).apply { queue.offer(this) }
                 } else {
                     null
@@ -569,7 +570,7 @@ internal class HttpPageLoader(
         if (isRecycled) return
         val pages = chapter.pages?.take(amount) ?: return
         pages.forEach { page ->
-            if (page.status == Page.State.Queue) {
+            if (page.status == PageState.Queue) {
                 queue.offer(PriorityPage(page, 0))
             }
         }
@@ -582,7 +583,7 @@ internal class HttpPageLoader(
      * (below the nearby-page preload priority of 0), so they never compete for bandwidth with
      * the page the user is actively reading or about to read.
      *
-     * Only pages in [Page.State.Queue] are enqueued. Pages already downloading, ready, or in
+     * Only pages in [PageState.Queue] are enqueued. Pages already downloading, ready, or in
      * an error state are intentionally skipped: pages in progress or already cached need no
      * action, and errored pages are retried through the user-facing [retryPage] path rather
      * than being silently re-queued here.
@@ -591,7 +592,7 @@ internal class HttpPageLoader(
         if (isRecycled) return
         val pages = chapter.pages ?: return
         pages.forEach { page ->
-            if (page.status == Page.State.Queue) {
+            if (page.status == PageState.Queue) {
                 queue.offer(PriorityPage(page, BACKGROUND_PRELOAD_PRIORITY))
             }
         }
@@ -615,6 +616,9 @@ internal class HttpPageLoader(
      * for themselves, so the drop [internalLoadPage] makes when a load fails and the drop a
      * user-triggered reload makes cannot disagree about what a given failure means.
      */
+    // The ABI view of a reader page: resolvePageImage and getImage are HttpSource members.
+    private fun ReaderPage.toSourcePage(): Page = Page(index, url, imageUrl)
+
     private fun prepareForReload(
         page: ReaderPage,
         dropImageUrl: Boolean = false,
@@ -627,7 +631,7 @@ internal class HttpPageLoader(
             // instead leaves the page asking a method the source does not implement.
             page.needsFreshAddress = true
         }
-        page.status = Page.State.Queue
+        page.status = PageState.Queue
     }
 
     /**
@@ -641,10 +645,10 @@ internal class HttpPageLoader(
      * Retry. See `DEF-023`, `DEF-028`.
      *
      * Yields immediately if a higher‑priority page arrives while waiting to start or between the
-     * URL‑fetch and download phases: the page returns to [Page.State.Queue] and is re‑enqueued at
+     * URL‑fetch and download phases: the page returns to [PageState.Queue] and is re‑enqueued at
      * its original [priority].
      *
-     * **Concurrency:** the worker filters dequeued pages on `status == Page.State.Queue`, so if
+     * **Concurrency:** the worker filters dequeued pages on `status == PageState.Queue`, so if
      * [loadPage] already queued a second entry for this page, whichever worker dequeues first
      * loads it and the other's entry is skipped — no double‑download.
      *
@@ -679,7 +683,7 @@ internal class HttpPageLoader(
                 page.progress = 0
 
                 if (page.imageUrl.isNullOrEmpty()) {
-                    page.status = Page.State.LoadPage
+                    page.status = PageState.LoadPage
                     // Paced, but *only* when this is a re-resolution. The first resolution of a page
                     // is on the hot path — the user is waiting for that image, and the page they are
                     // waiting on competes with the preload window for the same few workers — so
@@ -699,7 +703,7 @@ internal class HttpPageLoader(
                     //
                     // What stays here is page-load *policy*, which depends on state this cannot see:
                     // pacing above, and the repeat-address check below.
-                    val resolved = source.resolvePageImage(page, pageListOrigin).value
+                    val resolved = source.resolvePageImage(page.toSourcePage(), pageListOrigin).value
                     // A source that hands back the identical string we have already rejected is not
                     // going to produce a different one on the next call either, and every call it
                     // does make is a round-trip spent learning nothing. Reporting the defect now
@@ -750,8 +754,8 @@ internal class HttpPageLoader(
                 // editor is aborted by a new fetch for the same key (see ChapterCache), so the
                 // re-download replaces the bad entry rather than racing it.
                 if (forceDownload || !chapterCache.isImageInCache(imageUrl)) {
-                    page.status = Page.State.DownloadImage
-                    chapterCache.fetchAndCacheImage(imageUrl) { source.getImage(page) }
+                    page.status = PageState.DownloadImage
+                    chapterCache.fetchAndCacheImage(imageUrl) { source.getImage(page.toSourcePage()) }
                 }
 
                 page.resource.stream = {
@@ -791,7 +795,7 @@ internal class HttpPageLoader(
                     return
                 }
 
-                page.status = Page.State.Ready
+                page.status = PageState.Ready
                 return
             } catch (e: Throwable) {
                 if (e is CancellationException) throw e
@@ -847,7 +851,7 @@ internal class HttpPageLoader(
                     logcat(LogPriority.WARN, decision.error) {
                         giveUpMessage(page.number, chapter.chapter.name, decision, recovery.summary())
                     }
-                    page.status = Page.State.Error(decision.error)
+                    page.status = PageState.Error(decision.error)
                     return
                 }
                 delay(decision.delayMs)
@@ -857,7 +861,7 @@ internal class HttpPageLoader(
 
     /**
      * If there is a page in the queue with strictly higher [priority] than [currentPriority],
-     * resets [page] to [Page.State.Queue] and re-enqueues it at [currentPriority] so the
+     * resets [page] to [PageState.Queue] and re-enqueues it at [currentPriority] so the
      * calling worker is freed to service the more urgent request instead. Returns `true` when
      * the caller should `return` immediately (yield occurred), `false` otherwise.
      *
@@ -866,7 +870,7 @@ internal class HttpPageLoader(
      */
     private fun requeueAndYield(page: ReaderPage, currentPriority: Int, forceDownload: Boolean = false): Boolean {
         if (!shouldYield(currentPriority)) return false
-        page.status = Page.State.Queue
+        page.status = PageState.Queue
         queue.offer(PriorityPage(page, currentPriority, forceDownload))
         return true
     }

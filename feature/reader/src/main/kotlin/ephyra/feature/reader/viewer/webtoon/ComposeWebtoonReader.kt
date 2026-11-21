@@ -88,6 +88,7 @@ import ephyra.domain.reader.media.RenderPathPolicy
 import ephyra.domain.reader.media.supportsRegionDecode
 import ephyra.domain.reader.media.toPageImageFormat
 import ephyra.feature.reader.model.ChapterTransition
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.resolveReaderStartIndex
@@ -220,7 +221,7 @@ fun ComposeWebtoonReader(
                     var queued = 0
                     for (index in (lastVisible + 1)..(lastVisible + prefetchWindow)) {
                         val item = items.getOrNull(index) as? ReaderPage ?: continue
-                        if (item.status == Page.State.Queue) {
+                        if (item.status == PageState.Queue) {
                             withIOContext { item.chapter.pageLoader?.loadPage(item) }
                             if (++queued >= prefetchWindow) break
                         }
@@ -228,7 +229,7 @@ fun ComposeWebtoonReader(
                     // Backward: single page behind (covers 200-segment back-scroll).
                     (firstVisible - 1 downTo maxOf(0, firstVisible - 1)).forEach { index ->
                         val item = items.getOrNull(index) as? ReaderPage ?: return@forEach
-                        if (item.status == Page.State.Queue) {
+                        if (item.status == PageState.Queue) {
                             withIOContext { item.chapter.pageLoader?.loadPage(item) }
                         }
                     }
@@ -527,10 +528,10 @@ private fun WebtoonPageItem(
         // This used to check `Ready`/`Error` and rely on `loadPage` declining to re-queue a page
         // that was not `Queue`; stating the positive case drops that dependency, and stops the
         // watchdog triggering pointless neighbour preloads in the middle of a ladder.
-        if (status !is Page.State.Queue) return@LaunchedEffect
+        if (status !is PageState.Queue) return@LaunchedEffect
         kotlinx.coroutines.delay(WebtoonVisibility.WATCHDOG_GRACE_MS)
         val current = page.status
-        if (current !is Page.State.Queue) return@LaunchedEffect
+        if (current !is PageState.Queue) return@LaunchedEffect
         if (page.resource.cachedBytes == null && page.resource.mergedBitmap == null) {
             withIOContext {
                 page.chapter.pageLoader?.loadPage(page)
@@ -635,18 +636,18 @@ private fun WebtoonPageItem(
         contentAlignment = Alignment.Center,
     ) {
         when (val currentStatus = status) {
-            is Page.State.Queue, is Page.State.LoadPage -> {
+            is PageState.Queue, is PageState.LoadPage -> {
                 // Visible-but-loading keeps the reserved box (no 300dp jump) with a
                 // spinner: blank-background-forever becomes spinner → image, so the
                 // visibility watchdog's work is obvious during testing.
                 ReaderPageLoadingView(progress = progress)
             }
 
-            is Page.State.DownloadImage -> {
+            is PageState.DownloadImage -> {
                 ReaderPageLoadingView(progress = progress)
             }
 
-            is Page.State.Error -> {
+            is PageState.Error -> {
                 val isRateLimited = remember(currentStatus) {
                     isRateLimitError(currentStatus.error)
                 }
@@ -675,7 +676,7 @@ private fun WebtoonPageItem(
                 )
             }
 
-            Page.State.Ready -> {
+            PageState.Ready -> {
                 var readyBytesReadFailed by remember(page) { mutableStateOf(false) }
                 val readyBytes by produceState<ByteArray?>(
                     initialValue = page.resource.mergedBitmap?.let { null } ?: page.resource.cachedBytes,

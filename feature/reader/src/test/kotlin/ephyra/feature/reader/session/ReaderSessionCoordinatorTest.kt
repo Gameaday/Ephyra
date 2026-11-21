@@ -1,6 +1,7 @@
 package ephyra.feature.reader.session
 
 import ephyra.domain.chapter.model.Chapter
+import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -247,7 +248,7 @@ private fun ReaderSessionCoordinator.chapterLoadedForTest(
     url: String,
     sourceId: Long,
     urls: List<String>,
-) = chapterLoaded(chapter(url), sourceId, urls.mapIndexed { i, u -> Page(i, u) })
+) = chapterLoaded(chapter(url), sourceId, urls.mapIndexed { i, u -> ReaderPage(i, u) })
 
 private fun ReaderSessionCoordinator.pageFailedForTest(
     pageUrl: String,
@@ -255,15 +256,15 @@ private fun ReaderSessionCoordinator.pageFailedForTest(
     chapterUrl: String,
     sourceId: Long,
     error: ReaderSessionError,
-) = pageFailed(Page(index, pageUrl), chapter(chapterUrl), sourceId, error)
+) = pageFailed(ReaderPage(index, pageUrl), chapter(chapterUrl), sourceId, error)
 
 private fun ReaderSessionCoordinator.pageLoadedForTest(
     pageUrl: String,
     index: Int,
-) = pageLoaded(Page(index, pageUrl), chapter("/chapter/1"), 7L)
+) = pageLoaded(ReaderPage(index, pageUrl), chapter("/chapter/1"), 7L)
 
 private fun ReaderSessionCoordinator.selectPageForTest(
     pageUrl: String,
     index: Int,
     direction: ReaderNavigationDirection,
-) = selectPage(Page(index, pageUrl), chapter("/chapter/1"), 7L, direction)
+) = selectPage(ReaderPage(index, pageUrl), chapter("/chapter/1"), 7L, direction)

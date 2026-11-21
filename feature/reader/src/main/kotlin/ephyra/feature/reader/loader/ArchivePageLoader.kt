@@ -3,6 +3,7 @@ package ephyra.feature.reader.loader
 import ephyra.core.archive.ArchiveReader
 import ephyra.core.common.util.lang.compareToCaseInsensitiveNaturalOrder
 import ephyra.core.common.util.system.ImageUtil
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 
@@ -34,7 +35,7 @@ internal class ArchivePageLoader(private val reader: ArchiveReader) : PageLoader
                                 "Entry '${entry.name}' not found in archive"
                             }
                         }
-                        status = Page.State.Ready
+                        status = PageState.Ready
                     }
                 }
                 .toList()

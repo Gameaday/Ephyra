@@ -7,6 +7,7 @@ import ephyra.core.common.util.network.PageLoadRecovery
 import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.network.HttpException
@@ -81,7 +82,7 @@ class HttpPageLoaderCdnSwapTest {
 
         val page = fixture.loadFirstPage()
 
-        assertEquals(Page.State.Ready, page.status, "the page gave up instead of trying the second host")
+        assertEquals(PageState.Ready, page.status, "the page gave up instead of trying the second host")
         assertEquals(
             listOf("https://cdn-a.example/1.jpg", "https://cdn-b.example/1.jpg"),
             fixture.cache.requested,
@@ -119,7 +120,7 @@ class HttpPageLoaderCdnSwapTest {
 
         val page = fixture.loadFirstPage()
 
-        assertEquals(Page.State.Ready, page.status)
+        assertEquals(PageState.Ready, page.status)
         assertEquals(
             listOf("https://cdn-dead.example/1.jpg", "https://cdn-b.example/1.jpg"),
             fixture.cache.requested,
@@ -141,7 +142,7 @@ class HttpPageLoaderCdnSwapTest {
 
         val page = fixture.loadFirstPage()
 
-        assertEquals(Page.State.Ready, page.status)
+        assertEquals(PageState.Ready, page.status)
         assertEquals(
             listOf("https://cdn-a.example/1.jpg", "https://cdn-a.example/1.jpg"),
             fixture.cache.requested,
@@ -164,7 +165,7 @@ class HttpPageLoaderCdnSwapTest {
 
         val page = fixture.loadFirstPage()
 
-        assertTrue(page.status is Page.State.Error, "a 404 must not be retried")
+        assertTrue(page.status is PageState.Error, "a 404 must not be retried")
         assertEquals(listOf("https://cdn-a.example/1.jpg"), fixture.cache.requested)
         assertEquals(1, fixture.source.resolutions)
     }
@@ -184,7 +185,7 @@ class HttpPageLoaderCdnSwapTest {
 
         val page = fixture.loadFirstPage()
 
-        assertTrue(page.status is Page.State.Error, "every host was refused, so this must fail")
+        assertTrue(page.status is PageState.Error, "every host was refused, so this must fail")
         assertNull(page.imageUrl, "a URL known to be refused must not survive to be persisted")
     }
 
@@ -235,14 +236,14 @@ class HttpPageLoaderCdnSwapTest {
 
         val page = fixture.loadFirstPage()
 
-        assertTrue(page.status is Page.State.Error, "an unusable address must not resolve to Ready")
+        assertTrue(page.status is PageState.Error, "an unusable address must not resolve to Ready")
         assertTrue(
             fixture.cache.requested.isEmpty(),
             "no request may be spent on an address that cannot address a host, but these were sent: " +
                 fixture.cache.requested,
         )
 
-        val error = (page.status as Page.State.Error).error
+        val error = (page.status as PageState.Error).error
         assertTrue(
             error is MalformedImageUrlException,
             "expected the address to be refused by the owner of that judgement, got: $error",
@@ -278,7 +279,7 @@ class HttpPageLoaderCdnSwapTest {
             scope.launch { loader.loadPage(page) }
 
             val deadline = System.currentTimeMillis() + SETTLE_TIMEOUT_MS
-            while (page.status !is Page.State.Ready && page.status !is Page.State.Error) {
+            while (page.status !is PageState.Ready && page.status !is PageState.Error) {
                 assertTrue(
                     System.currentTimeMillis() < deadline,
                     "the page never settled; last status was ${page.status}, " +

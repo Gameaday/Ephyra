@@ -3,6 +3,7 @@ package ephyra.feature.reader.loader
 import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.FilterList
@@ -109,7 +110,7 @@ class HttpPageLoaderUrlResolutionTest {
             assertEquals(
                 "https://cdn.example.com/data/1.jpg",
                 PageImageAddress.of(
-                    fixture.pageForTheResolvedAssertion(),
+                    fixture.pageForTheResolvedAssertion().let { Page(it.index, it.url, it.imageUrl) },
                     BASE,
                 ).url.value,
             )
@@ -135,7 +136,7 @@ class HttpPageLoaderUrlResolutionTest {
             assertEquals(
                 "https://mangadex.org/data/1.jpg",
                 PageImageAddress.of(
-                    fixture.pageForTheResolvedAssertion(),
+                    fixture.pageForTheResolvedAssertion().let { Page(it.index, it.url, it.imageUrl) },
                     BASE,
                 ).url.value,
             )
@@ -165,7 +166,7 @@ class HttpPageLoaderUrlResolutionTest {
 
         val page = fixture.loadFirstPage()
 
-        assertEquals(Page.State.Ready, page.status, "the reported failure ended in Page.State.Error")
+        assertEquals(PageState.Ready, page.status, "the reported failure ended in PageState.Error")
         assertEquals("https://cdn.example.com/data/1.jpg", page.imageUrl)
     }
 
@@ -330,7 +331,7 @@ class HttpPageLoaderUrlResolutionTest {
         // The loader records the failure on the page rather than throwing, so the assertion is on the
         // state the reader would actually render: not Ready, and no image request issued.
         assertTrue(
-            page.status is Page.State.Error,
+            page.status is PageState.Error,
             "expected a contract-violation error state, got ${page.status}",
         )
         assertEquals(0, fixture.imageRequestCount, "no request should be spent on a cache key")
@@ -392,7 +393,7 @@ class HttpPageLoaderUrlResolutionTest {
         suspend fun loadAndRecordRequestedUrl(): String {
             val page = loadFirstPage()
             assertEquals(
-                Page.State.Ready,
+                PageState.Ready,
                 page.status,
                 "the page ended in ${page.status} rather than Ready, so the URL was never requested",
             )
@@ -404,7 +405,7 @@ class HttpPageLoaderUrlResolutionTest {
          * would build from it. The loader must have run first; the value the loader left in
          * `imageUrl` is the whole subject of the split these tests pin.
          */
-        fun pageForTheResolvedAssertion(): Page =
+        fun pageForTheResolvedAssertion(): ReaderPage =
             requireNotNull(lastPage) { "loadAndRecordRequestedUrl must run before the page is read" }
 
         /** Image requests issued by this fixture, for asserting that no request was spent on a bad value. */
@@ -422,7 +423,7 @@ class HttpPageLoaderUrlResolutionTest {
             scope.launch { loader.loadPage(page) }
 
             val deadline = System.currentTimeMillis() + SETTLE_TIMEOUT_MS
-            while (page.status !is Page.State.Ready && page.status !is Page.State.Error) {
+            while (page.status !is PageState.Ready && page.status !is PageState.Error) {
                 assertTrue(
                     System.currentTimeMillis() < deadline,
                     "the page never settled; last status was ${page.status}",

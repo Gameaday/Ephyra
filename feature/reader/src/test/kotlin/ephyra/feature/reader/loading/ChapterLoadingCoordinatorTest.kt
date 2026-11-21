@@ -1,6 +1,7 @@
 package ephyra.feature.reader.loading
 
 import ephyra.domain.chapter.model.Chapter
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -95,7 +96,7 @@ class ChapterLoadingCoordinatorTest {
     private fun chapter(state: ReaderChapter.State): ReaderChapter =
         ReaderChapter(Chapter.create()).apply { this.state = state }
 
-    private fun page(status: Page.State): ReaderPage =
+    private fun page(status: PageState): ReaderPage =
         ReaderPage(0, "/a.jpg").apply { this.status = status }
 
     @Test
@@ -148,10 +149,10 @@ class ChapterLoadingCoordinatorTest {
     @Test
     fun `a healthy forward buffer lets the next chapter's images start`() = runBlocking {
         val pages = listOf(
-            page(Page.State.Ready),
-            page(Page.State.Queue),
-            page(Page.State.Ready),
-            page(Page.State.Ready),
+            page(PageState.Ready),
+            page(PageState.Queue),
+            page(PageState.Ready),
+            page(PageState.Ready),
         )
 
         coordinator.preloadChapter(chapter(ReaderChapter.State.Wait), pages, 0)
@@ -163,11 +164,11 @@ class ChapterLoadingCoordinatorTest {
     @Test
     fun `a thin forward buffer defers the image preload but still asks for a reload`() = runBlocking {
         val pages = listOf(
-            page(Page.State.Ready),
-            page(Page.State.Queue),
-            page(Page.State.Queue),
-            page(Page.State.Queue),
-            page(Page.State.Queue),
+            page(PageState.Ready),
+            page(PageState.Queue),
+            page(PageState.Queue),
+            page(PageState.Queue),
+            page(PageState.Queue),
         )
 
         coordinator.preloadChapter(chapter(ReaderChapter.State.Wait), pages, 0)
@@ -205,13 +206,13 @@ class ChapterLoadingCoordinatorTest {
 
     @Test
     fun `next-chapter image preload asks the same buffer-health rule`() {
-        val healthy = listOf(Page.State.Ready, Page.State.Ready)
+        val healthy = listOf(PageState.Ready, PageState.Ready)
         val thin = listOf(
-            Page.State.Queue,
-            Page.State.Queue,
-            Page.State.Queue,
-            Page.State.Queue,
-            Page.State.Queue,
+            PageState.Queue,
+            PageState.Queue,
+            PageState.Queue,
+            PageState.Queue,
+            PageState.Queue,
         )
         val loaded = chapter(ReaderChapter.State.Loaded(emptyList()))
 
@@ -224,12 +225,12 @@ class ChapterLoadingCoordinatorTest {
     @Test
     fun `pending-ahead counts the unfinished window ahead of the reading position`() {
         val statuses = listOf(
-            Page.State.Ready,
-            Page.State.Queue,
-            Page.State.Ready,
-            Page.State.LoadPage,
-            Page.State.DownloadImage,
-            Page.State.Ready,
+            PageState.Ready,
+            PageState.Queue,
+            PageState.Ready,
+            PageState.LoadPage,
+            PageState.DownloadImage,
+            PageState.Ready,
         )
 
         assertEquals(0, coordinator.pendingAheadOf(statuses, 5))

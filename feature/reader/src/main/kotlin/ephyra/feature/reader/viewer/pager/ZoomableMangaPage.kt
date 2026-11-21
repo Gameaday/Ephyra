@@ -64,6 +64,7 @@ import ephyra.domain.reader.viewport.PagerViewport
 import ephyra.domain.reader.viewport.PagerViewportState
 import ephyra.domain.reader.viewport.PagerZoomTransform
 import ephyra.domain.reader.viewport.ViewportSize
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.PageGeometry
 import ephyra.feature.reader.viewer.ReaderPageErrorView
@@ -319,13 +320,13 @@ fun ZoomableMangaPage(
 
         Box(modifier = gestureModifier, contentAlignment = Alignment.Center) {
             when (val currentStatus = status) {
-                is Page.State.Queue, is Page.State.LoadPage -> {
+                is PageState.Queue, is PageState.LoadPage -> {
                     ReaderPageLoadingView(progress = progress)
                 }
-                is Page.State.DownloadImage -> {
+                is PageState.DownloadImage -> {
                     ReaderPageLoadingView(progress = progress)
                 }
-                is Page.State.Error -> {
+                is PageState.Error -> {
                     val isRateLimited = remember(currentStatus) {
                         isRateLimitError(currentStatus.error)
                     }
@@ -355,7 +356,7 @@ fun ZoomableMangaPage(
                         },
                     )
                 }
-                Page.State.Ready -> {
+                PageState.Ready -> {
                     var imageReadFailed by remember(page) { mutableStateOf(false) }
                     val imageModel by produceState<Any?>(
                         initialValue = page.resource.mergedBitmap ?: page.resource.cachedBytes,

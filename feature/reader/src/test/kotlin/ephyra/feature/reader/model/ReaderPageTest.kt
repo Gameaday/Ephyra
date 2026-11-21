@@ -1,6 +1,7 @@
 package ephyra.feature.reader.model
 
 import ephyra.domain.chapter.model.Chapter
+import ephyra.feature.reader.model.PageState
 import eu.kanade.tachiyomi.source.model.Page
 import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -72,7 +73,7 @@ class ReaderPageTest {
         assertSame(parent.resource.cachedBytes, insert.resource.cachedBytes)
         assertEquals(parent.index, insert.index)
         assertEquals(parent.url, insert.url)
-        assertEquals(Page.State.Ready, insert.status)
+        assertEquals(PageState.Ready, insert.status)
     }
 
     @Test

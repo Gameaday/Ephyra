@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.network.HttpException
 import kotlinx.coroutines.delay
@@ -47,7 +48,7 @@ fun RateLimitedRetry(
      * waits five seconds, and every failure after it offers an already-enabled button. That is
      * backwards, because the thing the cooldown exists to prevent — tapping straight back into a
      * source that is rate limiting — is exactly as true on the fifth failure as on the first. The
-     * caller passes the current `Page.State.Error`, a fresh instance per failure.
+     * caller passes the current `PageState.Error`, a fresh instance per failure.
      */
     restartKey: Any? = page,
 ) {
