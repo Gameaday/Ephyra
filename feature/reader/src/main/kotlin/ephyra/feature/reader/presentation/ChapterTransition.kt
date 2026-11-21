@@ -61,8 +61,8 @@ import ephyra.feature.reader.model.toTransitionState
 import ephyra.presentation.core.components.material.SECONDARY_ALPHA
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.collections.immutable.persistentMapOf
 
 /**

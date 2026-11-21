@@ -13,7 +13,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.sp
-import ephyra.presentation.theme.EphyraPreviewTheme
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 
 @Composable
 fun ReaderPageIndicator(

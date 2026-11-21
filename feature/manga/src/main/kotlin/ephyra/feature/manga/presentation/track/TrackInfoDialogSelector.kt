@@ -36,7 +36,7 @@ import ephyra.presentation.core.components.WheelTextPicker
 import ephyra.presentation.core.components.material.AlertDialogContent
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.theme.EphyraPreviewTheme
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableList

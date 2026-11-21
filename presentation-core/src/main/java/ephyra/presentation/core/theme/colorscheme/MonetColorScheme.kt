@@ -1,4 +1,4 @@
-package ephyra.presentation.theme.colorscheme
+package ephyra.presentation.core.theme.colorscheme
 
 import android.content.Context
 import androidx.compose.material3.dynamicDarkColorScheme

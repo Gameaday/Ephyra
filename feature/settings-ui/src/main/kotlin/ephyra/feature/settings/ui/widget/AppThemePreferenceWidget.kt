@@ -50,9 +50,9 @@ import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.AppTheme
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.theme.EphyraTheme
 import ephyra.presentation.core.util.LocalUiPreferences
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.EphyraTheme
 
 @Composable
 fun AppThemePreferenceWidget(

@@ -87,12 +87,12 @@ class ChapterLoadingOwnershipTest {
             codeOf("feature/reader/src/main/kotlin/ephyra/feature/reader/loading/ChapterLoadingCoordinator.kt")
 
         assertTrue(
-            vm.none { it.contains("Page.State.Queue") },
+            vm.none { it.contains("PageState.Queue") },
             "the forward-buffer count belongs to ChapterLoadingCoordinator; a copy in the view " +
                 "model is the duplication the redesign audit's F3 recorded",
         )
         assertTrue(
-            coordinator.any { it.contains("Page.State.Queue") },
+            coordinator.any { it.contains("PageState.Queue") },
             "ChapterLoadingCoordinator must own the forward-buffer count it is the single home of",
         )
     }

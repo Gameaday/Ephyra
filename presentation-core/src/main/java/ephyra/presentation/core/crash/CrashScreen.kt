@@ -19,9 +19,9 @@ import ephyra.domain.extension.service.ExtensionManager
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 import ephyra.presentation.core.util.CrashLogUtil
 import ephyra.presentation.core.util.SourceUtilEntryPoint
-import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.coroutines.launch
 
 @Composable

@@ -14,7 +14,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.domain.manga.model.SourceStatus
 import ephyra.presentation.core.components.AuthorityBrandColors
 import ephyra.presentation.core.components.Badge
-import ephyra.presentation.theme.EphyraPreviewTheme
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 
 @Composable
 internal fun DownloadsBadge(count: Long) {

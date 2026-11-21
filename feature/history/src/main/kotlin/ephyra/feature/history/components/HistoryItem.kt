@@ -26,7 +26,7 @@ import ephyra.feature.history.HistoryUiItem
 import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.theme.EphyraPreviewTheme
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 
 private val HistoryItemHeight = 96.dp
 

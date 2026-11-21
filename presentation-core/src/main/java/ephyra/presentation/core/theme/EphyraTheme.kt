@@ -1,4 +1,4 @@
-package ephyra.presentation.theme
+package ephyra.presentation.core.theme
 
 import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -13,32 +13,26 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.AppTheme
-import ephyra.presentation.core.theme.AtollaThemeConfig
-import ephyra.presentation.core.theme.BrandedThemeConfig
-import ephyra.presentation.core.theme.EphyraThemeConfig
-import ephyra.presentation.core.theme.LocalBrandedTheme
-import ephyra.presentation.core.theme.NagareThemeConfig
-import ephyra.presentation.core.theme.toShapes
+import ephyra.presentation.core.theme.colorscheme.AtollaColorScheme
+import ephyra.presentation.core.theme.colorscheme.BaseColorScheme
+import ephyra.presentation.core.theme.colorscheme.CatppuccinColorScheme
+import ephyra.presentation.core.theme.colorscheme.DefaultColorScheme
+import ephyra.presentation.core.theme.colorscheme.EphyraColorScheme
+import ephyra.presentation.core.theme.colorscheme.GreenAppleColorScheme
+import ephyra.presentation.core.theme.colorscheme.LavenderColorScheme
+import ephyra.presentation.core.theme.colorscheme.MidnightDuskColorScheme
+import ephyra.presentation.core.theme.colorscheme.MonetColorScheme
+import ephyra.presentation.core.theme.colorscheme.MonochromeColorScheme
+import ephyra.presentation.core.theme.colorscheme.NagareColorScheme
+import ephyra.presentation.core.theme.colorscheme.NordColorScheme
+import ephyra.presentation.core.theme.colorscheme.StrawberryColorScheme
+import ephyra.presentation.core.theme.colorscheme.TakoColorScheme
+import ephyra.presentation.core.theme.colorscheme.TealTurqoiseColorScheme
+import ephyra.presentation.core.theme.colorscheme.TidalWaveColorScheme
+import ephyra.presentation.core.theme.colorscheme.YinYangColorScheme
+import ephyra.presentation.core.theme.colorscheme.YotsubaColorScheme
 import ephyra.presentation.core.util.LocalUiPreferences
 import ephyra.presentation.core.util.collectAsState
-import ephyra.presentation.theme.colorscheme.AtollaColorScheme
-import ephyra.presentation.theme.colorscheme.BaseColorScheme
-import ephyra.presentation.theme.colorscheme.CatppuccinColorScheme
-import ephyra.presentation.theme.colorscheme.DefaultColorScheme
-import ephyra.presentation.theme.colorscheme.EphyraColorScheme
-import ephyra.presentation.theme.colorscheme.GreenAppleColorScheme
-import ephyra.presentation.theme.colorscheme.LavenderColorScheme
-import ephyra.presentation.theme.colorscheme.MidnightDuskColorScheme
-import ephyra.presentation.theme.colorscheme.MonetColorScheme
-import ephyra.presentation.theme.colorscheme.MonochromeColorScheme
-import ephyra.presentation.theme.colorscheme.NagareColorScheme
-import ephyra.presentation.theme.colorscheme.NordColorScheme
-import ephyra.presentation.theme.colorscheme.StrawberryColorScheme
-import ephyra.presentation.theme.colorscheme.TakoColorScheme
-import ephyra.presentation.theme.colorscheme.TealTurqoiseColorScheme
-import ephyra.presentation.theme.colorscheme.TidalWaveColorScheme
-import ephyra.presentation.theme.colorscheme.YinYangColorScheme
-import ephyra.presentation.theme.colorscheme.YotsubaColorScheme
 
 @Composable
 fun EphyraTheme(

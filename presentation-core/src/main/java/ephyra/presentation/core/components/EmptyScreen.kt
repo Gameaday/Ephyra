@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
-import ephyra.presentation.theme.EphyraPreviewTheme
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 import kotlinx.collections.immutable.persistentListOf
 
 @PreviewLightDark

@@ -49,6 +49,7 @@ import ephyra.feature.reader.viewer.pager.L2RPagerViewer
 import ephyra.feature.reader.viewer.pager.R2LPagerViewer
 import ephyra.feature.reader.viewer.pager.VerticalPagerViewer
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
+import ephyra.presentation.core.theme.EphyraTheme
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.ui.navigation.ActivityBoundaryCrossfadeHost
 import ephyra.presentation.core.ui.navigation.LocalMotionPreference
@@ -61,7 +62,6 @@ import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.core.util.view.applyHighRefreshRate
 import ephyra.presentation.core.util.view.setComposeContent
-import ephyra.presentation.theme.EphyraTheme
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview

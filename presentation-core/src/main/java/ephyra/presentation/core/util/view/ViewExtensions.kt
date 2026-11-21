@@ -19,9 +19,9 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.domain.ui.UiPreferences
+import ephyra.presentation.core.theme.EphyraTheme
 import ephyra.presentation.core.util.LocalPrivacyPreferences
 import ephyra.presentation.core.util.LocalUiPreferences
-import ephyra.presentation.theme.EphyraTheme
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)

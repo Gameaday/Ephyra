@@ -1,4 +1,4 @@
-package ephyra.presentation.theme.colorscheme
+package ephyra.presentation.core.theme.colorscheme
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color

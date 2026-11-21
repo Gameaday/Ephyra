@@ -38,8 +38,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import ephyra.presentation.core.components.material.Slider
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 import ephyra.presentation.core.util.isTabletUi
-import ephyra.presentation.theme.EphyraPreviewTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

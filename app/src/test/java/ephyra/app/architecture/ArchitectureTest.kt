@@ -522,10 +522,8 @@ class ArchitectureTest {
          * from the path alone why a brand colour belongs in a colour gate's allowlist.
          */
         val COLOR_EXCEPTION_PATHS = listOf(
-            // The palettes themselves. ~700 literals that ARE the theme. Note the path has no `core`
-            // segment: `core` is part of the *package* (ephyra.presentation.core.theme), while the
-            // directory is presentation-core/src/main/java/ephyra/presentation/theme/.
-            "presentation/theme/colorscheme/",
+            // The palettes themselves. ~700 literals that ARE the theme.
+            "presentation/core/theme/colorscheme/",
             // Third-party brand marks: must render identically in every palette.
             "presentation/core/icons/",
             // Service brand colours (AniList/MyAnimeList/MangaUpdates/Jellyfin) + the cover scrim and

@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
 fun MissingChapterCountListItem(

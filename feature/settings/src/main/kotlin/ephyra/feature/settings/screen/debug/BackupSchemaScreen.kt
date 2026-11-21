@@ -18,9 +18,9 @@ import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable

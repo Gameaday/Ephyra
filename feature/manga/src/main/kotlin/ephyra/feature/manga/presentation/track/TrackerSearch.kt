@@ -79,10 +79,10 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.runOnEnterKeyPressed
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.coroutines.launch
 
 @Composable

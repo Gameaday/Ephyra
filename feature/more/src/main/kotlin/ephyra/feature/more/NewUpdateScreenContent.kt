@@ -19,7 +19,7 @@ import ephyra.feature.manga.presentation.components.MarkdownRender
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
-import ephyra.presentation.theme.EphyraPreviewTheme
+import ephyra.presentation.core.theme.EphyraPreviewTheme
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 
 @Composable
