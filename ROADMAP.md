@@ -1,7 +1,7 @@
 
 # Ephyra Roadmap
 
-> **Baseline:** `02fc665b` · **Verified:** 2026-11-20 · **Target:** `2.0-clean`
+> **Baseline:** `fc853de03` · **Verified:** 2026-11-20 · **Target:** `2.0-clean`
 >
 > Single entry point. If another doc disagrees here, this file wins.
 
@@ -65,6 +65,35 @@ Next, in order:
 2. **Finish the UI model layer** on library and manga (history is done).
 3. **Design‑system split** in `presentation-core`.
 4. **Re‑theme** — needs device verification.
+
+### Architecture quarantine — the extension ABI
+
+Extensions are a hard requirement, so `eu.kanade.tachiyomi.*` stays. The defect is not that
+it exists; it is that **domain code is written against it**.
+
+**Do not try to move 29 files into a bridge module.** Measured: the files that import the ABI
+are not adapters. They are `SyncChaptersWithSource`, `FindContentSource`, `MigrateMangaUseCase`,
+`DownloadManager`, `SourceManager` and the rest of the source/download layer. Moving them would
+put domain logic in a bridge module, which is backwards.
+
+The real fix is to **replace the ABI type in each domain API**, one type at a time:
+
+| Type | Domain replacement | Scope | Note |
+|---|---|---|---|
+| `UpdateStrategy` | `domain.manga.model.UpdateStrategy` | ✅ done (`cd3d4207c`) | 2 values, ordinal‑compatible |
+| `Page` | own immutable page model | **39 files, 275 refs** | mutable, holds `android.net.Uri` + `MutableStateFlow`; `ChapterCache` JSON‑persists it |
+| `SManga` / `SChapter` | `Manga` / `Chapter` | ~8 files | mappers already exist |
+| `Source` / `CatalogueSource` / `HttpSource` | `SourceGateway` | ~11 files | the modern contract already exists |
+| `FilterList`, network types | domain equivalents | ~4 files | |
+
+`Page` is the worst offender and the highest‑value target: it is a **mutable, Android‑coupled
+source DTO** used by the domain's download and cache layers, while a well‑designed sealed
+`domain.content.model.ContentPage` sits unused beside it. Replacing it also removes shared
+mutable state from the download path.
+
+**What to keep:** `source-api` stays pristine for upstream merges. `androidx.preference` and
+`injekt` are part of the ABI (`PreferenceScreen` is a typealias; `HttpSource.network` is
+`by injectLazy()`) — do not remove them.
 
 Blocked on device: nav ViewModel retention across tab switches, tall‑page sharpness,
 back‑motion feel, page‑load parity vs MiHon, cache exhaustion over a long series.
