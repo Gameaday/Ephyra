@@ -303,6 +303,133 @@ class HttpPageLoaderForcedRetryTest {
         }
     }
 
+    /**
+     * A worker that dies is replaced.
+     *
+     * `scope` is a plain `SupervisorJob`, which isolates a failing child from its siblings but never
+     * restarts it. A throwable escaping the worker's flow therefore killed one permanently, and with
+     * `fullWorkerCount` of 1–3 by device tier, losing them all leaves a queue nobody consumes:
+     * every page sits at `Queue` and the chapter never loads again until the process restarts.
+     *
+     * The seam is a source that throws on its first page and succeeds on every page after it. Before
+     * the retry loop, the single LOW‑tier worker died on page 1 and page 2 never loaded; the second
+     * assertion is the one that distinguishes a real fix from a longer timeout.
+     */
+    @Test
+    fun `a page that kills its worker does not stop the chapter loading`() = runBlocking {
+        val fixture = FlakySourceFixture(failFirstPages = 1, pages = 2)
+
+        val pages = fixture.loadAllPages()
+
+        assertEquals(
+            2,
+            pages.count { it.status is PageState.Ready },
+            "the page after the throwing one must still load; a dead worker is never replaced",
+        )
+    }
+
+    /** One loader over a cache that already holds every image, plus the source and page plumbing. */
+    private inner class FlakySourceFixture(failFirstPages: Int, pages: Int) {
+        private val source = FlakySource(pages, failFirstPages)
+        private val cache = PreloadedImageCache(tempDir, pages)
+        private val chapter = ReaderChapter(Chapter.create().copy(id = 1, name = "Ch 1"))
+        private val loader = HttpPageLoader(chapter, source, cache)
+
+        suspend fun loadAllPages(): List<ReaderPage> {
+            val loaded = loader.getPages()
+            chapter.state = ReaderChapter.State.Loaded(loaded)
+            chapter.pageLoader = loader
+            loaded.forEach { it.chapter = chapter }
+
+            scope.launch { loader.loadPage(loaded.first()) }
+            loaded.forEach { settle(it) }
+            loader.recycle()
+            return loaded
+        }
+
+        private suspend fun settle(page: ReaderPage) {
+            val deadline = System.currentTimeMillis() + SETTLE_TIMEOUT_MS
+            while (page.status !is PageState.Ready && page.status !is PageState.Error) {
+                assertTrue(
+                    System.currentTimeMillis() < deadline,
+                    "the page never settled; last status was " + page.status,
+                )
+                delay(POLL_INTERVAL_MS)
+            }
+        }
+    }
+
+    /** A source whose image request throws for the first [failFirstPages] pages, then succeeds. */
+    private class FlakySource(pageCount: Int, private val failFirstPages: Int) : HttpSource() {
+        override val baseUrl: String = "https://example.org"
+        override val name: String = "Flaky"
+        override val lang: String = "en"
+        override val supportsLatest: Boolean = true
+
+        var imageRequests: Int = 0
+            private set
+
+        override val client: OkHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                imageRequests++
+                if (imageRequests <= failFirstPages) {
+                    throw RuntimeException("synthetic source failure for page $imageRequests")
+                }
+                Response.Builder()
+                    .code(200)
+                    .message("OK")
+                    .protocol(Protocol.HTTP_1_1)
+                    .request(chain.request())
+                    .body(ByteArray(0).toResponseBody(null))
+                    .build()
+            }
+            .build()
+
+        private val pages = (0 until pageCount).map { index ->
+            Page(index, "/data/${index + 1}.jpg", "https://img.example.com/data/${index + 1}.jpg")
+        }
+
+        override suspend fun getPageList(chapter: SChapter): List<Page> = pages
+
+        override fun headersBuilder(): Headers.Builder = Headers.Builder()
+
+        override suspend fun getPopularManga(page: Int): MangasPage = throw UnsupportedOperationException()
+
+        override suspend fun getSearchManga(
+            page: Int,
+            query: String,
+            filters: FilterList,
+        ): MangasPage = throw UnsupportedOperationException()
+
+        override suspend fun getLatestUpdates(page: Int): MangasPage = throw UnsupportedOperationException()
+
+        override suspend fun getMangaDetails(manga: SManga): SManga = throw UnsupportedOperationException()
+
+        override suspend fun getChapterList(manga: SManga): List<SChapter> = throw UnsupportedOperationException()
+
+        override fun popularMangaRequest(page: Int): Request = throw UnsupportedOperationException()
+
+        override fun popularMangaParse(response: Response): MangasPage = throw UnsupportedOperationException()
+
+        override fun latestUpdatesRequest(page: Int): Request = throw UnsupportedOperationException()
+
+        override fun latestUpdatesParse(response: Response): MangasPage = throw UnsupportedOperationException()
+
+        override fun searchMangaRequest(
+            page: Int,
+            query: String,
+            filters: FilterList,
+        ): Request = throw UnsupportedOperationException()
+
+        override fun searchMangaParse(response: Response): MangasPage = throw UnsupportedOperationException()
+
+        override fun mangaDetailsParse(response: Response): SManga = throw UnsupportedOperationException()
+
+        override fun chapterListParse(response: Response): List<SChapter> = throw UnsupportedOperationException()
+
+        override fun pageListParse(response: Response): List<Page> = throw UnsupportedOperationException()
+    }
+
     private companion object {
         const val SETTLE_TIMEOUT_MS = 15_000L
         const val POLL_INTERVAL_MS = 10L

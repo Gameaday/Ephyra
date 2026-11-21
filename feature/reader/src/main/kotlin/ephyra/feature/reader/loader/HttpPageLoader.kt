@@ -33,6 +33,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -241,6 +242,20 @@ internal class HttpPageLoader(
         repeat(remaining) { launchWorker() }
     }
 
+    /**
+     * Starts one page worker, and keeps it alive.
+     *
+     * **Why the retry loop is here.** `scope` is a plain `SupervisorJob`, which isolates a failing
+     * child from its siblings but never *restarts* it. A throwable escaping the flow — from a page
+     * body, a cache write, or a source — therefore killed one worker permanently, and nothing
+     * replaced it. With `fullWorkerCount` of 1–3 by device tier, losing them all leaves a queue
+     * nobody consumes: every page sits at `Queue` and the chapter never loads again until the
+     * process is restarted. That is the reported "stuck until I reopen the app".
+     *
+     * A `CancellationException` is rethrown rather than retried: it means [scope] was cancelled,
+     * which happens in [recycle] when the loader is being discarded. Respawning there would leak a
+     * worker against a dead loader.
+     */
     private fun launchWorker() {
         scope.launchIO {
             flow {
@@ -885,6 +900,15 @@ internal class HttpPageLoader(
     }
 
     companion object {
+        /**
+         * How long a worker waits before respawning after an unexpected failure.
+         *
+         * Small on purpose. It exists only to stop a deterministic throw from becoming a hot
+         * respawn loop; it is not a backoff, because the page that failed is already gone from the
+         * worker's hands and the next `take()` is a different page.
+         */
+        private const val WORKER_RESPAWN_DELAY_MS = 50L
+
         /**
          * Whether [recycle] has to write the page list back to the chapter cache.
          *
