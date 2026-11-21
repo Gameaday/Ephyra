@@ -101,27 +101,23 @@ private inline fun <T> PersistentSet<T>.mutate(action: (MutableSet<T>) -> Unit):
 /**
  * The library screen's state.
  *
- * **What the first paint waits on.** `isLoading` clears only when the five-way `combine` in
- * [init] emits, and `combine` emits nothing until every source has produced a value. The
- * sources were each checked for first-emission cost, because a slow one here is a spinner on
- * every return to the tab:
+ * **On the spinner at first paint.** `isLoading` clears when the five‑way `combine` in [init]
+ * emits, and `combine` emits nothing until every source has produced a value. The sources were
+ * each checked for first‑emission cost, because a slow one here is a spinner on every return to
+ * the tab:
  *
  *  - `getCategories.subscribe()` — Room flow, emits on the first query.
- *  - `getFavoritesFlow()` — a `SELECT * FROM libraryView` wrapped in `map`; the query is a
- *    plain view scan with no join pathology. Its own three inputs are the same manga flow,
- *    the item-preferences flow, and `downloadCache.changes`, which is `onStart { emit(Unit) }`
- *    and therefore fires immediately rather than waiting for a download event.
+ *  - `getFavoritesFlow()` — `SELECT * FROM libraryView`. The view joins `mangas`, `chapters`,
+ *    `excluded_scanlators`, `history` and `mangas_categories`, so Room invalidates it on a write to
+ *    **any** of those — including every history upsert during reading. That is a real cost the
+ *    combine's shape cannot remove, and it is the reason a snapshot is cached below.
  *  - the tracks/sort preferences — DataStore flows.
- *  - the search query — see the debounce note at the combine; this was the one source that
- *    *did* add fixed latency, and it no longer does.
+ *  - the search query — the one source that *did* add fixed latency; it no longer does.
  *
- * The per-emission work (`applyFilters`, `applyGrouping`, `applySort`) is O(items) over an
- * already-loaded list, and `favoritesById` is `by lazy`, so it is built once per emission
- * rather than per access. Nothing here is a per-frame cost.
- *
- * If the tab is still slow to first paint after this, the remaining candidate is ViewModel
- * retention across tab switches (`popUpTo(0)` with `saveState`/`restoreState`), which cannot
- * be settled by reading code — it needs a device.
+ * The tab is not slow because the combine is malformed, and it is not slow because a source is
+ * slow. It is slow because the back stack is cleared on every tab switch, so this ViewModel is
+ * destroyed and rebuilt each time and must query before it can paint. [snapshotCache] makes that
+ * rebuild non‑blank: see [LibrarySnapshotCache].
  */
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -149,6 +145,14 @@ class LibraryViewModel @Inject constructor(
     // `@IoDispatcher` binds `Dispatchers.IO`. See `InjectableViewModelDispatcherTest`.
     @IoDispatcher
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    /**
+     * Where the last snapshot is kept between ViewModel instances.
+     *
+     * Defaulted because it is process state, not a collaborator: a test that constructs several
+     * ViewModels would otherwise share one snapshot and see leakage between cases. Tests that care
+     * pass a fresh instance explicitly.
+     */
+    private val snapshotCache: LibrarySnapshotCache = LibrarySnapshotCache.get(),
 ) : BaseUdfViewModel<LibraryViewModel.State, LibraryScreenEvent, LibraryScreenEffect>(State()) {
 
     override fun onEvent(event: LibraryScreenEvent) {
@@ -187,6 +191,14 @@ class LibraryViewModel @Inject constructor(
     }
 
     init {
+        // Paint the last snapshot before anything else, so a recreated ViewModel never opens on a
+        // spinner for a list the user was just looking at. The combine below replaces it with a
+        // fresh query; see LibrarySnapshotCache for why the ViewModel is recreated at all.
+        val cached = snapshotCache.current
+        if (cached != null) {
+            updateState { it.copy(libraryData = cached, isLoading = false) }
+        }
+
         // Read active category index asynchronously to avoid blocking the main thread.
         // The combine block below will re-emit with the correct index once loaded.
         viewModelScope.launch(ioDispatcher) {
@@ -245,6 +257,7 @@ class LibraryViewModel @Inject constructor(
             }
                 .distinctUntilChanged()
                 .collectLatest { libraryData ->
+                    snapshotCache.store(libraryData)
                     updateState { state ->
                         state.copy(libraryData = libraryData)
                     }

@@ -1,4 +1,4 @@
-﻿package ephyra.feature.library
+package ephyra.feature.library
 
 import app.cash.turbine.test
 import ephyra.core.common.preference.Preference
@@ -137,7 +137,9 @@ class LibraryViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(): LibraryViewModel {
+    private fun createViewModel(
+        snapshotCache: LibrarySnapshotCache = LibrarySnapshotCache.isolated(),
+    ): LibraryViewModel {
         return LibraryViewModel(
             getLibraryManga = getLibraryManga,
             getCategories = getCategories,
@@ -157,6 +159,7 @@ class LibraryViewModelTest {
             trackerManager = trackerManager,
             ioDispatcher = testDispatcher,
             libraryUpdateScheduler = libraryUpdateScheduler,
+            snapshotCache = snapshotCache,
         )
     }
 
@@ -219,6 +222,50 @@ class LibraryViewModelTest {
             "first paint must not be gated on the search debounce",
         )
         assertTrue(state.libraryData.isInitialized)
+    }
+
+    /**
+     * A recreated ViewModel paints the previous snapshot instead of a spinner.
+     *
+     * The tab clears the back stack on every switch, so this ViewModel is destroyed and rebuilt each
+     * time the user returns. Without a snapshot the rebuild starts at `isLoading = true` and shows
+     * the spinner over a list the user was just looking at - the reported "spinny wheel on swipe
+     * back". The snapshot must therefore be readable *before* the query resolves, which is why the
+     * assertion is on the state as constructed rather than after advancing the scheduler.
+     */
+    @Test
+    fun `a recreated ViewModel paints the cached snapshot immediately`() = runTest {
+        val cache = LibrarySnapshotCache.isolated()
+
+        val first = createViewModel(cache)
+        val loaded = first.state.value.libraryData
+        assertTrue(loaded.isInitialized, "the fixture should produce an initialized library")
+
+        val second = createViewModel(cache)
+        val state = second.state.value
+
+        assertTrue(
+            state.isLoading.not(),
+            "a ViewModel built with a cached snapshot must not open on a spinner",
+        )
+        assertTrue(
+            state.libraryData.isInitialized,
+            "the cached snapshot must be painted before the query resolves",
+        )
+        assertEquals(
+            loaded.favorites.map { it.id }.toSet(),
+            state.libraryData.favorites.map { it.id }.toSet(),
+            "the painted snapshot must be the previous library, not an empty placeholder",
+        )
+    }
+
+    /** An uninitialized emission must not poison the cache for the next ViewModel. */
+    @Test
+    fun `the cache ignores an uninitialized snapshot`() = runTest {
+        val cache = LibrarySnapshotCache.isolated()
+
+        cache.store(LibraryViewModel.LibraryData())
+        assertNull(cache.current, "an uninitialized LibraryData must not be stored")
     }
 
     @Test
