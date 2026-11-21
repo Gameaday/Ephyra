@@ -261,21 +261,20 @@ class ViewerNavigationTest {
     }
 
     /**
-     * Rewritten 2026-09-28. This test previously asserted `moveToPage` hardcodes `animate = false`,
-     * and so **was itself protecting the defect**: `sliderNavMode` was read by no production code,
-     * so a user choosing "Instant" and one choosing "Smooth" got identical behaviour while two
-     * settings screens described a distinction that did not exist (`DEF-022`).
+     * Smooth animates a single-page step and nothing else.
      *
-     * The contract is now that the emitted target follows the preference, in both directions —
-     * which is a stronger claim than the original and fails if the preference is ignored again.
+     * It used to animate every seek. `animateScrollToPage` over a long distance animates through
+     * every page it crosses, and a drag emits a new target before that finishes, so each emission
+     * cancelled the last and the pager never settled — the reported scrubbing stutter. A seek is
+     * now a jump; the preference still governs the step it can meaningfully animate.
      */
     @Test
-    fun `PagerViewer moveToPage animates according to sliderNavMode`() = runTest(testDispatcher) {
+    fun `PagerViewer moveToPage animates only for an adjacent step under Smooth`() = runTest(testDispatcher) {
         // The class already holds a real `InMemoryPreferenceStore`, so this writes the actual
         // preference rather than mocking the getter. That also exercises the
         // `preferenceStore.getInt("pref_slider_nav_mode", ...)` → `config.sliderNavMode` mirror
         // that the defect lived behind, so the test would catch a break in either half.
-        fun animateFor(mode: Int): Boolean {
+        fun animateFor(mode: Int, offset: Int): Boolean {
             preferenceStore.getInt("pref_slider_nav_mode", ReaderPreferences.SLIDER_NAV_SMOOTH).set(mode)
             val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
             val chapters = createViewerChapters(chapterId = 1L, pageCount = 10)
@@ -287,9 +286,9 @@ class ViewerNavigationTest {
                 viewer.targetPageRequest.collect { targetRequests.add(it) }
             }
 
-            val page5 = chapters.currChapter.pages!![5]
+            val target = chapters.currChapter.pages!![offset]
             targetRequests.clear()
-            viewer.moveToPage(page5)
+            viewer.moveToPage(target)
 
             // Cleared above rather than asserted empty: `setChapters` emits its own seek, and with
             // `replay = 1` the new collector sees that replayed value immediately. The first
@@ -297,18 +296,23 @@ class ViewerNavigationTest {
             // which read like a leak but was just the replayed chapter-initialisation target. The
             // property under test is what `moveToPage` emits, so the list is cleared first.
             assertEquals(1, targetRequests.size, "moveToPage must emit exactly one target")
-            assertEquals(viewer.itemsState.value.indexOf(page5), targetRequests.first().index)
+            assertEquals(viewer.itemsState.value.indexOf(target), targetRequests.first().index)
             return targetRequests.first().animate
         }
 
-        assertFalse(
-            animateFor(ReaderPreferences.SLIDER_NAV_INSTANT),
-            "SLIDER_NAV_INSTANT must seek without animation",
-        )
         assertTrue(
-            animateFor(ReaderPreferences.SLIDER_NAV_SMOOTH),
-            "SLIDER_NAV_SMOOTH must animate; the settings screen promises this distinction, so " +
-                "reading the preference is the whole contract",
+            animateFor(ReaderPreferences.SLIDER_NAV_SMOOTH, 1),
+            "SLIDER_NAV_SMOOTH must animate a single-page step; the settings screen promises this " +
+                "distinction, so reading the preference is the whole contract",
+        )
+        assertFalse(
+            animateFor(ReaderPreferences.SLIDER_NAV_SMOOTH, 5),
+            "a multi-page seek must land at once: animating it crosses every page in between, and a " +
+                "drag emits a new target before that finishes, so the pager never settles",
+        )
+        assertFalse(
+            animateFor(ReaderPreferences.SLIDER_NAV_INSTANT, 1),
+            "SLIDER_NAV_INSTANT must seek without animation",
         )
     }
 

@@ -87,7 +87,11 @@ class UpdateMangaFromSourceTest {
         this.genre = genre
         this.status = status
         this.thumbnail_url = thumbnailUrl
-        this.update_strategy = updateStrategy
+        // SManga carries the extension ABI's enum; the domain type is Ephyra's own.
+        this.update_strategy = when (updateStrategy) {
+            UpdateStrategy.ALWAYS_UPDATE -> eu.kanade.tachiyomi.source.model.UpdateStrategy.ALWAYS_UPDATE
+            UpdateStrategy.ONLY_FETCH_ONCE -> eu.kanade.tachiyomi.source.model.UpdateStrategy.ONLY_FETCH_ONCE
+        }
     }
 
     @BeforeEach

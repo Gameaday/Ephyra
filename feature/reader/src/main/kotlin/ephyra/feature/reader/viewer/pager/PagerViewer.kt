@@ -241,23 +241,24 @@ abstract class PagerViewer(
     /**
      * Tells this viewer to move to the given [page].
      *
-     * Whether the jump animates follows the `sliderNavMode` preference. It previously did not: this
-     * method hardcoded `animate = false`, so a user who chose "Smooth" and one who chose "Instant"
-     * got byte-identical behaviour while the settings screen described a distinction that did not
-     * exist. The preference was stored, mirrored into [PagerConfig], surfaced in two settings UIs —
-     * and read by nobody, which a project-wide search for `sliderNavMode` confirmed.
+     * Animates only for an adjacent move, and only under `sliderNavMode = Smooth`. A seek that
+     * crosses pages animates through every page it passes, and a drag emits a new target before
+     * that finishes — so each emission cancelled the last and the pager never settled. The
+     * distance check is what separates a step from a seek.
      */
     override fun moveToPage(page: ReaderPage) {
         val items = _itemsState.value
         val position = items.indexOf(page)
         if (position != -1) {
+            val from = currentPage?.let { items.indexOf(it) } ?: position
+            val adjacent = kotlin.math.abs(position - from) <= 1
             pendingTargetIndex = null
             currentPage = page
             _targetPageRequest.tryEmit(
                 TargetPage(
                     chapterId = page.chapter.chapter.id,
                     index = position,
-                    animate = config.sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH,
+                    animate = config.sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH && adjacent,
                 ),
             )
         } else {
