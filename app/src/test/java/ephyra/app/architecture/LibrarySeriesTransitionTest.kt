@@ -244,6 +244,41 @@ class LibrarySeriesTransitionTest {
     }
 
     /**
+     * A shared element must not crossfade, on either end.
+     *
+     * The keying fix above made both ends agree on a cache key, but a cache hit only helps if the
+     * image is *drawn* without a blend. `MangaCover` applied `crossfade(!isSharedElement)` to the
+     * request it builds itself, then returned a caller-supplied `ImageRequest` verbatim. The library
+     * grid passes a plain model and so got the suppression; the series header passes a built request
+     * with `.crossfade(true)` and did not. One end faded, the other did not.
+     *
+     * That asymmetry is the remaining half of the reported "the cover fades in every time I open a
+     * series": the library end is already settled when the element lands, while the series end plays
+     * a 300 ms placeholder-to-image blend underneath the flight.
+     *
+     * Asserted on the source because neither the compiler nor a unit test can see it - both
+     * implementations type-check and both render a correct cover. Only the presence of the override
+     * keeps a later "let the caller decide" edit from reintroducing it.
+     */
+    @Test
+    fun `a caller-supplied image request still cannot crossfade on a shared element`() {
+        val cover = codeOf(mangaCover)
+
+        assertTrue(
+            Regex("""data\.newBuilder\(\)\.crossfade\(false\)\.build\(\)""").containsMatchIn(cover),
+            "MangaCover must rebuild a caller-supplied ImageRequest with crossfade(false) when the " +
+                "cover is a shared element. Returning it verbatim is what let the series header " +
+                "keep .crossfade(true) while the library grid suppressed it, so only one end " +
+                "faded - the reported flicker on opening a series.",
+        )
+        assertFalse(
+            Regex("""if\s*\(data is ImageRequest\)\s*\{\s*data\s*\}""").containsMatchIn(cover),
+            "an `if (data is ImageRequest) data` short-circuit is exactly the shape that skipped " +
+                "the crossfade override; the branch must fall through the shared-element rule",
+        )
+    }
+
+    /**
      * The return must be quicker than the arrival.
      *
      * The policy was direction-free and a test asserted that symmetry ("enter and exit share one

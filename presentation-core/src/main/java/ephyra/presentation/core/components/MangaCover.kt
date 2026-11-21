@@ -59,18 +59,26 @@ enum class MangaCover(val ratio: Float) {
         // instance each time, which at best re-runs request setup and at worst restarts the
         // fetch — per visible cover, per state change. The request depends only on these inputs.
         val model = remember(data, isSharedElement) {
-            if (data is ImageRequest) {
-                data
-            } else {
-                ImageRequest.Builder(context)
-                    .data(data)
-                    // No Coil crossfade on a shared element. While the element flies, both ends
-                    // draw the same image; a crossfade re-runs the placeholder-to-image blend
-                    // underneath the flight, which reads as the cover flashing mid-transition
-                    // (M3 guidance: shared elements must be settled content, not animating).
-                    .crossfade(!isSharedElement)
-                    .precision(Precision.EXACT)
-                    .build()
+            when {
+                // A caller-supplied request is used as given, with one override: a shared element
+                // must never crossfade. Both ends draw the same image while the element flies, so a
+                // placeholder-to-image blend underneath the flight reads as the cover flashing
+                // (M3: shared elements are settled content, not animating).
+                //
+                // This override is unconditional because the asymmetry was the bug. The library grid
+                // passes a plain model and got `crossfade(!isSharedElement)`; the series header
+                // passes a built ImageRequest with `.crossfade(true)` and was returned verbatim, so
+                // only one end ever suppressed the fade. Rebuilding via `newBuilder()` also avoids
+                // depending on how a request stores its crossfade flag.
+                data is ImageRequest ->
+                    if (isSharedElement) data.newBuilder().crossfade(false).build() else data
+
+                else ->
+                    ImageRequest.Builder(context)
+                        .data(data)
+                        .crossfade(!isSharedElement)
+                        .precision(Precision.EXACT)
+                        .build()
             }
         }
         val sharedElementModifier = if (isSharedElement) {
