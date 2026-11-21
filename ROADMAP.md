@@ -60,11 +60,29 @@ updates stacked by series, covers interned per series.
 
 Next, in order:
 
-1. **Coverage on `feature:library` and `feature:manga`** — the least‑tested, most‑visible modules.
-   Blocks every UI change after it.
-2. **Finish the UI model layer** on library and manga (history is done).
-3. **Design‑system split** in `presentation-core`.
-4. **Re‑theme** — needs device verification.
+1. **Finish the UI model layer** on library and manga (history is done).
+2. **Design‑system split** in `presentation-core`.
+3. **Re‑theme** — needs device verification.
+
+### Coverage — measured, not assumed
+
+Test ratios measured per module, splitting Compose UI from logic, because a raw
+`test LOC / total LOC` ratio counts UI as untested code and reads far worse than reality:
+
+| module | logic | ui | tests | logic cov | raw cov |
+|---|---|---|---|---|---|
+| history | 628 | 1,217 | 533 | 0.85 | 0.29 |
+| updates | 581 | 1,563 | 508 | 0.87 | 0.24 |
+| browse | 3,808 | 10,151 | 2,916 | 0.77 | 0.21 |
+| library | 791 | 3,893 | 603 | 0.76 | 0.13 |
+| settings | 1,557 | 7,798 | 1,039 | 0.67 | 0.11 |
+| reader | 16,618 | 10,921 | 10,197 | 0.61 | 0.37 |
+| manga | 1,765 | 10,866 | 1,009 | 0.57 | 0.08 |
+
+Every module's logic is covered between 0.57x and 0.87x. `feature:manga` is the
+lowest at 0.57, but it is **not** the 0.08 a raw ratio suggests — 10,866 of its
+11,622 lines are Compose UI. **Do not open a coverage effort on the strength of the
+raw column.** The earlier audit that recommended exactly that was measuring UI.
 
 ### Architecture quarantine — the extension ABI
 
