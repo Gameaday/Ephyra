@@ -1,36 +1,51 @@
 package ephyra.domain.chapter.service
 
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Chapter numbers are `Double` end to end, so every comparison is exact. */
+/** Chapter numbers compare within a Float-derived tolerance, so a widened twin still matches. */
 class ChapterNumberTest {
+
+    @Test
+    fun `a number matches its Float round trip`() {
+        // The ABI's `SChapter.chapter_number` is a Float, so a source's 12.3 arrives widened.
+        assertTrue(ChapterNumber.sameChapterNumber(12.3, 12.3.toFloat().toDouble()))
+    }
+
+    @Test
+    fun `a decimal number survives every round trip`() {
+        for (value in listOf(0.1, 0.7, 1.1, 3.3, 8.5, 12.3, 100.1, 1234.5678)) {
+            assertTrue(
+                ChapterNumber.sameChapterNumber(value, value.toFloat().toDouble()),
+                "$value must match its Float round trip",
+            )
+        }
+    }
+
+    @Test
+    fun `a large chapter number still round trips`() {
+        // Float has a fixed relative precision, so absolute error grows with magnitude.
+        for (value in listOf(4096.1, 99_999.5, 100_000.5, 131_072.1)) {
+            assertTrue(ChapterNumber.sameChapterNumber(value, value.toFloat().toDouble()))
+        }
+    }
+
+    @Test
+    fun `distinct chapters never collapse`() {
+        // The other half of the bound: tolerance must stay below a real numbering gap.
+        assertFalse(ChapterNumber.sameChapterNumber(12.3, 12.4))
+        assertFalse(ChapterNumber.sameChapterNumber(12.0, 13.0))
+        assertFalse(ChapterNumber.sameChapterNumber(0.0, 1.0))
+        assertFalse(ChapterNumber.sameChapterNumber(12.5, 12.6))
+    }
 
     @Test
     fun `identical numbers match`() {
         assertTrue(ChapterNumber.sameChapterNumber(12.3, 12.3))
         assertTrue(ChapterNumber.sameChapterNumber(0.0, 0.0))
         assertTrue(ChapterNumber.sameChapterNumber(1234.5678, 1234.5678))
-    }
-
-    @Test
-    fun `genuinely different chapters do not match`() {
-        assertFalse(ChapterNumber.sameChapterNumber(12.3, 12.4))
-        assertFalse(ChapterNumber.sameChapterNumber(12.0, 13.0))
-        assertFalse(ChapterNumber.sameChapterNumber(0.0, 1.0))
-    }
-
-    @Test
-    fun `a decimal number survives the whole pipeline exactly`() {
-        // The property the old tolerance existed to approximate. Backup stores Double, and the one
-        // upstream Float (SChapter.chapter_number) is widened losslessly at the extension bridge.
-        for (value in listOf(0.1, 0.7, 1.1, 3.3, 8.5, 12.3, 100.1, 1234.5678, 131_072.1)) {
-            assertTrue(ChapterNumber.sameChapterNumber(value, value), "$value must match itself")
-            assertEquals(ChapterNumber.bucket(value, "/c"), ChapterNumber.bucket(value, "/c"))
-        }
     }
 
     @Test
