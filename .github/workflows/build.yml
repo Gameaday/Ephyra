@@ -246,22 +246,49 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          found=0
-          for f in $(find . -path '*/build/test-results/testDebugUnitTest/TEST-*.xml' 2>/dev/null); do
-            if grep -q '<failure' "$f"; then
-              found=1
-              echo "::group::$(echo "$f" | sed 's#^\./##')"
-              grep -o 'testcase name="[^"]*" classname="[^"]*"' "$f" | head -50 || true
-              grep -o '<failure[^>]*message="[^"]*"' "$f" | head -20 || true
-              echo "::endgroup::"
-            fi
-          done
-          if [ "$found" = "0" ]; then
-            echo "No <failure> element in any module's test results."
-            echo "If this step's job failed, the failure was not an assertion in a recorded test"
-            echo "-- most likely a compile error, a Gradle task failure, or a JVM that died."
-            echo "Re-run with '--stacktrace' or read the log for the first 'FAILURE:' line."
-          fi
+          # Name the failing test, not the file. The previous version grepped the first 50
+          # `testcase` elements out of each XML, which are the *passing* ones in file order --
+          # so a red run printed 50 passes and a failure message with no test name attached,
+          # and the actual failure had to be guessed at. Parse for testcases that carry a
+          # <failure> or <error> child and print those with their message.
+          python3 - <<'PY'
+          import glob
+          import sys
+          import xml.etree.ElementTree as ET
+
+          files = sorted(glob.glob("**/build/test-results/testDebugUnitTest/TEST-*.xml", recursive=True))
+          failures = 0
+          for path in files:
+              try:
+                  root = ET.parse(path).getroot()
+              except Exception as exc:
+                  print(f"!! {path}: unparseable ({exc})")
+                  continue
+              for case in root.iter("testcase"):
+                  for child in case:
+                      if child.tag not in ("failure", "error"):
+                          continue
+                      failures += 1
+                      cls = case.get("classname", "?")
+                      name = case.get("name", "?")
+                      print(f"::error title=Failing test::{cls}.{name}")
+                      print(f"FAIL {cls}.{name}")
+                      message = (child.get("message") or "").strip()
+                      if message:
+                          first = message.splitlines()[0]
+                          print(f"     {first[:300]}")
+                          rest = [l for l in message.splitlines()[1:] if l.strip()][:8]
+                          for line in rest:
+                              print(f"       {line[:200]}")
+                      print()
+
+          if failures == 0:
+              print("No failing <testcase> in any module's test results.")
+              print("The job failed for another reason -- a compile error, a Gradle task")
+              print("failure, or a test JVM that died. Read the first 'FAILURE:' line above.")
+          else:
+              print(f"{failures} failing test(s).")
+          PY
 
       # A worker dying mid-discovery is a symptom. Surface the cause -- a JVM crash log, an OOM
       # kill, or the memory picture -- so a red run is diagnosable from the log alone, without
