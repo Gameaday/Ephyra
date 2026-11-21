@@ -81,7 +81,6 @@ import ephyra.feature.reader.viewermode.ViewerModeResolver
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.manga.editCover
 import ephyra.source.local.image.LocalCoverManager
-import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher

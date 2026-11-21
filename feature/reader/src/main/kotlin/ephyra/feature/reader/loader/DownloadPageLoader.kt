@@ -12,7 +12,6 @@ import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.model.Page
 
 internal class DownloadPageLoader(
     private val chapter: ReaderChapter,

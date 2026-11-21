@@ -11,7 +11,6 @@ import ephyra.feature.reader.ReaderViewModel
 import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.source.local.isLocal
-import eu.kanade.tachiyomi.source.model.Page
 import logcat.LogPriority
 import java.io.InputStream
 

@@ -4,7 +4,6 @@ import ephyra.core.common.util.system.logcat
 import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
-import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.CancellationException
 
 /**

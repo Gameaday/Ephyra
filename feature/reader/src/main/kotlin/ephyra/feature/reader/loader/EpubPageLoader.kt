@@ -3,7 +3,6 @@ package ephyra.feature.reader.loader
 import ephyra.core.archive.EpubReader
 import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
-import eu.kanade.tachiyomi.source.model.Page
 
 /**
  * Loader used to load a chapter from a .epub file.

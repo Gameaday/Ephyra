@@ -6,7 +6,6 @@ import androidx.compose.ui.Modifier
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderPage
-import eu.kanade.tachiyomi.source.model.Page
 
 /**
  * Single layout contract shared by every webtoon item branch (merged / sliced / single /
