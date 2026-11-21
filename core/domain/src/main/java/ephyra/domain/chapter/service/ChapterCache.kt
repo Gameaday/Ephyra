@@ -1,15 +1,15 @@
 package ephyra.domain.chapter.service
 
+import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
-import eu.kanade.tachiyomi.source.model.Page
 import okhttp3.Response
 import java.io.File
 
 interface ChapterCache {
 
-    fun getPageListFromCache(chapter: Chapter): List<Page>
+    fun getPageListFromCache(chapter: Chapter): List<CachedPage>
 
-    fun putPageListToCache(chapter: Chapter, pages: List<Page>)
+    fun putPageListToCache(chapter: Chapter, pages: List<CachedPage>)
 
     fun isImageInCache(imageUrl: String): Boolean
 

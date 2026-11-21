@@ -10,8 +10,8 @@ import ephyra.core.common.util.system.logcat
 import ephyra.data.cache.ChapterCache.Companion.CACHE_SIZE_HIGH
 import ephyra.data.cache.ChapterCache.Companion.CACHE_SIZE_LOW
 import ephyra.data.cache.ChapterCache.Companion.CACHE_SIZE_MEDIUM
+import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
-import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -92,7 +92,7 @@ class ChapterCache(
      * @param chapter the chapter.
      * @return the list of pages.
      */
-    override fun getPageListFromCache(chapter: Chapter): List<Page> {
+    override fun getPageListFromCache(chapter: Chapter): List<CachedPage> {
         // Get the key for the chapter.
         val key = DiskUtil.hashKeyForDisk(getKey(chapter))
 
@@ -111,7 +111,7 @@ class ChapterCache(
      * @param chapter the chapter.
      * @param pages list of pages.
      */
-    override fun putPageListToCache(chapter: Chapter, pages: List<Page>) {
+    override fun putPageListToCache(chapter: Chapter, pages: List<CachedPage>) {
         // Convert list of pages to json string.
         val cachedValue = json.encodeToString(pages)
         val key = DiskUtil.hashKeyForDisk(getKey(chapter))

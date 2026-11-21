@@ -12,6 +12,7 @@ import ephyra.core.common.util.network.TransientErrors
 import ephyra.core.common.util.network.withContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
@@ -283,7 +284,10 @@ internal class HttpPageLoader(
         // Persist immediately so a crash before recycle() doesn't lose the page list.
         scope.launchIO {
             try {
-                chapterCache.putPageListToCache(domainChapter, networkPages)
+                chapterCache.putPageListToCache(
+                    domainChapter,
+                    networkPages.map { CachedPage(it.index, it.url, it.imageUrl) },
+                )
             } catch (ex: Throwable) {
                 if (ex is CancellationException) throw ex
                 logcat(LogPriority.WARN, ex) { "Failed to persist page list to cache after network fetch" }
@@ -308,7 +312,11 @@ internal class HttpPageLoader(
         var isCacheHit = false
 
         val pages = try {
+            // The cache stores `CachedPage`, a record of the three fields it persists. This loader
+            // is the source-facing seam, so it rehydrates the extension type immediately and the
+            // rest of the reader path never sees the cache's shape.
             val cachedPages = chapterCache.getPageListFromCache(domainChapter)
+                .map { Page(it.index, it.url, it.imageUrl) }
             // A cache hit is only a hit if the list it holds still satisfies the URL contract. The
             // reported MangaDex failure lived here: a list written by a bad pass was served verbatim
             // on every subsequent open, the source was never asked, and no fix downstream of the
@@ -483,7 +491,7 @@ internal class HttpPageLoader(
             // *loaded* and cannot see a URL dropped mid-session because it was the thing that
             // failed.
             if (needsPageListSave(cacheHadMissingImageUrls, pages.map { it.imageUrl })) {
-                val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
+                val pagesToSave = pages.map { CachedPage(it.index, it.url, it.imageUrl) }
                 persistenceScope.launch {
                     try {
                         chapterCache.putPageListToCache(

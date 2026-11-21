@@ -1,5 +1,6 @@
 package ephyra.feature.reader.loader
 
+import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.feature.reader.model.ReaderChapter
@@ -267,10 +268,10 @@ class HttpPageLoaderForcedRetryTest {
 
         override fun removeChapter(chapter: Chapter): Boolean = false
 
-        override fun getPageListFromCache(chapter: Chapter): List<Page> =
+        override fun getPageListFromCache(chapter: Chapter): List<CachedPage> =
             throw NoSuchElementException("no page list cached")
 
-        override fun putPageListToCache(chapter: Chapter, pages: List<Page>) = Unit
+        override fun putPageListToCache(chapter: Chapter, pages: List<CachedPage>) = Unit
 
         override fun isImageInCache(imageUrl: String): Boolean = true
 

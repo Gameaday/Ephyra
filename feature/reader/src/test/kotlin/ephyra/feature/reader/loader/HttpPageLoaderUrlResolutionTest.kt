@@ -1,5 +1,6 @@
 package ephyra.feature.reader.loader
 
+import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.feature.reader.model.ReaderChapter
@@ -466,11 +467,11 @@ class HttpPageLoaderUrlResolutionTest {
          * loader to the source instead. The distinction is the point — the two routes reach the
          * request layer by different means and both have to end up absolute.
          */
-        override fun getPageListFromCache(chapter: Chapter): List<Page> =
-            cachedPageImageUrl?.let { listOf(Page(0, "/page/1.jpg", it)) }
+        override fun getPageListFromCache(chapter: Chapter): List<CachedPage> =
+            cachedPageImageUrl?.let { listOf(CachedPage(0, "/page/1.jpg", it)) }
                 ?: throw NoSuchElementException("no page list cached")
 
-        override fun putPageListToCache(chapter: Chapter, pages: List<Page>) = Unit
+        override fun putPageListToCache(chapter: Chapter, pages: List<CachedPage>) = Unit
 
         override fun isImageInCache(imageUrl: String): Boolean = false
 

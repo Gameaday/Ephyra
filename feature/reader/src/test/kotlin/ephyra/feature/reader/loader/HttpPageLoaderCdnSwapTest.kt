@@ -4,6 +4,7 @@ import ephyra.core.common.util.network.FailureLayer
 import ephyra.core.common.util.network.LayeredFailure
 import ephyra.core.common.util.network.MalformedImageUrlException
 import ephyra.core.common.util.network.PageLoadRecovery
+import ephyra.domain.chapter.model.CachedPage
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.feature.reader.model.ReaderChapter
@@ -313,10 +314,10 @@ class HttpPageLoaderCdnSwapTest {
 
         val requested = mutableListOf<String>()
 
-        override fun getPageListFromCache(chapter: Chapter): List<Page> =
+        override fun getPageListFromCache(chapter: Chapter): List<CachedPage> =
             throw NoSuchElementException("no page list cached; the test drives the source path")
 
-        override fun putPageListToCache(chapter: Chapter, pages: List<Page>) = Unit
+        override fun putPageListToCache(chapter: Chapter, pages: List<CachedPage>) = Unit
 
         override fun isImageInCache(imageUrl: String): Boolean = false
 
