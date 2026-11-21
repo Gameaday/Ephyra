@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import ephyra.domain.library.model.LibraryManga
-import ephyra.domain.manga.model.MangaCover
 import ephyra.feature.library.LibraryItem
 
 @Composable
@@ -33,27 +32,24 @@ internal fun LibraryCompactGrid(
 
         items(
             items = items,
-            key = { it.libraryManga.manga.id },
+            key = { it.id },
             contentType = { "library_compact_grid_item" },
         ) { libraryItem ->
-            val manga = libraryItem.libraryManga.manga
+            val item = libraryItem
             MangaCompactGridItem(
-                isSelected = manga.id in selection,
-                title = manga.title.takeIf { showTitle },
-                coverData = MangaCover(
-                    mangaId = manga.id,
-                    sourceId = manga.source,
-                    isMangaFavorite = manga.favorite,
-                    url = manga.thumbnailUrl,
-                    lastModified = manga.coverLastModified,
-                ),
+                isSelected = libraryItem.id in selection,
+                title = libraryItem.title.takeIf { showTitle },
+                coverData = libraryItem.cover,
                 coverBadgeStart = {
                     DownloadsBadge(count = libraryItem.downloadCount)
                     UnreadBadge(count = libraryItem.unreadCount)
                 },
                 coverBadgeEnd = {
-                    AuthorityBadge(hasCanonicalId = manga.canonicalId != null, canonicalId = manga.canonicalId)
-                    SourceHealthBadge(sourceStatus = manga.sourceStatus)
+                    AuthorityBadge(
+                        hasCanonicalId = libraryItem.canonicalId != null,
+                        canonicalId = libraryItem.canonicalId,
+                    )
+                    SourceHealthBadge(sourceStatus = libraryItem.sourceStatus)
                     LanguageBadge(
                         isLocal = libraryItem.isLocal,
                         sourceLanguage = libraryItem.sourceLanguage,

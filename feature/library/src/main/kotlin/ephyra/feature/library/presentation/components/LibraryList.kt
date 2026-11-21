@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ephyra.domain.library.model.LibraryManga
-import ephyra.domain.manga.model.MangaCover
 import ephyra.feature.library.LibraryItem
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.util.plus
@@ -40,29 +39,25 @@ internal fun LibraryList(
 
         items(
             items = items,
-            key = { it.libraryManga.manga.id },
+            key = { it.id },
             contentType = { "library_list_item" },
         ) { libraryItem ->
-            val manga = libraryItem.libraryManga.manga
             MangaListItem(
-                isSelected = manga.id in selection,
-                title = manga.title,
-                coverData = MangaCover(
-                    mangaId = manga.id,
-                    sourceId = manga.source,
-                    isMangaFavorite = manga.favorite,
-                    url = manga.thumbnailUrl,
-                    lastModified = manga.coverLastModified,
-                ),
+                isSelected = libraryItem.id in selection,
+                title = libraryItem.title,
+                coverData = libraryItem.cover,
                 badge = {
                     DownloadsBadge(count = libraryItem.downloadCount)
                     UnreadBadge(count = libraryItem.unreadCount)
-                    SourceHealthBadge(sourceStatus = manga.sourceStatus)
+                    SourceHealthBadge(sourceStatus = libraryItem.sourceStatus)
                     LanguageBadge(
                         isLocal = libraryItem.isLocal,
                         sourceLanguage = libraryItem.sourceLanguage,
                     )
-                    AuthorityBadge(hasCanonicalId = manga.canonicalId != null, canonicalId = manga.canonicalId)
+                    AuthorityBadge(
+                        hasCanonicalId = libraryItem.canonicalId != null,
+                        canonicalId = libraryItem.canonicalId,
+                    )
                 },
                 onLongClick = { onLongClick(libraryItem.libraryManga) },
                 onClick = { onClick(libraryItem.libraryManga) },

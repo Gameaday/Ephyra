@@ -1,6 +1,7 @@
 package ephyra.feature.library
 
 import ephyra.domain.library.model.LibraryManga
+import ephyra.domain.manga.model.MangaCover
 import ephyra.domain.source.service.SourceManager
 import ephyra.presentation.core.util.system.getNameForMangaInfo
 import ephyra.source.local.LocalSource
@@ -23,6 +24,22 @@ data class LibraryItem(
     val canonicalId: String? = libraryManga.manga.canonicalId
     val coverLastModified: Long = libraryManga.manga.coverLastModified
     val sourceStatus: Int = libraryManga.manga.sourceStatus
+
+    /**
+     * The cover request for this entry, in the shape `MangaCoverKeyer` keys on.
+     *
+     * Built here because the list, compact grid and comfortable grid all built the identical
+     * five-argument block inline, and a field dropped from one copy would silently change only
+     * that layout's cache key.
+     */
+    val cover: MangaCover
+        get() = MangaCover(
+            mangaId = id,
+            sourceId = libraryManga.manga.source,
+            isMangaFavorite = isFavorite,
+            url = coverUrl,
+            lastModified = coverLastModified,
+        )
 
     /**
      * Checks if a query matches the manga
