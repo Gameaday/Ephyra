@@ -1,7 +1,6 @@
 package ephyra.presentation.core.util.view
 
 import android.app.Activity
-import android.os.Build
 import android.view.Window
 import android.view.WindowManager
 
@@ -47,11 +46,7 @@ fun Window.applyHighRefreshRate() {
         preferredDisplayModeId = highestMode.modeId
     }
 
-    // API 35+: Opt out of automatic refresh-rate reductions during the reading session,
-    // and enable automatic rate boost when touch input is detected so the rate is high
-    // during scrolling/swiping and can be reduced by the OS when the display is static.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-        isFrameRatePowerSavingsBalanced = false
-        frameRateBoostOnTouchEnabled = true
-    }
+    // Let the OS drop the rate when the screen is static, but boost instantly on touch.
+    isFrameRatePowerSavingsBalanced = false
+    frameRateBoostOnTouchEnabled = true
 }

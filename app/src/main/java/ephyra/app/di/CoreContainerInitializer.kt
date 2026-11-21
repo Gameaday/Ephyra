@@ -56,8 +56,3 @@ fun initializeExtensionBridge(context: Context) {
     Injekt.addSingletonFactory<XML> { entryPoint.xml() }
     Injekt.addSingletonFactory<ProtoBuf> { entryPoint.protoBuf() }
 }
-
-@Deprecated("Use initializeExtensionBridge instead.", ReplaceWith("initializeExtensionBridge(context)"))
-fun initializeCoreContainer(context: Context) {
-    initializeExtensionBridge(context)
-}

@@ -33,19 +33,11 @@ class NavigatorImpl : AppNavigator {
         // start into the app.
         val activity = context as? Activity
         if (activity != null) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                activity.overrideActivityTransition(
-                    Activity.OVERRIDE_TRANSITION_OPEN,
-                    ephyra.presentation.core.R.anim.activity_boundary_fade_in,
-                    ephyra.presentation.core.R.anim.activity_boundary_fade_out,
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                activity.overridePendingTransition(
-                    ephyra.presentation.core.R.anim.activity_boundary_fade_in,
-                    ephyra.presentation.core.R.anim.activity_boundary_fade_out,
-                )
-            }
+            activity.overrideActivityTransition(
+                Activity.OVERRIDE_TRANSITION_OPEN,
+                ephyra.presentation.core.R.anim.activity_boundary_fade_in,
+                ephyra.presentation.core.R.anim.activity_boundary_fade_out,
+            )
         }
     }
 

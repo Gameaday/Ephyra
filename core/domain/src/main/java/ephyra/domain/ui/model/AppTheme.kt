@@ -18,9 +18,4 @@ enum class AppTheme(val titleRes: Int?) {
     YINYANG(ephyra.app.core.common.R.string.theme_yinyang),
     YOTSUBA(ephyra.app.core.common.R.string.theme_yotsuba),
     MONOCHROME(ephyra.app.core.common.R.string.theme_monochrome),
-
-    // Deprecated
-    DARK_BLUE(null),
-    HOT_PINK(null),
-    BLUE(null),
 }

@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -235,19 +234,17 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
             }
             .launchIn(lifecycleScope)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            readerPreferences.drawUnderCutout().changes()
-                .onEach { drawUnderCutout ->
-                    window.attributes = window.attributes.apply {
-                        layoutInDisplayCutoutMode = if (drawUnderCutout) {
-                            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-                        } else {
-                            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
-                        }
+        readerPreferences.drawUnderCutout().changes()
+            .onEach { drawUnderCutout ->
+                window.attributes = window.attributes.apply {
+                    layoutInDisplayCutoutMode = if (drawUnderCutout) {
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                    } else {
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
                     }
                 }
-                .launchIn(lifecycleScope)
-        }
+            }
+            .launchIn(lifecycleScope)
 
         if (savedInstanceState != null) {
             menuToggleToast?.cancel()

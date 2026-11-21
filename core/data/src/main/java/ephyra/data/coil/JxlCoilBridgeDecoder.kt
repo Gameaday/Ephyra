@@ -113,12 +113,9 @@ private fun Coil3Options.toPreferredConfig(): PreferredColorConfig {
         else -> PreferredColorConfig.DEFAULT
     }
     return when {
-        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
-            bitmapConfig == Bitmap.Config.RGBA_F16 -> PreferredColorConfig.RGBA_F16
-        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q &&
-            bitmapConfig == Bitmap.Config.HARDWARE -> PreferredColorConfig.HARDWARE
-        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-            bitmapConfig == Bitmap.Config.RGBA_1010102 -> PreferredColorConfig.RGBA_1010102
+        bitmapConfig == Bitmap.Config.RGBA_F16 -> PreferredColorConfig.RGBA_F16
+        bitmapConfig == Bitmap.Config.HARDWARE -> PreferredColorConfig.HARDWARE
+        bitmapConfig == Bitmap.Config.RGBA_1010102 -> PreferredColorConfig.RGBA_1010102
         else -> base
     }
 }

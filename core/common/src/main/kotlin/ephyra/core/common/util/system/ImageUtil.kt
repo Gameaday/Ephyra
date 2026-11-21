@@ -8,7 +8,6 @@ import android.graphics.BitmapRegionDecoder
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
-import android.os.Build
 import androidx.annotation.ColorInt
 import androidx.core.graphics.alpha
 import androidx.core.graphics.applyCanvas
@@ -316,12 +315,7 @@ object ImageUtil {
     fun splitAndMerge(imageSource: BufferedSource, upperSide: Side): Bitmap {
         val bytes = imageSource.readByteArray()
         val decoder = runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                BitmapRegionDecoder.newInstance(bytes, 0, bytes.size)
-            } else {
-                @Suppress("DEPRECATION")
-                BitmapRegionDecoder.newInstance(bytes, 0, bytes.size, false)
-            }
+            BitmapRegionDecoder.newInstance(bytes, 0, bytes.size)
         }.getOrNull()
 
         if (decoder != null) {
