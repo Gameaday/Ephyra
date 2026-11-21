@@ -1,13 +1,13 @@
 package ephyra.feature.browse.source.globalsearch
 
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.UpdateStrategy
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
 
 /**
  * Minimal [Manga] factory for unit tests, built on the production [Manga.create]

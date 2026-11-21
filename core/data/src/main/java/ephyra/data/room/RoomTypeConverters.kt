@@ -1,7 +1,7 @@
 package ephyra.data.room
 
 import androidx.room.TypeConverter
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import ephyra.domain.manga.model.UpdateStrategy
 import java.util.Date
 
 class RoomTypeConverters {

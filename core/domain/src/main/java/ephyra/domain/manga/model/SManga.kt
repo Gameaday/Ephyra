@@ -12,7 +12,7 @@ fun SManga.toDomainManga(sourceId: Long): Manga {
         genre = effectiveGenres(),
         status = status.toLong(),
         thumbnailUrl = thumbnail_url,
-        updateStrategy = update_strategy,
+        updateStrategy = update_strategy.toDomainModel(),
         initialized = initialized,
         source = sourceId,
     )

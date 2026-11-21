@@ -6,7 +6,7 @@ import ephyra.data.room.views.LibraryView
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaNotFoundException
 import ephyra.domain.manga.model.MangaUpdate
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import ephyra.domain.manga.model.UpdateStrategy
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

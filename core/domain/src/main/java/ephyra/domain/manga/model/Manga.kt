@@ -10,7 +10,6 @@ import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import java.io.Serializable
 import java.time.Instant
 
@@ -188,6 +187,7 @@ fun Manga.toSManga(): SManga = SManga.create().also {
     it.status = status.toInt()
     it.thumbnail_url = thumbnailUrl
     it.initialized = initialized
+    it.update_strategy = updateStrategy.toSourceModel()
 }
 
 fun Manga.copyFrom(other: SManga): Manga {
@@ -207,7 +207,7 @@ fun Manga.copyFrom(other: SManga): Manga {
         genre = genres,
         thumbnailUrl = thumbnailUrl,
         status = other.status.toLong(),
-        updateStrategy = other.update_strategy,
+        updateStrategy = other.update_strategy.toDomainModel(),
         initialized = other.initialized && initialized,
     )
 }

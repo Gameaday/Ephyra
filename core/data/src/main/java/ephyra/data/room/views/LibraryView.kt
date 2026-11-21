@@ -2,7 +2,7 @@ package ephyra.data.room.views
 
 import androidx.room.DatabaseView
 import ephyra.data.room.entities.MangaEntity
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import ephyra.domain.manga.model.UpdateStrategy
 
 @DatabaseView(
     viewName = "libraryView",

@@ -41,11 +41,11 @@ import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.SourceStatus
+import ephyra.domain.manga.model.UpdateStrategy
 import ephyra.domain.manga.model.toSManga
 import ephyra.domain.source.model.SourceNotInstalledException
 import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll

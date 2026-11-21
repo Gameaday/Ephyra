@@ -7,10 +7,10 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
+import ephyra.domain.manga.model.UpdateStrategy
 import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify

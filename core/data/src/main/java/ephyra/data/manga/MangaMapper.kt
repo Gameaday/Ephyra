@@ -8,7 +8,7 @@ import ephyra.domain.content.model.ContentType
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaWithChapterCount
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import ephyra.domain.manga.model.UpdateStrategy
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json

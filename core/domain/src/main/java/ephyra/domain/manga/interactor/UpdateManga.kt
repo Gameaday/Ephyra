@@ -7,6 +7,7 @@ import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.hasCustomCover
+import ephyra.domain.manga.model.toDomainModel
 import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.source.model.isLocal
@@ -132,7 +133,8 @@ class UpdateManga(
             remoteStatus == localManga.status -> null
             else -> remoteStatus
         }
-        val updateStrategy = remoteManga.update_strategy.takeIf { it != localManga.updateStrategy }
+        val updateStrategy = remoteManga.update_strategy.toDomainModel()
+            .takeIf { it != localManga.updateStrategy }
         val initialized = true.takeIf { !localManga.initialized }
 
         val hasChanges = title != null || coverLastModified != null || thumbnailUrl != null ||
