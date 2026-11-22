@@ -1,5 +1,6 @@
 package ephyra.app.architecture
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -236,10 +237,25 @@ class LibrarySeriesTransitionTest {
                 "page re-decodes what the library grid already had — the reported flicker. Use " +
                 "manga.asMangaCover(), which preserves mangaId and coverLastModified.",
         )
+        // Counted, not merely present. This file draws the cover twice (the full-width header and
+        // the compact row), so a `contains` check passes with a single conversion and stays green
+        // if the other site regresses to a raw `Manga` - the exact defect above, surviving in the
+        // one place the gate looks.
+        val coverSites = Regex("""MangaCover\.(Book|Square)\(""").findAll(header).count()
+        val conversions = Regex("""asMangaCover\(\)""").findAll(header).count()
+
         assertTrue(
-            header.contains("asMangaCover()"),
-            "The series header must derive its cover with asMangaCover() so the key matches the " +
-                "library grid's and arrival is a memory-cache hit rather than a re-decode.",
+            coverSites >= 2,
+            "expected at least two MangaCover call sites in MangaInfoHeader (header + compact " +
+                "row); found $coverSites. If one was removed, this gate no longer covers it.",
+        )
+        assertEquals(
+            coverSites,
+            conversions,
+            "every MangaCover call site in MangaInfoHeader must derive its data with " +
+                "asMangaCover(). Found $coverSites cover sites but $conversions conversions, so " +
+                "one end keys the cover differently from the library grid and arrival re-decodes " +
+                "instead of hitting the memory cache.",
         )
     }
 
