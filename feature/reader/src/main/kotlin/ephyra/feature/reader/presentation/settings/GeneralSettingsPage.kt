@@ -109,6 +109,11 @@ internal fun ColumnScope.GeneralPage(ViewModel: ReaderSettingsViewModel) {
     }
 
     CheckboxItem(
+        label = stringResource(ephyra.app.core.common.R.string.pref_show_seek_bar_preview),
+        pref = ViewModel.preferences.showSeekBarPreview(),
+    )
+
+    CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_flash_page),
         pref = ViewModel.preferences.flashOnPageChange(),
     )

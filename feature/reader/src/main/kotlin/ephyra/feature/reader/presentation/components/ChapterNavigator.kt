@@ -1,5 +1,10 @@
 package ephyra.feature.reader.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
@@ -52,6 +57,7 @@ fun ChapterNavigator(
     currentPage: Int,
     totalPages: Int,
     onPageIndexChange: (Int) -> Unit,
+    showSeekBarPreview: Boolean = false,
 ) {
     val isTabletUi = isTabletUi()
     val horizontalPadding = if (isTabletUi) 24.dp else 8.dp
@@ -93,41 +99,32 @@ fun ChapterNavigator(
 
             if (totalPages > 1) {
                 CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                    Row(
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val sliderDragged: Boolean by interactionSource.collectIsDraggedAsState()
+                    LaunchedEffect(currentPage) {
+                        if (sliderDragged) {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        }
+                    }
+                    Box(
                         modifier = Modifier
                             .weight(1f)
                             .clip(MaterialTheme.shapes.extraLarge)
                             .background(backgroundColor)
                             .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(contentAlignment = Alignment.CenterEnd) {
-                            Text(text = currentPage.toString())
-                            // Taking up full length so the slider doesn't shift when 'currentPage' length changes
-                            Text(text = totalPages.toString(), color = Color.Transparent)
-                        }
-
-                        val interactionSource = remember { MutableInteractionSource() }
-                        val sliderDragged: Boolean by interactionSource.collectIsDraggedAsState()
-                        LaunchedEffect(currentPage) {
-                            if (sliderDragged) {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            }
-                        }
-                        Slider(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 8.dp),
-                            value = currentPage,
-                            valueRange = 1..totalPages,
-                            onValueChange = f@{
-                                if (it == currentPage) return@f
-                                onPageIndexChange(it - 1)
-                            },
+                        SeekBarRow(
+                            currentPage = currentPage,
+                            totalPages = totalPages,
                             interactionSource = interactionSource,
+                            onPageIndexChange = onPageIndexChange,
                         )
 
-                        Text(text = totalPages.toString())
+                        SeekPreviewBubble(
+                            visible = showSeekBarPreview && sliderDragged,
+                            page = currentPage,
+                            modifier = Modifier.align(Alignment.TopCenter),
+                        )
                     }
                 }
             } else {
@@ -148,6 +145,68 @@ fun ChapterNavigator(
     }
 }
 
+/** The page-count readout and the seek bar, kept together so the bar's width never shifts. */
+@Composable
+private fun SeekBarRow(
+    currentPage: Int,
+    totalPages: Int,
+    interactionSource: MutableInteractionSource,
+    onPageIndexChange: (Int) -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(contentAlignment = Alignment.CenterEnd) {
+            Text(text = currentPage.toString())
+            // Transparent duplicate reserves the widest number's space, so the bar does not resize.
+            Text(text = totalPages.toString(), color = Color.Transparent)
+        }
+
+        Slider(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp),
+            value = currentPage,
+            valueRange = 1..totalPages,
+            onValueChange = { if (it == currentPage) return@Slider else onPageIndexChange(it - 1) },
+            interactionSource = interactionSource,
+        )
+
+        Text(text = totalPages.toString())
+    }
+}
+
+/**
+ * A bubble above the thumb so a drag has a target the eye can follow.
+ *
+ * The page number only - deliberately no image decode, so dragging stays free.
+ */
+@Composable
+private fun SeekPreviewBubble(
+    visible: Boolean,
+    page: Int,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier,
+        enter = fadeIn() + scaleIn(initialScale = 0.9f),
+        exit = fadeOut() + scaleOut(targetScale = 0.9f),
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(bottom = 4.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.inverseSurface)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+        ) {
+            Text(
+                text = page.toString(),
+                color = MaterialTheme.colorScheme.inverseOnSurface,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
+    }
+}
+
 @Preview
 @Composable
 private fun ChapterNavigatorPreview() {
@@ -162,6 +221,7 @@ private fun ChapterNavigatorPreview() {
             currentPage = currentPage,
             totalPages = 10,
             onPageIndexChange = { currentPage = (it + 1) },
+            showSeekBarPreview = true,
         )
     }
 }

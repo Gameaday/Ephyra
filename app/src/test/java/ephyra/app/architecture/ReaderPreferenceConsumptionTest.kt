@@ -40,6 +40,7 @@ class ReaderPreferenceConsumptionTest {
         // Every preference offered to the user, and the declaration that defines it.
         val offered = listOf(
             Preference("sliderNavMode", "seek-bar navigation mode"),
+            Preference("showSeekBarPreview", "page-number bubble while seeking"),
         )
 
         val unread = offered.filter { pref ->

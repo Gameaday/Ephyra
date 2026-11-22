@@ -404,6 +404,7 @@ private fun AppBars(
     val cropBorderWebtoon: Boolean by readerPreferences.cropBordersWebtoon().collectAsState()
     val isPagerType = ReadingMode.isPagerType(viewModel.getMangaReadingMode())
     val cropEnabled = if (isPagerType) cropBorderPaged else cropBorderWebtoon
+    val showSeekBarPreview: Boolean by readerPreferences.showSeekBarPreview().collectAsState()
 
     ReaderAppBars(
         visible = state.menuVisible,
@@ -424,6 +425,7 @@ private fun AppBars(
         currentPage = state.currentPage,
         totalPages = state.totalPages,
         onPageIndexChange = onPageIndexChange,
+        showSeekBarPreview = showSeekBarPreview,
         readingMode = ReadingMode.fromPreference(viewModel.getMangaReadingMode()),
         onClickReadingMode = { viewModel.onEvent(ReaderEvent.OpenReadingModeSelectDialog) },
         orientation = ReaderOrientation.fromPreference(viewModel.getMangaOrientation()),

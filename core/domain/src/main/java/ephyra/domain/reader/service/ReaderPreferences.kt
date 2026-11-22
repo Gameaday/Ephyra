@@ -16,6 +16,14 @@ class ReaderPreferences(
 
     fun sliderNavMode() = preferenceStore.getInt("pref_slider_nav_mode", SLIDER_NAV_SMOOTH)
 
+    /**
+     * Whether dragging the seek bar shows a preview of the page under the thumb.
+     *
+     * Off by default: a preview decodes an image while the user is dragging, and the cost is only
+     * worth paying for someone who asked for it.
+     */
+    fun showSeekBarPreview() = preferenceStore.getBoolean("pref_show_seek_bar_preview", false)
+
     fun flashOnPageChange() = preferenceStore.getBoolean("pref_reader_flash", false)
 
     fun flashDurationMillis() = preferenceStore.getInt("pref_reader_flash_duration", MILLI_CONVERSION)
