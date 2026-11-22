@@ -245,16 +245,21 @@ internal class HttpPageLoader(
     /**
      * Starts one page worker, and keeps it alive.
      *
-     * **Why the retry loop is here.** `scope` is a plain `SupervisorJob`, which isolates a failing
-     * child from its siblings but never *restarts* it. A throwable escaping the flow — from a page
-     * body, a cache write, or a source — therefore killed one worker permanently, and nothing
-     * replaced it. With `fullWorkerCount` of 1–3 by device tier, losing them all leaves a queue
-     * nobody consumes: every page sits at `Queue` and the chapter never loads again until the
-     * process is restarted. That is the reported "stuck until I reopen the app".
+     * A throwable escaping the flow — from a page body, a cache write, or a source — kills one
+     * worker, because [scope] is a plain `SupervisorJob`: it isolates a failing child from its
+     * siblings but never *restarts* it. With [fullWorkerCount] of 1–3 by device tier, losing them
+     * all would leave a queue nobody consumes, every page stuck at [PageState.Queue] until the
+     * process restarts.
      *
-     * A `CancellationException` is rethrown rather than retried: it means [scope] was cancelled,
-     * which happens in [recycle] when the loader is being discarded. Respawning there would leak a
-     * worker against a dead loader.
+     * In practice that does not happen, because [internalLoadPage] catches `Throwable` and turns it
+     * into a per-page recovery decision: it rethrows only `CancellationException`. The worker
+     * therefore survives source faults, cache faults and decode faults, and reaches the next
+     * `take()`. A respawn loop was written for this and then removed (`e8ce3f60a`) once that
+     * containment was confirmed — the loop could not be shown to prevent a failure that could
+     * actually occur.
+     *
+     * If that containment is ever weakened, the "stuck until I reopen the app" report returns; the
+     * guard is [internalLoadPage]'s `catch (e: Throwable)` with `CancellationException` rethrown.
      */
     private fun launchWorker() {
         scope.launchIO {
@@ -900,15 +905,6 @@ internal class HttpPageLoader(
     }
 
     companion object {
-        /**
-         * How long a worker waits before respawning after an unexpected failure.
-         *
-         * Small on purpose. It exists only to stop a deterministic throw from becoming a hot
-         * respawn loop; it is not a backoff, because the page that failed is already gone from the
-         * worker's hands and the next `take()` is a different page.
-         */
-        private const val WORKER_RESPAWN_DELAY_MS = 50L
-
         /**
          * Whether [recycle] has to write the page list back to the chapter cache.
          *
