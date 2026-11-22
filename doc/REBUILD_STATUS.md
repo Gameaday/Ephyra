@@ -26,11 +26,11 @@ if a row below disagrees with this summary, the summary is the authority and the
   `macrobenchmark`/frame-deadline gate. Each has a review/expiry condition.
 - **Standing channel blocker:** `B-050` â€” the CI emulator does not boot, so device runs are local
   (`ADR-0009` accepts `E4-lab`); publish paths never depend on connected instrumentation.
-- **CI (confirmed green on `main`, 2026-11-18):** `Build & Test` succeeded on `1209e5356` (23m 44s) and
-  `8755be5d5`. That settles the `feature:reader` `junit-vintage` worker‑death: `--max-workers=2` plus
-  `forkEvery = 1` on the Robolectric modules fixed it. Runs showing `cancelled` are
-  concurrency‑superseded by a newer push, never failures. The failure‑only "Diagnose test worker
-  death" step remains as the next signal if it ever recurs.
+- **CI (confirmed green on `main`, 2026-11‑22):** `Build & Test` succeeded on `1209e5356`,
+  `8755be5d5`, `eea32fbdb` and predecessors. That settles the `feature:reader` `junit‑vintage`
+  worker‑death: `--max-workers=2` plus `forkEvery = 1` on the Robolectric modules fixed it.
+  Runs showing `cancelled` are concurrency‑superseded by a newer push, never failures. The
+  failure‑only "Diagnose test worker death" step remains as the next signal if it recurs.
 - **Unidirectional data flow (complete):** every production `ViewModel` under `feature/` takes an
   `@IoDispatcher CoroutineDispatcher` and launches on it — debt `10 -> 0`. The gate now enforces
   **two** properties, not one: a ViewModel must not reach `Dispatchers.IO` *and* must actually **use**

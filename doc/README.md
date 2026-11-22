@@ -32,6 +32,9 @@
 **In flight** — [`REBUILD_STATUS.md`](REBUILD_STATUS.md) (read its As-is summary first;
 if a ledger row disagrees with it, the summary wins), [`source/`](source/).
 
+**Starting a new session** — [`SESSION_HANDOFF.md`](SESSION_HANDOFF.md): prompt to
+paste first. State, strategy, roadmap, mindset, gates, and the traps that cost time.
+
 **Forward** — [`../ROADMAP.md`](../ROADMAP.md),
 [`UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN`](UPSTREAM_MIHON_0_21_1_ADOPTION_PLAN.md),
 [`rfcs/`](rfcs/).
