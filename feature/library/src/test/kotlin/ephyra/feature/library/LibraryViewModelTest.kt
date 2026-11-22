@@ -8,6 +8,7 @@ import ephyra.domain.base.BasePreferences
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
 import ephyra.domain.category.model.Category
+import ephyra.domain.chapter.interactor.EvictChapterCacheForManga
 import ephyra.domain.chapter.interactor.SetReadStatus
 import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.download.service.DownloadManager
@@ -20,12 +21,14 @@ import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.GetTracksPerManga
 import ephyra.domain.track.service.TrackerManager
 import ephyra.feature.library.presentation.components.LibraryFilterType
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -56,6 +59,7 @@ class LibraryViewModelTest {
     private val chapterRepository: ChapterRepository = mockk(relaxed = true)
     private val setReadStatus: SetReadStatus = mockk(relaxed = true)
     private val updateManga: UpdateManga = mockk(relaxed = true)
+    private val evictChapterCacheForManga: EvictChapterCacheForManga = mockk(relaxed = true)
     private val setMangaCategories: SetMangaCategories = mockk(relaxed = true)
     private val preferences: BasePreferences = mockk(relaxed = true)
     private val libraryPreferences: LibraryPreferences = mockk(relaxed = true)
@@ -148,7 +152,7 @@ class LibraryViewModelTest {
             chapterRepository = chapterRepository,
             setReadStatus = setReadStatus,
             updateManga = updateManga,
-            evictChapterCacheForManga = mockk(relaxed = true),
+            evictChapterCacheForManga = evictChapterCacheForManga,
             setMangaCategories = setMangaCategories,
             preferences = preferences,
             libraryPreferences = libraryPreferences,
@@ -497,5 +501,160 @@ class LibraryViewModelTest {
             chapterFetchedAt = 0,
             lastRead = 0,
         )
+    }
+
+    // ── Selection ────────────────────────────────────────────────────────────
+    // The selection set drives the contextual action bar, so a wrong membership rule
+    // shows up as "it selected the wrong things".
+
+    private fun loadedViewModel(vararg items: LibraryManga): LibraryViewModel {
+        every { getLibraryManga.subscribe() } returns flowOf(items.toList())
+        return createViewModel()
+    }
+
+    private suspend fun awaitInitialized(viewModel: LibraryViewModel) {
+        viewModel.state.test {
+            var current = awaitItem()
+            while (!current.libraryData.isInitialized || current.displayedCategories.isEmpty()) {
+                current = awaitItem()
+            }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    private fun category() = Category.createSystemCategory()
+
+    /** Toggling the same manga twice must leave it unselected, not selected twice. */
+    @Test
+    fun `toggleSelection is its own inverse`() = runTest(testDispatcher) {
+        val manga = libraryManga(id = 1L, title = "A", dateAdded = 0)
+        val viewModel = loadedViewModel(manga)
+        awaitInitialized(viewModel)
+
+        viewModel.onEvent(LibraryScreenEvent.ToggleSelection(category(), manga))
+        assertTrue(
+            viewModel.state.value.selectedManga.any { it.id == 1L },
+            "the first toggle must select",
+        )
+
+        viewModel.onEvent(LibraryScreenEvent.ToggleSelection(category(), manga))
+        assertTrue(
+            viewModel.state.value.selectedManga.none { it.id == 1L },
+            "the second toggle must deselect, not toggle a duplicate in",
+        )
+    }
+
+    /**
+     * Range selection must fill the span *in list order*, not selection order.
+     *
+     * Selecting page 5 then page 2 has to select 2..5. Using tap order would select only
+     * the two endpoints and leave the middle unselected, which is the whole point of a
+     * range gesture.
+     */
+    @Test
+    fun `range selection fills between the anchors regardless of tap order`() = runTest(testDispatcher) {
+        val items = (1L..5L).map { libraryManga(id = it, title = "M$it", dateAdded = it) }
+        val viewModel = loadedViewModel(*items.toTypedArray())
+        awaitInitialized(viewModel)
+
+        viewModel.onEvent(LibraryScreenEvent.ToggleSelection(category(), items[4]))
+        viewModel.onEvent(LibraryScreenEvent.ToggleRangeSelection(category(), items[1]))
+
+        assertEquals(
+            setOf(2L, 3L, 4L, 5L),
+            viewModel.state.value.selectedManga.map { it.id }.toSet(),
+            "range must cover both anchors and everything between, in list order",
+        )
+    }
+
+    /** Select All must select the visible category and nothing outside it. */
+    @Test
+    fun `select all covers the active category`() = runTest(testDispatcher) {
+        val items = (1L..3L).map { libraryManga(id = it, title = "M$it", dateAdded = it) }
+        val viewModel = loadedViewModel(*items.toTypedArray())
+        awaitInitialized(viewModel)
+
+        viewModel.onEvent(LibraryScreenEvent.SelectAll)
+
+        assertEquals(setOf(1L, 2L, 3L), viewModel.state.value.selectedManga.map { it.id }.toSet())
+    }
+
+    /** Inverting an empty selection selects everything; inverting a full one empties it. */
+    @Test
+    fun `invert selection is a true complement`() = runTest(testDispatcher) {
+        val items = (1L..4L).map { libraryManga(id = it, title = "M$it", dateAdded = it) }
+        val viewModel = loadedViewModel(*items.toTypedArray())
+        awaitInitialized(viewModel)
+
+        viewModel.onEvent(LibraryScreenEvent.InvertSelection)
+        assertEquals(setOf(1L, 2L, 3L, 4L), viewModel.state.value.selectedManga.map { it.id }.toSet())
+
+        viewModel.onEvent(LibraryScreenEvent.InvertSelection)
+        assertTrue(
+            viewModel.state.value.selectedManga.isEmpty(),
+            "inverting a full selection must empty it",
+        )
+    }
+
+    /** Clearing selection must not touch the library itself. */
+    @Test
+    fun `clear selection empties the set and leaves the library intact`() = runTest(testDispatcher) {
+        val items = (1L..2L).map { libraryManga(id = it, title = "M$it", dateAdded = it) }
+        val viewModel = loadedViewModel(*items.toTypedArray())
+        awaitInitialized(viewModel)
+
+        viewModel.onEvent(LibraryScreenEvent.ToggleSelection(category(), items[0]))
+        viewModel.onEvent(LibraryScreenEvent.ClearSelection)
+
+        assertTrue(viewModel.state.value.selectedManga.isEmpty())
+        assertEquals(
+            2,
+            viewModel.state.value.libraryData.favorites.size,
+            "clearing a selection must not remove anything from the library",
+        )
+    }
+
+    /**
+     * Removing from the library must mark the manga unfavourite *and* evict its chapter cache.
+     *
+     * Both halves matter: leaving the cover bytes behind is the leak, and leaving the manga
+     * a favourite means it reappears on the next query.
+     */
+    @Test
+    fun `removing from the library unfavourites and evicts chapter bytes`() = runTest(testDispatcher) {
+        val items = (1L..2L).map { libraryManga(id = it, title = "M$it", dateAdded = it) }
+        val viewModel = loadedViewModel(*items.toTypedArray())
+        awaitInitialized(viewModel)
+
+        viewModel.onEvent(
+            LibraryScreenEvent.RemoveMangas(
+                mangas = items.map { it.manga },
+                deleteFromLibrary = true,
+                deleteChapters = false,
+            ),
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { updateManga.awaitAll(mangaUpdates = any()) }
+        coVerify(exactly = 2) { evictChapterCacheForManga.evict(any()) }
+    }
+
+    /** Deleting chapters must NOT unfavourite the manga — the two flags are independent. */
+    @Test
+    fun `deleting chapters alone keeps the manga in the library`() = runTest(testDispatcher) {
+        val items = listOf(libraryManga(id = 1L, title = "M1", dateAdded = 1))
+        val viewModel = loadedViewModel(*items.toTypedArray())
+        awaitInitialized(viewModel)
+
+        viewModel.onEvent(
+            LibraryScreenEvent.RemoveMangas(
+                mangas = items.map { it.manga },
+                deleteFromLibrary = false,
+                deleteChapters = true,
+            ),
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { updateManga.awaitAll(mangaUpdates = any()) }
     }
 }

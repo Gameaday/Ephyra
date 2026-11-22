@@ -11,7 +11,6 @@ import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.util.lang.compareToWithCollator
-import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.download.DownloadCache
 import ephyra.core.download.util.getNextUnread
 import ephyra.domain.base.BasePreferences
@@ -72,6 +71,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -89,6 +89,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -776,48 +777,52 @@ class LibraryViewModel @Inject constructor(
 
     private fun downloadNextChapters(amount: Int?) {
         val mangas = state.value.selectedManga
-        viewModelScope.launchNonCancellable {
-            // Wait for the DownloadCache disk-snapshot to be ready before querying it so
-            // that a chapter already on disk is never mistakenly re-downloaded on a cold start.
-            downloadManager.awaitCacheReady()
-            mangas.forEach { manga ->
-                val chapters = getNextChapters.await(manga.id)
-                    .filterNot { chapter ->
-                        downloadManager.getQueuedDownloadOrNull(chapter.id) != null ||
-                            downloadManager.isChapterDownloaded(
-                                chapter.name,
-                                chapter.scanlator,
-                                chapter.url,
-                                manga.title,
-                                manga.source,
-                            )
-                    }
-                    .let { if (amount != null) it.take(amount) else it }
+        viewModelScope.launch(ioDispatcher) {
+            withContext(NonCancellable) {
+                // Wait for the DownloadCache disk-snapshot to be ready before querying it so
+                // that a chapter already on disk is never mistakenly re-downloaded on a cold start.
+                downloadManager.awaitCacheReady()
+                mangas.forEach { manga ->
+                    val chapters = getNextChapters.await(manga.id)
+                        .filterNot { chapter ->
+                            downloadManager.getQueuedDownloadOrNull(chapter.id) != null ||
+                                downloadManager.isChapterDownloaded(
+                                    chapter.name,
+                                    chapter.scanlator,
+                                    chapter.url,
+                                    manga.title,
+                                    manga.source,
+                                )
+                        }
+                        .let { if (amount != null) it.take(amount) else it }
 
-                downloadManager.downloadChapters(manga, chapters)
+                    downloadManager.downloadChapters(manga, chapters)
+                }
             }
         }
     }
 
     private fun downloadBookmarkedChapters() {
         val mangas = state.value.selectedManga
-        viewModelScope.launchNonCancellable {
-            // Wait for the DownloadCache disk-snapshot to be ready before querying it so
-            // that a chapter already on disk is never mistakenly re-downloaded on a cold start.
-            downloadManager.awaitCacheReady()
-            mangas.forEach { manga ->
-                val chapters = chapterRepository.getBookmarkedChaptersByMangaId(manga.id)
-                    .filterNot { chapter ->
-                        downloadManager.getQueuedDownloadOrNull(chapter.id) != null ||
-                            downloadManager.isChapterDownloaded(
-                                chapter.name,
-                                chapter.scanlator,
-                                chapter.url,
-                                manga.title,
-                                manga.source,
-                            )
-                    }
-                downloadManager.downloadChapters(manga, chapters)
+        viewModelScope.launch(ioDispatcher) {
+            withContext(NonCancellable) {
+                // Wait for the DownloadCache disk-snapshot to be ready before querying it so
+                // that a chapter already on disk is never mistakenly re-downloaded on a cold start.
+                downloadManager.awaitCacheReady()
+                mangas.forEach { manga ->
+                    val chapters = chapterRepository.getBookmarkedChaptersByMangaId(manga.id)
+                        .filterNot { chapter ->
+                            downloadManager.getQueuedDownloadOrNull(chapter.id) != null ||
+                                downloadManager.isChapterDownloaded(
+                                    chapter.name,
+                                    chapter.scanlator,
+                                    chapter.url,
+                                    manga.title,
+                                    manga.source,
+                                )
+                        }
+                    downloadManager.downloadChapters(manga, chapters)
+                }
             }
         }
     }
@@ -827,12 +832,14 @@ class LibraryViewModel @Inject constructor(
      */
     private fun markReadSelection(read: Boolean) {
         val selection = state.value.selectedManga
-        viewModelScope.launchNonCancellable {
-            selection.forEach { manga ->
-                setReadStatus.await(
-                    manga = manga,
-                    read = read,
-                )
+        viewModelScope.launch(ioDispatcher) {
+            withContext(NonCancellable) {
+                selection.forEach { manga ->
+                    setReadStatus.await(
+                        manga = manga,
+                        read = read,
+                    )
+                }
             }
         }
         clearSelection()
@@ -846,25 +853,27 @@ class LibraryViewModel @Inject constructor(
      * @param deleteChapters whether to delete downloaded chapters.
      */
     private fun removeMangas(mangas: List<Manga>, deleteFromLibrary: Boolean, deleteChapters: Boolean) {
-        viewModelScope.launchNonCancellable {
-            if (deleteFromLibrary) {
-                val toDelete = mangas.map {
-                    it.removeCovers(coverCache)
-                    MangaUpdate(
-                        favorite = false,
-                        id = it.id,
-                    )
+        viewModelScope.launch(ioDispatcher) {
+            withContext(NonCancellable) {
+                if (deleteFromLibrary) {
+                    val toDelete = mangas.map {
+                        it.removeCovers(coverCache)
+                        MangaUpdate(
+                            favorite = false,
+                            id = it.id,
+                        )
+                    }
+                    updateManga.awaitAll(toDelete)
+                    // Retention rule 4: evict orphaned chapter pages immediately.
+                    mangas.forEach { evictChapterCacheForManga.evict(it.id) }
                 }
-                updateManga.awaitAll(toDelete)
-                // Retention rule 4: evict orphaned chapter pages immediately.
-                mangas.forEach { evictChapterCacheForManga.evict(it.id) }
-            }
 
-            if (deleteChapters) {
-                mangas.forEach { manga ->
-                    val source = sourceManager.get(manga.source) as? HttpSource
-                    if (source != null) {
-                        downloadManager.deleteManga(manga, source)
+                if (deleteChapters) {
+                    mangas.forEach { manga ->
+                        val source = sourceManager.get(manga.source) as? HttpSource
+                        if (source != null) {
+                            downloadManager.deleteManga(manga, source)
+                        }
                     }
                 }
             }
@@ -879,15 +888,17 @@ class LibraryViewModel @Inject constructor(
      * @param removeCategories the categories to remove in all mangas.
      */
     private fun setMangaCategories(mangaList: List<Manga>, addCategories: List<Long>, removeCategories: List<Long>) {
-        viewModelScope.launchNonCancellable {
-            val removeCategorySet = removeCategories.toHashSet()
-            mangaList.forEach { manga ->
-                val categoryIds = getCategories.await(manga.id)
-                    .filterNot { it.id in removeCategorySet }
-                    .mapTo(mutableListOf()) { it.id }
-                    .apply { addAll(addCategories) }
+        viewModelScope.launch(ioDispatcher) {
+            withContext(NonCancellable) {
+                val removeCategorySet = removeCategories.toHashSet()
+                mangaList.forEach { manga ->
+                    val categoryIds = getCategories.await(manga.id)
+                        .filterNot { it.id in removeCategorySet }
+                        .mapTo(mutableListOf()) { it.id }
+                        .apply { addAll(addCategories) }
 
-                setMangaCategories.await(manga.id, categoryIds)
+                    setMangaCategories.await(manga.id, categoryIds)
+                }
             }
         }
     }
