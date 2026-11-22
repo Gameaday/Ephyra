@@ -72,6 +72,7 @@ fun ReaderAppBars(
     totalPages: Int,
     onPageIndexChange: (Int) -> Unit,
     showSeekBarPreview: Boolean = false,
+    previewBytes: ByteArray? = null,
 
     readingMode: ReadingMode,
     onClickReadingMode: () -> Unit,
@@ -129,6 +130,7 @@ fun ReaderAppBars(
                     totalPages = totalPages,
                     onPageIndexChange = onPageIndexChange,
                     showSeekBarPreview = showSeekBarPreview,
+                    previewBytes = previewBytes,
                 )
                 ReaderBottomBar(
                     modifier = Modifier

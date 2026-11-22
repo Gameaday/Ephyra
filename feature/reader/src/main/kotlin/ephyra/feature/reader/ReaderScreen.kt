@@ -406,6 +406,16 @@ private fun AppBars(
     val cropEnabled = if (isPagerType) cropBorderPaged else cropBorderWebtoon
     val showSeekBarPreview: Boolean by readerPreferences.showSeekBarPreview().collectAsState()
 
+    // Bytes for the page under the thumb, so the seek bubble can show a thumbnail. Reads the page
+    // the reader already holds rather than fetching: a drag that decoded every intermediate page is
+    // the decode storm that makes scrubbing stutter, so this is null for pages not yet resident and
+    // the bubble falls back to the page number.
+    //
+    // `currentReaderPage`, not `pages[currentPage]`: `currentPage` is a *display* position (it
+    // counts visible pages), so indexing the raw list with it reads the wrong page whenever a page
+    // is hidden. `ReaderPageResourceOwnershipTest` fails the build on that pattern.
+    val previewBytes = state.currentReaderPage?.resource?.cachedBytes
+
     ReaderAppBars(
         visible = state.menuVisible,
         mangaTitle = state.manga.title,
@@ -426,6 +436,7 @@ private fun AppBars(
         totalPages = state.totalPages,
         onPageIndexChange = onPageIndexChange,
         showSeekBarPreview = showSeekBarPreview,
+        previewBytes = previewBytes,
         readingMode = ReadingMode.fromPreference(viewModel.getMangaReadingMode()),
         onClickReadingMode = { viewModel.onEvent(ReaderEvent.OpenReadingModeSelectDialog) },
         orientation = ReaderOrientation.fromPreference(viewModel.getMangaOrientation()),
