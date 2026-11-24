@@ -1,13 +1,16 @@
-﻿package ephyra.data.source
+package ephyra.data.source
 
 import ephyra.data.room.daos.MangaDao
 import ephyra.domain.manga.interactor.NetworkToLocalManga
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.model.SourceWithCount
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.SourcePagingSource
 import ephyra.domain.source.repository.SourceRepository
 import ephyra.domain.source.service.SourceManager
 import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
+import ephyra.source.api.SourceKind
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.FilterList
@@ -15,8 +18,11 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import javax.inject.Inject
 import ephyra.domain.source.model.Source as DomainSource
+import ephyra.domain.source.model.SourceFilter
 
 class SourceRepositoryImpl @Inject constructor(
     private val sourceManager: SourceManager,
@@ -26,9 +32,9 @@ class SourceRepositoryImpl @Inject constructor(
 
     override fun getSources(): Flow<List<DomainSource>> {
         return sourceManager.catalogueSourceFlow.map { sources ->
-            sources.map {
-                mapSourceToDomainSource(it).copy(
-                    supportsLatest = it.supportsLatest,
+            sources.map { gateway ->
+                mapGatewayToDomainSource(gateway).copy(
+                    supportsLatest = gateway.descriptor.capabilities.contains(ephyra.source.api.SourceCapability.LATEST),
                 )
             }
         }
@@ -37,8 +43,8 @@ class SourceRepositoryImpl @Inject constructor(
     override fun getOnlineSources(): Flow<List<DomainSource>> {
         return sourceManager.catalogueSourceFlow.map { sources ->
             sources
-                .filterIsInstance<HttpSource>()
-                .map(::mapSourceToDomainSource)
+                .filter { it.descriptor.kind == SourceKind.NATIVE }
+                .map(::mapGatewayToDomainSource)
         }
     }
 
@@ -49,9 +55,9 @@ class SourceRepositoryImpl @Inject constructor(
         ) { sourceIdWithFavoriteCount, _ -> sourceIdWithFavoriteCount }
             .map { list ->
                 list.map { (sourceId, count) ->
-                    val source = sourceManager.getOrStub(sourceId)
-                    val domainSource = mapSourceToDomainSource(source).copy(
-                        isStub = source is StubSource,
+                    val gateway = sourceManager.getOrStub(sourceId)
+                    val domainSource = mapGatewayToDomainSource(gateway).copy(
+                        isStub = gateway is LegacySourceGateway && gateway.delegate is StubSource,
                     )
                     domainSource to count
                 }
@@ -61,9 +67,9 @@ class SourceRepositoryImpl @Inject constructor(
     override fun getSourcesWithNonLibraryManga(): Flow<List<SourceWithCount>> {
         return mangaDao.getSourceIdsWithNonLibraryManga().map { list ->
             list.map { (sourceId, count) ->
-                val source = sourceManager.getOrStub(sourceId)
-                val domainSource = mapSourceToDomainSource(source).copy(
-                    isStub = source is StubSource,
+                val gateway = sourceManager.getOrStub(sourceId)
+                val domainSource = mapGatewayToDomainSource(gateway).copy(
+                    isStub = gateway is LegacySourceGateway && gateway.delegate is StubSource,
                 )
                 SourceWithCount(domainSource, count)
             }
@@ -73,10 +79,14 @@ class SourceRepositoryImpl @Inject constructor(
     override fun search(
         sourceId: Long,
         query: String,
-        filterList: FilterList,
+        filter: SourceFilter,
     ): SourcePagingSource {
-        val source = sourceManager.get(sourceId) as CatalogueSource
-        return SourceSearchPagingSource(source, query, filterList, networkToLocalManga)
+        val gateway = sourceManager.get(sourceId) ?: return SourceSearchPagingSourceStub() as SourcePagingSource
+        val legacySource = (gateway as? LegacySourceGateway)?.delegate
+            ?: throw IllegalStateException("Expected LegacySourceGateway for search")
+        val catalogueSource = legacySource as? CatalogueSource
+            ?: throw IllegalStateException("Expected CatalogueSource for search")
+        return SourceSearchPagingSource(catalogueSource, query, filter.toLegacyFilterList(), networkToLocalManga)
     }
 
     /**
@@ -89,24 +99,50 @@ class SourceRepositoryImpl @Inject constructor(
      * change. Search and latest are the same shape and the same change.
      */
     override fun getPopular(sourceId: Long): SourcePagingSource {
-        val source = sourceManager.get(sourceId) as CatalogueSource
+        val gateway = sourceManager.get(sourceId) ?: return SourcePopularPagingSourceStub() as SourcePagingSource
         return SourcePopularPagingSource(
-            gateway = LegacySourceGateway(source),
+            gateway = gateway,
             sourceId = sourceId,
             networkToLocalManga = networkToLocalManga,
         )
     }
 
     override fun getLatest(sourceId: Long): SourcePagingSource {
-        val source = sourceManager.get(sourceId) as CatalogueSource
-        return SourceLatestPagingSource(source, networkToLocalManga)
+        val gateway = sourceManager.get(sourceId) ?: return SourceLatestPagingSourceStub() as SourcePagingSource
+        val legacySource = (gateway as? LegacySourceGateway)?.delegate
+            ?: throw IllegalStateException("Expected LegacySourceGateway for latest")
+        val catalogueSource = legacySource as? CatalogueSource
+            ?: throw IllegalStateException("Expected CatalogueSource for latest")
+        return SourceLatestPagingSource(catalogueSource, networkToLocalManga)
     }
 
-    private fun mapSourceToDomainSource(source: Source): DomainSource = DomainSource(
-        id = source.id,
-        lang = source.lang,
-        name = source.name,
-        supportsLatest = false,
-        isStub = false,
+    private fun mapGatewayToDomainSource(gateway: SourceGateway): DomainSource = DomainSource(
+        id = gateway.descriptor.id.value.toLongOrNull() ?: -1L,
+        lang = gateway.descriptor.kind.name.lowercase(),
+        name = gateway.descriptor.displayName,
+        supportsLatest = gateway.descriptor.capabilities.contains(ephyra.source.api.SourceCapability.LATEST),
+        isStub = gateway is LegacySourceGateway && gateway.delegate is StubSource,
     )
+}
+
+// Stub paging sources for when source is not available
+private class SourceSearchPagingSourceStub : PagingSource<Long, Manga>() {
+    override suspend fun load(params: PagingSource.LoadParams<Long>): PagingSource.LoadResult<Long, Manga> {
+        return PagingSource.LoadResult.Error(IllegalStateException("Source not available"))
+    }
+    override fun getRefreshKey(state: PagingState<Long, Manga>): Long? = null
+}
+
+private class SourcePopularPagingSourceStub : PagingSource<Long, Manga>() {
+    override suspend fun load(params: PagingSource.LoadParams<Long>): PagingSource.LoadResult<Long, Manga> {
+        return PagingSource.LoadResult.Error(IllegalStateException("Source not available"))
+    }
+    override fun getRefreshKey(state: PagingState<Long, Manga>): Long? = null
+}
+
+private class SourceLatestPagingSourceStub : PagingSource<Long, Manga>() {
+    override suspend fun load(params: PagingSource.LoadParams<Long>): PagingSource.LoadResult<Long, Manga> {
+        return PagingSource.LoadResult.Error(IllegalStateException("Source not available"))
+    }
+    override fun getRefreshKey(state: PagingState<Long, Manga>): Long? = null
 }

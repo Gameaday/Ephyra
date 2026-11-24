@@ -3,9 +3,9 @@ package ephyra.domain.manga.model
 /**
  * Domain-level manga publishing status.
  *
- * Replaces raw `Long` status fields that formerly required importing
- * `eu.kanade.tachiyomi.source.model.SManga` constants into the domain layer.
- * Mappers in the data layer convert from/to source-api values.
+ * Values match `eu.kanade.tachiyomi.source.model.SManga` exactly so the domain
+ * layer never depends on the extension ABI. Mappers in the data layer convert
+ * from/to source-api values.
  */
 sealed interface MangaStatus {
     val value: Long
@@ -20,9 +20,14 @@ sealed interface MangaStatus {
         override val value: Long = 2L
     }
 
-    /** Manga is on a break / hiatus. */
-    data object Hiatus : MangaStatus {
-        override val value: Long = 6L
+    /** Manga is licensed (status used by some sources). */
+    data object Licensed : MangaStatus {
+        override val value: Long = 3L
+    }
+
+    /** Manga publication has finished (distinct from licensed). */
+    data object PublishingFinished : MangaStatus {
+        override val value: Long = 4L
     }
 
     /** Manga publication was cancelled. */
@@ -30,9 +35,9 @@ sealed interface MangaStatus {
         override val value: Long = 5L
     }
 
-    /** Manga is licensed (status used by some sources). */
-    data object Licensed : MangaStatus {
-        override val value: Long = 4L
+    /** Manga is on a break / hiatus. */
+    data object Hiatus : MangaStatus {
+        override val value: Long = 6L
     }
 
     /** Status is unknown or not specified. */
@@ -45,7 +50,8 @@ sealed interface MangaStatus {
         fun fromValue(value: Long): MangaStatus = when (value) {
             1L -> Ongoing
             2L -> Completed
-            4L -> Licensed
+            3L -> Licensed
+            4L -> PublishingFinished
             5L -> Cancelled
             6L -> Hiatus
             else -> Unknown

@@ -7,14 +7,10 @@ import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
-import eu.kanade.tachiyomi.source.CatalogueSource
+import ephyra.source.api.SourceCapability
+import ephyra.source.api.SourceGateway
+import ephyra.source.api.SourceKind
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.model.FilterList
-import eu.kanade.tachiyomi.source.model.MangasPage
-import eu.kanade.tachiyomi.source.model.Page
-import eu.kanade.tachiyomi.source.model.SChapter
-import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.online.HttpSource
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -30,12 +26,22 @@ import org.junit.jupiter.api.Test
 
 class GetAvailableSourcesTest {
 
-    private val catalogueSourcesFlow = MutableStateFlow<List<CatalogueSource>>(emptyList())
+    private val catalogueSourcesFlow = MutableStateFlow<List<SourceGateway>>(emptyList())
     private val installedExtensionsFlow = MutableStateFlow<List<Extension.Installed>>(emptyList())
 
+    // Helper to convert SourceGateway to legacy Source for Extension.Installed
+    private fun toLegacySource(gateway: SourceGateway): Source {
+        val idString = gateway.descriptor.id.value
+        val idLong = idString.toLongOrNull() ?: -1L
+        return mockk(relaxed = true) {
+            every { id } returns idLong
+            every { name } returns gateway.descriptor.displayName
+        }
+    }
+
     // A hand-written fake instead of mockk: `SourceManager` exposes both a
-    // `catalogueSources: Flow<List<CatalogueSource>>` property and a
-    // `getCatalogueSources(): List<CatalogueSource>` overload, and mockk's call recorder
+    // `catalogueSources: Flow<List<SourceGateway>>` property and a
+    // `getCatalogueSources(): List<SourceGateway>` overload, and mockk's call recorder
     // resolves the property getter to the `List`-returning overload — throwing a
     // "Class cast exception happened / use `hint`" MockKException while recording the
     // `every { ... }` block (intermittent under its auto-hinter). A fake sidesteps the
@@ -48,20 +54,52 @@ class GetAvailableSourcesTest {
 
     private lateinit var getAvailableSources: GetAvailableSources
 
-    private class TestCatalogueSource(
-        override val id: Long,
-        override val name: String,
-        override val lang: String,
-    ) : CatalogueSource {
-        override val supportsLatest: Boolean = true
-        override suspend fun getPopularManga(page: Int): MangasPage = MangasPage(emptyList(), false)
-        override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage =
-            MangasPage(emptyList(), false)
-        override suspend fun getLatestUpdates(page: Int): MangasPage = MangasPage(emptyList(), false)
-        override fun getFilterList(): FilterList = FilterList()
-        override suspend fun getMangaDetails(manga: SManga): SManga = manga
-        override suspend fun getChapterList(manga: SManga): List<SChapter> = emptyList()
-        override suspend fun getPageList(chapter: SChapter): List<Page> = emptyList()
+    private class TestSourceGateway(
+        private val testId: Long,
+        private val testName: String,
+    ) : SourceGateway {
+        override val descriptor = ephyra.source.api.SourceDescriptor(
+            id = ephyra.source.api.SourceId(testId.toString()),
+            displayName = testName,
+            kind = SourceKind.NATIVE,
+            revision = 1L,
+            capabilities = setOf(SourceCapability.CATALOG),
+            contentTypes = setOf(ephyra.domain.content.model.ContentType.MANGA),
+        )
+
+        override suspend fun search(
+            request: ephyra.source.api.SourceSearchRequest,
+        ): ephyra.source.api.SourceResult<
+            ephyra.source.api.SourcePage<ephyra.source.api.SourceContentItem>,
+            > = ephyra.source.api.SourceResult.Empty
+
+        override suspend fun getPopular(
+            request: ephyra.source.api.SourceCatalogueRequest,
+        ): ephyra.source.api.SourceResult<
+            ephyra.source.api.SourcePage<ephyra.source.api.SourceContentItem>,
+            > = ephyra.source.api.SourceResult.Empty
+
+        override suspend fun getLatest(
+            request: ephyra.source.api.SourceCatalogueRequest,
+        ): ephyra.source.api.SourceResult<
+            ephyra.source.api.SourcePage<ephyra.source.api.SourceContentItem>,
+            > = ephyra.source.api.SourceResult.Empty
+
+        override suspend fun getDetails(
+            reference: ephyra.source.api.ContentReference,
+        ): ephyra.source.api.SourceResult<ephyra.source.api.SourceContentItem> =
+            ephyra.source.api.SourceResult.Empty
+
+        override suspend fun getUnits(
+            reference: ephyra.source.api.ContentReference,
+        ): ephyra.source.api.SourceResult<
+            ephyra.source.api.SourcePage<ephyra.source.api.SourceContentUnit>,
+            > = ephyra.source.api.SourceResult.Empty
+
+        override suspend fun getResources(
+            reference: ephyra.source.api.UnitReference,
+        ): ephyra.source.api.SourceResult<List<ephyra.source.api.SourceResource>> =
+            ephyra.source.api.SourceResult.Empty
     }
 
     @BeforeEach
@@ -80,8 +118,9 @@ class GetAvailableSourcesTest {
     @Test
     fun `groups multi-language extension sources into single UnifiedSource`() = runTest {
         val subSources = (1..60).map { idx ->
-            TestCatalogueSource(id = 1000L + idx, name = "MangaDex ($idx)", lang = "lang_$idx")
+            TestSourceGateway(testId = 1000L + idx, testName = "MangaDex ($idx)")
         }
+        val legacySubSources = subSources.map { toLegacySource(it) }
 
         val extension = Extension.Installed(
             name = "MangaDex",
@@ -96,7 +135,7 @@ class GetAvailableSourcesTest {
             isShared = false,
             pkgFactory = null,
             repoUrl = null,
-            sources = subSources,
+            sources = legacySubSources,
             icon = null,
         )
 
@@ -117,8 +156,9 @@ class GetAvailableSourcesTest {
     @Test
     fun `groups multi-language extension sources even when extension package lookup is null`() = runTest {
         val subSources = (1..60).map { idx ->
-            TestCatalogueSource(id = 2000L + idx, name = "MangaDex ($idx)", lang = "lang_$idx")
+            TestSourceGateway(testId = 2000L + idx, testName = "MangaDex ($idx)")
         }
+        val legacySubSources = subSources.map { toLegacySource(it) }
 
         val extension = Extension.Installed(
             name = "MangaDex",
@@ -133,7 +173,7 @@ class GetAvailableSourcesTest {
             isShared = false,
             pkgFactory = null,
             repoUrl = null,
-            sources = subSources,
+            sources = legacySubSources,
             icon = null,
         )
 
@@ -157,15 +197,17 @@ class GetAvailableSourcesTest {
      * is a hand-written fake rather than a `mockk(relaxed = true)`.
      */
     private class FakeSourceManager(
-        private val catalogueSourcesFlow: MutableStateFlow<List<CatalogueSource>>,
+        private val catalogueSourcesFlow: MutableStateFlow<List<SourceGateway>>,
     ) : SourceManager {
         override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
-        override val catalogueSourceFlow: Flow<List<CatalogueSource>> = catalogueSourcesFlow
+        override val catalogueSourceFlow: Flow<List<SourceGateway>> = catalogueSourcesFlow
 
-        override fun get(sourceKey: Long): Source? = null
-        override fun getOrStub(sourceKey: Long): Source = StubSource(sourceKey, "", "")
-        override fun getOnlineSources(): List<HttpSource> = emptyList()
-        override fun getCatalogueSources(): List<CatalogueSource> = catalogueSourcesFlow.value
+        override fun get(sourceKey: Long): SourceGateway? = null
+        override fun getOrStub(
+            sourceKey: Long,
+        ): SourceGateway = TestSourceGateway(testId = sourceKey, testName = "Stub $sourceKey")
+        override fun getOnlineSources(): List<SourceGateway> = emptyList()
+        override fun getCatalogueSources(): List<SourceGateway> = catalogueSourcesFlow.value
         override fun getStubSources(): List<StubSource> = emptyList()
     }
 }

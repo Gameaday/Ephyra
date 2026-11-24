@@ -1,5 +1,6 @@
 package ephyra.domain.chapter.model
 
+import ephyra.source.api.SourceContentUnit
 import eu.kanade.tachiyomi.source.model.SChapter
 
 data class Chapter(
@@ -49,6 +50,30 @@ data class Chapter(
             version = 1,
         )
     }
+}
+
+/**
+ * Converts a [SourceContentUnit] (from SourceGateway) to a domain [Chapter].
+ * The [mangaId] and [sourceOrder] must be provided by the caller as they are
+ * not part of the source's unit data.
+ */
+fun SourceContentUnit.toDomainChapter(mangaId: Long, sourceOrder: Long): Chapter {
+    return Chapter(
+        id = -1,
+        mangaId = mangaId,
+        read = false,
+        bookmark = false,
+        lastPageRead = 0,
+        dateFetch = 0,
+        sourceOrder = sourceOrder,
+        url = url,
+        name = title,
+        dateUpload = dateUpload,
+        chapterNumber = number,
+        scanlator = scanlator,
+        lastModifiedAt = 0,
+        version = 1,
+    )
 }
 
 /**

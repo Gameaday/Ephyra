@@ -15,7 +15,9 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.Source
+import java.util.HashSet
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -164,7 +166,8 @@ class DownloadManager(
      * @param chapter the downloaded chapter.
      * @return the list of pages from the chapter.
      */
-    override fun buildPageList(source: Source, manga: Manga, chapter: Chapter): List<Page> {
+    override fun buildPageList(source: SourceGateway, manga: Manga, chapter: Chapter): List<Page> {
+        val legacySource = (source as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for buildPageList")
         val chapterDir = provider.findChapterDir(chapter.name, chapter.scanlator, chapter.url, manga.title, source)
         val files = chapterDir?.listFiles().orEmpty()
             .filter { it.isFile && ImageUtil.isImage(it.name) { it.openInputStream() } }
@@ -175,7 +178,7 @@ class DownloadManager(
 
         return files.sortedBy { it.name }
             .mapIndexed { i, file ->
-                Page(i, uri = file.uri).apply { status = Page.State.Ready }
+                Page(index = i, uri = file.uri).apply { status = Page.State.Ready }
             }
     }
 
@@ -234,26 +237,52 @@ class DownloadManager(
      * @param manga the manga of the chapters.
      * @param source the source of the chapters.
      */
-    override fun deleteChapters(chapters: List<Chapter>, manga: Manga, source: Source) {
+    override fun deleteChapters(chapters: List<Chapter>, manga: Manga, source: SourceGateway) {
+        val providerRef = provider
+        val cacheRef = cache
+        val downloaderRef = downloader
+        val queueStateRef = queueState
         scope.launchIO {
             val filteredChapters = getChaptersToDelete(chapters, manga)
             if (filteredChapters.isEmpty()) {
                 return@launchIO
             }
 
-            removeFromDownloadQueue(filteredChapters)
+            // removeFromDownloadQueue needs downloader and queueState
+            val wasRunning = downloaderRef.isRunning
+            if (wasRunning) {
+                downloaderRef.pause()
+            }
+            downloaderRef.removeFromQueue(filteredChapters)
+            if (wasRunning) {
+                if (queueStateRef.value.isEmpty()) {
+                    downloaderRef.stop()
+                } else {
+                    downloaderRef.start()
+                }
+            }
 
-            val (mangaDir, chapterDirs) = provider.findChapterDirs(filteredChapters, manga, source)
+            val legacySource = (source as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for deleteChapters")
+            val (mangaDir, chapterDirs) = providerRef.findChapterDirs(filteredChapters, manga, source)
             chapterDirs.forEach { it.delete() }
-            cache.removeChapters(filteredChapters, manga)
+            cacheRef.removeChapters(filteredChapters, manga)
 
             // Delete manga directory if empty
             if (mangaDir?.listFiles()?.isEmpty() == true) {
-                deleteManga(manga, source, false)
+                // Call the non-suspend deleteManga logic directly
+                providerRef.findMangaDir(manga.title, source)?.delete()
+                cacheRef.removeManga(manga)
+
+                // Delete source directory if empty
+                val sourceDir = providerRef.findSourceDir(source)
+                if (sourceDir?.listFiles()?.isEmpty() == true) {
+                    sourceDir.delete()
+                    cacheRef.removeSource(source)
+                }
             }
         }
-    }
 
+    }
     /**
      * Deletes the directory of a downloaded manga.
      *
@@ -261,19 +290,35 @@ class DownloadManager(
      * @param source the source of the manga.
      * @param removeQueued whether to also remove queued downloads.
      */
-    override fun deleteManga(manga: Manga, source: Source, removeQueued: Boolean) {
+    override fun deleteManga(manga: Manga, source: SourceGateway, removeQueued: Boolean) {
+        val providerRef = provider
+        val cacheRef = cache
+        val downloaderRef = downloader
+        val queueStateRef = queueState
         scope.launchIO {
+            val legacySource = (source as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for deleteManga")
             if (removeQueued) {
-                downloader.removeFromQueue(manga)
+                val wasRunning = downloaderRef.isRunning
+                if (wasRunning) {
+                    downloaderRef.pause()
+                }
+                downloaderRef.removeFromQueue(manga)
+                if (wasRunning) {
+                    if (queueStateRef.value.isEmpty()) {
+                        downloaderRef.stop()
+                    } else {
+                        downloaderRef.start()
+                    }
+                }
             }
-            provider.findMangaDir(manga.title, source)?.delete()
-            cache.removeManga(manga)
+            providerRef.findMangaDir(manga.title, source)?.delete()
+            cacheRef.removeManga(manga)
 
             // Delete source directory if empty
-            val sourceDir = provider.findSourceDir(source)
+            val sourceDir = providerRef.findSourceDir(source)
             if (sourceDir?.listFiles()?.isEmpty() == true) {
                 sourceDir.delete()
-                cache.removeSource(source)
+                cacheRef.removeSource(source)
             }
         }
     }
@@ -308,8 +353,9 @@ class DownloadManager(
     override suspend fun deletePendingChapters() {
         val pendingChapters = pendingDeleter.getPendingChapters()
         for ((manga, chapters) in pendingChapters) {
-            val source = sourceManager.get(manga.source) ?: continue
-            deleteChapters(chapters, manga, source)
+            val gateway = sourceManager.get(manga.source) ?: continue
+            val legacySource = (gateway as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for deletePendingChapters")
+            deleteChapters(chapters, manga, gateway)
         }
     }
 
@@ -319,7 +365,9 @@ class DownloadManager(
      * @param oldSource the old source.
      * @param newSource the new source.
      */
-    override fun renameSource(oldSource: Source, newSource: Source) {
+    override fun renameSource(oldSource: SourceGateway, newSource: SourceGateway) {
+        val legacyOldSource = (oldSource as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for renameSource")
+        val legacyNewSource = (newSource as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for renameSource")
         val oldFolder = provider.findSourceDir(oldSource) ?: return
         val newName = provider.getSourceDirName(newSource)
 
@@ -329,16 +377,16 @@ class DownloadManager(
         if (capitalizationChanged) {
             val tempName = newName + Downloader.TMP_DIR_SUFFIX
             if (!oldFolder.renameTo(tempName)) {
-                logcat(LogPriority.ERROR) { "Failed to rename source download folder: ${oldFolder.name}" }
+                logcat(LogPriority.ERROR) { "Failed to rename source download folder: $oldFolder" }
                 return
             }
         }
 
         if (!oldFolder.renameTo(newName)) {
-            logcat(LogPriority.ERROR) { "Failed to rename source download folder: ${oldFolder.name}" }
+            logcat(LogPriority.ERROR) { "Failed to rename source download folder: $oldFolder" }
         }
-    }
 
+    }
     /**
      * Renames manga download folder
      *
@@ -346,8 +394,9 @@ class DownloadManager(
      * @param newTitle the new manga title.
      */
     override suspend fun renameManga(manga: Manga, newTitle: String) {
-        val source = sourceManager.getOrStub(manga.source)
-        val oldFolder = provider.findMangaDir(manga.title, source) ?: return
+        val gateway = sourceManager.getOrStub(manga.source)
+        val legacySource = (gateway as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for renameManga")
+        val oldFolder = provider.findMangaDir(manga.title, gateway) ?: return
         val newName = provider.getMangaDirName(newTitle)
 
         if (oldFolder.name == newName) return
@@ -359,7 +408,7 @@ class DownloadManager(
         if (capitalizationChanged) {
             val tempName = newName + Downloader.TMP_DIR_SUFFIX
             if (!oldFolder.renameTo(tempName)) {
-                logcat(LogPriority.ERROR) { "Failed to rename manga download folder: ${oldFolder.name}" }
+                logcat(LogPriority.ERROR) { "Failed to rename manga download folder: $oldFolder" }
                 return
             }
         }
@@ -367,10 +416,10 @@ class DownloadManager(
         if (oldFolder.renameTo(newName)) {
             cache.renameManga(manga, oldFolder, newTitle)
         } else {
-            logcat(LogPriority.ERROR) { "Failed to rename manga download folder: ${oldFolder.name}" }
+            logcat(LogPriority.ERROR) { "Failed to rename manga download folder: $oldFolder" }
         }
-    }
 
+    }
     /**
      * Renames an already downloaded chapter
      *
@@ -379,7 +428,8 @@ class DownloadManager(
      * @param oldChapter the existing chapter with the old name.
      * @param newChapter the target chapter with the new name.
      */
-    override suspend fun renameChapter(source: Source, manga: Manga, oldChapter: Chapter, newChapter: Chapter) {
+    override suspend fun renameChapter(source: SourceGateway, manga: Manga, oldChapter: Chapter, newChapter: Chapter) {
+        val legacySource = (source as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for renameChapter")
         val oldNames = provider.getValidChapterDirNames(oldChapter.name, oldChapter.scanlator, oldChapter.url)
         val mangaDir = provider.getMangaDir(manga.title, source).getOrElse { e ->
             logcat(LogPriority.ERROR, e) { "Manga download folder doesn't exist. Skipping renaming after source sync" }
@@ -436,7 +486,7 @@ class DownloadManager(
     override fun statusFlow(): Flow<Download> = queueState
         .flatMapLatest { downloads ->
             downloads
-                .map { download ->
+            .map { download ->
                     download.statusFlow.drop(1).map { download }
                 }
                 .merge()
@@ -451,7 +501,7 @@ class DownloadManager(
     override fun progressFlow(): Flow<Download> = queueState
         .flatMapLatest { downloads ->
             downloads
-                .map { download ->
+            .map { download ->
                     download.progressFlow.drop(1).map { download }
                 }
                 .merge()

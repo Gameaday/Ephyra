@@ -15,7 +15,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import ephyra.core.common.preference.TriState
+import ephyra.domain.source.model.SourceFilter
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.CollapsibleBox
@@ -32,12 +32,13 @@ import eu.kanade.tachiyomi.source.model.FilterList
 @Composable
 fun SourceFilterDialog(
     onDismissRequest: () -> Unit,
-    filters: FilterList,
+    filters: SourceFilter,
     onReset: () -> Unit,
     onFilter: () -> Unit,
-    onUpdate: (FilterList) -> Unit,
+    onUpdate: (SourceFilter) -> Unit,
 ) {
-    val updateFilters = { onUpdate(filters) }
+    val legacyFilters = filters.toLegacyFilterList()
+    val updateFilters = { onUpdate(SourceFilter.fromLegacyFilterList(legacyFilters)) }
 
     AdaptiveSheet(onDismissRequest = onDismissRequest) {
         LazyColumn {
@@ -70,7 +71,7 @@ fun SourceFilterDialog(
                 HorizontalDivider()
             }
 
-            items(filters) {
+            items(legacyFilters) {
                 FilterItem(it, updateFilters)
             }
         }

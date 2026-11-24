@@ -2,9 +2,8 @@ package ephyra.domain.chapter.interactor
 
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.NoChaptersException
-import ephyra.domain.chapter.model.copyFromSChapter
 import ephyra.domain.chapter.model.toChapterUpdate
-import ephyra.domain.chapter.model.toSChapter
+import ephyra.domain.chapter.model.toDomainChapter
 import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.chapter.service.ChapterNumber
 import ephyra.domain.chapter.service.ChapterRecognition
@@ -17,11 +16,11 @@ import ephyra.domain.manga.interactor.GetExcludedScanlators
 import ephyra.domain.manga.interactor.SetMangaChapterFlags
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.toSManga
 import ephyra.domain.source.model.isLocal
-import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.model.SChapter
-import eu.kanade.tachiyomi.source.online.HttpSource
+import ephyra.source.api.ContentReference
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
+import ephyra.source.api.SourceResult
 import java.lang.Long.max
 import java.time.ZonedDateTime
 import java.util.TreeSet
@@ -40,34 +39,41 @@ class SyncChaptersWithSource(
 ) {
 
     /**
-     * Method to synchronize db chapters with source ones
+     * Method to synchronize db chapters with source ones.
      *
-     * @param rawSourceChapters the chapters from the source.
+     * @param gateway the source gateway to fetch chapters from.
      * @param manga the manga the chapters belong to.
-     * @param source the source the manga belongs to.
+     * @param manualFetch whether this is a manual fetch.
+     * @param fetchWindow the fetch window for interval updates.
      * @return Newly added chapters
      */
     suspend fun await(
-        rawSourceChapters: List<SChapter>,
+        gateway: SourceGateway,
         manga: Manga,
-        source: Source,
         manualFetch: Boolean = false,
         fetchWindow: Pair<Long, Long> = Pair(0, 0),
     ): List<Chapter> {
-        if (rawSourceChapters.isEmpty() && !source.isLocal()) {
+        // Fetch chapters from the source gateway
+        val contentRef = ContentReference(url = manga.url)
+        val unitsResult = gateway.getUnits(contentRef)
+        val rawSourceUnits = when (unitsResult) {
+            is SourceResult.Success -> unitsResult.value.items
+            is SourceResult.Empty -> emptyList()
+            else -> throw RuntimeException("Failed to fetch chapters: $unitsResult")
+        }
+
+        if (rawSourceUnits.isEmpty() && gateway.descriptor.kind != ephyra.source.api.SourceKind.LOCAL) {
             throw NoChaptersException()
         }
 
         val now = ZonedDateTime.now()
         val nowMillis = now.toInstant().toEpochMilli()
 
-        val sourceChapters = rawSourceChapters
+        val sourceChapters = rawSourceUnits
             .distinctBy { it.url }
-            .mapIndexed { i, sChapter ->
-                Chapter.create()
-                    .copyFromSChapter(sChapter)
-                    .copy(name = with(ChapterSanitizer) { sChapter.name.sanitize(manga.title) })
-                    .copy(mangaId = manga.id, sourceOrder = i.toLong())
+            .mapIndexed { i, unit ->
+                unit.toDomainChapter(manga.id, i.toLong())
+                    .copy(name = with(ChapterSanitizer) { unit.title.sanitize(manga.title) })
             }
 
         val dbChapters = getChaptersByMangaId.await(manga.id)
@@ -84,13 +90,6 @@ class SyncChaptersWithSource(
 
         for (sourceChapter in sourceChapters) {
             var chapter = sourceChapter
-
-            // Update metadata from source if necessary.
-            if (source is HttpSource) {
-                val sChapter = chapter.toSChapter()
-                source.prepareNewChapter(sChapter, manga.toSManga())
-                chapter = chapter.copyFromSChapter(sChapter)
-            }
 
             // Recognize chapter number for the chapter.
             val chapterNumber = ChapterRecognition.parseChapterNumber(manga.title, chapter.name, chapter.chapterNumber)
@@ -124,7 +123,8 @@ class SyncChaptersWithSource(
                         )
 
                     if (shouldRenameChapter) {
-                        downloadManager.renameChapter(source, manga, dbChapter, chapter)
+                        // Use the gateway for rename
+                        downloadManager.renameChapter(gateway, manga, dbChapter, chapter)
                     }
 
                     var toChangeChapter = dbChapter.copy(

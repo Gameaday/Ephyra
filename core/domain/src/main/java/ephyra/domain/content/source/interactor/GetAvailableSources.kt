@@ -4,7 +4,7 @@ import ephyra.domain.content.source.SourceType
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
-import eu.kanade.tachiyomi.source.CatalogueSource
+import ephyra.source.api.SourceGateway
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
@@ -34,7 +34,9 @@ class GetAvailableSources @Inject constructor(
             // Legacy extension sources - represent each installed extension package once
             val disabledSources = sourcePreferences.disabledSources().get()
             for (ext in extensions) {
-                val primarySource = ext.sources.firstOrNull { it is CatalogueSource } ?: ext.sources.firstOrNull()
+                val primarySource =
+                    ext.sources.firstOrNull { it is eu.kanade.tachiyomi.source.CatalogueSource }
+                        ?: ext.sources.firstOrNull()
                 val isEnabled = ext.sources.any { it.id.toString() !in disabledSources }
                 unifiedSources.add(
                     UnifiedSource(
@@ -68,20 +70,21 @@ class GetAvailableSources @Inject constructor(
 
             // Add any standalone catalogue sources not already covered by an installed extension
             for (source in catalogueSources) {
-                if (source.id == 0L || source.id in extensionSourceIds) continue
-                val pkgName = sourceIdToExtensionPkg[source.id] ?: extensionManager.getExtensionPackage(source.id)
+                val sourceId = source.descriptor.id.value.toLongOrNull() ?: -1L
+                if (sourceId == 0L || sourceId in extensionSourceIds) continue
+                val pkgName = sourceIdToExtensionPkg[sourceId] ?: extensionManager.getExtensionPackage(sourceId)
                 val isAlreadyCovered = if (pkgName != null) {
                     unifiedSources.any { it.extensionId == pkgName }
                 } else {
-                    unifiedSources.any { it.id == source.id }
+                    unifiedSources.any { it.id == sourceId }
                 }
                 if (!isAlreadyCovered) {
-                    val isEnabled = source.id.toString() !in disabledSources
+                    val isEnabled = sourceId.toString() !in disabledSources
                     unifiedSources.add(
                         UnifiedSource(
-                            id = source.id,
-                            name = source.name,
-                            baseUrl = (source as? eu.kanade.tachiyomi.source.online.HttpSource)?.baseUrl ?: "",
+                            id = sourceId,
+                            name = source.descriptor.displayName,
+                            baseUrl = source.descriptor.homeUrl ?: "",
                             sourceType = SourceType.REMOTE_EXTENSION,
                             enabled = isEnabled,
                             extensionId = pkgName,

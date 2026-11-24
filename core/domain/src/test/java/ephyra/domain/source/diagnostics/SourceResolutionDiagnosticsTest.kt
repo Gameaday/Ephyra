@@ -6,7 +6,8 @@ import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.registry.SourceEntryResolution
 import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.online.HttpSource
+import ephyra.source.api.SourceGateway
+import eu.kanade.tachiyomi.source.Source
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
@@ -27,7 +28,7 @@ class SourceResolutionDiagnosticsTest {
 
     private val sourceManager: SourceManager = mockk(relaxed = true) {
         every { isInitialized } returns MutableStateFlow(true)
-        every { getOnlineSources() } returns emptyList()
+        every { getOnlineSources() } returns emptyList<SourceGateway>()
         every { getStubSources() } returns emptyList()
         every { get(any<Long>()) } returns null
     }
@@ -42,15 +43,32 @@ class SourceResolutionDiagnosticsTest {
         sourceRegistry = SourceRegistry(extensionManager),
     )
 
-    private fun httpSource(sourceId: Long, sourceName: String, sourceBaseUrl: String): HttpSource =
+    private fun sourceGateway(sourceId: Long, sourceName: String, sourceBaseUrl: String? = null): SourceGateway =
+        mockk(relaxed = true) {
+            every { descriptor.id.value } returns sourceId.toString()
+            every { descriptor.displayName } returns sourceName
+            every { descriptor.homeUrl } returns sourceBaseUrl
+        }
+
+    private fun legacySource(
+        sourceId: Long,
+        sourceName: String,
+        sourceBaseUrl: String,
+    ): eu.kanade.tachiyomi.source.Source =
         mockk(relaxed = true) {
             every { id } returns sourceId
             every { name } returns sourceName
-            every { baseUrl } returns sourceBaseUrl
         }
 
-    private fun installedExtension(pkgName: String, vararg sources: HttpSource): Extension.Installed =
-        Extension.Installed(
+    private fun installedExtension(pkgName: String, vararg gateways: SourceGateway): Extension.Installed {
+        val legacySources = gateways.map { gw ->
+            legacySource(
+                gw.descriptor.id.value.toLongOrNull() ?: -1L,
+                gw.descriptor.displayName,
+                gw.descriptor.homeUrl ?: "",
+            )
+        }
+        return Extension.Installed(
             name = "Extension $pkgName",
             pkgName = pkgName,
             versionName = "1.0",
@@ -59,10 +77,11 @@ class SourceResolutionDiagnosticsTest {
             lang = "en",
             isNsfw = false,
             pkgFactory = null,
-            sources = sources.toList(),
+            sources = legacySources,
             icon = null,
             isShared = false,
         )
+    }
 
     @Test
     fun `a registration with no map source is reported as lost by the projection`() = runTest {
@@ -71,7 +90,7 @@ class SourceResolutionDiagnosticsTest {
         installedExtensions.value = listOf(
             installedExtension(
                 "eu.kanade.tachiyomi.extension.missing",
-                httpSource(101L, "Missing", "https://missing.example.org"),
+                sourceGateway(101L, "Missing", "https://missing.example.org"),
             ),
         )
 
@@ -86,7 +105,7 @@ class SourceResolutionDiagnosticsTest {
     @Test
     fun `a map source the registry does not know is reported as invented by the projection`() = runTest {
         every { sourceManager.getOnlineSources() } returns
-            listOf(httpSource(42L, "Foreign", "https://foreign.example.org"))
+            listOf(sourceGateway(42L, "Foreign", "https://foreign.example.org"))
 
         val report = diagnostics().inspectRegistration()
 
@@ -99,11 +118,11 @@ class SourceResolutionDiagnosticsTest {
         installedExtensions.value = listOf(
             installedExtension(
                 "eu.kanade.tachiyomi.extension.agreed",
-                httpSource(101L, "Agreed", "https://agreed.example.org"),
+                sourceGateway(101L, "Agreed", "https://agreed.example.org"),
             ),
         )
         every { sourceManager.getOnlineSources() } returns
-            listOf(httpSource(101L, "Agreed", "https://agreed.example.org"))
+            listOf(sourceGateway(101L, "Agreed", "https://agreed.example.org"))
 
         val report = diagnostics().inspectRegistration()
 
@@ -117,11 +136,11 @@ class SourceResolutionDiagnosticsTest {
         installedExtensions.value = listOf(
             installedExtension(
                 "eu.kanade.tachiyomi.extension.single",
-                httpSource(101L, "Extension Source", "https://ext.example.org"),
+                sourceGateway(101L, "Extension Source", "https://ext.example.org"),
             ),
         )
-        val resolved = mockk<HttpSource> {
-            every { id } returns 101L
+        val resolved = mockk<SourceGateway> {
+            every { descriptor.id.value } returns "101"
         }
         every { sourceManager.get(101L) } returns resolved
 

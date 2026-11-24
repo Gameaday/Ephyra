@@ -2,23 +2,27 @@ package ephyra.domain.manga.interactor
 
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toDomainManga
-import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.model.SManga
+import ephyra.source.api.SourceContentItem
+import ephyra.source.api.SourceGateway
+import ephyra.source.api.SourceResult
+import ephyra.source.api.SourceSearchRequest
 
-class SmartSourceSearchEngine(extraSearchParams: String?) : BaseSmartSearchEngine<SManga>(extraSearchParams) {
+class SmartSourceSearchEngine(extraSearchParams: String?) : BaseSmartSearchEngine<SourceContentItem>(
+    extraSearchParams,
+) {
 
-    override fun getTitle(result: SManga) = result.title
+    override fun getTitle(result: SourceContentItem) = result.title
 
-    suspend fun regularSearch(source: CatalogueSource, title: String): Manga? {
-        return regularSearch(makeSearchAction(source), title).let {
-            it?.toDomainManga(source.id)
-        }
+    override fun getAlternativeTitles(result: SourceContentItem): List<String> {
+        return result.metadata["altTitles"]?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
     }
 
-    suspend fun deepSearch(source: CatalogueSource, title: String): Manga? {
-        return deepSearch(makeSearchAction(source), title).let {
-            it?.toDomainManga(source.id)
-        }
+    suspend fun regularSearch(gateway: SourceGateway, title: String): Manga? {
+        return regularSearch(makeSearchAction(gateway), title)?.toDomainManga()
+    }
+
+    suspend fun deepSearch(gateway: SourceGateway, title: String): Manga? {
+        return deepSearch(makeSearchAction(gateway), title)?.toDomainManga()
     }
 
     /**
@@ -30,17 +34,23 @@ class SmartSourceSearchEngine(extraSearchParams: String?) : BaseSmartSearchEngin
      *   Set to false to limit to title-based matching only (fewer API calls).
      */
     suspend fun multiTitleSearch(
-        source: CatalogueSource,
+        gateway: SourceGateway,
         primaryTitle: String,
         alternativeTitles: List<String> = emptyList(),
         deepSearchFallback: Boolean = true,
     ): Pair<Manga, Double>? {
-        return multiTitleSearch(makeSearchAction(source), primaryTitle, alternativeTitles, deepSearchFallback)?.let {
-            it.entry.toDomainManga(source.id) to it.distance
+        return multiTitleSearch(makeSearchAction(gateway), primaryTitle, alternativeTitles, deepSearchFallback)?.let {
+            it.entry.toDomainManga() to it.distance
         }
     }
 
-    private fun makeSearchAction(source: CatalogueSource): SearchAction<SManga> = { query ->
-        source.getSearchManga(1, query, source.getFilterList()).mangas
+    private fun makeSearchAction(gateway: SourceGateway): SearchAction<SourceContentItem> = { query ->
+        val request = SourceSearchRequest(query = query, cursor = "1", filters = emptyMap())
+        val result = gateway.search(request)
+        when (result) {
+            is SourceResult.Success -> result.value.items
+            is SourceResult.Empty -> emptyList()
+            else -> throw RuntimeException("Search failed: $result")
+        }
     }
 }

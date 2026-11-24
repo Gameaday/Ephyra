@@ -6,7 +6,7 @@ import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.source.model.Page
-import eu.kanade.tachiyomi.source.online.HttpSource
+import ephyra.source.api.SourceGateway
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 
 data class Download(
-    val source: HttpSource,
+    val source: SourceGateway,
     val manga: Manga,
     val chapter: Chapter,
 ) {
@@ -78,9 +78,9 @@ data class Download(
         ): Download? {
             val chapter = getChapter.await(chapterId) ?: return null
             val manga = getManga.await(chapter.mangaId) ?: return null
-            val source = sourceManager.get(manga.source) as? HttpSource ?: return null
+            val gateway = sourceManager.get(manga.source) ?: return null
 
-            return Download(source, manga, chapter)
+            return Download(gateway, manga, chapter)
         }
     }
 }

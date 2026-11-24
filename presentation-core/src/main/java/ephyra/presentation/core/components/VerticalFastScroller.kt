@@ -135,10 +135,10 @@ fun VerticalFastScroller(
             val layoutChanged = abs(layoutChangeTracker.value - scrollableSections) > 0.1
             layoutChangeTracker.value = scrollableSections
 
-            val estimateConfidence = remember { MutableData(remainingSections) }
-            if (layoutChanged) estimateConfidence.value = remainingSections
-            val maxRemainingSections = remember(estimateConfidence.value) { scrollableSections }
-            estimateConfidence.value = max(estimateConfidence.value, remainingSections)
+            val maxRemainingSectionsTracker = remember { MutableData(remainingSections) }
+            if (layoutChanged) maxRemainingSectionsTracker.value = remainingSections
+            else maxRemainingSectionsTracker.value = max(maxRemainingSectionsTracker.value, remainingSections)
+            val maxRemainingSections = maxRemainingSectionsTracker.value
 
             if (maxRemainingSections < 0.5) return@subcompose
 

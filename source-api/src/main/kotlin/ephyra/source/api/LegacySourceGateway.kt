@@ -18,7 +18,7 @@ import java.io.IOException
  * [SourceGateway] contract. Remove this bridge after all product callers use native gateways.
  */
 class LegacySourceGateway(
-    private val delegate: Source,
+    val delegate: Source,
 ) : SourceGateway {
     override val descriptor: SourceDescriptor = SourceDescriptor(
         id = SourceId("legacy:${delegate.id}"),

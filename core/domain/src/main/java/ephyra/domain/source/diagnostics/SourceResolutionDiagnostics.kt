@@ -6,6 +6,7 @@ import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.registry.SourceEntryResolution
 import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.service.SourceManager
+import ephyra.source.api.SourceGateway
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
@@ -51,7 +52,7 @@ class SourceResolutionDiagnostics @Inject constructor(
         val registrations = sourceRegistry.currentRegistrations()
         val onlineSources = sourceManager.getOnlineSources()
 
-        val mapIds = onlineSources.map { it.id }.toSet()
+        val mapIds = onlineSources.map { it.descriptor.id.value.toLongOrNull() ?: -1L }.toSet()
         val registrationIds = registrations.map { it.id }.toSet()
 
         return SourceRegistrationReport(

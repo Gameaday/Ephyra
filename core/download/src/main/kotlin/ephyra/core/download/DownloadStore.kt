@@ -12,7 +12,7 @@ import ephyra.domain.download.model.Download
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.online.HttpSource
+import ephyra.source.api.SourceGateway
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -118,7 +118,7 @@ class DownloadStore(
                 val manga = cachedManga.getOrPut(mangaId) {
                     getManga.await(mangaId)
                 } ?: continue
-                val source = sourceManager.get(manga.source) as? HttpSource ?: continue
+                val source = sourceManager.get(manga.source) ?: continue
                 val chapter = getChapter.await(chapterId) ?: continue
                 downloads.add(Download(source, manga, chapter))
             }

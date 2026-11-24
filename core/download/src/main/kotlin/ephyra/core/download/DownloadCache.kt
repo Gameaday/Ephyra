@@ -13,6 +13,8 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.storage.service.StorageManager
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -123,7 +125,7 @@ class DownloadCache(
 
     /**
      * Signals that the initial cache state is ready for queries. Completed once immediately
-     * after the disk-cache load attempt in [init] — before the first filesystem-renewal job
+     * after the disk-cache load attempt in [init] ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â before the first filesystem-renewal job
      * runs. Callers that need a reliable answer should call [awaitCacheReady] (via
      * [ephyra.app.data.download.DownloadManager.awaitCacheReady]) before calling
      * [isChapterDownloaded], so they see the disk-cached state rather than the transient empty
@@ -155,7 +157,7 @@ class DownloadCache(
             cacheReady.complete(Unit)
 
             sourceManager.catalogueSourceFlow
-                .map { sources -> sources.mapTo(HashSet()) { it.id } }
+                .map { sources -> sources.mapTo(HashSet()) { it.descriptor.id.value.toLongOrNull() ?: -1L } }
                 .distinctUntilChanged()
                 .collect {
                     restartRenewal()
@@ -357,9 +359,9 @@ class DownloadCache(
         notifyChanges()
     }
 
-    suspend fun removeSource(source: Source) {
+    suspend fun removeSource(source: SourceGateway) {
         rootDownloadsDirMutex.withLock {
-            rootDownloadsDir.sourceDirs -= source.id
+            rootDownloadsDir.sourceDirs -= source.descriptor.id.value.toLongOrNull() ?: -1L
         }
 
         notifyChanges()
@@ -413,7 +415,12 @@ class DownloadCache(
             sourceManager.catalogueSourceFlow.first { it.isNotEmpty() }
 
             val sources = getSources()
-            val sourceMap = sources.associate { provider.getSourceDirName(it).lowercase() to it.id }
+            val sourceMap = sources.associate {
+                Pair(
+                    provider.getSourceDirName(it).lowercase(),
+                    it.descriptor.id.value.toLongOrNull() ?: -1L,
+                )
+            }
 
             rootDownloadsDirMutex.withLock {
                 val updatedRootDir = RootDirectory(storageManager.getDownloadsDirectory())
@@ -473,8 +480,8 @@ class DownloadCache(
         notifyChanges()
     }
 
-    private fun getSources(): List<Source> {
-        return sourceManager.getOnlineSources() + sourceManager.getStubSources()
+    private fun getSources(): List<SourceGateway> {
+        return sourceManager.getOnlineSources() + sourceManager.getStubSources().map { LegacySourceGateway(it) }
     }
 
     private fun notifyChanges() {
@@ -554,7 +561,7 @@ private class UniFileSerializer(private val context: Application) : KSerializer<
 
     override fun deserialize(decoder: Decoder): UniFile {
         return requireNotNull(UniFile.fromUri(context, decoder.decodeString().toUri())) {
-            "Failed to resolve a UniFile from the stored URI — the download cache will be rebuilt."
+            "Failed to resolve a UniFile from the stored URI ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â the download cache will be rebuilt."
         }
     }
 }

@@ -198,8 +198,8 @@ class MigrationListViewModel @Inject constructor(
 
             val localManga = match.manga
             try {
-                val chapters = source.getChapterList(localManga.toSManga())
-                syncChaptersWithSource.await(chapters, localManga, source)
+                val gateway = ephyra.source.api.LegacySourceGateway(source)
+                syncChaptersWithSource.await(gateway, localManga)
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
             }
@@ -250,8 +250,8 @@ class MigrationListViewModel @Inject constructor(
                 val manga = getManga.await(target) ?: return@async null
                 try {
                     val source = sourceManager.get(manga.source)!!
-                    val chapters = source.getChapterList(manga.toSManga())
-                    syncChaptersWithSource.await(chapters, manga, source)
+                    val gateway = ephyra.source.api.LegacySourceGateway(source)
+                    syncChaptersWithSource.await(gateway, manga)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {

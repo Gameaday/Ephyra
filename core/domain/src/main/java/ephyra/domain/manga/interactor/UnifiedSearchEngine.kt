@@ -3,6 +3,8 @@ package ephyra.domain.manga.interactor
 import ephyra.core.common.extension.runExtensionCall
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toDomainManga
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -66,8 +68,9 @@ class UnifiedSearchEngine @Inject constructor(
 
         // Deep search fallback: if standard search returned 0 results
         return try {
+            val gateway = LegacySourceGateway(source)
             val smartEngine = SmartSourceSearchEngine(extraSearchParams)
-            val smartMatch = smartEngine.deepSearch(source, query)
+            val smartMatch = smartEngine.deepSearch(gateway, query)
             if (smartMatch != null) {
                 networkToLocalManga(listOf(smartMatch))
             } else {
@@ -104,9 +107,10 @@ class UnifiedSearchEngine @Inject constructor(
         }
 
         // Tier 2 - 4: Multi-title smart search
+        val gateway = LegacySourceGateway(targetSource)
         val smartEngine = SmartSourceSearchEngine(extraSearchParams)
         val titleResult = smartEngine.multiTitleSearch(
-            source = targetSource,
+            gateway = gateway,
             primaryTitle = manga.title,
             alternativeTitles = manga.alternativeTitles,
             deepSearchFallback = deepSearchMode,

@@ -12,7 +12,8 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.model.JellyfinNaming
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.storage.service.StorageManager
-import eu.kanade.tachiyomi.source.Source
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import logcat.LogPriority
 import java.io.IOException
 import ephyra.domain.download.service.DownloadProvider as IDownloadProvider
@@ -38,7 +39,7 @@ class DownloadProvider(
      * @param mangaTitle the title of the manga to query.
      * @param source the source of the manga.
      */
-    internal fun getMangaDir(mangaTitle: String, source: Source): Result<UniFile> {
+    internal fun getMangaDir(mangaTitle: String, source: SourceGateway): Result<UniFile> {
         val downloadsDir = downloadsDir
         if (downloadsDir == null) {
             logcat(LogPriority.ERROR) { "Failed to create download directory" }
@@ -87,7 +88,7 @@ class DownloadProvider(
      *
      * @param source the source to query.
      */
-    override fun findSourceDir(source: Source): UniFile? {
+    override fun findSourceDir(source: SourceGateway): UniFile? {
         return downloadsDir?.findFile(getSourceDirName(source))
     }
 
@@ -97,7 +98,7 @@ class DownloadProvider(
      * @param mangaTitle the title of the manga to query.
      * @param source the source of the manga.
      */
-    override fun findMangaDir(mangaTitle: String, source: Source): UniFile? {
+    override fun findMangaDir(mangaTitle: String, source: SourceGateway): UniFile? {
         val sourceDir = findSourceDir(source)
         return sourceDir?.findFile(getMangaDirName(mangaTitle))
     }
@@ -116,7 +117,7 @@ class DownloadProvider(
         chapterScanlator: String?,
         chapterUrl: String,
         mangaTitle: String,
-        source: Source,
+        source: SourceGateway,
     ): UniFile? {
         val mangaDir = findMangaDir(mangaTitle, source)
         return getValidChapterDirNames(chapterName, chapterScanlator, chapterUrl).asSequence()
@@ -131,7 +132,11 @@ class DownloadProvider(
      * @param manga the manga of the chapter.
      * @param source the source of the chapter.
      */
-    override fun findChapterDirs(chapters: List<Chapter>, manga: Manga, source: Source): Pair<UniFile?, List<UniFile>> {
+    override fun findChapterDirs(
+        chapters: List<Chapter>,
+        manga: Manga,
+        source: SourceGateway,
+    ): Pair<UniFile?, List<UniFile>> {
         val mangaDir = findMangaDir(manga.title, source) ?: return null to emptyList()
         return mangaDir to chapters.mapNotNull { chapter ->
             getValidChapterDirNames(chapter.name, chapter.scanlator, chapter.url).asSequence()
@@ -145,10 +150,12 @@ class DownloadProvider(
      *
      * @param source the source to query.
      */
-    override fun getSourceDirName(source: Source): String {
+    override fun getSourceDirName(source: SourceGateway): String {
+        val legacySource = (source as? LegacySourceGateway)?.delegate
+            ?: throw IllegalStateException("Expected LegacySourceGateway for getSourceDirName")
         @Suppress("DEPRECATION")
         return DiskUtil.buildValidFilename(
-            source.toString(),
+            legacySource.toString(),
             disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync(),
         )
     }

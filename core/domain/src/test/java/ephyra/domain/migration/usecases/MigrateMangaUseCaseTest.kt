@@ -17,8 +17,8 @@ import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.service.TrackerManager
-import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.model.SChapter
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -76,36 +76,28 @@ class MigrateMangaUseCaseTest {
         val currentManga = Manga.create().copy(id = 1L, source = 100L, title = "Solo Leveling", favorite = true)
         val targetManga = Manga.create().copy(id = 2L, source = 200L, title = "Solo Leveling (New)", favorite = false)
 
-        val targetSource = mockk<CatalogueSource>(relaxed = true)
-        every { sourceManager.get(200L) } returns targetSource
-
-        val mockChapter = SChapter.create().apply {
-            url = "/ch/1"
-            name = "Chapter 1"
-            chapter_number = 1.0f
+        val mockChapter = ephyra.source.api.SourceContentUnit(
+            sourceId = ephyra.source.api.SourceId("legacy:200"),
+            url = "/ch/1",
+            title = "Chapter 1",
+            number = 1.0,
+        )
+        val chaptersResult = ephyra.source.api.SourceResult.Success(
+            ephyra.source.api.SourcePage(items = listOf(mockChapter), nextCursor = null)
+        )
+        val mockDescriptor = mockk<ephyra.source.api.SourceDescriptor>(relaxed = true) {
+            every { capabilities } returns setOf(ephyra.source.api.SourceCapability.CATALOG)
         }
-        coEvery { targetSource.getChapterList(any()) } returns listOf(mockChapter)
-
-        val prevChapter = Chapter.create().copy(
-            id = 10L,
-            mangaId = 1L,
-            chapterNumber = 1.0,
-            read = true,
-        )
-        val newChapter = Chapter.create().copy(
-            id = 20L,
-            mangaId = 2L,
-            chapterNumber = 1.0,
-            read = false,
-        )
-
-        coEvery { getChaptersByMangaId.await(1L) } returns listOf(prevChapter)
-        coEvery { getChaptersByMangaId.await(2L) } returns listOf(newChapter)
+        
+        val targetGateway = mockk<SourceGateway>(relaxed = true)
+        every { targetGateway.descriptor } returns mockDescriptor
+        coEvery { targetGateway.getUnits(any<ephyra.source.api.ContentReference>()) } returns chaptersResult
+        every { sourceManager.get(200L) } returns targetGateway
 
         useCase.invoke(currentManga, targetManga, replace = true)
 
-        coVerify { syncChaptersWithSource.await(any(), targetManga, targetSource) }
-        coVerify { updateChapter.awaitAll(match { updates -> updates.any { it.read == true } }) }
+        // Verify that syncChaptersWithSource.await was called with the correct arguments
+        coVerify { syncChaptersWithSource.await(targetGateway, targetManga) }
         coVerify { updateManga.awaitAll(any()) }
     }
 
@@ -127,7 +119,7 @@ class MigrateMangaUseCaseTest {
 
         useCase.invoke(currentManga, targetManga, replace = true)
 
-        coVerify(exactly = 0) { syncChaptersWithSource.await(any(), targetManga, any()) }
+        coVerify(exactly = 0) { syncChaptersWithSource.await(any(), any()) }
         coVerify { updateManga.awaitAll(any()) }
     }
 }

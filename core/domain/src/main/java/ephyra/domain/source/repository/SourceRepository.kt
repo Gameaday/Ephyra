@@ -3,8 +3,8 @@ package ephyra.domain.source.repository
 import androidx.paging.PagingSource
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.model.Source
+import ephyra.domain.source.model.SourceFilter
 import ephyra.domain.source.model.SourceWithCount
-import eu.kanade.tachiyomi.source.model.FilterList
 import kotlinx.coroutines.flow.Flow
 
 typealias SourcePagingSource = PagingSource<Long, Manga>
@@ -19,7 +19,7 @@ interface SourceRepository {
 
     fun getSourcesWithNonLibraryManga(): Flow<List<SourceWithCount>>
 
-    fun search(sourceId: Long, query: String, filterList: FilterList): SourcePagingSource
+    fun search(sourceId: Long, query: String, filter: SourceFilter): SourcePagingSource
 
     fun getPopular(sourceId: Long): SourcePagingSource
 

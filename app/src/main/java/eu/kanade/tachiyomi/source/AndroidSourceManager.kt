@@ -8,8 +8,9 @@ import ephyra.core.download.DownloadManager
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.StubSourceRepository
 import ephyra.domain.source.service.SourceManager
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import ephyra.source.local.LocalSource
-import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -43,12 +44,13 @@ internal class AndroidSourceManager(
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
+    // Store the legacy sources; wrap in LegacySourceGateway when exposing
     private val sourcesMapFlow = MutableStateFlow(ConcurrentHashMap<Long, Source>())
 
     private val stubSourcesMap = ConcurrentHashMap<Long, StubSource>()
 
-    override val catalogueSourceFlow: Flow<List<CatalogueSource>> = sourcesMapFlow.map {
-        it.values.filterIsInstance<CatalogueSource>()
+    override val catalogueSourceFlow: Flow<List<SourceGateway>> = sourcesMapFlow.map { map ->
+        map.values.map { LegacySourceGateway(it) }
     }
 
     init {
@@ -126,13 +128,13 @@ internal class AndroidSourceManager(
         }
     }
 
-    override fun get(sourceKey: Long): Source? {
-        return sourcesMapFlow.value[sourceKey]
+    override fun get(sourceKey: Long): SourceGateway? {
+        return sourcesMapFlow.value[sourceKey]?.let { LegacySourceGateway(it) }
     }
 
-    override fun getOrStub(sourceKey: Long): Source {
-        sourcesMapFlow.value[sourceKey]?.let { return it }
-        stubSourcesMap[sourceKey]?.let { return it }
+    override fun getOrStub(sourceKey: Long): SourceGateway {
+        sourcesMapFlow.value[sourceKey]?.let { return LegacySourceGateway(it) }
+        stubSourcesMap[sourceKey]?.let { return LegacySourceGateway(it) }
 
         if (sourceKey == ephyra.domain.track.interactor.TrackerListImporter.AUTHORITY_SOURCE_ID) {
             val authorityStub = StubSource(
@@ -141,7 +143,7 @@ internal class AndroidSourceManager(
                 name = context.stringResource(ephyra.app.core.common.R.string.authority_source_name),
             )
             stubSourcesMap[sourceKey] = authorityStub
-            return authorityStub
+            return LegacySourceGateway(authorityStub)
         }
 
         val fallback = StubSource(id = sourceKey, lang = "", name = "")
@@ -154,15 +156,19 @@ internal class AndroidSourceManager(
                 stubSourcesMap[sourceKey] = actualStub
             }
         }
-        return fallback
+        return LegacySourceGateway(fallback)
     }
 
-    override fun getOnlineSources() = sourcesMapFlow.value.values.filterIsInstance<HttpSource>()
+    override fun getOnlineSources(): List<SourceGateway> {
+        return sourcesMapFlow.value.values.filterIsInstance<HttpSource>().map { LegacySourceGateway(it) }
+    }
 
-    override fun getCatalogueSources() = sourcesMapFlow.value.values.filterIsInstance<CatalogueSource>()
+    override fun getCatalogueSources(): List<SourceGateway> {
+        return sourcesMapFlow.value.values.filterIsInstance<CatalogueSource>().map { LegacySourceGateway(it) }
+    }
 
     override fun getStubSources(): List<StubSource> {
-        val onlineSourceIds = getOnlineSources().map { it.id }
+        val onlineSourceIds = getOnlineSources().map { it.descriptor.id.value.toLongOrNull() ?: -1L }
         return stubSourcesMap.values.filterNot { it.id in onlineSourceIds }
     }
 

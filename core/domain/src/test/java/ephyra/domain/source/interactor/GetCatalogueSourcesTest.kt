@@ -3,9 +3,7 @@
 import app.cash.turbine.test
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.online.HttpSource
+import ephyra.source.api.SourceGateway
 import io.mockk.mockk
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,33 +20,33 @@ class GetCatalogueSourcesTest {
 
     @Test
     fun `subscribe delegates to sourceManager catalogueSources flow`() = runTest {
-        val catalogueSource: CatalogueSource = mockk(relaxed = true)
-        fakeSourceManager.backingCatalogueFlow = flowOf(listOf(catalogueSource))
+        val gateway: SourceGateway = mockk(relaxed = true)
+        fakeSourceManager.backingCatalogueFlow = flowOf(listOf(gateway))
 
         getCatalogueSources.subscribe().test {
-            assertEquals(listOf(catalogueSource), awaitItem())
+            assertEquals(listOf(gateway), awaitItem())
             awaitComplete()
         }
     }
 
     @Test
     fun `get delegates to sourceManager getCatalogueSources`() {
-        val catalogueSource: CatalogueSource = mockk(relaxed = true)
-        fakeSourceManager.catalogueSourceList = listOf(catalogueSource)
+        val gateway: SourceGateway = mockk(relaxed = true)
+        fakeSourceManager.catalogueSourceList = listOf(gateway)
 
-        assertEquals(listOf(catalogueSource), getCatalogueSources.get())
+        assertEquals(listOf(gateway), getCatalogueSources.get())
     }
 
     private class FakeSourceManager : SourceManager {
-        var backingCatalogueFlow: Flow<List<CatalogueSource>> = flowOf(emptyList())
-        var catalogueSourceList: List<CatalogueSource> = emptyList()
+        var backingCatalogueFlow: Flow<List<SourceGateway>> = flowOf(emptyList())
+        var catalogueSourceList: List<SourceGateway> = emptyList()
 
         override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
-        override val catalogueSourceFlow: Flow<List<CatalogueSource>> get() = backingCatalogueFlow
-        override fun get(sourceKey: Long): Source? = null
-        override fun getOrStub(sourceKey: Long): Source = mockk(relaxed = true)
-        override fun getOnlineSources(): List<HttpSource> = emptyList()
-        override fun getCatalogueSources(): List<CatalogueSource> = catalogueSourceList
+        override val catalogueSourceFlow: Flow<List<SourceGateway>> get() = backingCatalogueFlow
+        override fun get(sourceKey: Long): SourceGateway? = null
+        override fun getOrStub(sourceKey: Long): SourceGateway = mockk(relaxed = true)
+        override fun getOnlineSources(): List<SourceGateway> = emptyList()
+        override fun getCatalogueSources(): List<SourceGateway> = catalogueSourceList
         override fun getStubSources(): List<StubSource> = emptyList()
     }
 }

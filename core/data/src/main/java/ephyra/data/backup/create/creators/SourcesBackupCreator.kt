@@ -3,7 +3,7 @@ package ephyra.data.backup.create.creators
 import ephyra.data.backup.models.BackupManga
 import ephyra.data.backup.models.BackupSource
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.Source
+import ephyra.source.api.SourceGateway
 
 class SourcesBackupCreator(
     private val sourceManager: SourceManager,
@@ -20,8 +20,8 @@ class SourcesBackupCreator(
     }
 }
 
-private fun Source.toBackupSource() =
+private fun SourceGateway.toBackupSource() =
     BackupSource(
-        name = this.name,
-        sourceId = this.id,
+        name = this.descriptor.displayName,
+        sourceId = this.descriptor.id.value.toLongOrNull() ?: -1L,
     )

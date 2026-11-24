@@ -12,7 +12,6 @@ import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.source.model.isLocal
 import ephyra.domain.track.service.TrackPreferences
-import eu.kanade.tachiyomi.source.model.SManga
 import logcat.LogPriority
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -36,15 +35,10 @@ class UpdateManga(
 
     suspend fun awaitUpdateFromSource(
         localManga: Manga,
-        remoteManga: SManga,
+        remoteManga: Manga,
         manualFetch: Boolean,
     ): Boolean {
-        val remoteTitle = try {
-            remoteManga.title
-        } catch (e: UninitializedPropertyAccessException) {
-            logcat(LogPriority.DEBUG, e) { "Source returned SManga with uninitialized title; using empty string" }
-            ""
-        }
+        val remoteTitle = remoteManga.title
 
         // When a manga has a canonical ID (linked to an authoritative tracker), its metadata
         // was enriched from the tracker's verified data. Preserve that authoritative metadata
@@ -75,7 +69,7 @@ class UpdateManga(
         }
 
         val title = run {
-            if (remoteTitle.isEmpty()) return@run null
+            if (remoteTitle.isBlank()) return@run null
             if (shouldPreserve(LockedField.TITLE, localManga.title.isNotBlank())) return@run null
             if (localManga.favorite && !libraryPreferences.updateMangaTitles().get()) return@run null
             if (remoteTitle == localManga.title) return@run null
@@ -86,8 +80,8 @@ class UpdateManga(
 
         val coverLastModified = when {
             coverPreserved -> null
-            remoteManga.thumbnail_url.isNullOrEmpty() -> null
-            localManga.thumbnailUrl == remoteManga.thumbnail_url -> null
+            remoteManga.thumbnailUrl.isNullOrEmpty() -> null
+            localManga.thumbnailUrl == remoteManga.thumbnailUrl -> null
             localManga.isLocal() -> Instant.now().toEpochMilli()
             localManga.hasCustomCover(coverCache) -> {
                 coverCache.deleteFromCache(localManga, false)
@@ -102,8 +96,8 @@ class UpdateManga(
 
         val thumbnailUrl = when {
             coverPreserved -> null
-            remoteManga.thumbnail_url == localManga.thumbnailUrl -> null
-            else -> remoteManga.thumbnail_url?.takeIf { it.isNotEmpty() }
+            remoteManga.thumbnailUrl == localManga.thumbnailUrl -> null
+            else -> remoteManga.thumbnailUrl?.takeIf { it.isNotEmpty() }
         }
 
         val author = when {
@@ -121,19 +115,17 @@ class UpdateManga(
             remoteManga.description == localManga.description -> null
             else -> remoteManga.description
         }
-        val remoteGenres = remoteManga.effectiveGenres()
         val genre = when {
             shouldPreserve(LockedField.GENRE, !localManga.genre.isNullOrEmpty()) -> null
-            remoteGenres == localManga.genre -> null
-            else -> remoteGenres
+            remoteManga.genre == localManga.genre -> null
+            else -> remoteManga.genre
         }
-        val remoteStatus = remoteManga.status.toLong()
         val status = when {
             shouldPreserve(LockedField.STATUS, localManga.status != 0L) -> null
-            remoteStatus == localManga.status -> null
-            else -> remoteStatus
+            remoteManga.status == localManga.status -> null
+            else -> remoteManga.status
         }
-        val updateStrategy = remoteManga.update_strategy.toDomainModel()
+        val updateStrategy = remoteManga.updateStrategy
             .takeIf { it != localManga.updateStrategy }
         val initialized = true.takeIf { !localManga.initialized }
 

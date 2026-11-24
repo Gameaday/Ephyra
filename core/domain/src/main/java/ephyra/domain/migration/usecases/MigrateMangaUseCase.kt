@@ -22,8 +22,8 @@ import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.TrackerManager
-import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.model.SChapter
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import kotlinx.coroutines.CancellationException
 import logcat.LogPriority
 import java.time.Instant
@@ -45,8 +45,8 @@ class MigrateMangaUseCase(
 ) {
 
     suspend operator fun invoke(current: Manga, target: Manga, replace: Boolean) {
-        val targetSource = sourceManager.get(target.source) ?: sourceManager.getOrStub(target.source)
-        val currentSource = sourceManager.get(current.source) ?: sourceManager.getOrStub(current.source)
+        val targetGateway = sourceManager.get(target.source) ?: sourceManager.getOrStub(target.source)
+        val currentGateway = sourceManager.get(current.source) ?: sourceManager.getOrStub(current.source)
         val flags = sourcePreferences.migrationFlags().get()
         val enhancedServices = trackerManager.loggedInTrackers().filterIsInstance<EnhancedTracker>()
 
@@ -56,11 +56,9 @@ class MigrateMangaUseCase(
             // CatalogueSource is a stub the manager could not resolve: it has no chapter
             // provider, and syncing an empty chapter list would delete the target's existing
             // chapters, so the migration completes without touching them.
-            if (targetSource is CatalogueSource) {
-                val chapters: List<SChapter> = targetSource.getChapterList(target.toSManga())
-
+            if (targetGateway.descriptor.capabilities.contains(ephyra.source.api.SourceCapability.CATALOG)) {
                 try {
-                    syncChaptersWithSource.await(chapters, target, targetSource)
+                    syncChaptersWithSource.await(targetGateway, target)
                 } catch (e: Exception) {
                     logcat(LogPriority.WARN, e) {
                         "Chapter sync failed during migration to '${target.title}'; chapters may be incomplete"
@@ -117,11 +115,15 @@ class MigrateMangaUseCase(
             getTracks.await(current.id).mapNotNull { track ->
                 val updatedTrack = track.copy(mangaId = target.id)
 
-                val service = enhancedServices
-                    .firstOrNull { it.isTrackFrom(updatedTrack, current, currentSource) }
+                val legacyCurrentSource = (currentGateway as? LegacySourceGateway)?.delegate
+                val legacyTargetSource = (targetGateway as? LegacySourceGateway)?.delegate
 
-                if (service != null) {
-                    service.migrateTrack(updatedTrack, target, targetSource)
+                val service = legacyCurrentSource?.let { src ->
+                    enhancedServices.firstOrNull { tracker -> tracker.isTrackFrom(updatedTrack, current, src) }
+                }
+
+                if (service != null && legacyTargetSource != null) {
+                    service.migrateTrack(updatedTrack, target, legacyTargetSource)
                 } else {
                     updatedTrack
                 }
@@ -130,8 +132,8 @@ class MigrateMangaUseCase(
                 ?.let { insertTrack.awaitAll(it) }
 
             // Delete downloaded
-            if (MigrationFlag.REMOVE_DOWNLOAD in flags && currentSource != null) {
-                downloadManager.deleteManga(current, currentSource)
+            if (MigrationFlag.REMOVE_DOWNLOAD in flags && currentGateway != null) {
+                downloadManager.deleteManga(current, currentGateway)
             }
 
             // Update custom cover (recheck if custom cover exists)

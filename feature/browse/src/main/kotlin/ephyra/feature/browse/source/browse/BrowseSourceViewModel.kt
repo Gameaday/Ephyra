@@ -35,6 +35,7 @@ import ephyra.domain.track.interactor.AddTracks
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.removeCovers
+import ephyra.domain.source.model.SourceFilter
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import kotlinx.collections.immutable.ImmutableList
@@ -122,7 +123,7 @@ class BrowseSourceViewModel @Inject constructor(
         this.source = src
 
         val initialListing = Listing.valueOf(listingQuery)
-        val initialFilters = (src as? CatalogueSource)?.getFilterList() ?: FilterList()
+        val initialFilters = (src as? CatalogueSource)?.getFilterList()?.let { SourceFilter.fromLegacyFilterList(it) } ?: SourceFilter.EMPTY
         val query = if (initialListing is Listing.Search) initialListing.query else null
         val resolvedListing = if (initialListing is Listing.Search) {
             Listing.Search(query, initialFilters)
@@ -158,7 +159,7 @@ class BrowseSourceViewModel @Inject constructor(
             sourceManager.isInitialized.first { it }
             val realSrc = sourceManager.getOrStub(sourceId)
             source = realSrc
-            val filters = (realSrc as? CatalogueSource)?.getFilterList() ?: FilterList()
+            val filters = (realSrc as? CatalogueSource)?.getFilterList()?.let { SourceFilter.fromLegacyFilterList(it) } ?: SourceFilter.EMPTY
             updateState { current ->
                 current.copy(
                     source = realSrc,
@@ -228,25 +229,25 @@ class BrowseSourceViewModel @Inject constructor(
     private fun resetFilters() {
         val src = source ?: return
         if (src !is CatalogueSource) return
-        updateState { it.copy(filters = src.getFilterList()) }
+        updateState { it.copy(filters = SourceFilter.fromLegacyFilterList(src.getFilterList())) }
     }
 
     private fun setListing(listing: Listing) {
         updateState { it.copy(listing = listing, toolbarQuery = null) }
     }
 
-    private fun setFilters(filters: FilterList) {
+    private fun setFilters(filters: SourceFilter) {
         val src = source ?: return
         if (src !is CatalogueSource) return
         updateState { it.copy(filters = filters) }
     }
 
-    private fun search(query: String? = null, filters: FilterList? = null) {
+    private fun search(query: String? = null, filters: SourceFilter? = null) {
         val src = source ?: return
         if (src !is CatalogueSource) return
 
         val input = currentState.listing as? Listing.Search
-            ?: Listing.Search(query = null, filters = src.getFilterList())
+            ?: Listing.Search(query = null, filters = SourceFilter.fromLegacyFilterList(src.getFilterList()))
 
         updateState {
             it.copy(
@@ -263,7 +264,7 @@ class BrowseSourceViewModel @Inject constructor(
         val src = source ?: return
         if (src !is CatalogueSource) return
 
-        val defaultFilters = src.getFilterList()
+        val defaultFilters = SourceFilter.fromLegacyFilterList(src.getFilterList())
         var genreExists = false
 
         filter@ for (sourceFilter in defaultFilters) {
@@ -394,12 +395,12 @@ class BrowseSourceViewModel @Inject constructor(
         sourcePreferences.sourceDisplayMode().set(mode)
     }
 
-    sealed class Listing(open val query: String?, open val filters: FilterList) {
-        data object Popular : Listing(query = GetRemoteManga.QUERY_POPULAR, filters = FilterList())
-        data object Latest : Listing(query = GetRemoteManga.QUERY_LATEST, filters = FilterList())
+    sealed class Listing(open val query: String?, open val filters: SourceFilter) {
+        data object Popular : Listing(query = GetRemoteManga.QUERY_POPULAR, filters = SourceFilter.EMPTY)
+        data object Latest : Listing(query = GetRemoteManga.QUERY_LATEST, filters = SourceFilter.EMPTY)
         data class Search(
             override val query: String?,
-            override val filters: FilterList,
+            override val filters: SourceFilter,
         ) : Listing(query = query, filters = filters)
 
         companion object {
@@ -407,7 +408,7 @@ class BrowseSourceViewModel @Inject constructor(
                 return when (query) {
                     GetRemoteManga.QUERY_POPULAR -> Popular
                     GetRemoteManga.QUERY_LATEST -> Latest
-                    else -> Search(query = query, filters = FilterList())
+                    else -> Search(query = query, filters = SourceFilter.EMPTY)
                 }
             }
         }
@@ -438,7 +439,7 @@ class BrowseSourceViewModel @Inject constructor(
          * stub source only means "not loaded yet", not "not installed".
          */
         val sourceReady: Boolean = false,
-        val filters: FilterList = FilterList(),
+        val filters: SourceFilter = SourceFilter.EMPTY,
         val toolbarQuery: String? = null,
         val dialog: Dialog? = null,
     ) {

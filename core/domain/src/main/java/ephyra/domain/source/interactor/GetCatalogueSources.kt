@@ -1,14 +1,14 @@
 ﻿package ephyra.domain.source.interactor
 
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.CatalogueSource
+import ephyra.source.api.SourceGateway
 import kotlinx.coroutines.flow.Flow
 
 class GetCatalogueSources(
     private val sourceManager: SourceManager,
 ) {
 
-    fun subscribe(): Flow<List<CatalogueSource>> = sourceManager.catalogueSourceFlow
+    fun subscribe(): Flow<List<SourceGateway>> = sourceManager.catalogueSourceFlow
 
-    fun get(): List<CatalogueSource> = sourceManager.getCatalogueSources()
+    fun get(): List<SourceGateway> = sourceManager.getCatalogueSources()
 }

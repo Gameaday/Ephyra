@@ -315,31 +315,33 @@ class LibraryUpdateJob(
         }
 
         val source = sourceManager.getOrStub(manga.source)
-        val sManga = manga.toSManga()
-
-        val chapters = try {
-            val update = source.getMangaUpdate(
-                manga = sManga,
-                chapters = emptyList(),
-                fetchDetails = autoUpdateMetadata,
-                fetchChapters = true,
-            )
-            if (autoUpdateMetadata) {
-                try {
-                    updateManga.awaitUpdateFromSource(manga, update.manga(), manualFetch = false)
-                } catch (e: Exception) {
-                    logcat(LogPriority.WARN, e) { "Metadata update failed for '${manga.title}'" }
-                }
-            }
-            update.chapters()
-        } catch (e: Exception) {
-            logcat(LogPriority.WARN, e) { "Update failed for '${manga.title}'" }
-            emptyList()
-        }
+        val gateway = ephyra.source.api.LegacySourceGateway(source)
 
         val dbManga = getManga.await(manga.id)?.takeIf { it.favorite } ?: return emptyList()
 
-        return syncChaptersWithSource.await(chapters, dbManga, source, false, fetchWindow)
+        // Sync chapters using the new SourceGateway API (fetches chapters internally)
+        val newChapters = syncChaptersWithSource.await(gateway, dbManga, false, fetchWindow)
+
+        // Update metadata if needed (separate from chapter sync)
+        if (autoUpdateMetadata) {
+            try {
+                val mangaDetailsResult = gateway.getDetails(ephyra.source.api.ContentReference(url = dbManga.url))
+                when (mangaDetailsResult) {
+                    is ephyra.source.api.SourceResult.Success -> {
+                        val remoteManga = mangaDetailsResult.value.toDomainManga()
+                        updateManga.awaitUpdateFromSource(dbManga, remoteManga.toSManga(), manualFetch = false)
+                    }
+                    is ephyra.source.api.SourceResult.Empty -> {
+                        logcat(LogPriority.DEBUG) { "No manga details for ${dbManga.title}" }
+                    }
+                    else -> logcat(LogPriority.WARN, mangaDetailsResult.exceptionOrNull()) { "Failed to get manga details for '${dbManga.title}'" }
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN, e) { "Metadata update failed for '${dbManga.title}'" }
+            }
+        }
+
+        return newChapters
     }
 
     private suspend fun withUpdateNotification(

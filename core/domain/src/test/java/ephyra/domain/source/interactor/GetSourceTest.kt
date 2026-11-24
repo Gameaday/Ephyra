@@ -1,12 +1,11 @@
 package ephyra.domain.source.interactor
 
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.online.HttpSource
+import ephyra.source.api.SourceCapability
+import ephyra.source.api.SourceGateway
+import ephyra.source.api.SourceKind
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -18,43 +17,56 @@ class GetSourceTest {
 
     @Test
     fun `get delegates to sourceManager get`() {
-        val source: Source = mockk()
-        every { sourceManager.get(1L) } returns source
+        val gateway: SourceGateway = mockk()
+        every { sourceManager.get(1L) } returns gateway
 
-        assertEquals(source, getSource.get(1L))
+        assertEquals(gateway, getSource.get(1L))
         every { sourceManager.get(2L) } returns null
         assertNull(getSource.get(2L))
     }
 
     @Test
     fun `getOrStub delegates to sourceManager getOrStub`() {
-        val source: Source = mockk()
-        every { sourceManager.getOrStub(1L) } returns source
+        val gateway: SourceGateway = mockk()
+        every { sourceManager.getOrStub(1L) } returns gateway
 
-        assertEquals(source, getSource.getOrStub(1L))
+        assertEquals(gateway, getSource.getOrStub(1L))
     }
 
     @Test
-    fun `getCatalogueSource casts when source is CatalogueSource`() {
-        val catalogueSource: CatalogueSource = mockk()
-        val plainSource: Source = mockk()
+    fun `getCatalogueSource returns gateway with CATALOG capability`() {
+        val catalogueGateway: SourceGateway = mockk {
+            every { descriptor.capabilities } returns setOf(SourceCapability.CATALOG)
+        }
+        val plainGateway: SourceGateway = mockk {
+            every { descriptor.capabilities } returns emptySet()
+        }
 
-        every { sourceManager.get(1L) } returns catalogueSource
-        every { sourceManager.get(2L) } returns plainSource
+        every { sourceManager.get(1L) } returns catalogueGateway
+        every { sourceManager.get(2L) } returns plainGateway
 
-        assertEquals(catalogueSource, getSource.getCatalogueSource(1L))
+        assertEquals(catalogueGateway, getSource.getCatalogueSource(1L))
         assertNull(getSource.getCatalogueSource(2L))
     }
 
     @Test
-    fun `getHttpSource casts when source is HttpSource`() {
-        val httpSource: HttpSource = mockk()
-        val plainSource: Source = mockk()
+    fun `getHttpSource returns gateway with NATIVE or LEGACY_COMPATIBILITY kind`() {
+        val nativeGateway: SourceGateway = mockk {
+            every { descriptor.kind } returns SourceKind.NATIVE
+        }
+        val legacyGateway: SourceGateway = mockk {
+            every { descriptor.kind } returns SourceKind.LEGACY_COMPATIBILITY
+        }
+        val plainGateway: SourceGateway = mockk {
+            every { descriptor.kind } returns SourceKind.REPOSITORY
+        }
 
-        every { sourceManager.get(1L) } returns httpSource
-        every { sourceManager.get(2L) } returns plainSource
+        every { sourceManager.get(1L) } returns nativeGateway
+        every { sourceManager.get(2L) } returns legacyGateway
+        every { sourceManager.get(3L) } returns plainGateway
 
-        assertEquals(httpSource, getSource.getHttpSource(1L))
-        assertNull(getSource.getHttpSource(2L))
+        assertEquals(nativeGateway, getSource.getHttpSource(1L))
+        assertEquals(legacyGateway, getSource.getHttpSource(2L))
+        assertNull(getSource.getHttpSource(3L))
     }
 }

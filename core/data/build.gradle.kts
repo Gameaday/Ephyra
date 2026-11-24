@@ -95,6 +95,9 @@ dependencies {
     implementation(libs.room.paging)
     ksp(libs.room.compiler)
 
+    // Paging - for SourcePagingSource stub classes
+    implementation(libs.paging.runtime)
+
     implementation("javax.inject:javax.inject:1")
     implementation(libs.stringSimilarity)
 

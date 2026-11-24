@@ -1,19 +1,23 @@
 package ephyra.domain.source.interactor
 
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.online.HttpSource
+import ephyra.source.api.SourceGateway
 
 class GetSource(
     private val sourceManager: SourceManager,
 ) {
 
-    fun get(id: Long): Source? = sourceManager.get(id)
+    fun get(id: Long): SourceGateway? = sourceManager.get(id)
 
-    fun getOrStub(id: Long): Source = sourceManager.getOrStub(id)
+    fun getOrStub(id: Long): SourceGateway = sourceManager.getOrStub(id)
 
-    fun getCatalogueSource(id: Long): CatalogueSource? = sourceManager.get(id) as? CatalogueSource
+    fun getCatalogueSource(id: Long): SourceGateway? = sourceManager.get(id)?.takeIf {
+        it.descriptor.capabilities.contains(ephyra.source.api.SourceCapability.CATALOG)
+    }
 
-    fun getHttpSource(id: Long): HttpSource? = sourceManager.get(id) as? HttpSource
+    fun getHttpSource(id: Long): SourceGateway? = sourceManager.get(id)?.takeIf {
+        it.descriptor.kind ==
+            ephyra.source.api.SourceKind.NATIVE ||
+            it.descriptor.kind == ephyra.source.api.SourceKind.LEGACY_COMPATIBILITY
+    }
 }

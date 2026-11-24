@@ -5,8 +5,9 @@ import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.interactor.FindContentSource.Companion.CHAPTER_COUNT_UNKNOWN
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.model.SManga
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
+import ephyra.source.api.SourceResult
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.supervisorScope
@@ -42,14 +43,16 @@ class FindContentSource(
 
     /**
      * A content source match with confidence score and content availability.
-     * @param manga The manga as it exists on the matched source.
-     * @param source The catalogue source that hosts this manga.
+     * @param manga The manga as it exists on the matched source (domain model).
+     * @param source The source gateway that hosts this manga.
+     * @param sourceId The source ID.
+     * @param sourceName The source name.
      * @param confidence Match confidence: 1.0 = canonical ID, 0.4–0.9 = title similarity.
      * @param chapterCount Number of chapters available on this source, or -1 if unknown.
      */
     data class SourceMatch(
-        val manga: SManga,
-        val source: CatalogueSource,
+        val manga: Manga,
+        val source: SourceGateway,
         val sourceId: Long,
         val sourceName: String,
         val confidence: Double,
@@ -72,7 +75,11 @@ class FindContentSource(
         onProgress: (suspend (searched: Int, total: Int) -> Unit)? = null,
     ): List<SourceMatch> = withIOContext {
         val catalogueSources = sourceManager.getCatalogueSources()
-            .filter { it.id > 0 && it.id != manga.source } // Skip invalid IDs and current source
+            .filter {
+                it.descriptor.id.value.toLongOrNull()?.let {
+                    it > 0 && it != manga.source
+                } == true
+            } // Skip invalid IDs and current source
         if (catalogueSources.isEmpty()) return@withIOContext emptyList()
 
         val total = catalogueSources.size
@@ -80,14 +87,14 @@ class FindContentSource(
         val searchedCount = AtomicInteger(0)
 
         val results = supervisorScope {
-            catalogueSources.map { source ->
+            catalogueSources.map { gateway ->
                 async {
                     semaphore.withPermit {
                         try {
-                            searchSource(manga, source, deepSearch)
+                            searchSource(manga, gateway, deepSearch)
                         } catch (e: Exception) {
                             logcat(LogPriority.DEBUG, e) {
-                                "Source search failed: ${source.name} for '${manga.title}'"
+                                "Source search failed: ${gateway.descriptor.displayName} for '${manga.title}'"
                             }
                             null
                         } finally {
@@ -120,17 +127,17 @@ class FindContentSource(
      */
     private suspend fun searchSource(
         manga: Manga,
-        source: CatalogueSource,
+        gateway: SourceGateway,
         deepSearch: Boolean,
     ): SourceMatch? {
         // Tier 1: Canonical ID lookup (free, 0 API calls)
-        val canonicalMatch = findByCanonicalId(manga, source.id)
+        val canonicalMatch = findByCanonicalId(manga, gateway.descriptor.id.value.toLongOrNull() ?: -1L)
         if (canonicalMatch != null) {
             return SourceMatch(
-                manga = canonicalMatch.toSManga(),
-                source = source,
-                sourceId = source.id,
-                sourceName = source.name,
+                manga = canonicalMatch,
+                source = gateway,
+                sourceId = gateway.descriptor.id.value.toLongOrNull() ?: -1L,
+                sourceName = gateway.descriptor.displayName,
                 confidence = 1.0,
             )
         }
@@ -138,7 +145,7 @@ class FindContentSource(
         // Tier 2+: Smart title search using the same engine as migration
         val engine = SmartSourceSearchEngine(extraSearchParams = null)
         val searchResult = engine.multiTitleSearch(
-            source = source,
+            gateway = gateway,
             primaryTitle = manga.title,
             alternativeTitles = manga.alternativeTitles,
             deepSearchFallback = deepSearch,
@@ -147,10 +154,10 @@ class FindContentSource(
         if (searchResult != null) {
             val (matchedManga, confidence) = searchResult
             return SourceMatch(
-                manga = matchedManga.toSManga(),
-                source = source,
-                sourceId = source.id,
-                sourceName = source.name,
+                manga = matchedManga,
+                source = gateway,
+                sourceId = gateway.descriptor.id.value.toLongOrNull() ?: -1L,
+                sourceName = gateway.descriptor.displayName,
                 confidence = confidence,
             )
         }
@@ -169,22 +176,6 @@ class FindContentSource(
         } catch (e: Exception) {
             logcat(LogPriority.DEBUG, e) { "Canonical ID lookup failed for '${manga.title}'" }
             null
-        }
-    }
-
-    /**
-     * Converts a domain Manga to SManga for the SourceMatch return type.
-     * This lets callers get the source-native representation for further operations.
-     */
-    private fun Manga.toSManga(): SManga {
-        return SManga.create().apply {
-            url = this@toSManga.url
-            title = this@toSManga.title
-            thumbnail_url = this@toSManga.thumbnailUrl
-            description = this@toSManga.description
-            author = this@toSManga.author
-            artist = this@toSManga.artist
-            status = this@toSManga.status.toInt()
         }
     }
 
@@ -215,7 +206,7 @@ class FindContentSource(
 
         // First pass: one per provider
         for (match in sorted) {
-            val provider = match.source.name.lowercase(Locale.ROOT)
+            val provider = match.source.descriptor.displayName.lowercase(Locale.ROOT)
             if (provider !in seenProviders) {
                 selected.add(match)
                 seenProviders.add(provider)
@@ -249,8 +240,14 @@ class FindContentSource(
                 async {
                     semaphore.withPermit {
                         try {
-                            val chapters = match.source.getChapterList(match.manga)
-                            match.copy(chapterCount = chapters.size)
+                            val contentRef = ephyra.source.api.ContentReference(url = match.manga.url)
+                            val unitsResult = match.source.getUnits(contentRef)
+                            val chapterCount = when (unitsResult) {
+                                is SourceResult.Success -> unitsResult.value.items.size
+                                is SourceResult.Empty -> 0
+                                else -> throw RuntimeException("Failed to fetch chapters: $unitsResult")
+                            }
+                            match.copy(chapterCount = chapterCount)
                         } catch (e: Exception) {
                             logcat(LogPriority.DEBUG, e) {
                                 "Chapter count fetch failed: ${match.sourceName}"

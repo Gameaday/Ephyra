@@ -5,6 +5,7 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
+import ephyra.source.api.SourceGateway
 
 class DeleteDownload(
     private val sourceManager: SourceManager,
@@ -12,8 +13,8 @@ class DeleteDownload(
 ) {
 
     suspend fun awaitAll(manga: Manga, vararg chapters: Chapter) = withNonCancellableContext {
-        sourceManager.get(manga.source)?.let { source ->
-            downloadManager.deleteChapters(chapters.toList(), manga, source)
+        sourceManager.get(manga.source)?.let { gateway ->
+            downloadManager.deleteChapters(chapters.toList(), manga, gateway)
         }
     }
 }
