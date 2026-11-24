@@ -8,7 +8,7 @@ import eu.kanade.tachiyomi.source.model.FilterList
  * Wraps the legacy [FilterList] to avoid leaking legacy types into the domain layer.
  */
 data class SourceFilter(
-    val filters: List<Filter<*>> = emptyList()
+    val filters: List<Filter<*>> = emptyList(),
 ) : List<Filter<*>> by filters {
 
     constructor(vararg filters: Filter<*>) : this(if (filters.isNotEmpty()) filters.asList() else emptyList())
