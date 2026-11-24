@@ -14,10 +14,11 @@ import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.interactor.GetRemoteManga
+import ephyra.domain.source.model.SourceFilter
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.domain.source.model.SourceFilter
 import ephyra.domain.track.interactor.AddTracks
+import eu.kanade.tachiyomi.source.CatalogueSource
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -40,7 +41,6 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import eu.kanade.tachiyomi.source.CatalogueSource
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BrowseSourceViewModelTest {

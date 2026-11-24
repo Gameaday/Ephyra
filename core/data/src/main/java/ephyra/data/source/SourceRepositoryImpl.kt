@@ -1,8 +1,11 @@
 package ephyra.data.source
 
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import ephyra.data.room.daos.MangaDao
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.source.model.SourceFilter
 import ephyra.domain.source.model.SourceWithCount
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.SourcePagingSource
@@ -18,11 +21,8 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
 import javax.inject.Inject
 import ephyra.domain.source.model.Source as DomainSource
-import ephyra.domain.source.model.SourceFilter
 
 class SourceRepositoryImpl @Inject constructor(
     private val sourceManager: SourceManager,
@@ -34,7 +34,9 @@ class SourceRepositoryImpl @Inject constructor(
         return sourceManager.catalogueSourceFlow.map { sources ->
             sources.map { gateway ->
                 mapGatewayToDomainSource(gateway).copy(
-                    supportsLatest = gateway.descriptor.capabilities.contains(ephyra.source.api.SourceCapability.LATEST),
+                    supportsLatest = gateway.descriptor.capabilities.contains(
+                        ephyra.source.api.SourceCapability.LATEST,
+                    ),
                 )
             }
         }

@@ -334,7 +334,9 @@ class LibraryUpdateJob(
                     is ephyra.source.api.SourceResult.Empty -> {
                         logcat(LogPriority.DEBUG) { "No manga details for ${dbManga.title}" }
                     }
-                    else -> logcat(LogPriority.WARN, mangaDetailsResult.exceptionOrNull()) { "Failed to get manga details for '${dbManga.title}'" }
+                    else -> logcat(LogPriority.WARN, mangaDetailsResult.exceptionOrNull()) {
+                        "Failed to get manga details for '${dbManga.title}'"
+                    }
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.WARN, e) { "Metadata update failed for '${dbManga.title}'" }
