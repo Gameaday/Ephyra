@@ -40,11 +40,10 @@ import ephyra.source.api.LegacySourceGateway
 import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.UnmeteredSource
-import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.model.Page
-
-import eu.kanade.tachiyomi.source.online.resolvePageImage
+import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.needsFreshPageList
+import eu.kanade.tachiyomi.source.online.resolvePageImage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -305,7 +304,8 @@ class Downloader(
         if (chapters.isEmpty()) return
 
         val gateway = sourceManager.get(manga.source) ?: return
-        val legacySource = (gateway as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway")
+        val legacySource =
+            (gateway as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway")
         val wasEmpty = queueState.value.isEmpty()
         val enqueuedChapterIds = queueState.value.mapTo(HashSet()) { it.chapter.id }
         val chaptersToQueue = chapters.asSequence()
@@ -350,8 +350,11 @@ class Downloader(
     @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun downloadChapter(download: Download) {
         val gateway = download.source
-        val legacySource = (gateway as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for downloadChapter")
-        val httpSource = legacySource as? HttpSource ?: throw IllegalStateException("Expected HttpSource for downloadChapter")
+        val legacySource =
+            (gateway as? LegacySourceGateway)?.delegate
+                ?: throw IllegalStateException("Expected LegacySourceGateway for downloadChapter")
+        val httpSource =
+            legacySource as? HttpSource ?: throw IllegalStateException("Expected HttpSource for downloadChapter")
         val mangaDir = provider.getMangaDir(download.manga.title, gateway).getOrElse { e ->
             download.status = Download.State.ERROR
             notifier.onError(e.message, download.chapter.name, download.manga.title, download.manga.id)
@@ -637,8 +640,11 @@ class Downloader(
         reResolvePacer: ReResolvePacer,
         freshAddresses: FreshPageAddresses,
     ): UniFile {
-        val legacySource = (download.source as? LegacySourceGateway)?.delegate ?: throw IllegalStateException("Expected LegacySourceGateway for downloadImage")
-        val httpSource = legacySource as? HttpSource ?: throw IllegalStateException("Expected HttpSource for downloadImage")
+        val legacySource =
+            (download.source as? LegacySourceGateway)?.delegate
+                ?: throw IllegalStateException("Expected LegacySourceGateway for downloadImage")
+        val httpSource =
+            legacySource as? HttpSource ?: throw IllegalStateException("Expected HttpSource for downloadImage")
         page.status = Page.State.DownloadImage
         page.progress = 0
         return flow {
@@ -847,7 +853,12 @@ class Downloader(
     /**
      * Creates ComicInfo.xml file in the chapter directory.
      */
-    private fun createComicInfoFile(tmpDir: UniFile, manga: Manga, chapter: Chapter, legacySource: eu.kanade.tachiyomi.source.Source) {
+    private fun createComicInfoFile(
+        tmpDir: UniFile,
+        manga: Manga,
+        chapter: Chapter,
+        legacySource: eu.kanade.tachiyomi.source.Source,
+    ) {
         // Implementation here...
     }
 
@@ -893,7 +904,6 @@ class Downloader(
     private fun areAllDownloadsFinished(): Boolean {
         return queueState.value.all { it.status == Download.State.DOWNLOADED || it.status == Download.State.ERROR }
     }
-
 
     /** Replaces the entire download queue with the given list. */
     fun updateQueue(downloads: List<Download>) {
