@@ -90,6 +90,7 @@ fun VerticalFastScroller(
 
             val dragInteractionSource = remember { MutableInteractionSource() }
             val isThumbDragged by dragInteractionSource.collectIsDraggedAsState()
+            val estimateConfidence = remember { mutableFloatStateOf(1f) }
             val scrolled = remember {
                 MutableSharedFlow<Unit>(
                     extraBufferCapacity = 1,
@@ -136,8 +137,11 @@ fun VerticalFastScroller(
             layoutChangeTracker.value = scrollableSections
 
             val maxRemainingSectionsTracker = remember { MutableData(remainingSections) }
-            if (layoutChanged) maxRemainingSectionsTracker.value = remainingSections
-            else maxRemainingSectionsTracker.value = max(maxRemainingSectionsTracker.value, remainingSections)
+            if (layoutChanged) {
+                maxRemainingSectionsTracker.value = remainingSections
+            } else {
+                maxRemainingSectionsTracker.value = max(maxRemainingSectionsTracker.value, remainingSections)
+            }
             val maxRemainingSections = maxRemainingSectionsTracker.value
 
             if (maxRemainingSections < 0.5) return@subcompose
