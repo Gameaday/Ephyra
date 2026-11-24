@@ -5,8 +5,8 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.model.Page
 import ephyra.source.api.SourceGateway
+import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -29,13 +29,13 @@ import ephyra.domain.manga.model.toMangaUpdate
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.interactor.GetRemoteManga
+import ephyra.domain.source.model.SourceFilter
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.removeCovers
-import ephyra.domain.source.model.SourceFilter
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import kotlinx.collections.immutable.ImmutableList
@@ -123,7 +123,9 @@ class BrowseSourceViewModel @Inject constructor(
         this.source = src
 
         val initialListing = Listing.valueOf(listingQuery)
-        val initialFilters = (src as? CatalogueSource)?.getFilterList()?.let { SourceFilter.fromLegacyFilterList(it) } ?: SourceFilter.EMPTY
+        val initialFilters =
+            (src as? CatalogueSource)?.getFilterList()?.let { SourceFilter.fromLegacyFilterList(it) }
+                ?: SourceFilter.EMPTY
         val query = if (initialListing is Listing.Search) initialListing.query else null
         val resolvedListing = if (initialListing is Listing.Search) {
             Listing.Search(query, initialFilters)
@@ -159,7 +161,9 @@ class BrowseSourceViewModel @Inject constructor(
             sourceManager.isInitialized.first { it }
             val realSrc = sourceManager.getOrStub(sourceId)
             source = realSrc
-            val filters = (realSrc as? CatalogueSource)?.getFilterList()?.let { SourceFilter.fromLegacyFilterList(it) } ?: SourceFilter.EMPTY
+            val filters =
+                (realSrc as? CatalogueSource)?.getFilterList()?.let { SourceFilter.fromLegacyFilterList(it) }
+                    ?: SourceFilter.EMPTY
             updateState { current ->
                 current.copy(
                     source = realSrc,
