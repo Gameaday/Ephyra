@@ -83,12 +83,12 @@ class MigrateMangaUseCaseTest {
             number = 1.0,
         )
         val chaptersResult = ephyra.source.api.SourceResult.Success(
-            ephyra.source.api.SourcePage(items = listOf(mockChapter), nextCursor = null)
+            ephyra.source.api.SourcePage(items = listOf(mockChapter), nextCursor = null),
         )
         val mockDescriptor = mockk<ephyra.source.api.SourceDescriptor>(relaxed = true) {
             every { capabilities } returns setOf(ephyra.source.api.SourceCapability.CATALOG)
         }
-        
+
         val targetGateway = mockk<SourceGateway>(relaxed = true)
         every { targetGateway.descriptor } returns mockDescriptor
         coEvery { targetGateway.getUnits(any<ephyra.source.api.ContentReference>()) } returns chaptersResult
