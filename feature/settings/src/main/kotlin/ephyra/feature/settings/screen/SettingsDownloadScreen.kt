@@ -86,11 +86,6 @@ object SettingsDownloadScreen : SearchableSettings {
                 preference = downloadPreferences.saveChaptersAsCBZ(),
                 title = stringResource(ephyra.app.core.common.R.string.save_chapter_as_cbz),
             ),
-            Preference.PreferenceItem.SwitchPreference(
-                preference = downloadPreferences.splitTallImages(),
-                title = stringResource(ephyra.app.core.common.R.string.split_tall_images),
-                subtitle = stringResource(ephyra.app.core.common.R.string.split_tall_images_summary_no_longer_needed),
-            ),
             Preference.PreferenceItem.SliderPreference(
                 value = parallelSourceLimit,
                 valueRange = 1..10,

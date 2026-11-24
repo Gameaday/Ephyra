@@ -608,8 +608,6 @@ class Downloader(
             }
 
             // When the page is ready, set page path, progress (just in case) and status
-            splitTallImageIfNeeded(page, tmpDir)
-
             page.uri = file.uri
             page.progress = 100
             page.status = Page.State.Ready
@@ -785,29 +783,6 @@ class Downloader(
     private suspend fun derivedImageEncoder(): Pair<(android.graphics.Bitmap, java.io.OutputStream) -> Unit, String> {
         val fmt = libraryPreferences.imageFormat().get()
         return fmt.encoder() to fmt.extension
-    }
-
-    private suspend fun splitTallImageIfNeeded(page: Page, tmpDir: UniFile) {
-        if (!downloadPreferences.splitTallImages().get()) return
-
-        try {
-            val filenamePrefix = "%03d".format(Locale.ENGLISH, page.number)
-            val imageFile = tmpDir.listFiles()?.firstOrNull { it.name.orEmpty().startsWith(filenamePrefix) }
-                ?: error(
-                    context.stringResource(
-                        ephyra.app.core.common.R.string.download_notifier_split_page_not_found,
-                        page.number,
-                    ),
-                )
-
-            // If the original page was previously split, then skip
-            if (imageFile.name.orEmpty().startsWith("${filenamePrefix}__")) return
-
-            val (encoder, ext) = derivedImageEncoder()
-            ImageUtil.splitTallImage(tmpDir, imageFile, filenamePrefix, encoder, ext)
-        } catch (e: Exception) {
-            logcat(LogPriority.ERROR, e) { "Failed to split downloaded image" }
-        }
     }
 
     /**
