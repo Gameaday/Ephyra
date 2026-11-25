@@ -8,10 +8,10 @@ import ephyra.core.download.DownloadManager
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.StubSourceRepository
 import ephyra.domain.source.service.SourceManager
+import ephyra.presentation.core.util.system.legacyId
 import ephyra.source.api.LegacySourceGateway
 import ephyra.source.api.SourceGateway
 import ephyra.source.local.LocalSource
-import ephyra.presentation.core.util.system.legacyId
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CoroutineScope

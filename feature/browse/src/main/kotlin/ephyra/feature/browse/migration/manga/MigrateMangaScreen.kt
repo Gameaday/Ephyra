@@ -28,7 +28,6 @@ import androidx.navigation.NavController
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.manga.presentation.components.BaseMangaListItem
 import ephyra.presentation.core.components.AppBar
-import ephyra.presentation.core.util.system.name
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
@@ -39,6 +38,7 @@ import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.core.util.shouldExpandFAB
+import ephyra.presentation.core.util.system.name
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
 

@@ -4,8 +4,9 @@ import ephyra.domain.source.registry.SourceAvailability
 import ephyra.domain.source.registry.SourceRegistration
 import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.service.SourceManager
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import ephyra.source.local.LocalSource
-import eu.kanade.tachiyomi.source.CatalogueSource
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -40,10 +41,10 @@ class SourceReconcilerTest {
         availability = SourceAvailability.AVAILABLE,
     )
 
-    private fun catalogSource(id: Long): CatalogueSource {
+    private fun catalogSource(id: Long): SourceGateway {
         val source = mockk<CatalogueSource>()
         every { source.id } returns id
-        return source
+        return LegacySourceGateway(source)
     }
 
     private fun readyManager(ready: Boolean): SourceManager {

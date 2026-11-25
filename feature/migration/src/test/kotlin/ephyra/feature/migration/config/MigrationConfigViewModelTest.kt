@@ -5,6 +5,9 @@ import ephyra.core.common.preference.Preference
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
+import ephyra.presentation.core.util.system.asHttpSource
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
@@ -47,16 +50,16 @@ class MigrationConfigViewModelTest {
     private val disabledSourcesPref: Preference<Set<String>> = mockk(relaxed = true)
 
     private class FakeSourceManager(
-        var catalogueSourcesList: List<CatalogueSource> = emptyList(),
+        var catalogueSourcesList: List<SourceGateway> = emptyList(),
     ) : SourceManager {
         override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
-        override val catalogueSourceFlow: Flow<List<CatalogueSource>> = flowOf(catalogueSourcesList)
-        override fun get(sourceKey: Long): eu.kanade.tachiyomi.source.Source? = null
+        override val catalogueSourceFlow: Flow<List<SourceGateway>> = flowOf(catalogueSourcesList)
+        override fun get(sourceKey: Long): SourceGateway? = null
         override fun getOrStub(
             sourceKey: Long,
-        ): eu.kanade.tachiyomi.source.Source = throw UnsupportedOperationException()
-        override fun getOnlineSources(): List<HttpSource> = catalogueSourcesList.filterIsInstance<HttpSource>()
-        override fun getCatalogueSources(): List<CatalogueSource> = catalogueSourcesList
+        ): SourceGateway = throw UnsupportedOperationException()
+        override fun getOnlineSources(): List<SourceGateway> = catalogueSourcesList.filterIsInstance<LegacySourceGateway>().filter { (it as LegacySourceGateway).delegate is HttpSource }
+        override fun getCatalogueSources(): List<SourceGateway> = catalogueSourcesList
         override fun getStubSources(): List<StubSource> = emptyList()
     }
 
@@ -82,8 +85,8 @@ class MigrationConfigViewModelTest {
         override fun pageListParse(response: Response) = throw UnsupportedOperationException()
     }
 
-    private val source1 = DummyHttpSource(1L, "Source One", "en")
-    private val source2 = DummyHttpSource(2L, "Source Two", "en")
+    private val source1 = LegacySourceGateway(DummyHttpSource(1L, "Source One", "en"))
+    private val source2 = LegacySourceGateway(DummyHttpSource(2L, "Source Two", "en"))
 
     @BeforeEach
     fun setUp() {

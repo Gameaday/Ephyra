@@ -18,12 +18,12 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.model.StubSource
 import ephyra.feature.reader.model.PageByteStoreOwner
 import ephyra.feature.reader.model.ReaderChapter
-import ephyra.source.local.LocalSource
-import ephyra.source.local.io.Format
 import ephyra.presentation.core.util.system.asHttpSource
 import ephyra.presentation.core.util.system.asLocalSource
 import ephyra.presentation.core.util.system.asStubSource
 import ephyra.source.api.SourceGateway
+import ephyra.source.local.LocalSource
+import ephyra.source.local.io.Format
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
 

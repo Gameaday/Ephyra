@@ -5,9 +5,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import ephyra.domain.extension.service.ExtensionManager
+import ephyra.domain.source.model.SourceFilter
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.domain.source.model.SourceFilter
 import ephyra.source.api.LegacySourceGateway
 import ephyra.source.api.SourceGateway
 import ephyra.source.local.LocalSource

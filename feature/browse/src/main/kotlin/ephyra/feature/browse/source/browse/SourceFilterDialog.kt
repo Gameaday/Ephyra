@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ephyra.core.common.preference.TriState
-import ephyra.domain.source.model.SourceFilter as DomainSourceFilter
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.CollapsibleBox
@@ -30,6 +29,7 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.system.fromLegacyFilterList
 import eu.kanade.tachiyomi.source.model.Filter
 import eu.kanade.tachiyomi.source.model.FilterList
+import ephyra.domain.source.model.SourceFilter as DomainSourceFilter
 
 @Composable
 fun SourceFilterDialog(

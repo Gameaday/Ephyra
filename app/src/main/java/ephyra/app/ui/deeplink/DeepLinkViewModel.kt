@@ -94,7 +94,11 @@ class DeepLinkViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getChapterFromSourceContentItem(contentItem: ephyra.source.api.SourceContentItem, manga: Manga, source: SourceGateway): Chapter? {
+    private suspend fun getChapterFromSourceContentItem(
+        contentItem: ephyra.source.api.SourceContentItem,
+        manga: Manga,
+        source: SourceGateway,
+    ): Chapter? {
         // Convert SourceContentItem to SChapter-like object for URL matching
         val chapterUrl = contentItem.url
         val localChapter = runCatching {

@@ -41,7 +41,6 @@ import ephyra.presentation.core.util.system.asLegacySource
 import ephyra.presentation.core.util.system.fromLegacyFilterList
 import ephyra.presentation.core.util.system.legacyId
 import ephyra.presentation.core.util.system.name
-import ephyra.domain.source.model.SourceFilter as DomainSourceFilter
 import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
@@ -63,6 +62,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import javax.inject.Inject
+import ephyra.domain.source.model.SourceFilter as DomainSourceFilter
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 @HiltViewModel

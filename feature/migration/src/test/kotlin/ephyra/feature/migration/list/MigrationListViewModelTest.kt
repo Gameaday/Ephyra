@@ -11,6 +11,9 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.migration.usecases.MigrateMangaUseCase
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
+import ephyra.presentation.core.util.system.name
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.CatalogueSource
 import io.mockk.coEvery
 import io.mockk.every
@@ -51,7 +54,7 @@ class MigrationListViewModelTest {
 
     private val testManga1 = Manga.create().copy(id = 100L, source = 1L, title = "Manga One")
     private val testManga2 = Manga.create().copy(id = 200L, source = 1L, title = "Manga Two")
-    private val mockSource: CatalogueSource = mockk(relaxed = true)
+    private val mockSource: SourceGateway = LegacySourceGateway(mockk<CatalogueSource>(relaxed = true))
 
     @BeforeEach
     fun setUp() {

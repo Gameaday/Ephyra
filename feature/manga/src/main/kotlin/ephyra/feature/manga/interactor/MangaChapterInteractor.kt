@@ -16,8 +16,8 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.SetMangaChapterFlags
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.toSManga
 import ephyra.domain.manga.model.toDomainManga
+import ephyra.domain.manga.model.toSManga
 import ephyra.presentation.core.util.system.asLegacySource
 import ephyra.presentation.core.util.system.getMangaDetails
 import ephyra.presentation.core.util.system.isLocalOrStub

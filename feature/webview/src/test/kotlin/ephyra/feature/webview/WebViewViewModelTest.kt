@@ -3,6 +3,7 @@ package ephyra.feature.webview
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import ephyra.domain.source.service.SourceManager
+import ephyra.source.api.LegacySourceGateway
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
@@ -70,10 +71,12 @@ class WebViewViewModelTest {
         ): List<eu.kanade.tachiyomi.source.model.Page> = throw UnsupportedOperationException()
     }
 
+    private val fakeSourceGateway = LegacySourceGateway(fakeHttpSource)
+
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { sourceManager.get(42L) } returns fakeHttpSource
+        every { sourceManager.get(42L) } returns fakeSourceGateway
     }
 
     @AfterEach

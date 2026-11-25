@@ -42,13 +42,13 @@ import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.presentation.core.util.manga.removeCovers
-import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.core.util.system.asHttpSource
 import ephyra.presentation.core.util.system.asLegacySource
 import ephyra.presentation.core.util.system.getNameForMangaInfo
 import ephyra.presentation.core.util.system.isLocalOrStub
 import ephyra.presentation.core.util.system.lang
 import ephyra.presentation.core.util.system.name
+import ephyra.presentation.core.util.system.toast
 import ephyra.source.api.SourceGateway
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.online.HttpSource

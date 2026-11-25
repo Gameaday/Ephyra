@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal class PatchedDefaultRegister : InjektRegistrar {
 
-    private val NOKEY = object {}
+    private val noKey = object {}
 
     internal data class Instance(val forWhatType: Type, val forKey: Any)
 
@@ -51,7 +51,7 @@ internal class PatchedDefaultRegister : InjektRegistrar {
     @Suppress("UNCHECKED_CAST")
     override fun <R : Any> addSingletonFactory(forType: TypeReference<R>, factoryCalledOnce: () -> R) {
         factories[forType.type] = {
-            val lazy = existingValues.getOrPut(Instance(forType.type, NOKEY)) {
+            val lazy = existingValues.getOrPut(Instance(forType.type, noKey)) {
                 lazy { factoryCalledOnce() }
             }
             (lazy as Lazy<R>).value
@@ -64,7 +64,7 @@ internal class PatchedDefaultRegister : InjektRegistrar {
 
     override fun <R : Any> addPerThreadFactory(forType: TypeReference<R>, factoryCalledOncePerThread: () -> R) {
         factories[forType.type] = {
-            threadedValues.get()!!.getOrPut(Instance(forType.type, NOKEY)) { factoryCalledOncePerThread() }
+            threadedValues.get()!!.getOrPut(Instance(forType.type, noKey)) { factoryCalledOncePerThread() }
         }
     }
 
