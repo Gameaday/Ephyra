@@ -43,7 +43,7 @@ import org.junit.jupiter.params.provider.ValueSource
  * asserts the one field the contract gives an image address, [Page.imageUrl], and that `Page.url` is
  * never consulted as a substitute for it.
  */
-@Suppress("DEPRECATION") // Calls the deprecated request/parse helpers on purpose; they are what ships.
+// @Suppress("DEPRECATION") // Calls the deprecated request/parse helpers on purpose; they are what ships.
 class HttpSourceImageUrlRequestTest {
 
     /**

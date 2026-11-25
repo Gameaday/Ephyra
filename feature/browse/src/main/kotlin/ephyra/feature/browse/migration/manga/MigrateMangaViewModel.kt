@@ -8,7 +8,7 @@ import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.presentation.core.udf.BaseUdfViewModel
-import eu.kanade.tachiyomi.source.Source
+import ephyra.source.api.SourceGateway
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
@@ -82,7 +82,7 @@ class MigrateMangaViewModel @Inject constructor(
 
     @Immutable
     data class State(
-        val source: Source? = null,
+        val source: SourceGateway? = null,
         val selection: ImmutableSet<Long> = persistentSetOf(),
         private val titleList: ImmutableList<Manga>? = null,
     ) {

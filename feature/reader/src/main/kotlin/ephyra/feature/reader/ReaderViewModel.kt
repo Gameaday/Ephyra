@@ -496,7 +496,7 @@ class ReaderViewModel @Inject constructor(
                     updateState { it.copy(manga = manga) }
                     if (chapterId == -1L) chapterId = initialChapterId
 
-                    val source = sourceManager.getOrStub(manga.source)
+                    val sourceGateway = sourceManager.getOrStub(manga.source)
                     // DEF-029 instrument: an entry whose source is no longer registered fails later
                     // and elsewhere, so record how this entry's source id resolves right here.
                     sourceResolutionDiagnostics.reportEntry(manga.source)
@@ -505,7 +505,7 @@ class ReaderViewModel @Inject constructor(
                         downloadManager,
                         downloadProvider,
                         manga,
-                        source,
+                        sourceGateway,
                         downloadPreferences,
                         chapterCache,
                     )

@@ -145,7 +145,6 @@ object SyntheticMediaFixtures {
         return EncodedMediaFixture(id, format, width = 32, height = 32, bytes = bytes)
     }
 
-    @Suppress("DEPRECATION")
     private fun encode(id: String, format: FixtureMediaFormat, bitmap: Bitmap): EncodedMediaFixture {
         val output = ByteArrayOutputStream()
         val compressFormat = when (format) {

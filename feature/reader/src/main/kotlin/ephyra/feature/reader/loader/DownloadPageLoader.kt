@@ -11,12 +11,12 @@ import ephyra.feature.reader.model.PageResource
 import ephyra.feature.reader.model.PageState
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
-import eu.kanade.tachiyomi.source.Source
+import ephyra.source.api.SourceGateway
 
 internal class DownloadPageLoader(
     private val chapter: ReaderChapter,
     private val manga: Manga,
-    private val source: Source,
+    private val source: SourceGateway,
     private val downloadManager: DownloadManager,
     private val downloadProvider: DownloadProvider,
     private val context: Application,

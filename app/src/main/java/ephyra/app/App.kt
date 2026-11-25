@@ -163,7 +163,6 @@ class App :
         startupWorkflow.settled(StartupStep.CRASH_HANDLER, ok = true)
     }
 
-    @Suppress("DEPRECATION")
     override fun onCreate() {
         // Phase 3: Extension bridge initialization — must happen BEFORE super.onCreate()
         // so Injekt is primed before Hilt injects members or starts background tasks
@@ -360,7 +359,6 @@ class App :
      * to the configured size at foreground pressure, clear at critical, restore on the next
      * foreground — lives in [imageCacheMemoryPolicy] since B5; the rationale moved with it.
      */
-    @Suppress("DEPRECATION")
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         imageCacheMemoryPolicy.trim(this, level)

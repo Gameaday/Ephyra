@@ -29,7 +29,8 @@ import ephyra.domain.track.interactor.AddTracks
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.formatChapterNumber
 import ephyra.presentation.core.util.lang.searchResults
-import eu.kanade.tachiyomi.source.Source
+import ephyra.presentation.core.util.system.asLegacySource
+import ephyra.source.api.SourceGateway
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf
@@ -87,7 +88,7 @@ class HistoryViewModel @Inject constructor(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<HistoryViewModel.State, HistoryScreenEvent, HistoryViewModel.Effect>(State()) {
 
-    fun getSource(sourceId: Long): Source = sourceManager.getOrStub(sourceId)
+    fun getSource(sourceId: Long): SourceGateway = sourceManager.getOrStub(sourceId)
 
     init {
         (collectionScope ?: viewModelScope).launch {
@@ -344,7 +345,10 @@ class HistoryViewModel @Inject constructor(
             }
 
             // Sync with tracking services if applicable
-            addTracks.bindEnhancedTrackers(manga, sourceManager.getOrStub(manga.source))
+            val legacySource = sourceManager.getOrStub(manga.source).asLegacySource()
+            if (legacySource != null) {
+                addTracks.bindEnhancedTrackers(manga, legacySource)
+            }
         }
     }
 

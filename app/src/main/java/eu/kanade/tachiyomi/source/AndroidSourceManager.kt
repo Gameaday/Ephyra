@@ -11,6 +11,9 @@ import ephyra.domain.source.service.SourceManager
 import ephyra.source.api.LegacySourceGateway
 import ephyra.source.api.SourceGateway
 import ephyra.source.local.LocalSource
+import ephyra.presentation.core.util.system.legacyId
+import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -160,15 +163,21 @@ internal class AndroidSourceManager(
     }
 
     override fun getOnlineSources(): List<SourceGateway> {
-        return sourcesMapFlow.value.values.filterIsInstance<HttpSource>().map { LegacySourceGateway(it) }
+        return sourcesMapFlow.value.values
+            .toList()
+            .filterIsInstance<HttpSource>()
+            .map { LegacySourceGateway(it) }
     }
 
     override fun getCatalogueSources(): List<SourceGateway> {
-        return sourcesMapFlow.value.values.filterIsInstance<CatalogueSource>().map { LegacySourceGateway(it) }
+        return sourcesMapFlow.value.values
+            .toList()
+            .filterIsInstance<CatalogueSource>()
+            .map { LegacySourceGateway(it) }
     }
 
     override fun getStubSources(): List<StubSource> {
-        val onlineSourceIds = getOnlineSources().map { it.descriptor.id.value.toLongOrNull() ?: -1L }
+        val onlineSourceIds = getOnlineSources().map { (it.legacyId ?: 0L) }
         return stubSourcesMap.values.filterNot { it.id in onlineSourceIds }
     }
 
@@ -178,7 +187,7 @@ internal class AndroidSourceManager(
             if (dbSource == source) return@launch
             sourceRepository.upsertStubSource(source.id, source.lang, source.name)
             if (dbSource != null) {
-                downloadManagerProvider.get().renameSource(dbSource, source)
+                downloadManagerProvider.get().renameSource(LegacySourceGateway(dbSource), LegacySourceGateway(source))
             }
         }
     }

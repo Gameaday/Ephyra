@@ -28,13 +28,11 @@ fun Context.notify(id: Int, channelId: String, block: (NotificationCompat.Builde
     this.notify(id, notification)
 }
 
-@SuppressLint("MissingPermission")
 fun Context.notify(id: Int, notification: Notification) {
     if (!hasNotificationPermission()) return
     NotificationManagerCompat.from(this).notify(id, notification)
 }
 
-@SuppressLint("MissingPermission")
 fun Context.notify(notificationWithIdAndTags: List<NotificationWithIdAndTag>) {
     if (!hasNotificationPermission()) return
     NotificationManagerCompat.from(this).notify(notificationWithIdAndTags)

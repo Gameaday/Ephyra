@@ -20,8 +20,11 @@ import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.manga.model.toSManga
 import ephyra.domain.source.service.SourceManager
+import ephyra.presentation.core.util.system.getMangaDetails
+import ephyra.presentation.core.util.system.legacyId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -110,12 +113,16 @@ class MetadataUpdateJob(
                                     manga,
                                 ) {
                                     try {
-                                        val networkManga = source.getMangaDetails(manga.toSManga())
-                                        updateManga.awaitUpdateFromSource(
-                                            manga,
-                                            networkManga,
-                                            manualFetch = true,
-                                        )
+                                        val networkSManga = source?.getMangaDetails(manga.toSManga())
+                                        if (networkSManga != null) {
+                                            val sourceId = source?.legacyId ?: 0L
+                                            val networkManga = networkSManga.toDomainManga(sourceId)
+                                            updateManga.awaitUpdateFromSource(
+                                                manga,
+                                                networkManga,
+                                                manualFetch = true,
+                                            )
+                                        }
                                     } catch (e: Throwable) {
                                         // Ignore errors and continue
                                         logcat(LogPriority.ERROR, e)

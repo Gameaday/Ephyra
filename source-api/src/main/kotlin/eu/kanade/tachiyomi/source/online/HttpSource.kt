@@ -121,7 +121,6 @@ abstract class HttpSource : CatalogueSource {
      * @since tachiyomix 1.6
      * @param page the page number to retrieve.
      */
-    @Suppress("DEPRECATION")
     override suspend fun getPopularManga(page: Int): MangasPage =
         client.newCall(popularMangaRequest(page)).awaitSuccess().use { popularMangaParse(it) }
 
@@ -155,7 +154,6 @@ abstract class HttpSource : CatalogueSource {
      * @param query the search query.
      * @param filters the list of filters to apply.
      */
-    @Suppress("DEPRECATION")
     override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage =
         client.newCall(searchMangaRequest(page, query, filters)).awaitSuccess().use { searchMangaParse(it) }
 
@@ -193,7 +191,6 @@ abstract class HttpSource : CatalogueSource {
      * @since tachiyomix 1.6
      * @param page the page number to retrieve.
      */
-    @Suppress("DEPRECATION")
     override suspend fun getLatestUpdates(page: Int): MangasPage =
         client.newCall(latestUpdatesRequest(page)).awaitSuccess().use { latestUpdatesParse(it) }
 
@@ -231,7 +228,6 @@ abstract class HttpSource : CatalogueSource {
      *
      * The two halves run in a [supervisorScope] so one failing does not cancel the other.
      */
-    @Suppress("DEPRECATION")
     override suspend fun getMangaUpdate(
         manga: SManga,
         chapters: List<SChapter>,
@@ -357,7 +353,6 @@ abstract class HttpSource : CatalogueSource {
      * @since tachiyomix 1.6
      * @param chapter the chapter whose page list has to be fetched.
      */
-    @Suppress("DEPRECATION")
     override suspend fun getPageList(chapter: SChapter): List<Page> =
         client.newCall(pageListRequest(chapter)).awaitSuccess().use { pageListParse(it) }
 
@@ -491,7 +486,6 @@ abstract class HttpSource : CatalogueSource {
      * @param manga the manga
      * @return url of the manga
      */
-    @Suppress("DEPRECATION")
     open fun getMangaUrl(manga: SManga): String {
         return mangaDetailsRequest(manga).url.toString()
     }
@@ -503,7 +497,6 @@ abstract class HttpSource : CatalogueSource {
      * @param chapter the chapter
      * @return url of the chapter
      */
-    @Suppress("DEPRECATION")
     open fun getChapterUrl(chapter: SChapter): String {
         return pageListRequest(chapter).url.toString()
     }

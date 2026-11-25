@@ -30,15 +30,15 @@ import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.formattedMessage
-import ephyra.source.local.LocalSource
+import ephyra.presentation.core.util.system.asLocalSource
 import eu.kanade.tachiyomi.network.interceptor.CloudflareChallengeException
-import eu.kanade.tachiyomi.source.Source
+import ephyra.source.api.SourceGateway
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun BrowseSourceContent(
-    source: Source?,
+    source: SourceGateway?,
     mangaList: LazyPagingItems<StateFlow<Manga>>,
     columns: GridCells,
     displayMode: LibraryDisplayMode,
@@ -85,7 +85,7 @@ fun BrowseSourceContent(
                 is LoadState.Error -> getErrorMessage(errorState)
                 else -> stringResource(ephyra.app.core.common.R.string.no_results_found)
             },
-            actions = if (source is LocalSource) {
+            actions = if (source?.asLocalSource() != null) {
                 persistentListOf(
                     EmptyScreenAction(
                         stringRes = ephyra.app.core.common.R.string.local_source_help_guide,

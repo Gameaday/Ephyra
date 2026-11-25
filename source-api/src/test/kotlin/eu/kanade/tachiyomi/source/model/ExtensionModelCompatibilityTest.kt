@@ -68,7 +68,6 @@ class ExtensionModelCompatibilityTest {
         val modern = SManga.create().apply { genres = listOf("Action", "Fantasy") }
         assertEquals(listOf("Action", "Fantasy"), modern.effectiveGenres())
 
-        @Suppress("DEPRECATION")
         val legacy = SManga.create().apply { genre = "Action, Fantasy" }
         assertEquals(listOf("Action", "Fantasy"), legacy.effectiveGenres())
     }
@@ -79,7 +78,6 @@ class ExtensionModelCompatibilityTest {
         val chapter = SChapter.create().apply { number = "12.5a" }
         assertEquals("12.5a", chapter.effectiveNumber())
 
-        @Suppress("DEPRECATION")
         val legacy = SChapter.create().apply { chapter_number = 12.5f }
         assertEquals("12.5", legacy.effectiveNumber())
     }

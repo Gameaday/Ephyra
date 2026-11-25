@@ -12,7 +12,8 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
-import eu.kanade.tachiyomi.source.Source
+import ephyra.presentation.core.util.system.asLegacySource
+import ephyra.source.api.SourceGateway
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -44,8 +45,9 @@ class MangaTrackInteractor @Inject constructor(
 
     suspend fun refreshTracks(mangaId: Long) = refreshTracks.await(mangaId)
 
-    suspend fun bindEnhancedTrackers(manga: Manga, source: Source) {
-        addTracks.bindEnhancedTrackers(manga, source)
+    suspend fun bindEnhancedTrackers(manga: Manga, source: SourceGateway) {
+        val legacySource = source.asLegacySource() ?: return
+        addTracks.bindEnhancedTrackers(manga, legacySource)
     }
 
     suspend fun trackChapter(mangaId: Long, maxChapterNumber: Double) {

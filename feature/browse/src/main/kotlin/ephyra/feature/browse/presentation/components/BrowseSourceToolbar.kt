@@ -18,16 +18,17 @@ import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.RadioMenuItem
 import ephyra.presentation.core.components.SearchToolbar
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.source.local.LocalSource
-import eu.kanade.tachiyomi.source.ConfigurableSource
-import eu.kanade.tachiyomi.source.Source
+import ephyra.presentation.core.util.system.asConfigurableSource
+import ephyra.presentation.core.util.system.asLocalSource
+import ephyra.presentation.core.util.system.name
+import ephyra.source.api.SourceGateway
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun BrowseSourceToolbar(
     searchQuery: String?,
     onSearchQueryChange: (String?) -> Unit,
-    source: Source?,
+    source: SourceGateway?,
     displayMode: LibraryDisplayMode,
     onDisplayModeChange: (LibraryDisplayMode) -> Unit,
     navigateUp: () -> Unit,
@@ -39,8 +40,8 @@ fun BrowseSourceToolbar(
 ) {
     // Avoid capturing unstable source in actions lambda
     val title = source?.name
-    val isLocalSource = source is LocalSource
-    val isConfigurableSource = source is ConfigurableSource
+    val isLocalSource = source?.asLocalSource() != null
+    val isConfigurableSource = source?.asConfigurableSource() != null
 
     var selectingDisplayMode by remember { mutableStateOf(false) }
 

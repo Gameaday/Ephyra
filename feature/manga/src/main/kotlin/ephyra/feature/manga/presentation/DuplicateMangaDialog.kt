@@ -69,7 +69,8 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.secondaryItemAlpha
-import eu.kanade.tachiyomi.source.Source
+import ephyra.presentation.core.util.system.name
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.model.SManga
 
 @Composable
@@ -79,7 +80,7 @@ fun DuplicateMangaDialog(
     onConfirm: () -> Unit,
     onOpenManga: (manga: Manga) -> Unit,
     onMigrate: (manga: Manga) -> Unit,
-    getSource: (Long) -> Source,
+    getSource: (Long) -> SourceGateway,
     modifier: Modifier = Modifier,
 ) {
     val minHeight = 48.dp
@@ -175,7 +176,7 @@ fun DuplicateMangaDialog(
 @Composable
 private fun DuplicateMangaListItem(
     duplicate: MangaWithChapterCount,
-    getSource: () -> Source,
+    getSource: () -> SourceGateway,
     onDismissRequest: () -> Unit,
     onOpenManga: () -> Unit,
     onMigrate: () -> Unit,

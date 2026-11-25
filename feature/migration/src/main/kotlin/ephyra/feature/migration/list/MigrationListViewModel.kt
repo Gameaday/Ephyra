@@ -11,6 +11,7 @@ import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.UnifiedSearchEngine
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.manga.model.toSManga
 import ephyra.domain.migration.usecases.MigrateMangaUseCase
 import ephyra.domain.source.service.SourceManager
@@ -18,6 +19,7 @@ import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.migration.list.models.MigratingManga
 import ephyra.feature.migration.list.models.MigratingManga.SearchResult
 import ephyra.presentation.core.udf.BaseUdfViewModel
+import ephyra.presentation.core.util.system.getMangaDetails
 import ephyra.presentation.core.util.system.getNameForMangaInfo
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.collections.immutable.ImmutableList
@@ -156,7 +158,8 @@ class MigrationListViewModel @Inject constructor(
             if (result != null && result.manga.thumbnailUrl == null) {
                 try {
                     val newManga = sourceManager.getOrStub(result.manga.source).getMangaDetails(result.manga.toSManga())
-                    updateManga.awaitUpdateFromSource(result.manga, newManga, true)
+                    val domainManga = newManga.toDomainManga(result.manga.source)
+                    updateManga.awaitUpdateFromSource(result.manga, domainManga, true)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -249,8 +252,7 @@ class MigrationListViewModel @Inject constructor(
             val result = migratingManga.migrationScope.async {
                 val manga = getManga.await(target) ?: return@async null
                 try {
-                    val source = sourceManager.get(manga.source)!!
-                    val gateway = ephyra.source.api.LegacySourceGateway(source)
+                    val gateway = sourceManager.get(manga.source)!!
                     syncChaptersWithSource.await(gateway, manga)
                 } catch (e: CancellationException) {
                     throw e
@@ -272,7 +274,8 @@ class MigrationListViewModel @Inject constructor(
 
             try {
                 val newManga = sourceManager.getOrStub(result.source).getMangaDetails(result.toSManga())
-                updateManga.awaitUpdateFromSource(result, newManga, true)
+                val domainManga = newManga.toDomainManga(result.source)
+                updateManga.awaitUpdateFromSource(result, domainManga, true)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

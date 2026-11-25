@@ -2,6 +2,7 @@ package ephyra.app.startup
 
 import ephyra.domain.source.registry.SourceRegistry
 import ephyra.domain.source.service.SourceManager
+import ephyra.presentation.core.util.system.legacyId
 import ephyra.source.local.LocalSource
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
@@ -44,7 +45,7 @@ class SourceReconciler(
             val sourceManager = sourceManagerProvider.get()
             val ready = withTimeoutOrNull(timeoutMs) { sourceManager.isInitialized.first { it } } ?: false
             val registrations = sourceRegistry.currentRegistrations()
-            val loaded = sourceManager.getCatalogueSources().map { it.id }
+            val loaded = sourceManager.getCatalogueSources().map { it.legacyId ?: 0L }
             val registeredIds = registrations.map { it.id }.toSet()
             val loadedIds = loaded.toSet()
             SourceReconciliationOutcome(

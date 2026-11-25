@@ -27,7 +27,6 @@ fun OkHttpClient.Builder.rateLimit(permits: Int, period: Duration = 1.seconds) =
     addInterceptor(RateLimitInterceptor(null, permits, period))
 
 /** We can probably accept domains or wildcards by comparing with [endsWith], etc. */
-@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
 internal class RateLimitInterceptor(
     private val host: String?,
     private val permits: Int,

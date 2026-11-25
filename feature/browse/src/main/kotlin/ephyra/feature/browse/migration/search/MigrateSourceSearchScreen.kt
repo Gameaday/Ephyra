@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.core.common.Constants
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.source.model.SourceFilter
 import ephyra.feature.browse.presentation.BrowseSourceContent
 import ephyra.feature.browse.source.browse.BrowseSourceScreenEvent
 import ephyra.feature.browse.source.browse.BrowseSourceViewModel
@@ -37,6 +38,8 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsLazyPagingItems
+import ephyra.presentation.core.util.system.asHttpSource
+import ephyra.source.api.SourceGateway
 import ephyra.source.local.LocalSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.launch
@@ -120,7 +123,7 @@ fun MigrateSourceSearchScreen(
             snackbarHostState = snackbarHostState,
             contentPadding = paddingValues,
             onWebViewClick = { targetUrl ->
-                val httpSource = source as? HttpSource ?: return@BrowseSourceContent
+                val httpSource = source?.asHttpSource() ?: return@BrowseSourceContent
                 navController.navigate(
                     Screen.WebView(targetUrl ?: httpSource.baseUrl, httpSource.name, httpSource.id),
                 )

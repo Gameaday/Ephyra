@@ -18,6 +18,11 @@ import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.presentation.core.udf.BaseUdfViewModel
+import ephyra.presentation.core.util.system.asCatalogueSource
+import ephyra.presentation.core.util.system.lang
+import ephyra.presentation.core.util.system.legacyId
+import ephyra.presentation.core.util.system.name
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
@@ -99,12 +104,13 @@ abstract class SearchViewModel(
     }
 
     open fun getEnabledSources(): List<CatalogueSource> {
-        val filtered = sourceManager.getCatalogueSources()
-            .filter { it.lang in enabledLanguages && it.id !in disabledSourceIds }
+        val filtered: List<CatalogueSource> = sourceManager.getCatalogueSources()
+            .filter { it.lang in enabledLanguages && (it.legacyId ?: 0L) !in disabledSourceIds }
+            .mapNotNull { it.asCatalogueSource() }
         val sortKeys = HashMap<Long, String>((filtered.size / 0.75f + 1).toInt())
         filtered.forEach { sortKeys[it.id] = "${it.name.lowercase()} (${it.lang})" }
         return filtered.sortedWith(
-            compareBy(
+            compareBy<CatalogueSource>(
                 { it.id !in pinnedSourceIds },
                 { sortKeys.getValue(it.id) },
             ),

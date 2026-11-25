@@ -51,11 +51,14 @@ import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.ui.viewer.MediaViewerRegistry
 import ephyra.presentation.core.util.isTabletUi
+import ephyra.presentation.core.util.system.asHttpSource
 import ephyra.presentation.core.util.system.copyToClipboard
+import ephyra.presentation.core.util.system.isLocalOrStub
+import ephyra.presentation.core.util.system.legacyId
+import ephyra.presentation.core.util.system.name
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
-import ephyra.source.local.isLocalOrStub
-import eu.kanade.tachiyomi.source.Source
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.collect
@@ -406,11 +409,11 @@ fun MangaDetailsScreen(
                 var showCoverSearch by remember { mutableStateOf(value = false) }
                 if (showCoverSearch) {
                     val coverSearchSm = hiltViewModel<CoverSearchViewModel>()
-                    LaunchedEffect(manga!!.title, successState.source.id) {
+                    LaunchedEffect(manga!!.title, successState.source.legacyId) {
                         coverSearchSm.onEvent(
                             CoverSearchScreenEvent.Init(
                                 mangaTitle = manga!!.title,
-                                currentSourceId = successState.source.id,
+                                currentSourceId = successState.source.legacyId ?: 0L,
                             ),
                         )
                         coverSearchSm.onEvent(CoverSearchScreenEvent.Search)
@@ -567,9 +570,9 @@ private fun openChapter(
     }
 }
 
-private fun getMangaUrl(manga: Manga?, source: Source?): String? {
+private fun getMangaUrl(manga: Manga?, source: SourceGateway?): String? {
     val m = manga ?: return null
-    val s = source as? HttpSource ?: return null
+    val s = source?.asHttpSource() ?: return null
 
     return try {
         s.getMangaUrl(m.toSManga())
@@ -578,19 +581,19 @@ private fun getMangaUrl(manga: Manga?, source: Source?): String? {
     }
 }
 
-private fun openMangaInWebView(navController: NavController, manga: Manga?, source: Source?) {
+private fun openMangaInWebView(navController: NavController, manga: Manga?, source: SourceGateway?) {
     getMangaUrl(manga, source)?.let { url ->
         navController.navigate(
             Screen.WebView(
                 url = url,
                 title = manga?.title,
-                sourceId = source?.id,
+                sourceId = source?.legacyId,
             ),
         )
     }
 }
 
-private fun shareManga(context: Context, manga: Manga?, source: Source?) {
+private fun shareManga(context: Context, manga: Manga?, source: SourceGateway?) {
     try {
         getMangaUrl(manga, source)?.let { url ->
             val intent = url.toUri().toShareIntent(context, type = "text/plain")
@@ -603,7 +606,7 @@ private fun shareManga(context: Context, manga: Manga?, source: Source?) {
 
 private fun performSearch(
     navController: NavController,
-    source: Source,
+    source: SourceGateway,
     query: String,
     global: Boolean,
 ) {
@@ -615,7 +618,7 @@ private fun performSearch(
     // and language preferences for that source are respected. Local/stub sources have
     // no catalogue to search.
     if (!source.isLocalOrStub()) {
-        navController.navigate(Screen.BrowseSource(source.id, query))
+        navController.navigate(Screen.BrowseSource(source.legacyId ?: 0L, query))
     } else {
         navController.navigate(Screen.GlobalSearch(query))
     }
@@ -623,7 +626,7 @@ private fun performSearch(
 
 private fun performGenreSearch(
     navController: NavController,
-    source: Source,
+    source: SourceGateway,
     genreName: String,
 ) {
     performSearch(
@@ -634,9 +637,9 @@ private fun performGenreSearch(
     )
 }
 
-private fun copyMangaUrl(context: Context, manga: Manga?, source: Source?) {
+private fun copyMangaUrl(context: Context, manga: Manga?, source: SourceGateway?) {
     val m = manga ?: return
-    val s = source as? HttpSource ?: return
+    val s = source?.asHttpSource() ?: return
     val url = s.getMangaUrl(m.toSManga())
     context.copyToClipboard(url, url)
 }

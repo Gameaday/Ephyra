@@ -28,7 +28,6 @@ object DeviceUtil {
             .toIntOrNull()
     }
 
-    @SuppressLint("PrivateApi")
     fun isMiuiOptimizationDisabled(): Boolean {
         val sysProp = getSystemProperty("persist.sys.miui_optimization")
         if (sysProp == "0" || sysProp == "false") {
@@ -137,7 +136,6 @@ object DeviceUtil {
             tier
         }
 
-    @SuppressLint("PrivateApi")
     private fun getSystemProperty(key: String?): String? {
         return try {
             Class.forName("android.os.SystemProperties")

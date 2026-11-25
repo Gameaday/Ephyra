@@ -153,7 +153,6 @@ class DownloadProvider(
     override fun getSourceDirName(source: SourceGateway): String {
         val legacySource = (source as? LegacySourceGateway)?.delegate
             ?: throw IllegalStateException("Expected LegacySourceGateway for getSourceDirName")
-        @Suppress("DEPRECATION")
         return DiskUtil.buildValidFilename(
             legacySource.toString(),
             disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync(),
@@ -166,7 +165,6 @@ class DownloadProvider(
      * @param mangaTitle the title of the manga to query.
      */
     override fun getMangaDirName(mangaTitle: String): String {
-        @Suppress("DEPRECATION")
         return DiskUtil.buildValidFilename(
             mangaTitle,
             disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync(),
@@ -233,7 +231,6 @@ class DownloadProvider(
     }
 
     override fun isChapterDirNameChanged(oldChapter: Chapter, newChapter: Chapter): Boolean {
-        @Suppress("DEPRECATION")
         val disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync()
         return getChapterDirName(oldChapter.name, oldChapter.scanlator, oldChapter.url, disallowNonAscii) !=
             getChapterDirName(newChapter.name, newChapter.scanlator, newChapter.url, disallowNonAscii)
@@ -249,7 +246,6 @@ class DownloadProvider(
         chapterScanlator: String?,
         chapterUrl: String,
     ): List<String> {
-        @Suppress("DEPRECATION")
         val disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync()
         val chapterDirName = getChapterDirName(chapterName, chapterScanlator, chapterUrl, disallowNonAscii)
 

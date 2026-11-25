@@ -66,7 +66,6 @@ class ImageCacheMemoryPolicy {
      * cover working set. Long webtoon sessions are still protected by the background-retention
      * fraction and the `MEMORY_CACHE_HARD_CAP_BYTES` ceiling, which trim even without a callback.
      */
-    @Suppress("DEPRECATION")
     fun trim(context: Context, level: Int) {
         val memoryCache = SingletonImageLoader.get(context).memoryCache
         if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {

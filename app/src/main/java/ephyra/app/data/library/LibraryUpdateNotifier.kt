@@ -33,6 +33,7 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.presentation.core.util.formatChapterNumber
 import ephyra.presentation.core.util.system.getBitmapOrNull
+import ephyra.presentation.core.util.system.name
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import java.math.RoundingMode
 import java.text.NumberFormat

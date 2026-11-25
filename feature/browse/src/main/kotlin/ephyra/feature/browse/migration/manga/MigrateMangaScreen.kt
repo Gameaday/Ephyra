@@ -28,6 +28,7 @@ import androidx.navigation.NavController
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.manga.presentation.components.BaseMangaListItem
 import ephyra.presentation.core.components.AppBar
+import ephyra.presentation.core.util.system.name
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource

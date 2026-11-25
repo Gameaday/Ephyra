@@ -29,13 +29,20 @@ import ephyra.domain.manga.model.toMangaUpdate
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.interactor.GetRemoteManga
+import ephyra.domain.source.model.SourceFilter
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.removeCovers
-import ephyra.domain.source.model.SourceFilter
+import ephyra.presentation.core.util.system.asCatalogueSource
+import ephyra.presentation.core.util.system.asLegacySource
+import ephyra.presentation.core.util.system.fromLegacyFilterList
+import ephyra.presentation.core.util.system.legacyId
+import ephyra.presentation.core.util.system.name
+import ephyra.domain.source.model.SourceFilter as DomainSourceFilter
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import kotlinx.collections.immutable.ImmutableList
@@ -84,7 +91,7 @@ class BrowseSourceViewModel @Inject constructor(
     State(Listing.Popular),
 ) {
 
-    fun getSource(id: Long): eu.kanade.tachiyomi.source.Source = sourceManager.getOrStub(id)
+    fun getSource(id: Long): SourceGateway = sourceManager.getOrStub(id)
 
     // Read-only: display-mode changes enter through BrowseSourceScreenEvent.SetDisplayMode
     // like every other mutation (strict UDF — the UI never writes ViewModel state directly).
@@ -93,7 +100,7 @@ class BrowseSourceViewModel @Inject constructor(
     var sourceId: Long = -1L
         private set
 
-    var source: eu.kanade.tachiyomi.source.Source? = null
+    var source: SourceGateway? = null
         private set
 
     private var isInitialized = false
@@ -123,7 +130,9 @@ class BrowseSourceViewModel @Inject constructor(
         this.source = src
 
         val initialListing = Listing.valueOf(listingQuery)
-        val initialFilters = (src as? CatalogueSource)?.getFilterList()?.let { SourceFilter.fromLegacyFilterList(it) } ?: SourceFilter.EMPTY
+        val initialFilters =
+            (src.asCatalogueSource())?.getFilterList()?.let { fromLegacyFilterList(it) }
+                ?: DomainSourceFilter.EMPTY
         val query = if (initialListing is Listing.Search) initialListing.query else null
         val resolvedListing = if (initialListing is Listing.Search) {
             Listing.Search(query, initialFilters)
@@ -146,8 +155,8 @@ class BrowseSourceViewModel @Inject constructor(
             )
         }
 
-        if (!getIncognitoState.await(src.id)) {
-            sourcePreferences.lastUsedSource().set(src.id)
+        if (!getIncognitoState.await(src.legacyId ?: 0L)) {
+            sourcePreferences.lastUsedSource().set(src.legacyId ?: 0L)
         }
 
         // Read async preference after init to avoid blocking main thread
@@ -159,7 +168,9 @@ class BrowseSourceViewModel @Inject constructor(
             sourceManager.isInitialized.first { it }
             val realSrc = sourceManager.getOrStub(sourceId)
             source = realSrc
-            val filters = (realSrc as? CatalogueSource)?.getFilterList()?.let { SourceFilter.fromLegacyFilterList(it) } ?: SourceFilter.EMPTY
+            val filters =
+                (realSrc.asCatalogueSource())?.getFilterList()?.let { fromLegacyFilterList(it) }
+                    ?: DomainSourceFilter.EMPTY
             updateState { current ->
                 current.copy(
                     source = realSrc,
@@ -228,26 +239,26 @@ class BrowseSourceViewModel @Inject constructor(
 
     private fun resetFilters() {
         val src = source ?: return
-        if (src !is CatalogueSource) return
-        updateState { it.copy(filters = SourceFilter.fromLegacyFilterList(src.getFilterList())) }
+        val catalogueSource = src.asCatalogueSource() ?: return
+        updateState { it.copy(filters = fromLegacyFilterList(catalogueSource.getFilterList())) }
     }
 
     private fun setListing(listing: Listing) {
         updateState { it.copy(listing = listing, toolbarQuery = null) }
     }
 
-    private fun setFilters(filters: SourceFilter) {
+    private fun setFilters(filters: DomainSourceFilter) {
         val src = source ?: return
-        if (src !is CatalogueSource) return
+        if (src.asCatalogueSource() == null) return
         updateState { it.copy(filters = filters) }
     }
 
-    private fun search(query: String? = null, filters: SourceFilter? = null) {
+    private fun search(query: String? = null, filters: DomainSourceFilter? = null) {
         val src = source ?: return
-        if (src !is CatalogueSource) return
+        val catalogueSource = src.asCatalogueSource() ?: return
 
         val input = currentState.listing as? Listing.Search
-            ?: Listing.Search(query = null, filters = SourceFilter.fromLegacyFilterList(src.getFilterList()))
+            ?: Listing.Search(query = null, filters = fromLegacyFilterList(catalogueSource.getFilterList()))
 
         updateState {
             it.copy(
@@ -262,9 +273,9 @@ class BrowseSourceViewModel @Inject constructor(
 
     private fun searchGenre(genreName: String) {
         val src = source ?: return
-        if (src !is CatalogueSource) return
+        val catalogueSource = src.asCatalogueSource() ?: return
 
-        val defaultFilters = SourceFilter.fromLegacyFilterList(src.getFilterList())
+        val defaultFilters = fromLegacyFilterList(catalogueSource.getFilterList())
         var genreExists = false
 
         filter@ for (sourceFilter in defaultFilters) {
@@ -320,7 +331,10 @@ class BrowseSourceViewModel @Inject constructor(
                 new = new.removeCovers(coverCache)
             } else {
                 setMangaDefaultChapterFlags.await(manga)
-                addTracks.bindEnhancedTrackers(manga, src)
+                val legacySource = src.asLegacySource()
+                if (legacySource != null) {
+                    addTracks.bindEnhancedTrackers(manga, legacySource)
+                }
             }
 
             updateManga.await(new.toMangaUpdate())
@@ -433,13 +447,13 @@ class BrowseSourceViewModel @Inject constructor(
     data class State(
         val listing: Listing = Listing.Popular,
         val sourceId: Long = -1L,
-        val source: eu.kanade.tachiyomi.source.Source? = null,
+        val source: SourceGateway? = null,
         /**
          * True once the source map has finished loading, so [source] can be trusted. Until then a
          * stub source only means "not loaded yet", not "not installed".
          */
         val sourceReady: Boolean = false,
-        val filters: SourceFilter = SourceFilter.EMPTY,
+        val filters: DomainSourceFilter = DomainSourceFilter.EMPTY,
         val toolbarQuery: String? = null,
         val dialog: Dialog? = null,
     ) {

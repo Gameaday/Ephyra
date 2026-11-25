@@ -15,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal class PatchedDefaultRegister : InjektRegistrar {
 
-    @Suppress("PrivatePropertyName", "ktlint:standard:property-naming")
     private val NOKEY = object {}
 
     internal data class Instance(val forWhatType: Type, val forKey: Any)

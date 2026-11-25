@@ -21,7 +21,6 @@ fun ImageFormat.encoder(): (Bitmap, OutputStream) -> Unit = when (this) {
     }
 
     ImageFormat.WEBP -> { bitmap, os ->
-        @Suppress("DEPRECATION")
         bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, os)
     }
 }

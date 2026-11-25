@@ -13,7 +13,6 @@ import eu.kanade.tachiyomi.source.model.SManga
 import java.io.Serializable
 import java.time.Instant
 
-/** @suppress Compose compiler does not reach domain models; use `@Immutable` in UI mappers instead. */
 data class Manga(
     val id: Long,
     val source: Long,

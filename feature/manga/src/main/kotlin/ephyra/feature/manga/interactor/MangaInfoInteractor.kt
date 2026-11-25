@@ -6,6 +6,7 @@ import ephyra.domain.manga.interactor.SetExcludedScanlators
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
+import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.MatchUnlinkedManga
@@ -68,7 +69,8 @@ class MangaInfoInteractor @Inject constructor(
         manualFetch: Boolean,
     ) {
         networkManga ?: return
-        updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch)
+        val domainManga = networkManga.toDomainManga(manga.source)
+        updateManga.awaitUpdateFromSource(manga, domainManga, manualFetch)
     }
 
     suspend fun setExcludedScanlators(mangaId: Long, excludedScanlators: Set<String>) {

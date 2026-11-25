@@ -48,7 +48,6 @@ sealed class Image(
         override val name: String,
         override val location: Location,
         val encoder: (Bitmap, java.io.OutputStream) -> Unit = { bmp, os ->
-            @Suppress("DEPRECATION")
             bmp.compress(Bitmap.CompressFormat.PNG, 100, os)
         },
     ) : Image(name, location)

@@ -17,7 +17,6 @@ object SecureActivityDelegateState {
      */
     var requireUnlock = true
 
-    @Suppress("DEPRECATION")
     fun onApplicationStopped(preferences: SecurityPreferences) {
         if (!preferences.useAuthenticator().getSync()) return
 
@@ -32,7 +31,6 @@ object SecureActivityDelegateState {
     /**
      * Checks if unlock is needed when the app comes to the foreground.
      */
-    @Suppress("DEPRECATION")
     fun onApplicationStart(preferences: SecurityPreferences) {
         if (!preferences.useAuthenticator().getSync()) return
 

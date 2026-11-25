@@ -43,9 +43,14 @@ import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.presentation.core.util.manga.removeCovers
 import ephyra.presentation.core.util.system.toast
+import ephyra.presentation.core.util.system.asHttpSource
+import ephyra.presentation.core.util.system.asLegacySource
+import ephyra.presentation.core.util.system.getNameForMangaInfo
+import ephyra.presentation.core.util.system.isLocalOrStub
+import ephyra.presentation.core.util.system.lang
+import ephyra.presentation.core.util.system.name
+import ephyra.source.api.SourceGateway
 import ephyra.source.local.isLocal
-import ephyra.source.local.isLocalOrStub
-import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentSet
@@ -108,7 +113,7 @@ class MangaViewModel @Inject constructor(
     val manga: Manga?
         get() = successState?.manga
 
-    val source: Source?
+    val source: SourceGateway?
         get() = successState?.source
 
     private val skipRead by readerPreferences.skipRead().asState(viewModelScope)
@@ -873,7 +878,7 @@ class MangaViewModel @Inject constructor(
         @Immutable
         data class Success(
             val manga: Manga,
-            val source: Source,
+            val source: SourceGateway,
             val chapters: List<Chapter> = emptyList(),
             val chapterListItems: List<ChapterList> = emptyList(),
             val selectedChapterIds: PersistentSet<Long> = persistentSetOf(),

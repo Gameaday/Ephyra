@@ -29,7 +29,6 @@ import logcat.LogPriority
  * PendingIntent broadcasting [ACTION_DISABLE_INCOGNITO_MODE] — and the receiver is registered;
  * on disable both are torn down.
  */
-@SuppressLint("LaunchActivityFromNotification")
 class IncognitoModeMonitor(
     private val app: Context,
     private val basePreferences: BasePreferences,

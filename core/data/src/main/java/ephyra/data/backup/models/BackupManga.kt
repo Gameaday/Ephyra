@@ -6,7 +6,6 @@ import ephyra.domain.manga.model.UpdateStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 
-@Suppress("DEPRECATION")
 @Serializable
 data class BackupManga(
     @ProtoNumber(1) var source: Long,

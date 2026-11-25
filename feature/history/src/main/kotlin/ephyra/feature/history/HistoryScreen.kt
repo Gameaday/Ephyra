@@ -325,7 +325,7 @@ fun HistoryTabScreen(
                     )
                 },
                 onMigrate = { viewModel.onEvent(HistoryScreenEvent.ShowMigrateDialog(dialog.manga, it)) },
-                getSource = viewModel::getSource,
+                getSource = { viewModel.getSource(it) },
             )
         }
 

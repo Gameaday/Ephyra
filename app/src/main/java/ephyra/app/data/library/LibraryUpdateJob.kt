@@ -42,9 +42,12 @@ import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.SourceStatus
 import ephyra.domain.manga.model.UpdateStrategy
+import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.manga.model.toSManga
 import ephyra.domain.source.model.SourceNotInstalledException
 import ephyra.domain.source.service.SourceManager
+import ephyra.source.api.SourceGateway
+import ephyra.source.api.SourceResult
 import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -82,7 +85,6 @@ class LibraryUpdateJob(
 
     override suspend fun doWork(): Result {
         if (tags.contains(WORK_NAME_AUTO)) {
-            @Suppress("DEPRECATION")
             if (context.isPowerSaveMode) {
                 return Result.retry()
             }
@@ -314,8 +316,7 @@ class LibraryUpdateJob(
             return emptyList()
         }
 
-        val source = sourceManager.getOrStub(manga.source)
-        val gateway = ephyra.source.api.LegacySourceGateway(source)
+        val gateway: SourceGateway = sourceManager.getOrStub(manga.source)
 
         val dbManga = getManga.await(manga.id)?.takeIf { it.favorite } ?: return emptyList()
 
@@ -327,14 +328,26 @@ class LibraryUpdateJob(
             try {
                 val mangaDetailsResult = gateway.getDetails(ephyra.source.api.ContentReference(url = dbManga.url))
                 when (mangaDetailsResult) {
-                    is ephyra.source.api.SourceResult.Success -> {
+                    is SourceResult.Success -> {
                         val remoteManga = mangaDetailsResult.value.toDomainManga()
-                        updateManga.awaitUpdateFromSource(dbManga, remoteManga.toSManga(), manualFetch = false)
+                        updateManga.awaitUpdateFromSource(dbManga, remoteManga, manualFetch = false)
                     }
-                    is ephyra.source.api.SourceResult.Empty -> {
+                    is SourceResult.Empty -> {
                         logcat(LogPriority.DEBUG) { "No manga details for ${dbManga.title}" }
                     }
-                    else -> logcat(LogPriority.WARN, mangaDetailsResult.exceptionOrNull()) { "Failed to get manga details for '${dbManga.title}'" }
+                    is SourceResult.PermanentFailure -> {
+                        logcat(LogPriority.WARN, mangaDetailsResult.cause) {
+                            "Failed to get manga details for '${dbManga.title}'"
+                        }
+                    }
+                    is SourceResult.TransientFailure -> {
+                        logcat(LogPriority.WARN, mangaDetailsResult.cause) {
+                            "Failed to get manga details for '${dbManga.title}'"
+                        }
+                    }
+                    else -> logcat(LogPriority.WARN) {
+                        "Failed to get manga details for '${dbManga.title}'"
+                    }
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.WARN, e) { "Metadata update failed for '${dbManga.title}'" }

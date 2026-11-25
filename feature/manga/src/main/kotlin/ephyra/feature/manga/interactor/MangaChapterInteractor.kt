@@ -17,7 +17,13 @@ import ephyra.domain.manga.interactor.SetMangaChapterFlags
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toSManga
-import eu.kanade.tachiyomi.source.Source
+import ephyra.domain.manga.model.toDomainManga
+import ephyra.presentation.core.util.system.asLegacySource
+import ephyra.presentation.core.util.system.getMangaDetails
+import ephyra.presentation.core.util.system.isLocalOrStub
+import ephyra.presentation.core.util.system.legacyId
+import ephyra.presentation.core.util.system.name
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.model.SMangaUpdate
 import logcat.LogPriority
 import javax.inject.Inject
@@ -82,7 +88,7 @@ class MangaChapterInteractor @Inject constructor(
         )
     }
 
-    fun deleteChapters(chapters: List<Chapter>, manga: Manga, source: Source) {
+    fun deleteChapters(chapters: List<Chapter>, manga: Manga, source: SourceGateway) {
         downloadManager.deleteChapters(chapters, manga, source)
     }
 
@@ -94,18 +100,20 @@ class MangaChapterInteractor @Inject constructor(
         return filterChaptersForDownload.await(manga, chapters)
     }
 
-    @Suppress("DEPRECATION")
     suspend fun syncChaptersWithSource(
         chapters: List<Chapter>,
         manga: Manga,
-        source: Source,
+        source: SourceGateway,
         manualFetch: Boolean,
     ): List<Chapter> {
         val sManga = manga.toSManga()
         val sChapters = chapters.map { it.toSChapter() }
         val update = runCatching {
-            runExtensionCall(sourceName = source.name) {
-                source.getMangaUpdate(
+            // Use the legacy source for the extension call
+            val legacySource = source.asLegacySource()
+                ?: throw IllegalStateException("Cannot sync chapters with non-legacy source")
+            runExtensionCall(sourceName = legacySource.name) {
+                legacySource.getMangaUpdate(
                     manga = sManga,
                     chapters = sChapters,
                     fetchDetails = true,
@@ -114,7 +122,8 @@ class MangaChapterInteractor @Inject constructor(
             }
         }.onSuccess { updateResult ->
             runCatching {
-                updateManga.awaitUpdateFromSource(manga, updateResult.manga(), manualFetch = manualFetch)
+                val domainManga = updateResult.manga().toDomainManga(source.legacyId ?: 0L)
+                updateManga.awaitUpdateFromSource(manga, domainManga, manualFetch = manualFetch)
             }.onFailure { e ->
                 logcat(LogPriority.WARN, e) {
                     "Failed to update manga details from source '${source.name}'"
@@ -128,10 +137,10 @@ class MangaChapterInteractor @Inject constructor(
             SMangaUpdate(sManga, sChapters)
         }
         return syncChaptersWithSource.await(
-            update.chapters(),
-            manga,
             source,
+            manga,
             manualFetch,
+            Pair(0, 0),
         )
     }
 

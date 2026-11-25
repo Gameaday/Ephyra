@@ -72,9 +72,11 @@ import ephyra.presentation.core.components.material.AlertDialogContent
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.udf.BaseUdfViewModel
+import ephyra.presentation.core.util.system.asLegacySource
 import ephyra.presentation.core.util.system.copyToClipboard
+import ephyra.presentation.core.util.system.legacyId
 import ephyra.presentation.core.util.system.toast
-import eu.kanade.tachiyomi.source.Source
+import ephyra.source.api.SourceGateway
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
@@ -97,7 +99,7 @@ import java.time.ZoneOffset
 @Composable
 fun TrackInfoDialog(
     manga: Manga,
-    source: Source,
+    source: SourceGateway,
     onDismissRequest: () -> Unit,
 ) {
     val stack = remember { mutableStateListOf<TrackInfoDialogScreen>(TrackInfoDialogScreen.Home) }
@@ -107,7 +109,7 @@ fun TrackInfoDialog(
             TrackInfoDialogScreen.Home -> TrackInfoDialogHomeScreen(
                 mangaId = manga.id,
                 mangaTitle = manga.title,
-                sourceId = source.id,
+                sourceId = source.legacyId ?: 0L,
                 canonicalId = manga.canonicalId,
                 onStatusClick = { stack.add(TrackInfoDialogScreen.Status(it.track!!, it.tracker.id)) },
                 onChapterClick = { stack.add(TrackInfoDialogScreen.Chapter(it.track!!, it.tracker.id)) },
@@ -390,7 +392,8 @@ class TrackInfoHomeViewModel @AssistedInject constructor(
 
     private suspend fun List<Track>.mapToTrackItem(): List<TrackItem> {
         val loggedInTrackers = trackerManager.loggedInTrackers()
-        val source = sourceManager.getOrStub(sourceId)
+        val sourceGateway = sourceManager.getOrStub(sourceId)
+        val source = sourceGateway.asLegacySource()!!
         // Include Jellyfin even when not logged in so users can discover it
         val jellyfin = trackerManager.get(TrackerManager.JELLYFIN)
         val visibleTrackers = if (jellyfin == null || jellyfin.isLoggedIn()) {

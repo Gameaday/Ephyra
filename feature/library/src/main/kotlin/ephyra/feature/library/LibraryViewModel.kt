@@ -50,6 +50,8 @@ import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.presentation.core.util.manga.removeCovers
 import ephyra.presentation.core.util.system.getNameForMangaInfo
+import ephyra.presentation.core.util.system.lang
+import ephyra.presentation.core.util.system.legacyId
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.ImmutableList
@@ -653,7 +655,7 @@ class LibraryViewModel @Inject constructor(
                         false
                     },
                     sourceLanguage = sourceLangMap[manga.manga.source] ?: "",
-                    sourceId = source.id,
+                    sourceId = source.legacyId ?: 0L,
                     sourceName = source.getNameForMangaInfo(),
                 )
             }
@@ -870,9 +872,9 @@ class LibraryViewModel @Inject constructor(
 
                 if (deleteChapters) {
                     mangas.forEach { manga ->
-                        val source = sourceManager.get(manga.source) as? HttpSource
-                        if (source != null) {
-                            downloadManager.deleteManga(manga, source)
+                        val sourceGateway = sourceManager.get(manga.source)
+                        if (sourceGateway != null) {
+                            downloadManager.deleteManga(manga, sourceGateway)
                         }
                     }
                 }

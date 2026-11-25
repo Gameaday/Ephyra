@@ -72,7 +72,7 @@ class DownloadQueueViewModel @Inject constructor(
 
     fun <R : Comparable<R>> reorderQueue(selector: (Download) -> R, reverse: Boolean = false) {
         val reordered = currentState.downloads
-            .groupBy { it.source.id }
+            .groupBy { it.source.descriptor.id.value }
             .values
             .flatMap { group ->
                 group.sortedBy(selector).let { if (reverse) it.reversed() else it }

@@ -5,7 +5,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.presentation.core.util.system.asLegacySource
+import ephyra.presentation.core.util.system.name
 import ephyra.domain.source.service.SourceManager
+import ephyra.source.api.SourceGateway
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,10 +60,7 @@ class SourcePreferencesViewModel @Inject constructor(
     }
 
     fun getConfigurableSource(sourceId: Long): eu.kanade.tachiyomi.source.ConfigurableSource? {
-        return (
-            sourceManager.get(
-                sourceId,
-            ) ?: sourceManager.getOrStub(sourceId)
-            ) as? eu.kanade.tachiyomi.source.ConfigurableSource
+        val gateway = sourceManager.get(sourceId) ?: sourceManager.getOrStub(sourceId)
+        return gateway.asLegacySource() as? eu.kanade.tachiyomi.source.ConfigurableSource
     }
 }

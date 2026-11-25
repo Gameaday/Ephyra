@@ -22,7 +22,6 @@ data class BackupTracking(
     @ProtoNumber(12) var isPrivate: Boolean = false,
     @ProtoNumber(100) var mediaId: Long = 0,
 ) {
-    @Suppress("DEPRECATION")
     fun getTrackImpl(): Track {
         return Track(
             id = -1,

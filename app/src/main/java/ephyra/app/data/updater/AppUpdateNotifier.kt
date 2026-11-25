@@ -39,7 +39,6 @@ class AppUpdateNotifier(private val context: Context) : DomainAppUpdateNotifier 
         NotificationReceiver.dismissNotification(context, Notifications.ID_APP_UPDATER)
     }
 
-    @SuppressLint("LaunchActivityFromNotification")
     override fun promptUpdate(release: Release) {
         val updateIntent = NotificationReceiver.downloadAppUpdatePendingBroadcast(
             context,

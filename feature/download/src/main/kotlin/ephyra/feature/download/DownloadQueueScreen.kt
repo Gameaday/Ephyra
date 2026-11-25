@@ -275,9 +275,9 @@ fun DownloadQueueScreen(
         val flatItems = remember(downloadList) {
             buildList {
                 downloadList
-                    .groupBy { it.source.id }
+                    .groupBy { it.source.descriptor.id.value }
                     .forEach { (_, group) ->
-                        add(DownloadListDisplayItem.Header(group.first().source.name, group.size))
+                        add(DownloadListDisplayItem.Header(group.first().source.descriptor.displayName, group.size))
                         group.forEach { add(DownloadListDisplayItem.Item(it)) }
                     }
             }

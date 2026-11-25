@@ -20,6 +20,10 @@ import ephyra.feature.reader.model.PageByteStoreOwner
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.source.local.LocalSource
 import ephyra.source.local.io.Format
+import ephyra.presentation.core.util.system.asHttpSource
+import ephyra.presentation.core.util.system.asLocalSource
+import ephyra.presentation.core.util.system.asStubSource
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
 
@@ -31,7 +35,7 @@ class ChapterLoader(
     private val downloadManager: DownloadManager,
     private val downloadProvider: DownloadProvider,
     private val manga: Manga,
-    private val source: Source,
+    private val source: SourceGateway,
     private val downloadPreferences: DownloadPreferences,
     private val chapterCache: ChapterCache,
 ) {
@@ -152,8 +156,9 @@ class ChapterLoader(
             manga.title,
             manga.source,
         )
-        return when {
-            isDownloaded -> DownloadPageLoader(
+        // Check for downloaded chapters first
+        if (isDownloaded) {
+            return DownloadPageLoader(
                 chapter,
                 manga,
                 source,
@@ -161,29 +166,39 @@ class ChapterLoader(
                 downloadProvider,
                 context,
             )
+        }
 
-            source is LocalSource -> source.getFormat(chapter.chapter.toSChapter()).let { format ->
-                when (format) {
-                    is Format.Directory -> DirectoryPageLoader(format.file)
-                    is Format.Archive -> ArchivePageLoader(format.file.archiveReader(context))
-                    is Format.Epub -> EpubPageLoader(format.file.epubReader(context))
-                }
+        // Check for local source formats
+        val localFormat = source.asLocalSource()?.getFormat(chapter.chapter.toSChapter())
+        if (localFormat != null) {
+            return when (localFormat) {
+                is Format.Directory -> DirectoryPageLoader(localFormat.file)
+                is Format.Archive -> ArchivePageLoader(localFormat.file.archiveReader(context))
+                is Format.Epub -> EpubPageLoader(localFormat.file.epubReader(context))
             }
+        }
 
-            source is HttpSource -> HttpPageLoader(
+        // Check for HTTP source
+        source.asHttpSource()?.let { httpSource ->
+            return HttpPageLoader(
                 chapter,
-                source,
+                httpSource,
                 chapterCache = chapterCache,
                 performanceTier = performanceTier,
                 isPreloadOnly = isPreloadOnly,
                 preProcessor = preProcessor,
             )
-
-            source is StubSource -> error(
-                context.stringResource(ephyra.app.core.common.R.string.source_not_installed, source.toString()),
-            )
-            else -> error(context.stringResource(ephyra.app.core.common.R.string.loader_not_implemented_error))
         }
+
+        // Check for stub source
+        source.asStubSource()?.let { stubSource ->
+            error(
+                context.stringResource(ephyra.app.core.common.R.string.source_not_installed, stubSource.toString()),
+            )
+        }
+
+        // Fallback
+        error(context.stringResource(ephyra.app.core.common.R.string.loader_not_implemented_error))
     }
 
     private companion object {
