@@ -3,6 +3,8 @@
 import app.cash.turbine.test
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.MangasPage
@@ -93,14 +95,14 @@ class CoverSearchViewModelTest {
     }
 
     private class FakeSourceManager : SourceManager {
-        var catalogueSourceList: List<CatalogueSource> = emptyList()
+        var catalogueSourceList: List<SourceGateway> = emptyList()
 
         override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
-        override val catalogueSourceFlow: Flow<List<CatalogueSource>> = flowOf(emptyList())
-        override fun get(sourceKey: Long): Source? = null
-        override fun getOrStub(sourceKey: Long): Source = mockk(relaxed = true)
-        override fun getOnlineSources(): List<HttpSource> = emptyList()
-        override fun getCatalogueSources(): List<CatalogueSource> = catalogueSourceList
+        override val catalogueSourceFlow: Flow<List<SourceGateway>> = flowOf(emptyList())
+        override fun get(sourceKey: Long): SourceGateway? = null
+        override fun getOrStub(sourceKey: Long): SourceGateway = mockk(relaxed = true)
+        override fun getOnlineSources(): List<SourceGateway> = emptyList()
+        override fun getCatalogueSources(): List<SourceGateway> = catalogueSourceList
         override fun getStubSources(): List<StubSource> = emptyList()
     }
 }

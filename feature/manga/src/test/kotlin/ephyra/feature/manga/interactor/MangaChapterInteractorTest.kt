@@ -11,6 +11,8 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.SetMangaChapterFlags
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
@@ -77,6 +79,8 @@ class MangaChapterInteractorTest {
         override suspend fun getPageList(chapter: SChapter): List<Page> = emptyList()
     }
 
+    private val fake16SourceGateway = LegacySourceGateway(Fake16HttpSource())
+
     private class FailingHttpSource : HttpSource() {
         override val baseUrl: String = "https://failing.source"
         override val name: String = "Failing Source"
@@ -95,25 +99,27 @@ class MangaChapterInteractorTest {
         override suspend fun getPageList(chapter: SChapter): List<Page> = emptyList()
     }
 
+    private val failingSourceGateway = LegacySourceGateway(FailingHttpSource())
+
     @Test
     fun `syncChaptersWithSource uses getMangaUpdate on extension source and persists update`() = runTest {
         val manga = Manga.create().copy(id = 1L, url = "/series/1", title = "Original")
-        val source = Fake16HttpSource()
+        val source = fake16SourceGateway
         val expectedChapters = listOf(Chapter.create().copy(id = 101L, mangaId = 1L, name = "Chapter 1"))
 
         coEvery {
             syncChaptersWithSource.await(
-                rawSourceChapters = match { it.size == 1 && it[0].name == "Chapter 1" },
+                gateway = source,
                 manga = manga,
-                source = source,
                 manualFetch = true,
+                fetchWindow = Pair(0L, 0L),
             )
         } returns expectedChapters
 
         val result = interactor.syncChaptersWithSource(
             chapters = emptyList(),
             manga = manga,
-            source = source,
+            gateway = source,
             manualFetch = true,
         )
 
@@ -130,22 +136,22 @@ class MangaChapterInteractorTest {
     @Test
     fun `syncChaptersWithSource with manualFetch false falls back to local chapters on error`() = runTest {
         val manga = Manga.create().copy(id = 1L, url = "/series/1", title = "Original")
-        val source = FailingHttpSource()
+        val source = failingSourceGateway
         val localChapters = listOf(Chapter.create().copy(id = 10L, mangaId = 1L, url = "/ch1", name = "Local 1"))
 
         coEvery {
             syncChaptersWithSource.await(
-                rawSourceChapters = match { it.size == 1 && it[0].url == "/ch1" },
+                gateway = source,
                 manga = manga,
-                source = source,
                 manualFetch = false,
+                fetchWindow = Pair(0L, 0L),
             )
         } returns localChapters
 
         val result = interactor.syncChaptersWithSource(
             chapters = localChapters,
             manga = manga,
-            source = source,
+            gateway = source,
             manualFetch = false,
         )
 

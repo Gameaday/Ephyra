@@ -24,7 +24,8 @@ import ephyra.feature.manga.interactor.MangaChapterInteractor
 import ephyra.feature.manga.interactor.MangaInfoInteractor
 import ephyra.feature.manga.interactor.MangaTrackInteractor
 import ephyra.presentation.core.ui.AppInfo
-import eu.kanade.tachiyomi.source.Source
+import ephyra.source.api.LegacySourceGateway
+import ephyra.source.api.SourceGateway
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -81,9 +82,11 @@ class MangaViewModelTest {
         every { bookmarkedFilterRaw } returns 0L
     }
 
-    private val testSource: Source = mockk(relaxed = true) {
-        every { id } returns 100L
-    }
+    private val testSource: SourceGateway = LegacySourceGateway(
+        mockk<Source>(relaxed = true) {
+            every { id } returns 100L
+        },
+    )
 
     private val chapter1: Chapter = mockk(relaxed = true) {
         every { id } returns 10L

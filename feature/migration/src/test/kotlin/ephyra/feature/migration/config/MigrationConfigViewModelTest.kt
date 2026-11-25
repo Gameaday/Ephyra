@@ -58,7 +58,9 @@ class MigrationConfigViewModelTest {
         override fun getOrStub(
             sourceKey: Long,
         ): SourceGateway = throw UnsupportedOperationException()
-        override fun getOnlineSources(): List<SourceGateway> = catalogueSourcesList.filterIsInstance<LegacySourceGateway>().filter { (it as LegacySourceGateway).delegate is HttpSource }
+        override fun getOnlineSources(): List<SourceGateway> = catalogueSourcesList
+            .filterIsInstance<LegacySourceGateway>()
+            .filter { (it as LegacySourceGateway).delegate is HttpSource }
         override fun getCatalogueSources(): List<SourceGateway> = catalogueSourcesList
         override fun getStubSources(): List<StubSource> = emptyList()
     }
