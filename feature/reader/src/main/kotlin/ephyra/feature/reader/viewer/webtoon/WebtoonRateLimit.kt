@@ -38,8 +38,8 @@ fun isRateLimitError(error: Throwable?): Boolean {
 fun RateLimitedRetry(
     page: ReaderPage,
     onRetry: () -> Unit,
-    cooldownMs: Long = RATE_LIMIT_RETRY_COOLDOWN_MS,
     modifier: Modifier = Modifier,
+    cooldownMs: Long = RATE_LIMIT_RETRY_COOLDOWN_MS,
     /**
      * Identity that re-arms the countdown when it changes.
      *

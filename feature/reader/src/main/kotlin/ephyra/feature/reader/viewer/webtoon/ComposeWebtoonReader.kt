@@ -58,6 +58,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
@@ -142,10 +143,9 @@ fun ComposeWebtoonReader(
     }
 
     val scope = rememberCoroutineScope()
-    val configuration = LocalConfiguration.current
-    val density = LocalDensity.current
     val context = LocalContext.current
-    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val windowInfo = LocalWindowInfo.current
+    val screenHeightPx = windowInfo.containerSize.height.toFloat()
     val scrollDistance = screenHeightPx * 0.75f
 
     // Shared horizontal zoom across the chapter: continuous vertical flow stays authoritative,
@@ -328,7 +328,8 @@ fun ComposeWebtoonReader(
                 }
         }
 
-        val webtoonOverscrollConnection = remember(onNextChapter, onPreviousChapter) {
+        val density = LocalDensity.current
+        val webtoonOverscrollConnection = remember(onNextChapter, onPreviousChapter, density) {
             object : NestedScrollConnection {
                 var accumulatedOverscroll = 0f
 
@@ -740,11 +741,10 @@ private fun WebtoonPageItem(
                 // Use the device's actual screen width as the target for image loading.
                 // This ensures the image is loaded at native screen resolution, preserving
                 // quality for any device (phones, tablets, foldables) regardless of density.
-                val density = LocalDensity.current
-                val configuration = LocalConfiguration.current
-                val targetWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+                val windowInfo = LocalWindowInfo.current
+                val targetWidthPx = windowInfo.containerSize.width.toFloat()
                 // Compose viewport height drives the per-slice ceiling (~1.5 viewports).
-                val viewportHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+                val viewportHeightPx = windowInfo.containerSize.height.toFloat()
 
                 // Long strips render sliced at full width resolution; everything else (and any
                 // slice failure) uses the single-image path via `fallback`.
@@ -795,7 +795,7 @@ private fun WebtoonPageItem(
                         imageModel = page.resource.mergedBitmap!!,
                         cropBorders = true,
                         targetWidthPx = targetWidthPx,
-                        densityScale = density.density,
+                        densityScale = LocalDensity.current.density,
                         bytesSize = 0,
                         onTransformedSize = { transformedDimensions = it },
                     )
@@ -833,7 +833,7 @@ private fun WebtoonPageItem(
                                 imageModel = readyBytes!!,
                                 cropBorders = cropBorders,
                                 targetWidthPx = targetWidthPx,
-                                densityScale = density.density,
+                                densityScale = LocalDensity.current.density,
                                 bytesSize = readyBytes!!.size,
                                 onTransformedSize = { transformedDimensions = it },
                             )
@@ -855,7 +855,7 @@ private fun WebtoonPageItem(
                         imageModel = readyBytes!!,
                         cropBorders = cropBorders,
                         targetWidthPx = targetWidthPx,
-                        densityScale = density.density,
+                        densityScale = LocalDensity.current.density,
                         bytesSize = readyBytes!!.size,
                         onTransformedSize = { transformedDimensions = it },
                     )

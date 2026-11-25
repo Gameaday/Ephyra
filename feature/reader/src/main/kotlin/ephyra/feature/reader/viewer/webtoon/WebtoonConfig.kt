@@ -1,6 +1,7 @@
 package ephyra.feature.reader.viewer.webtoon
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import ephyra.domain.reader.service.ReaderPreferences
@@ -30,7 +31,7 @@ class WebtoonConfig(
     var imageCropBorders by mutableStateOf(false)
         private set
 
-    var sidePadding by mutableStateOf(0)
+    var sidePadding by mutableIntStateOf(0)
         private set
 
     var doubleTapZoom by mutableStateOf(true)

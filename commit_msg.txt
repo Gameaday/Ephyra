@@ -1,0 +1,12 @@
+fix(lint): resolve reader module lint issues
+
+- ReaderActivity.kt: Move super.onDestroy() to beginning of method
+- BookReaderScreen.kt: Use snapshotFlow to avoid @FrequentlyChangingValue in composition
+- ChapterTransition.kt: Move modifier parameter to first optional position (2 locations)
+- ComposeWebtoonReader.kt: Replace Configuration.screenWidthDp/screenHeightDp with LocalWindowInfo.current.containerSize
+- ComposeWebtoonReader.kt: Capture density for NestedScrollConnection.onPreFling
+- PagerConfig.kt: Use mutableIntStateOf for Int state
+- WebtoonConfig.kt: Use mutableIntStateOf for Int state
+- WebtoonRateLimit.kt: Move modifier parameter to first optional position
+
+All lint issues in feature:reader module resolved (1 error, 10 warnings -> 0 errors, 3 warnings (UseTomlInstead in build files))

@@ -1,6 +1,7 @@
 package ephyra.feature.reader.viewer.pager
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import ephyra.domain.reader.service.ReaderPreferences
@@ -39,7 +40,7 @@ class PagerConfig(
 
     var dualPageSplitChangedListener: ((Boolean) -> Unit)? = null
 
-    var imageScaleType by mutableStateOf(1)
+    var imageScaleType by mutableIntStateOf(1)
         private set
 
     var imageZoomType by mutableStateOf(ZoomStartPosition.LEFT)

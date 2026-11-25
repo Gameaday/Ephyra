@@ -78,11 +78,11 @@ fun ChapterTransition(
     transition: ChapterTransition,
     currChapterDownloaded: Boolean,
     goingToChapterDownloaded: Boolean,
+    modifier: Modifier = Modifier,
     onTransitionClick: (() -> Unit)? = null,
     onReturnClick: (() -> Unit)? = null,
     onReturnToSeries: (() -> Unit)? = null,
     direction: TransitionDirection = TransitionDirection.LTR,
-    modifier: Modifier = Modifier,
 ) {
     val currChapter = transition.from.chapter
     val goingToChapter = transition.to?.chapter
@@ -270,12 +270,12 @@ private fun TransitionCard(
     bottomChapterDownloaded: Boolean,
     fallbackLabel: String,
     chapterGap: Int,
+    modifier: Modifier = Modifier,
     onTransitionClick: (() -> Unit)? = null,
     onReturnClick: (() -> Unit)? = null,
     actionLabel: String? = null,
     isNext: Boolean = true,
     direction: TransitionDirection = TransitionDirection.LTR,
-    modifier: Modifier = Modifier,
 ) {
     // The layout direction is supplied explicitly rather than inherited from the device locale:
     // an R2L manga pager advances leftwards even on an LTR device, and an LTR pager advances

@@ -258,11 +258,11 @@ class ReaderActivity : BaseActivity(), ReaderViewerHost {
     }
 
     override fun onDestroy() {
+        super.onDestroy()
         if (isFinishing) {
             sendActivityFinish()
         }
         currentViewer?.destroy()
-        super.onDestroy()
         config = null
         menuToggleToast?.cancel()
         readingModeToast?.cancel()

@@ -258,8 +258,10 @@ private fun ScrollChapterReader(
         scrollState.scrollTo(state.initialScrollOffset)
     }
 
-    LaunchedEffect(scrollState.value) {
-        onScrollChanged(scrollState.value)
+    // Use snapshotFlow to avoid reading @FrequentlyChangingValue directly in composition
+    LaunchedEffect(Unit) {
+        snapshotFlow { scrollState.value }
+            .collect { onScrollChanged(it) }
     }
 
     Column(
